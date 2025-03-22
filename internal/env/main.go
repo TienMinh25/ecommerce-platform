@@ -1,9 +1,18 @@
 package env
 
 import (
-	"github.com/kelseyhightower/envconfig"
 	"log"
+
+	"github.com/kelseyhightower/envconfig"
 )
+
+type PostgreSQLConfig struct {
+	PostgresHost     string `envconfig:"POSTGRES_HOST"`
+	PostgresPort     int    `envconfig:"POSTGRES_PORT"`
+	PostgresUser     string `envconfig:"POSTGRES_USER"`
+	PostgresPassword string `envconfig:"POSTGRES_PASSWORD"`
+	PostgresDSN      string `envconfig:"POSTGRES_DSN"`
+}
 
 type RedisConfig struct {
 	// redis
@@ -61,6 +70,7 @@ type ServiceWorkerPoolConfig struct {
 }
 
 type EnvManager struct {
+	PostgreSQL        *PostgreSQLConfig
 	Redis             *RedisConfig
 	Jeager            *JeagerConfig
 	Mail              *MailConfig
