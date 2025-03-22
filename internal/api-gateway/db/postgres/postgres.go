@@ -1,4 +1,4 @@
-package postgres
+package api_gateway_postgres
 
 import (
 	"context"
@@ -18,6 +18,7 @@ type postgres struct {
 	db *pgxpool.Pool
 }
 
+// todo: inject tracer for distributed tracing
 func NewPostgresSQL(lifecycle fx.Lifecycle, manager *env.EnvManager) (pkg.Database, error) {
 	dbClient, err := pgxpool.New(context.Background(), fmt.Sprintf("%s/%s", manager.PostgreSQL.PostgresDSN, common.API_GATEWAY_DB))
 
@@ -135,10 +136,10 @@ func (t *tx) Exec(ctx context.Context, sql string, args ...any) error {
 // ExecWithResult implements pkg.Tx.
 func (t *tx) ExecWithResult(ctx context.Context, sqlStr string, args ...any) (sql.Result, error) {
 	// todo: add open telemetry
-	commandTag, err := t.transaction.Exec(ctx, sql, args)
+	commandTag, err := t.transaction.Exec(ctx, sqlStr, args)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed when do query within transaction '%s', error: %w", sql, err)
+		return nil, fmt.Errorf("failed when do query within transaction '%s', error: %w", sqlStr, err)
 	}
 
 	return &pgxResult{
