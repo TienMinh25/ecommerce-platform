@@ -23,7 +23,7 @@ migrate-down:
 	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir_api_gateway) down
 
 fix-dirty-db:
-	@migrate -database $(postgres_dsn)/$(dbname) -path $(dir_api_gateway) force $(version)
+	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir_api_gateway) force $(version)
 
 generate-public-key: generate-private-key
 	@openssl rsa -pubout -in jwtRSA256.key -out jwtRSA256.key.pub

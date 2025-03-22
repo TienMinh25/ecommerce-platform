@@ -1,8 +1,11 @@
 package env
 
 import (
+	"fmt"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -69,7 +72,12 @@ type ServiceWorkerPoolConfig struct {
 	MessageSize        int `envconfig:"NUM_MESSAGE_IN_QUEUE_DEFAULT" default:"1000"`
 }
 
+type ServerConfig struct {
+	ServerAddresss string `envconfig:"SERVER_ADDRESS"`
+}
+
 type EnvManager struct {
+	ServerConfig      *ServerConfig
 	PostgreSQL        *PostgreSQLConfig
 	Redis             *RedisConfig
 	Jeager            *JeagerConfig
@@ -91,11 +99,22 @@ type EnvManager struct {
 }
 
 func NewEnvManager() *EnvManager {
+	dir, _ := os.Getwd()
+	err := godotenv.Load(fmt.Sprintf("%s/%s", dir, "configs/.env.dev"))
+
+	if err != nil {
+		log.Fatalf("Error loading .env file: %v", err)
+	}
+
+	log.Println("✅ Loaded env file successfully")
+
 	var config EnvManager
 
-	if err := envconfig.Process("", config); err != nil {
+	if err := envconfig.Process("", &config); err != nil {
 		log.Fatalf("Failed to load environment variables: %v", err)
 	}
+
+	log.Println("✅ Loaded environment variables successfully")
 
 	return &config
 }
