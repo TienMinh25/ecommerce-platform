@@ -67,11 +67,11 @@ func main() {
 			NewGinEngine,
 			// router and handler
 			api_gateway_router.NewRouter,
-			api_gateway_handler.NewAdminAddressHandler,
+			api_gateway_handler.NewAdminAddressTypeHandler,
 			// service
-			api_gateway_service.NewAdminAddressService,
+			api_gateway_service.NewAdminAddressTypeService,
 			// repository
-			api_gateway_repository.NewAddressRepository,
+			api_gateway_repository.NewAddressTypeRepository,
 		),
 		fx.Invoke(StartServer),
 	)

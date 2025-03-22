@@ -4,8 +4,8 @@ import (
 	"context"
 )
 
-type IAdminAddressService interface {
-	GetAddresses(ctx context.Context)
-	UpdateAddress(ctx context.Context)
-	DeleteAddress(ctx context.Context)
+type IAdminAddressTypeService interface {
+	GetAddressTypes(ctx context.Context)
+	UpdateAddressType(ctx context.Context)
+	DeleteAddressType(ctx context.Context)
 }

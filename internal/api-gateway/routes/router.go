@@ -20,22 +20,23 @@ type Router struct {
 // @name
 func NewRouter(
 	router *gin.Engine,
-	adminAddressHandler api_gateway_handler.IAdminAddressHandler,
+	adminAddressTypeHandler api_gateway_handler.IAdminAddressTypeHandler,
 ) *Router {
 	apiV1Group := router.Group("/api/v1")
 
-	registerAdminAddressManagementEndpoint(apiV1Group, adminAddressHandler)
+	registerAdminAddressManagementEndpoint(apiV1Group, adminAddressTypeHandler)
 
 	return &Router{
 		Router: router,
 	}
 }
 
-func registerAdminAddressManagementEndpoint(group *gin.RouterGroup, handler api_gateway_handler.IAdminAddressHandler) {
-	adminAddressGroup := group.Group("/addresses")
+func registerAdminAddressManagementEndpoint(group *gin.RouterGroup, handler api_gateway_handler.IAdminAddressTypeHandler) {
+	adminAddressGroup := group.Group("/address-types")
 
 	// todo: add middleware check permission to access api endpoint
-	adminAddressGroup.GET("", handler.GetAddresses)
-	adminAddressGroup.PATCH("/:addressID", handler.UpdateAddress)
-	adminAddressGroup.DELETE("/:addressID", handler.DeleteAddress)
+	adminAddressGroup.GET("", handler.GetAddressTypes)
+	adminAddressGroup.POST("", handler.CreateAddressType)
+	adminAddressGroup.PATCH("/:addressID", handler.UpdateAddressType)
+	adminAddressGroup.DELETE("/:addressID", handler.DeleteAddressType)
 }
