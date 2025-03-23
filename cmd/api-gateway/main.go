@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/TienMinh25/ecommerce-platform/pkg"
+	"github.com/TienMinh25/ecommerce-platform/third_party/s3"
 	"log"
 	"net/http"
 	"time"
@@ -61,6 +63,8 @@ func main() {
 		fx.Provide(
 			// env manager
 			env.NewEnvManager,
+			// minio,
+			s3.NewStorage,
 			// database,
 			api_gateway_postgres.NewPostgresSQL,
 			// gin engine
@@ -74,6 +78,7 @@ func main() {
 			api_gateway_repository.NewAddressTypeRepository,
 		),
 		fx.Invoke(StartServer),
+		fx.Invoke(func(minio pkg.Storage) {}),
 	)
 
 	app.Run()

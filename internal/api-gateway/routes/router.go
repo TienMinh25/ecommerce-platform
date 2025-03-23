@@ -37,6 +37,6 @@ func registerAdminAddressManagementEndpoint(group *gin.RouterGroup, handler api_
 	// todo: add middleware check permission to access api endpoint
 	adminAddressGroup.GET("", handler.GetAddressTypes)
 	adminAddressGroup.POST("", handler.CreateAddressType)
-	adminAddressGroup.PATCH("/:addressID", handler.UpdateAddressType)
-	adminAddressGroup.DELETE("/:addressID", handler.DeleteAddressType)
+	adminAddressGroup.PATCH("/:addressTypeID", handler.UpdateAddressType)
+	adminAddressGroup.DELETE("/:addressTypeID", handler.DeleteAddressType)
 }

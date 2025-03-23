@@ -20,31 +20,12 @@ func NewAddressTypeRepository(db pkg.Database) IAddressTypeRepository {
 	}
 }
 
-// todo: add open telemetry
-func (a addressTypeRepository) CreateAddressType(ctx context.Context, addressType string) error {
-	sqlStr := "INSERT INTO address_types(address_type) VALUES(@addressType)"
-	args := pgx.NamedArgs{
-		"addressType": addressType,
-	}
-
-	if err := a.db.Exec(ctx, sqlStr, args); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (a addressTypeRepository) GetAddressTypeByName(ctx context.Context, name string) (*api_gateway_models.AddressType, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (a addressTypeRepository) BeginTransaction(ctx context.Context) (pkg.Tx, error) {
+func (a *addressTypeRepository) BeginTransaction(ctx context.Context) (pkg.Tx, error) {
 	// todo: inject tracer
 	return a.db.BeginTx(ctx)
 }
 
-func (a addressTypeRepository) CreateAddressTypeX(ctx context.Context, tx pkg.Tx, addressType string) error {
+func (a *addressTypeRepository) CreateAddressTypeX(ctx context.Context, tx pkg.Tx, addressType string) error {
 	// todo: inject tracer
 	sqlStr := "INSERT INTO address_types(address_type) VALUES(@addressType)"
 	args := pgx.NamedArgs{
@@ -58,7 +39,7 @@ func (a addressTypeRepository) CreateAddressTypeX(ctx context.Context, tx pkg.Tx
 	return nil
 }
 
-func (a addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pkg.Tx, name string) (*api_gateway_models.AddressType, error) {
+func (a *addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pkg.Tx, name string) (*api_gateway_models.AddressType, error) {
 	// todo: inject tracer
 	sqlStr := "SELECT id, address_type, created_at, updated_at FROM address_types WHERE address_type = @addressType"
 	args := pgx.NamedArgs{
@@ -84,4 +65,71 @@ func (a addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pkg
 	}
 
 	return &addressType, nil
+}
+
+func (a *addressTypeRepository) UpdateAddressTypeX(ctx context.Context, tx pkg.Tx, id int, addressType string) error {
+	// todo: inject tracer
+	sqlStr := "UPDATE address_types SET address_type = @addressType WHERE id = @id"
+	args := pgx.NamedArgs{
+		"addressType": addressType,
+		"id":          id,
+	}
+
+	res, err := tx.ExecWithResult(ctx, sqlStr, args)
+
+	if err != nil {
+		return err
+	}
+
+	rowEffected, err := res.RowsAffected()
+
+	if err != nil {
+		return err
+	}
+
+	if rowEffected == 0 {
+		return utils.BusinessError{
+			Message: "address type is not found",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	return nil
+}
+
+func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx pkg.Tx, id int) error {
+	// todo: add tracer
+	// step 1: check address type in address table
+	sqlCheckStr := "SELECT EXISTS(SELECT 1 FROM addresses WHERE address_type_id = @id)"
+	argsCheck := pgx.NamedArgs{
+		"id": id,
+	}
+
+	var exists bool
+	err := tx.QueryRow(ctx, sqlCheckStr, argsCheck).Scan(&exists)
+
+	if err != nil {
+		return utils.TechnicalError{
+			Message: "Something went wrong, please try again later.",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	if exists {
+		return utils.BusinessError{
+			Message: "cannot delete address type as it is being used by customer, deliverer or supplier",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	// step 2: Delete address type
+	sqlDeleteStr := "DELETE FROM address_types WHERE id = @id"
+	if err = tx.Exec(ctx, sqlDeleteStr, argsCheck); err != nil {
+		return utils.TechnicalError{
+			Message: "Something went wrong, please try again later.",
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	return nil
 }

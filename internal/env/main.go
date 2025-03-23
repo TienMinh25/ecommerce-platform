@@ -83,6 +83,7 @@ type EnvManager struct {
 	Jeager            *JeagerConfig
 	Mail              *MailConfig
 	Mongo             *MongoDBConfig
+	MinioConfig       *MinioConfig
 	Kafka             *KafkaConfig
 	ServiceWorkerPool *ServiceWorkerPoolConfig
 
