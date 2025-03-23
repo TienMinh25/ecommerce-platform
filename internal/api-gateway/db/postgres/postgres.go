@@ -61,7 +61,7 @@ func (p *postgres) Exec(ctx context.Context, sql string, args ...any) error {
 	_, err := p.db.Exec(ctx, sql, args)
 
 	if err != nil {
-		return fmt.Errorf("failed when do query '%s', error: %w", sql, err)
+		return err
 	}
 
 	return nil
@@ -73,7 +73,7 @@ func (p *postgres) ExecWithResult(ctx context.Context, sqlStr string, args ...an
 	commandTag, err := p.db.Exec(ctx, sqlStr, args)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed when do query '%s', error: %w", sqlStr, err)
+		return nil, err
 	}
 
 	return &pgxResult{
@@ -87,7 +87,7 @@ func (p *postgres) Query(ctx context.Context, sql string, args ...any) (pkg.Rows
 	res, err := p.db.Query(ctx, sql, args)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed when select records with query %s, error: %w", sql, err)
+		return nil, err
 	}
 
 	return &rows{
@@ -109,7 +109,7 @@ func (p *postgres) BeginTx(ctx context.Context) (pkg.Tx, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("cannot begin transaction: %w", err)
+		return nil, err
 	}
 
 	return &tx{
@@ -127,7 +127,7 @@ func (t *tx) Exec(ctx context.Context, sql string, args ...any) error {
 	_, err := t.transaction.Exec(ctx, sql, args)
 
 	if err != nil {
-		return fmt.Errorf("failed when do query within transaction '%s', error: %w", sql, err)
+		return err
 	}
 
 	return nil
@@ -139,7 +139,7 @@ func (t *tx) ExecWithResult(ctx context.Context, sqlStr string, args ...any) (sq
 	commandTag, err := t.transaction.Exec(ctx, sqlStr, args)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed when do query within transaction '%s', error: %w", sqlStr, err)
+		return nil, err
 	}
 
 	return &pgxResult{
@@ -153,7 +153,7 @@ func (t *tx) Query(ctx context.Context, sql string, args ...any) (pkg.Rows, erro
 	res, err := t.transaction.Query(ctx, sql, args)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed when select records with query within transaction: %s, error: %w", sql, err)
+		return nil, err
 	}
 
 	return &rows{

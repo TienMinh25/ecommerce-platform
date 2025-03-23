@@ -34,7 +34,7 @@ func PaginatedResponse[T any](ctx *gin.Context, data T, currentPage, limit, tota
 }
 
 func ErrorResponse(ctx *gin.Context, statusCode int, errDetail interface{}) {
-	ctx.JSON(statusCode, common.ResponseError{
+	ctx.AbortWithStatusJSON(statusCode, common.ResponseError{
 		Metadata: common.Metadata{
 			Code: statusCode,
 		},
