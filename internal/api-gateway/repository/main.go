@@ -5,3 +5,5 @@ import "context"
 type IAddressTypeRepository interface {
 	CreateAddressType(ctx context.Context, addressType string) error
 }
+
+type RoleTypeRepository interface{}
