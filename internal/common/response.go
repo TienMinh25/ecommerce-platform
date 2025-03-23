@@ -32,12 +32,3 @@ type Pagination struct {
 	HasNext     bool `json:"has_next"`
 	HasPrevious bool `json:"has_previous"`
 }
-
-type ErrorResponse struct {
-	Code    int    `json:"-"`
-	Message string `json:"message"`
-}
-
-func (e *ErrorResponse) Error() string {
-	return e.Message
-}
