@@ -9,6 +9,12 @@ type roleTypeHandler struct {
 	service api_gateway_service.IRoleTypeService
 }
 
+func NewRoleTypeHandler(service api_gateway_service.IRoleTypeService) IRoleTypeHandler {
+	return &roleTypeHandler{
+		service: service,
+	}
+}
+
 func (h *roleTypeHandler) GetRole(ctx *gin.Context) {
 	panic("unimplemented")
 }
@@ -23,10 +29,4 @@ func (h *roleTypeHandler) UpdateRole(ctx *gin.Context) {
 
 func (h *roleTypeHandler) DeleteRole(ctx *gin.Context) {
 	panic("unimplemented")
-}
-
-func NewRoleTypeHandler(service api_gateway_service.IRoleTypeService) *roleTypeHandler {
-	return &roleTypeHandler{
-		service: service,
-	}
 }

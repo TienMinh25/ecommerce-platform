@@ -68,10 +68,13 @@ func main() {
 			// router and handler
 			api_gateway_router.NewRouter,
 			api_gateway_handler.NewAdminAddressTypeHandler,
+			api_gateway_handler.NewResourceHandler,
 			// service
 			api_gateway_service.NewAdminAddressTypeService,
+			api_gateway_service.NewResourceSevice,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
+			api_gateway_repository.NewResourceRepository,
 		),
 		fx.Invoke(StartServer),
 	)

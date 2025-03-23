@@ -15,3 +15,9 @@ type IRoleTypeHandler interface {
 	UpdateRole(ctx *gin.Context)
 	DeleteRole(ctx *gin.Context)
 }
+
+type IResourceHandler interface {
+	CreateResource(ctx *gin.Context)
+	UpdateResource(ctx *gin.Context)
+	DeleteResource(ctx *gin.Context)
+}

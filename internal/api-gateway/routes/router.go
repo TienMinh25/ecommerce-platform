@@ -22,11 +22,13 @@ func NewRouter(
 	router *gin.Engine,
 	adminAddressTypeHandler api_gateway_handler.IAdminAddressTypeHandler,
 	roleTypeHandler api_gateway_handler.IRoleTypeHandler,
+	resourceHandler api_gateway_handler.IResourceHandler,
 ) *Router {
 	apiV1Group := router.Group("/api/v1")
 
 	registerAdminAddressManagementEndpoint(apiV1Group, adminAddressTypeHandler)
 	registerRolesEndpoint(apiV1Group, roleTypeHandler)
+	registerResourceEndPoint(apiV1Group, resourceHandler)
 	return &Router{
 		Router: router,
 	}
@@ -51,4 +53,13 @@ func registerRolesEndpoint(group *gin.RouterGroup,
 	rolesGroup.POST("", handler.CreateRole)
 	rolesGroup.PATCH("/:roleID", handler.UpdateRole)
 	rolesGroup.DELETE("/:roleID", handler.DeleteRole)
+}
+
+func registerResourceEndPoint(group *gin.RouterGroup,
+	handler api_gateway_handler.IResourceHandler) {
+	resourceGroup := group.Group("/resources")
+
+	resourceGroup.POST("", handler.CreateResource)
+	resourceGroup.PATCH("/:resourceID", handler.UpdateResource)
+	resourceGroup.DELETE("/:resourceID", handler.DeleteResource)
 }

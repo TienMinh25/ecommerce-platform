@@ -2,8 +2,8 @@ package api_gateway_service
 
 import (
 	"context"
-	"github.com/gin-gonic/gin"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
+	"github.com/gin-gonic/gin"
 )
 
 type IAdminAddressTypeService interface {
@@ -20,3 +20,8 @@ type IRoleTypeService interface {
 	DeleteRole(ctx *gin.Context)
 }
 
+type IResourceService interface {
+	CreateResource(ctx context.Context, resourceType string) error
+	UpdateResource(ctx context.Context, id int, resourceType string) error
+	DeleteResource(ctx *gin.Context)
+}
