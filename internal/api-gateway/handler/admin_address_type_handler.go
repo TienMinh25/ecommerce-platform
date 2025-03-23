@@ -43,7 +43,7 @@ func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
 		return
 	}
 
-	err := a.service.CreateAddressType(ctx, data.AddressType)
+	res, err := a.service.CreateAddressType(ctx, data.AddressType)
 
 	if err != nil {
 		var techError utils.TechnicalError
@@ -60,7 +60,7 @@ func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
 		}
 	}
 
-	utils.SuccessResponse[api_gateway_dto.CreateAddressTypeByAdminResponse](ctx, http.StatusCreated, api_gateway_dto.CreateAddressTypeByAdminResponse{})
+	utils.SuccessResponse[api_gateway_dto.CreateAddressTypeByAdminResponse](ctx, http.StatusCreated, *res)
 }
 
 // DeleteAddressType implements IAdminAddressTypeHandler.
@@ -110,5 +110,23 @@ func (a *adminAddressTypeHandler) GetAddressTypes(ctx *gin.Context) {
 
 // UpdateAddressType implements IAdminAddressTypeHandler.
 func (a *adminAddressTypeHandler) UpdateAddressType(ctx *gin.Context) {
-	panic("unimplemented")
+	// todo: inject tracer for distributed tracing
+	var data api_gateway_dto.UpdateAddressTypeByAdminRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		var targetError validator.ValidationErrors
+
+		if errors.As(err, &targetError) {
+			apiErrors := utils.CastValidationError(targetError)
+			utils.ErrorResponse(ctx, http.StatusBadRequest, apiErrors)
+			return
+		}
+
+		utils.ErrorResponse(ctx, http.StatusBadRequest, utils.ApiError{
+			Field:   "",
+			Message: err.Error(),
+		})
+		return
+	}
+
 }
