@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Simple square with rounded corners -->
+  <rect x="10" y="10" width="80" height="80" rx="16" fill="#3B82F6" />
+  
+  <!-- M letter -->
+  <path d="M25,25 L25,75 L50,50 L75,75 L75,25" stroke="white" stroke-width="10" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

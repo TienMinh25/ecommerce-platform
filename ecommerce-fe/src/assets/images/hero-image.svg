@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4158D0" />
+      <stop offset="46%" stop-color="#C850C0" />
+      <stop offset="100%" stop-color="#FFCC70" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="2" dy="2" stdDeviation="3" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  
+  <!-- Main background -->
+  <rect width="800" height="600" fill="url(#bgGradient)" />
+  
+  <!-- Decorative patterns -->
+  <g opacity="0.1" fill="white">
+    <circle cx="100" cy="100" r="50" />
+    <circle cx="700" cy="500" r="80" />
+    <circle cx="200" cy="500" r="30" />
+    <circle cx="600" cy="150" r="40" />
+  </g>
+  
+  <!-- Shopping bags group -->
+  <g transform="translate(400, 300)" filter="url(#shadow)">
+    <!-- Central shopping bag -->
+    <g transform="translate(-90, -60) scale(1.2)">
+      <path d="M0,0 L80,0 L90,100 L-10,100 Z" fill="#ffffff" />
+      <path d="M15,0 Q15,-20 40,-20 Q65,-20 65,0" fill="none" stroke="#ffffff" stroke-width="5" />
+      <rect x="5" y="10" width="70" height="80" fill="#4158D0" opacity="0.3" rx="5" />
+    </g>
+    
+    <!-- Right shopping bag -->
+    <g transform="translate(30, -30) scale(0.9)">
+      <path d="M0,0 L70,0 L80,90 L-10,90 Z" fill="#ffffff" />
+      <path d="M15,0 Q15,-20 35,-20 Q55,-20 55,0" fill="none" stroke="#ffffff" stroke-width="5" />
+      <rect x="5" y="10" width="60" height="70" fill="#C850C0" opacity="0.3" rx="5" />
+    </g>
+    
+    <!-- Left small shopping bag -->
+    <g transform="translate(-150, 0) scale(0.8)">
+      <path d="M0,0 L60,0 L70,80 L-10,80 Z" fill="#ffffff" />
+      <path d="M10,0 Q10,-15 30,-15 Q50,-15 50,0" fill="none" stroke="#ffffff" stroke-width="5" />
+      <rect x="5" y="10" width="50" height="60" fill="#FFCC70" opacity="0.3" rx="5" />
+    </g>
+  </g>
+
+  <!-- Shopping icons -->
+  <g fill="white" transform="translate(400, 330)" opacity="0.7">
+    <!-- Shopping cart icon -->
+    <g transform="translate(-200, -150) scale(0.7)">
+      <circle cx="30" cy="120" r="10" />
+      <circle cx="80" cy="120" r="10" />
+      <path d="M0,20 L20,20 L35,90 L90,90 L100,40 L25,40 M35,90 L35,120 M80,90 L80,120" stroke="white" stroke-width="8" fill="none" />
+    </g>
+    
+    <!-- Hanger/Clothes icon -->
+    <g transform="translate(150, -100) scale(0.7)">
+      <path d="M50,20 L50,40 L20,80 L80,80 L50,40" stroke="white" stroke-width="8" fill="none" />
+      <line x1="20" y1="80" x2="80" y2="80" stroke="white" stroke-width="8" />
+      <path d="M20,80 Q20,100 50,110 Q80,100 80,80" stroke="white" stroke-width="4" fill="none" />
+    </g>
+    
+    <!-- Gift box icon -->
+    <g transform="translate(50, 100) scale(0.7)">
+      <rect x="20" y="50" width="60" height="60" stroke="white" stroke-width="6" fill="none" />
+      <rect x="35" y="30" width="30" height="20" stroke="white" stroke-width="6" fill="none" />
+      <line x1="50" y1="50" x2="50" y2="110" stroke="white" stroke-width="6" />
+      <line x1="20" y1="80" x2="80" y2="80" stroke="white" stroke-width="6" />
+    </g>
+  </g>
+  
+  <!-- Brand elements -->
+  <g transform="translate(400, 500)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-weight="bold" font-size="24" fill="white" text-anchor="middle">MINH PLAZA</text>
+    <text x="0" y="30" font-family="Arial, sans-serif" font-size="14" fill="white" text-anchor="middle">Shopping Reimagined</text>
+  </g>
+</svg>
