@@ -18,8 +18,8 @@ import {
   FiPackage,
   FiTruck,
   FiLogOut,
-  FiChevronLeft,
-  FiChevronRight,
+  FiChevronsLeft,
+  FiChevronsRight,
 } from 'react-icons/fi';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSidebar } from '../../components/layout/DashboardLayout'; // Update with the correct path
@@ -30,6 +30,7 @@ const DashboardSidebar = ({ onStateChange }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [width, setWidth] = useState(256); // Default width (64 in Chakra units = 256px)
   const [isResizing, setIsResizing] = useState(false);
+  const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const minWidth = 180; // Increased minimum width for better text display
   const maxWidth = 400; // Maximum width when dragging
   const collapsedWidth = 64; // Width when collapsed (16 in Chakra units)
@@ -71,12 +72,12 @@ const DashboardSidebar = ({ onStateChange }) => {
   
   // Menu configuration
   const menuItems = [
-    { icon: FiUsers, label: 'User Management', path: '/admin/users' },
-    { icon: FiShield, label: 'Role Management', path: '/admin/roles' },
-    { icon: FiKey, label: 'Permission Management', path: '/admin/permissions' },
-    { icon: FiDatabase, label: 'Resource Management', path: '/admin/resources' },
-    { icon: FiPackage, label: 'Supplier Management', path: '/admin/suppliers' },
-    { icon: FiTruck, label: 'Deliverer Management', path: '/admin/deliverers' },
+    { icon: FiUsers, label: 'User Management', path: '/dashboard/users' },
+    { icon: FiShield, label: 'Role Management', path: '/dashboard/roles' },
+    { icon: FiKey, label: 'Permission Management', path: '/dashboard/permissions' },
+    { icon: FiDatabase, label: 'Resource Management', path: '/dashboard/resources' },
+    { icon: FiPackage, label: 'Supplier Management', path: '/dashboard/suppliers' },
+    { icon: FiTruck, label: 'Deliverer Management', path: '/dashboard/deliverers' },
   ];
   
   // Logout item separate (for positioning at bottom)
@@ -165,133 +166,163 @@ const DashboardSidebar = ({ onStateChange }) => {
   };
   
   // Menu item component with enhanced hover transitions
-  const MenuItem = ({ item, isActive }) => {
+  const MenuItem = ({ item, isActive, isLogoutItem = false }) => {
     const [isHovered, setIsHovered] = useState(false);
     
     const handleClick = (e) => {
       navigate(item.path);
     };
     
+    const handleMouseEnter = () => {
+      setIsHovered(true);
+      if (isLogoutItem) {
+        setIsLogoutHovered(true);
+      }
+    };
+    
+    const handleMouseLeave = () => {
+      setIsHovered(false);
+      if (isLogoutItem) {
+        setIsLogoutHovered(false);
+      }
+    };
+    
     return (
-      <Box
-        position="relative"
-        width="100%"
-        mb={2}
-        className="menu-item-container"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+      <Tooltip
+        label={isCollapsed ? item.label : ""}
+        placement="right"
+        hasArrow
+        bg="cyan.500"
+        color="white"
+        fontWeight="medium"
+        px={3}
+        py={2}
+        borderRadius="md"
+        isDisabled={!isCollapsed}
+        openDelay={200}
+        gutter={12}
       >
-        {/* Regular background fill - changes color on hover */}
         <Box
-          position="absolute"
-          top="0"
-          left="0"
-          right="0"
-          bottom="0"
-          borderRadius="md"
-          borderLeft="3px solid"
-          borderLeftColor={isActive ? activeItemBorder : 'transparent'}
-          bg={isActive ? activeItemBg : 'transparent'}
-          transition="all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
-          zIndex="1"
-          className="menu-item-bg"
-          _groupHover={{
-            bg: hoverBg,
-            borderLeftColor: isActive ? activeItemBorder : hoverBg,
-            boxShadow: "lg",
-            transform: "translateY(-4px) scale(1.03)",
-          }}
-        />
-
-        {/* Content container */}
-        <Flex
-          py={3}
-          px={4}
           position="relative"
-          zIndex="2"
-          alignItems="center"
-          justifyContent={isCollapsed ? "center" : "flex-start"}
           width="100%"
-          cursor="pointer"
-          onClick={handleClick}
-          role="group"
+          mb={2}
+          className="menu-item-container"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
-          {/* Icon container */}
+          {/* Regular background fill - changes color on hover */}
           <Box
+            position="absolute"
+            top="0"
+            left="0"
+            right="0"
+            bottom="0"
+            borderRadius="md"
+            borderLeft="3px solid"
+            borderLeftColor={isActive ? activeItemBorder : 'transparent'}
+            bg={isActive ? activeItemBg : 'transparent'}
+            transition="all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+            zIndex="1"
+            className="menu-item-bg"
+            _groupHover={{
+              bg: hoverBg,
+              borderLeftColor: isActive ? activeItemBorder : hoverBg,
+              boxShadow: "lg",
+              transform: "translateY(-4px) scale(1.03)",
+            }}
+          />
+
+          {/* Content container */}
+          <Flex
+            py={3}
+            px={4}
             position="relative"
             zIndex="2"
+            alignItems="center"
+            justifyContent={isCollapsed ? "center" : "flex-start"}
+            width="100%"
+            cursor="pointer"
+            onClick={handleClick}
+            role="group"
           >
-            <Icon 
-              as={item.icon} 
-              boxSize={5} 
-              flexShrink={0}
-              color={isActive ? activeIconColor : iconColor}
-              _groupHover={{ 
-                color: "white",
-                transform: isCollapsed ? "scale(1.3)" : "scale(1.2)",
-                filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.2))"
-              }}
-              transition="all 0.3s ease"
-              transform={isCollapsed ? "scale(1.2)" : "scale(1)"}
-            />
-          </Box>
-          
-          {/* Menu item text */}
-          {!isCollapsed && (
+            {/* Icon container */}
             <Box
               position="relative"
               zIndex="2"
-              ml={4}
-              width="calc(100% - 28px)"
             >
-              <Text 
-                className="menu-item-text"
-                fontSize="sm" 
-                fontWeight={isActive ? "medium" : "normal"}
-                color={textColor}
-                transition="all 0.25s ease"
-                opacity={isCollapsed ? 0 : 1}
-                overflow="hidden"
-                textOverflow="ellipsis"
-                whiteSpace={width < 220 ? "normal" : "nowrap"}
-                wordBreak={width < 220 ? "break-word" : "normal"}
-                lineHeight="1.2"
-                maxHeight={width < 220 ? "36px" : "none"}
-                _groupHover={{
+              <Icon 
+                as={item.icon} 
+                boxSize={5} 
+                flexShrink={0}
+                color={isActive ? activeIconColor : iconColor}
+                _groupHover={{ 
                   color: "white",
-                  fontWeight: "bold",
-                  letterSpacing: "0.02em",
-                  transform: "scale(1.05)",
-                  textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                  transform: isCollapsed ? "scale(1.3)" : "scale(1.2)",
+                  filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.2))"
                 }}
-                style={{
-                  transformOrigin: "left center",
-                }}
+                transition="all 0.3s ease"
+                transform={isCollapsed ? "scale(1.2)" : "scale(1)"}
+              />
+            </Box>
+            
+            {/* Menu item text */}
+            {!isCollapsed && (
+              <Box
+                position="relative"
+                zIndex="2"
+                ml={4}
+                width="calc(100% - 28px)"
+                overflow="hidden"
               >
-                {item.label}
-              </Text>
-            </Box>
-          )}
-          
-          {/* Right arrow indicator with animation */}
-          {!isCollapsed && (
-            <Box
-              position="absolute"
-              right="12px"
-              color="white"
-              opacity={isHovered ? 1 : 0}
-              transform={isHovered ? "translateX(0)" : "translateX(-10px)"}
-              fontWeight="bold"
-              fontSize="md"
-              zIndex="2"
-              transition="all 0.3s ease"
-              textShadow="0 1px 2px rgba(0,0,0,0.2)"
-            >
-              →
-            </Box>
-          )}
-        </Flex>
-      </Box>
+                <Text 
+                  className="menu-item-text"
+                  fontSize="sm" 
+                  fontWeight={isActive ? "medium" : "normal"}
+                  color={textColor}
+                  transition="all 0.25s ease"
+                  opacity={isCollapsed ? 0 : 1}
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  whiteSpace={width < 220 ? "normal" : "nowrap"}
+                  wordBreak={width < 220 ? "break-word" : "normal"}
+                  lineHeight="1.2"
+                  maxHeight={width < 220 ? "36px" : "none"}
+                  _groupHover={{
+                    color: "white",
+                    fontWeight: "bold",
+                    letterSpacing: "0.02em",
+                    transform: "scale(1.05)",
+                    textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                  }}
+                  style={{
+                    transformOrigin: "left center",
+                  }}
+                >
+                  {item.label}
+                </Text>
+              </Box>
+            )}
+            
+            {/* Right arrow indicator with animation */}
+            {!isCollapsed && (
+              <Box
+                position="absolute"
+                right="12px"
+                color="white"
+                opacity={isHovered ? 1 : 0}
+                transform={isHovered ? "translateX(0)" : "translateX(-10px)"}
+                fontWeight="bold"
+                fontSize="md"
+                zIndex="2"
+                transition="all 0.3s ease"
+                textShadow="0 1px 2px rgba(0,0,0,0.2)"
+              >
+                →
+              </Box>
+            )}
+          </Flex>
+        </Box>
+      </Tooltip>
     );
   };
 
@@ -316,7 +347,7 @@ const DashboardSidebar = ({ onStateChange }) => {
       zIndex={isMobile ? "overlay" : "auto"}
       transition={isResizing ? "none" : "width 0.2s ease"}
       justify="space-between"
-      overflow="hidden"
+      overflow="hidden" // Prevents overflow in the sidebar itself
       shadow={isMobile ? "xl" : "none"}
     >
       {/* CSS for menu items */}
@@ -334,8 +365,31 @@ const DashboardSidebar = ({ onStateChange }) => {
       />
 
       {/* Main menu items */}
-      <Box overflowY="auto" py={2} pt={6} flex="1">
-        <VStack spacing={0} align="stretch">
+      <Box 
+        overflowY="auto" 
+        overflowX="hidden" // Prevents horizontal scrolling in menu items area
+        py={2} 
+        pt={6} 
+        flex="1"
+        css={{
+          '&::-webkit-scrollbar': {
+            width: '4px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'transparent',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'var(--chakra-colors-gray-300)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb:hover': {
+            background: 'var(--chakra-colors-gray-400)',
+          },
+          msOverflowStyle: 'none',  // IE and Edge
+          scrollbarWidth: 'thin',   // Firefox
+        }}
+      >
+        <VStack spacing={0} align="stretch" width="100%" maxWidth="100%">
           {menuItems.map((item, index) => {
             const isActive = location.pathname === item.path;
             return <MenuItem key={index} item={item} isActive={isActive} />;
@@ -344,14 +398,15 @@ const DashboardSidebar = ({ onStateChange }) => {
       </Box>
 
       {/* Bottom section with logout and collapse button */}
-      <Box borderTop="1px" borderColor={borderColor}>
+      <Box borderTop="1px" borderColor={borderColor} maxWidth="100%" overflow="hidden">
         {isCollapsed ? (
           // When collapsed, show collapse button in its own row
-          <VStack spacing={0} align="stretch">
+          <VStack spacing={0} align="stretch" width="100%">
             {/* Logout button */}
             <MenuItem 
               item={logoutItem} 
               isActive={location.pathname === logoutItem.path} 
+              isLogoutItem={true}
             />
             
             {/* Collapse button in separate row below logout when collapsed */}
@@ -360,15 +415,84 @@ const DashboardSidebar = ({ onStateChange }) => {
               p={2}
               borderTop="1px" 
               borderColor="gray.100"
+              opacity={isLogoutHovered ? 0 : 1}
+              transition="opacity 0.3s ease"
             >
               <Box>
+                <Tooltip
+                  label="Expand sidebar"
+                  placement="right"
+                  hasArrow
+                  bg="cyan.500"
+                  color="white"
+                  fontWeight="medium"
+                  px={3}
+                  py={2}
+                  borderRadius="md"
+                  openDelay={200}
+                  gutter={12}
+                >
+                  <IconButton
+                    size="sm"
+                    variant="ghost"
+                    icon={<FiChevronsRight />}
+                    onClick={handleToggleClick}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    aria-label="Expand sidebar"
+                    color="gray.500"
+                    _hover={{ 
+                      color: "cyan.500", 
+                      bg: "gray.50",
+                      transform: "scale(1.1)",
+                      boxShadow: "0 0 8px rgba(0, 188, 212, 0.3)",
+                    }}
+                    transition="all 0.3s ease"
+                    _active={{ transform: "scale(0.95)" }}
+                  />
+                </Tooltip>
+              </Box>
+            </Flex>
+          </VStack>
+        ) : (
+          // When expanded, show logout and collapse buttons in same row
+          <Flex position="relative" alignItems="center" width="100%" maxWidth="100%">
+            {/* Logout button */}
+            <Box flex="1" maxWidth="100%">
+              <MenuItem 
+                item={logoutItem} 
+                isActive={location.pathname === logoutItem.path} 
+                isLogoutItem={true}
+              />
+            </Box>
+            
+            {/* Collapse button on same row as logout when expanded */}
+            <Box 
+              position="absolute" 
+              right="2" 
+              zIndex={2}
+              opacity={isLogoutHovered ? 0 : 1}
+              transition="opacity 0.3s ease"
+            >
+              <Tooltip
+                label="Collapse sidebar"
+                placement="left"
+                hasArrow
+                bg="cyan.500"
+                color="white"
+                fontWeight="medium"
+                px={3}
+                py={2}
+                borderRadius="md"
+                openDelay={200}
+                gutter={12}
+              >
                 <IconButton
                   size="sm"
                   variant="ghost"
-                  icon={<FiChevronRight />}
+                  icon={<FiChevronsLeft />}
                   onClick={handleToggleClick}
                   onMouseDown={(e) => e.stopPropagation()}
-                  aria-label="Expand sidebar"
+                  aria-label="Collapse sidebar"
                   color="gray.500"
                   _hover={{ 
                     color: "cyan.500", 
@@ -376,42 +500,10 @@ const DashboardSidebar = ({ onStateChange }) => {
                     transform: "scale(1.1)",
                     boxShadow: "0 0 8px rgba(0, 188, 212, 0.3)",
                   }}
-                  transition="all 0.3s ease"
                   _active={{ transform: "scale(0.95)" }}
+                  transition="all 0.3s ease"
                 />
-              </Box>
-            </Flex>
-          </VStack>
-        ) : (
-          // When expanded, show logout and collapse buttons in same row
-          <Flex position="relative" alignItems="center">
-            {/* Logout button */}
-            <Box flex="1">
-              <MenuItem 
-                item={logoutItem} 
-                isActive={location.pathname === logoutItem.path} 
-              />
-            </Box>
-            
-            {/* Collapse button on same row as logout when expanded */}
-            <Box position="absolute" right="2" zIndex={2}>
-              <IconButton
-                size="sm"
-                variant="ghost"
-                icon={<FiChevronLeft />}
-                onClick={handleToggleClick}
-                onMouseDown={(e) => e.stopPropagation()}
-                aria-label="Collapse sidebar"
-                color="gray.500"
-                _hover={{ 
-                  color: "cyan.500", 
-                  bg: "gray.50",
-                  transform: "scale(1.1)",
-                  boxShadow: "0 0 8px rgba(0, 188, 212, 0.3)",
-                }}
-                _active={{ transform: "scale(0.95)" }}
-                transition="all 0.3s ease"
-              />
+              </Tooltip>
             </Box>
           </Flex>
         )}

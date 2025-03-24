@@ -11,7 +11,10 @@ import NotFound from '../pages/NotFound';
 
 import MainLayout from '../components/layout/MainLayout';
 import DashboardLayout from '../components/layout/DashboardLayout';
+
 import Dashboard from '../pages/Dashboard';
+import UserManagementComponent from '../pages/Module/Dashboard/UserManagementComponent';
+import RoleManagementComponent from '../pages/Module/Dashboard/RoleManagementComponent';
 
 const AppRoutes = () => {
   return (
@@ -30,9 +33,21 @@ const AppRoutes = () => {
         </Route>
       </Route>
 
-      <Route element={<DashboardLayout />}>
-          <Route path='/dashboard' element={<Dashboard />} />
+      {/* Dashboard Routes */}
+      <Route element={<PrivateRoute />}>
+        <Route path='/dashboard' element={<DashboardLayout />}>
+          {/* Main dashboard */}
+          <Route index element={<Dashboard />} />
+
+          {/* Routes - render when clicks into the sidebar button */}
+          <Route path='users' element={<UserManagementComponent />} />
+          <Route path='roles' element={<RoleManagementComponent />} />
+          {/* <Route path='permissions' element={<DashboardComponent />} />
+          <Route path='resources' element={<DashboardComponent />} />
+          <Route path='suppliers' element={<DashboardComponent />} />
+          <Route path='deliverers' element={<DashboardComponent />} /> */}
         </Route>
+      </Route>
 
       {/* Mixed Access Routes */}
       <Route element={<MainLayout />}>
