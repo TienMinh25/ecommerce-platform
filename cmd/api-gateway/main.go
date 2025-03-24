@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	_ "github.com/TienMinh25/ecommerce-platform/docs"
 	api_gateway_postgres "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/db/postgres"
 	api_gateway_handler "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/handler"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"

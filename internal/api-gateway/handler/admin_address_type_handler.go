@@ -21,12 +21,27 @@ func NewAdminAddressTypeHandler(
 }
 
 // CreateAddressType implements IAdminAddressTypeHandler.
+// CreateAddressType godoc
+//
+//	@Summary		Create new address type
+//	@Tags			address-types
+//	@Description	create new address type
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//	@Param			request	body		api_gateway_dto.CreateAddressTypeByAdminRequest	true	"Request body"
+//	@Success		200		{object}	api_gateway_dto.CreateAddressTypeResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/address-types [post]
 func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
 	// todo: inject tracer for distributed tracing
 	var data api_gateway_dto.CreateAddressTypeByAdminRequest
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		utils.HandleValidateData(ctx, err)
+		return
 	}
 
 	res, err := a.service.CreateAddressType(ctx, data.AddressType)
@@ -40,6 +55,20 @@ func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
 }
 
 // DeleteAddressType implements IAdminAddressTypeHandler.
+// DeleteAddressType godoc
+//
+//	@Summary		Delete address type
+//	@Tags			address-types
+//	@Description	delete address type by id
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//	@Param			addressTypeID	path		int	true	"address type id"
+//	@Success		200				{object}	api_gateway_dto.DeleteAddressTypeResponseDocs
+//	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/address-types/{addressTypeID} [delete]
 func (a *adminAddressTypeHandler) DeleteAddressType(ctx *gin.Context) {
 	var uri api_gateway_dto.DeleteAddressTypeQueryRequest
 
@@ -56,8 +85,21 @@ func (a *adminAddressTypeHandler) DeleteAddressType(ctx *gin.Context) {
 	utils.SuccessResponse[api_gateway_dto.DeleteAddressTypeByAdminResponse](ctx, http.StatusOK, api_gateway_dto.DeleteAddressTypeByAdminResponse{})
 }
 
-// todo: improve performance in here
 // GetAddressTypes implements IAdminAddressTypeHandler.
+// GetAddressTypes godoc
+//
+//	@Summary		Get list address types
+//	@Tags			address-types
+//	@Description	Get list address types
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			limit	query		int	true	"Limit number of records returned"
+//	@Param			page	query		int	true	"page"
+//	@Success		200		{object}	api_gateway_dto.ListAddressTypesResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/address-types [get]
 func (a *adminAddressTypeHandler) GetAddressTypes(ctx *gin.Context) {
 	var queryReq api_gateway_dto.GetAddressTypeQueryRequest
 
@@ -66,16 +108,34 @@ func (a *adminAddressTypeHandler) GetAddressTypes(ctx *gin.Context) {
 		return
 	}
 
-	res, err := a.service.GetAddressTypes(ctx, queryReq)
+	res, totalItems, totalPages, hasNext, hasPrevious, errRes := a.service.GetAddressTypes(ctx, queryReq)
 
-	if err != nil {
-		utils.HandleErrorResponse(ctx, err)
+	if errRes != nil {
+		utils.HandleErrorResponse(ctx, errRes)
+		return
 	}
 
-	utils.SuccessResponse[[]api_gateway_dto.GetAddressTypeQueryResponse](ctx, http.StatusOK, res)
+	utils.PaginatedResponse[[]api_gateway_dto.GetAddressTypeQueryResponse](ctx, res, queryReq.Page, queryReq.Limit, totalPages, totalItems, hasNext, hasPrevious)
 }
 
 // UpdateAddressType implements IAdminAddressTypeHandler.
+// UpdateAddressType godoc
+//
+//	@Summary		Update address type by address id
+//	@Tags			address-types
+//	@Description	update address type by id
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//	@Param			addressTypeID	path		int												true	"address type id"
+//
+//	@Param			request			body		api_gateway_dto.UpdateAddressTypeBodyRequest	true	"Request body"
+//
+//	@Success		200				{object}	api_gateway_dto.UpdateAddressTypeResponseDocs
+//	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/address-types/{addressTypeID} [patch]
 func (a *adminAddressTypeHandler) UpdateAddressType(ctx *gin.Context) {
 	// todo: inject tracer for distributed tracing
 	var uri api_gateway_dto.UpdateAddressTypeUriRequest

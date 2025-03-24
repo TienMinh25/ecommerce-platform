@@ -3,6 +3,7 @@ package api_gateway_repository
 import (
 	"context"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/jackc/pgx/v5"
@@ -25,14 +26,14 @@ func (a *addressTypeRepository) BeginTransaction(ctx context.Context) (pkg.Tx, e
 	return a.db.BeginTx(ctx)
 }
 
-func (a *addressTypeRepository) CreateAddressTypeX(ctx context.Context, tx pkg.Tx, addressType string) error {
+func (a *addressTypeRepository) CreateAddressType(ctx context.Context, addressType string) error {
 	// todo: inject tracer
 	sqlStr := "INSERT INTO address_types(address_type) VALUES(@addressType)"
 	args := pgx.NamedArgs{
 		"addressType": addressType,
 	}
 
-	if err := tx.Exec(ctx, sqlStr, args); err != nil {
+	if err := a.db.Exec(ctx, sqlStr, args); err != nil {
 		return err
 	}
 
@@ -59,7 +60,7 @@ func (a *addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pk
 
 	if err := row.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
 		return nil, utils.TechnicalError{
-			Message: "Something went wrong, please try again later.",
+			Message: common.MSG_INTERNAL_ERROR,
 			Code:    http.StatusInternalServerError,
 		}
 	}
@@ -67,7 +68,7 @@ func (a *addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pk
 	return &addressType, nil
 }
 
-func (a *addressTypeRepository) UpdateAddressTypeX(ctx context.Context, tx pkg.Tx, id int, addressType string) error {
+func (a *addressTypeRepository) UpdateAddressType(ctx context.Context, id int, addressType string) error {
 	// todo: inject tracer
 	sqlStr := "UPDATE address_types SET address_type = @addressType WHERE id = @id"
 	args := pgx.NamedArgs{
@@ -75,7 +76,7 @@ func (a *addressTypeRepository) UpdateAddressTypeX(ctx context.Context, tx pkg.T
 		"id":          id,
 	}
 
-	res, err := tx.ExecWithResult(ctx, sqlStr, args)
+	res, err := a.db.ExecWithResult(ctx, sqlStr, args)
 
 	if err != nil {
 		return err
@@ -110,7 +111,7 @@ func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx p
 
 	if err != nil {
 		return utils.TechnicalError{
-			Message: "Something went wrong, please try again later.",
+			Message: common.MSG_INTERNAL_ERROR,
 			Code:    http.StatusInternalServerError,
 		}
 	}
@@ -126,10 +127,43 @@ func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx p
 	sqlDeleteStr := "DELETE FROM address_types WHERE id = @id"
 	if err = tx.Exec(ctx, sqlDeleteStr, argsCheck); err != nil {
 		return utils.TechnicalError{
-			Message: "Something went wrong, please try again later.",
+			Message: common.MSG_INTERNAL_ERROR,
 			Code:    http.StatusInternalServerError,
 		}
 	}
 
 	return nil
+}
+
+func (a *addressTypeRepository) GetListAddressTypes(ctx context.Context, limit, page int) ([]api_gateway_models.AddressType, int, error) {
+	var totalItems int
+
+	countQuery := "SELECT COUNT(*) FROM address_types"
+
+	if err := a.db.QueryRow(ctx, countQuery).Scan(&totalItems); err != nil {
+		return nil, 0, err
+	}
+
+	query := `SELECT id, address_type, created_at, updated_at FROM address_types ORDER BY id ASC LIMIT @limit OFFSET @offset`
+	args := pgx.NamedArgs{
+		"limit":  limit,
+		"offset": (page - 1) * limit,
+	}
+
+	rows, err := a.db.Query(ctx, query, args)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var addressTypes []api_gateway_models.AddressType
+	for rows.Next() {
+		addressType := api_gateway_models.AddressType{}
+		if err := rows.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
+			return nil, 0, err
+		}
+		addressTypes = append(addressTypes, addressType)
+	}
+
+	return addressTypes, totalItems, nil
 }

@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"net/http"
@@ -87,5 +88,8 @@ func HandleErrorResponse(ctx *gin.Context, err error) {
 
 	if errors.As(err, &businessError) {
 		ErrorResponse(ctx, businessError.Code, businessError.Message)
+		return
 	}
+
+	ErrorResponse(ctx, http.StatusInternalServerError, common.MSG_INTERNAL_ERROR)
 }

@@ -7,6 +7,7 @@ import (
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/jackc/pgx/v5/pgconn"
+	"math"
 	"net/http"
 )
 
@@ -23,16 +24,7 @@ func NewAdminAddressTypeService(repo api_gateway_repository.IAddressTypeReposito
 
 func (a *adminAddressTypeService) CreateAddressType(ctx context.Context, addressType string) (*api_gateway_dto.CreateAddressTypeByAdminResponse, error) {
 	// todo: add trace
-	tx, err := a.repo.BeginTransaction(ctx)
-
-	if err != nil {
-		return nil, utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		}
-	}
-
-	err = a.repo.CreateAddressTypeX(ctx, tx, addressType)
+	err := a.repo.CreateAddressType(ctx, addressType)
 
 	if err != nil {
 		var pgError pgconn.PgError
@@ -53,35 +45,37 @@ func (a *adminAddressTypeService) CreateAddressType(ctx context.Context, address
 		}
 	}
 
-	res, err := a.repo.GetAddressTypeByNameX(ctx, tx, addressType)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &api_gateway_dto.CreateAddressTypeByAdminResponse{
-		ID:          res.ID,
-		AddressType: res.AddressType,
-		CreatedAt:   res.CreatedAt,
-		UpdatedAt:   res.UpdatedAt,
-	}, nil
+	return &api_gateway_dto.CreateAddressTypeByAdminResponse{}, nil
 }
 
-func (a *adminAddressTypeService) GetAddressTypes(ctx context.Context, queryReq api_gateway_dto.GetAddressTypeQueryRequest) ([]api_gateway_dto.GetAddressTypeQueryResponse, error) {
-	return nil, nil
+func (a *adminAddressTypeService) GetAddressTypes(ctx context.Context, queryReq api_gateway_dto.GetAddressTypeQueryRequest) ([]api_gateway_dto.GetAddressTypeQueryResponse, int, int, bool, bool, error) {
+	// todo: add trace
+	addressTypes, totalItems, err := a.repo.GetListAddressTypes(ctx, queryReq.Limit, queryReq.Page)
+
+	if err != nil {
+		return nil, 0, 0, false, false, err
+	}
+
+	addressTypesResponse := make([]api_gateway_dto.GetAddressTypeQueryResponse, 0)
+	for _, addressType := range addressTypes {
+		addressTypesResponse = append(addressTypesResponse, api_gateway_dto.GetAddressTypeQueryResponse{
+			ID:          addressType.ID,
+			AddressType: addressType.AddressType,
+			CreatedAt:   addressType.CreatedAt,
+			UpdatedAt:   addressType.UpdatedAt,
+		})
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(queryReq.Limit)))
+
+	hasNext := queryReq.Page < totalPages
+	hasPrevious := queryReq.Page > 1
+
+	return addressTypesResponse, totalItems, totalPages, hasNext, hasPrevious, nil
 }
 
 func (a *adminAddressTypeService) UpdateAddressType(ctx context.Context, id int, addressType string) (*api_gateway_dto.UpdateAddressTypeByAdminResponse, error) {
-	tx, err := a.repo.BeginTransaction(ctx)
-
-	if err != nil {
-		return nil, utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		}
-	}
-
-	err = a.repo.UpdateAddressTypeX(ctx, tx, id, addressType)
+	err := a.repo.UpdateAddressType(ctx, id, addressType)
 
 	if err != nil {
 		var pgError pgconn.PgError
@@ -100,20 +94,10 @@ func (a *adminAddressTypeService) UpdateAddressType(ctx context.Context, id int,
 				}
 			}
 		}
+
 	}
 
-	res, err := a.repo.GetAddressTypeByNameX(ctx, tx, addressType)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &api_gateway_dto.UpdateAddressTypeByAdminResponse{
-		ID:          res.ID,
-		AddressType: res.AddressType,
-		CreatedAt:   res.CreatedAt,
-		UpdatedAt:   res.UpdatedAt,
-	}, nil
+	return &api_gateway_dto.UpdateAddressTypeByAdminResponse{}, nil
 
 }
 
@@ -130,6 +114,14 @@ func (a *adminAddressTypeService) DeleteAddressType(ctx context.Context, id int)
 	err = a.repo.DeleteAddressTypeByIDX(ctx, tx, id)
 
 	if err != nil {
+		if err = tx.Rollback(ctx); err != nil {
+			return err
+		}
+
+		return err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
 		return err
 	}
 

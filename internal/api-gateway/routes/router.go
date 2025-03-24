@@ -9,15 +9,15 @@ type Router struct {
 	Router *gin.Engine
 }
 
-// @title						Ecommerce API
-// @version					1.0
-// @description			API for ecommerce
-// @host						localhost:3000
-// @BasePath				/api/v1
+//	@title						Ecommerce API
+//	@version					1.0
+//	@description				API for ecommerce
+//	@host						localhost:3000
+//	@BasePath					/api/v1
 //
-// @securityDefinitions.apikey	BearerAuth
-// @in							header
-// @name
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name
 func NewRouter(
 	router *gin.Engine,
 	adminAddressTypeHandler api_gateway_handler.IAdminAddressTypeHandler,

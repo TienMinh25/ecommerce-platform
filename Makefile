@@ -32,7 +32,7 @@ generate-private-key:
 	@openssl genpkey -algorithm RSA -out jwtRSA256.key
 
 swagger-generate:
-	@swag init -g cmd/main.go
+	@swag init -g internal/api-gateway/routes/router.go
 
 swagger-format:
 	@swag fmt
