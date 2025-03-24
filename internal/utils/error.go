@@ -1,8 +1,12 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"net/http"
 	"strings"
 )
 
@@ -11,7 +15,7 @@ type ApiError struct {
 	Message string `json:"message"`
 }
 
-func CastValidationError(arrayErrors validator.ValidationErrors) []ApiError {
+func castValidationError(arrayErrors validator.ValidationErrors) []ApiError {
 	res := make([]ApiError, len(arrayErrors))
 
 	for idx, fe := range arrayErrors {
@@ -56,4 +60,36 @@ func (err TechnicalError) Error() string {
 
 func (err BusinessError) Error() string {
 	return err.Message
+}
+
+func HandleValidateData(ctx *gin.Context, err error) {
+	var targetError validator.ValidationErrors
+
+	if errors.As(err, &targetError) {
+		apiErrors := castValidationError(targetError)
+		ErrorResponse(ctx, http.StatusBadRequest, apiErrors)
+		return
+	}
+
+	ErrorResponse(ctx, http.StatusBadRequest, ApiError{
+		Field:   "",
+		Message: err.Error(),
+	})
+}
+
+func HandleErrorResponse(ctx *gin.Context, err error) {
+	var techError TechnicalError
+	var businessError BusinessError
+
+	if errors.As(err, &techError) {
+		ErrorResponse(ctx, techError.Code, techError.Message)
+		return
+	}
+
+	if errors.As(err, &businessError) {
+		ErrorResponse(ctx, businessError.Code, businessError.Message)
+		return
+	}
+
+	ErrorResponse(ctx, http.StatusInternalServerError, common.MSG_INTERNAL_ERROR)
 }

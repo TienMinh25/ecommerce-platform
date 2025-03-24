@@ -1,0 +1,226 @@
+basePath: /api/v1
+definitions:
+  api_gateway_dto.CreateAddressTypeByAdminRequest:
+    properties:
+      address_type:
+        enum:
+        - HOME
+        - WORK
+        - PICKUP
+        type: string
+    required:
+    - address_type
+    type: object
+  api_gateway_dto.CreateAddressTypeByAdminResponse:
+    type: object
+  api_gateway_dto.CreateAddressTypeResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.CreateAddressTypeByAdminResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.DeleteAddressTypeByAdminResponse:
+    type: object
+  api_gateway_dto.DeleteAddressTypeResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.DeleteAddressTypeByAdminResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetAddressTypeQueryResponse:
+    properties:
+      address_type:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  api_gateway_dto.ListAddressTypesResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetAddressTypeQueryResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.Metadata:
+    properties:
+      code:
+        type: integer
+    type: object
+  api_gateway_dto.ResponseErrorDocs:
+    properties:
+      error: {}
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.UpdateAddressTypeBodyRequest:
+    properties:
+      address_type:
+        enum:
+        - HOME
+        - WORK
+        - PICKUP
+        type: string
+    required:
+    - address_type
+    type: object
+  api_gateway_dto.UpdateAddressTypeByAdminResponse:
+    type: object
+  api_gateway_dto.UpdateAddressTypeResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateAddressTypeByAdminResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: API for ecommerce
+  title: Ecommerce API
+  version: "1.0"
+paths:
+  /address-types:
+    get:
+      consumes:
+      - application/json
+      description: Get list address types
+      parameters:
+      - description: Limit number of records returned
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - description: page
+        in: query
+        name: page
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ListAddressTypesResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: Get list address types
+      tags:
+      - address-types
+    post:
+      consumes:
+      - application/json
+      description: create new address type
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.CreateAddressTypeByAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.CreateAddressTypeResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Create new address type
+      tags:
+      - address-types
+  /address-types/{addressTypeID}:
+    delete:
+      consumes:
+      - application/json
+      description: delete address type by id
+      parameters:
+      - description: address type id
+        in: path
+        name: addressTypeID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.DeleteAddressTypeResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Delete address type
+      tags:
+      - address-types
+    patch:
+      consumes:
+      - application/json
+      description: update address type by id
+      parameters:
+      - description: address type id
+        in: path
+        name: addressTypeID
+        required: true
+        type: integer
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateAddressTypeBodyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateAddressTypeResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Update address type by address id
+      tags:
+      - address-types
+securityDefinitions:
+  BearerAuth:
+    in: header
+    type: apiKey
+swagger: "2.0"
