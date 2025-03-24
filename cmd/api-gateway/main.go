@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/s3"
+	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"log"
 	"net/http"
 	"time"
@@ -59,6 +61,10 @@ func StartServer(lifecycle fx.Lifecycle, r *api_gateway_router.Router, env *env.
 	})
 }
 
+func NewTracerApiGatewayService(env *env.EnvManager) (pkg.Tracer, error) {
+	return tracing.NewTracer(env, common.API_GATEWAY_SERVICE)
+}
+
 func main() {
 	app := fx.New(
 		fx.Provide(
@@ -77,6 +83,8 @@ func main() {
 			api_gateway_service.NewAdminAddressTypeService,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
+			// tracer
+			NewTracerApiGatewayService,
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),

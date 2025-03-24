@@ -23,5 +23,6 @@ type IAddressTypeRepository interface {
 	// DeleteAddressTypeByIDX deletes an 'address type' by name using a transaction.
 	DeleteAddressTypeByIDX(ctx context.Context, tx pkg.Tx, id int) error
 
+	// GetListAddressTypes retrieves a paginated list of address types.
 	GetListAddressTypes(ctx context.Context, limit, page int) ([]api_gateway_models.AddressType, int, error)
 }
