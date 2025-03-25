@@ -6,24 +6,29 @@ import (
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/pkg"
+	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5/pgconn"
 	"math"
 	"net/http"
 )
 
 type adminAddressTypeService struct {
-	repo api_gateway_repository.IAddressTypeRepository
+	repo   api_gateway_repository.IAddressTypeRepository
+	tracer pkg.Tracer
 }
 
-// todo: inject tracer for distributed tracing
-func NewAdminAddressTypeService(repo api_gateway_repository.IAddressTypeRepository) IAdminAddressTypeService {
+func NewAdminAddressTypeService(repo api_gateway_repository.IAddressTypeRepository, tracer pkg.Tracer) IAdminAddressTypeService {
 	return &adminAddressTypeService{
-		repo: repo,
+		repo:   repo,
+		tracer: tracer,
 	}
 }
 
 func (a *adminAddressTypeService) CreateAddressType(ctx context.Context, addressType string) (*api_gateway_dto.CreateAddressTypeByAdminResponse, error) {
-	// todo: add trace
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CreateAddressType"))
+	defer span.End()
+
 	err := a.repo.CreateAddressType(ctx, addressType)
 
 	if err != nil {
@@ -43,13 +48,20 @@ func (a *adminAddressTypeService) CreateAddressType(ctx context.Context, address
 				}
 			}
 		}
+
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}
 	}
 
 	return &api_gateway_dto.CreateAddressTypeByAdminResponse{}, nil
 }
 
 func (a *adminAddressTypeService) GetAddressTypes(ctx context.Context, queryReq api_gateway_dto.GetAddressTypeQueryRequest) ([]api_gateway_dto.GetAddressTypeQueryResponse, int, int, bool, bool, error) {
-	// todo: add trace
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetAddressTypes"))
+	defer span.End()
+
 	addressTypes, totalItems, err := a.repo.GetListAddressTypes(ctx, queryReq.Limit, queryReq.Page)
 
 	if err != nil {
@@ -75,6 +87,9 @@ func (a *adminAddressTypeService) GetAddressTypes(ctx context.Context, queryReq 
 }
 
 func (a *adminAddressTypeService) UpdateAddressType(ctx context.Context, id int, addressType string) (*api_gateway_dto.UpdateAddressTypeByAdminResponse, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateAddressType"))
+	defer span.End()
+
 	err := a.repo.UpdateAddressType(ctx, id, addressType)
 
 	if err != nil {
@@ -95,6 +110,10 @@ func (a *adminAddressTypeService) UpdateAddressType(ctx context.Context, id int,
 			}
 		}
 
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}
 	}
 
 	return &api_gateway_dto.UpdateAddressTypeByAdminResponse{}, nil
@@ -102,6 +121,9 @@ func (a *adminAddressTypeService) UpdateAddressType(ctx context.Context, id int,
 }
 
 func (a *adminAddressTypeService) DeleteAddressType(ctx context.Context, id int) error {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "DeleteAddressType"))
+	defer span.End()
+
 	tx, err := a.repo.BeginTransaction(ctx)
 
 	if err != nil {
@@ -126,4 +148,22 @@ func (a *adminAddressTypeService) DeleteAddressType(ctx context.Context, id int)
 	}
 
 	return nil
+}
+
+func (a *adminAddressTypeService) GetAddressTypeByID(ctx context.Context, id int) (*api_gateway_dto.GetAddressTypeByIdResponse, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetAddressTypeByID"))
+	defer span.End()
+
+	res, err := a.repo.GetAddressTypeByID(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &api_gateway_dto.GetAddressTypeByIdResponse{
+		ID:          res.ID,
+		AddressType: res.AddressType,
+		CreatedAt:   res.CreatedAt,
+		UpdatedAt:   res.UpdatedAt,
+	}, nil
 }

@@ -61,8 +61,24 @@ func StartServer(lifecycle fx.Lifecycle, r *api_gateway_router.Router, env *env.
 	})
 }
 
-func NewTracerApiGatewayService(env *env.EnvManager) (pkg.Tracer, error) {
-	return tracing.NewTracer(env, common.API_GATEWAY_SERVICE)
+func NewTracerApiGatewayService(env *env.EnvManager, lifecycle fx.Lifecycle) (pkg.Tracer, error) {
+	var tracer pkg.Tracer
+	var err error = nil
+	tracer, err = tracing.NewTracer(env, common.API_GATEWAY_SERVICE)
+
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			log.Println("✅ Init tracer service...")
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			log.Println("🛑 Shutting down tracer...")
+			return tracer.Shutdown(ctx)
+		},
+	})
+
+	return tracer, err
 }
 
 func main() {

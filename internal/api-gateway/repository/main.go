@@ -25,4 +25,6 @@ type IAddressTypeRepository interface {
 
 	// GetListAddressTypes retrieves a paginated list of address types.
 	GetListAddressTypes(ctx context.Context, limit, page int) ([]api_gateway_models.AddressType, int, error)
+
+	GetAddressTypeByID(ctx context.Context, id int) (*api_gateway_models.AddressType, error)
 }

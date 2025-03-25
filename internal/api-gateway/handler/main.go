@@ -7,4 +7,5 @@ type IAdminAddressTypeHandler interface {
 	CreateAddressType(ctx *gin.Context)
 	UpdateAddressType(ctx *gin.Context)
 	DeleteAddressType(ctx *gin.Context)
+	GetAddressTypeByID(ctx *gin.Context)
 }

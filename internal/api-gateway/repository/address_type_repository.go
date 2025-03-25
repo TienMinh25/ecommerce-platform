@@ -6,28 +6,34 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
+	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
 	"net/http"
 )
 
 type addressTypeRepository struct {
-	db pkg.Database
+	db     pkg.Database
+	tracer pkg.Tracer
 }
 
-// todo: inject tracer for distributed tracing
-func NewAddressTypeRepository(db pkg.Database) IAddressTypeRepository {
+func NewAddressTypeRepository(db pkg.Database, tracer pkg.Tracer) IAddressTypeRepository {
 	return &addressTypeRepository{
-		db: db,
+		db:     db,
+		tracer: tracer,
 	}
 }
 
 func (a *addressTypeRepository) BeginTransaction(ctx context.Context) (pkg.Tx, error) {
-	// todo: inject tracer
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "BeginTransaction"))
+	defer span.End()
+
 	return a.db.BeginTx(ctx)
 }
 
 func (a *addressTypeRepository) CreateAddressType(ctx context.Context, addressType string) error {
-	// todo: inject tracer
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateAddressType"))
+	defer span.End()
+
 	sqlStr := "INSERT INTO address_types(address_type) VALUES(@addressType)"
 	args := pgx.NamedArgs{
 		"addressType": addressType,
@@ -41,7 +47,9 @@ func (a *addressTypeRepository) CreateAddressType(ctx context.Context, addressTy
 }
 
 func (a *addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pkg.Tx, name string) (*api_gateway_models.AddressType, error) {
-	// todo: inject tracer
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetAddressTypeByNameX"))
+	defer span.End()
+
 	sqlStr := "SELECT id, address_type, created_at, updated_at FROM address_types WHERE address_type = @addressType"
 	args := pgx.NamedArgs{
 		"addressType": name,
@@ -49,19 +57,12 @@ func (a *addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pk
 
 	row := tx.QueryRow(ctx, sqlStr, args)
 
-	if row == nil {
-		return nil, utils.BusinessError{
-			Message: "address type is not found",
-			Code:    http.StatusBadRequest,
-		}
-	}
-
 	var addressType api_gateway_models.AddressType
 
 	if err := row.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
-		return nil, utils.TechnicalError{
-			Message: common.MSG_INTERNAL_ERROR,
-			Code:    http.StatusInternalServerError,
+		return nil, utils.BusinessError{
+			Message: "address type is not found",
+			Code:    http.StatusBadRequest,
 		}
 	}
 
@@ -69,7 +70,9 @@ func (a *addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pk
 }
 
 func (a *addressTypeRepository) UpdateAddressType(ctx context.Context, id int, addressType string) error {
-	// todo: inject tracer
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateAddressType"))
+	defer span.End()
+
 	sqlStr := "UPDATE address_types SET address_type = @addressType WHERE id = @id"
 	args := pgx.NamedArgs{
 		"addressType": addressType,
@@ -99,7 +102,9 @@ func (a *addressTypeRepository) UpdateAddressType(ctx context.Context, id int, a
 }
 
 func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx pkg.Tx, id int) error {
-	// todo: add tracer
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "DeleteAddressTypeByIDX"))
+	defer span.End()
+
 	// step 1: check address type in address table
 	sqlCheckStr := "SELECT EXISTS(SELECT 1 FROM addresses WHERE address_type_id = @id)"
 	argsCheck := pgx.NamedArgs{
@@ -136,6 +141,9 @@ func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx p
 }
 
 func (a *addressTypeRepository) GetListAddressTypes(ctx context.Context, limit, page int) ([]api_gateway_models.AddressType, int, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetListAddressTypes"))
+	defer span.End()
+
 	var totalItems int
 
 	countQuery := "SELECT COUNT(*) FROM address_types"
@@ -166,4 +174,27 @@ func (a *addressTypeRepository) GetListAddressTypes(ctx context.Context, limit, 
 	}
 
 	return addressTypes, totalItems, nil
+}
+
+func (a *addressTypeRepository) GetAddressTypeByID(ctx context.Context, id int) (*api_gateway_models.AddressType, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetAddressTypeByID"))
+	defer span.End()
+
+	var addressType api_gateway_models.AddressType
+
+	query := `SELECT id, address_type, created_at, updated_at FROM address_types WHERE id = @id`
+	args := pgx.NamedArgs{
+		"id": id,
+	}
+
+	row := a.db.QueryRow(ctx, query, args)
+
+	if err := row.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt); err != nil {
+		return nil, utils.BusinessError{
+			Message: "address type is not found",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	return &addressType, nil
 }

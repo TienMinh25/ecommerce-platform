@@ -82,23 +82,21 @@ func (t *tracer) StartFromContext(ctx context.Context, name string) (context.Con
 }
 
 func (t *tracer) StartFromSpan(ctx context.Context, span pkg.Span, name string) (context.Context, pkg.Span) {
-	//TODO implement me
-	return nil, nil
+	return t.StartFromContext(span.Context(ctx), name)
 }
 
 func (t *tracer) Shutdown(ctx context.Context) error {
-	//TODO implement me
-	panic("implement me")
+	return t.provider.Shutdown(ctx)
 }
 
 func (t *tracer) Inject(ctx context.Context, carrier pkg.TextMapCarrier) {
-	//TODO implement me
-	panic("implement me")
+	otel.GetTextMapPropagator().Inject(ctx, carrier)
 }
 
 func (t *tracer) Extract(ctx context.Context, carrier pkg.TextMapCarrier) pkg.Span {
-	//TODO implement me
-	panic("implement me")
+	return &span{
+		span: trace.SpanFromContext(otel.GetTextMapPropagator().Extract(ctx, carrier)),
+	}
 }
 
 type span struct {

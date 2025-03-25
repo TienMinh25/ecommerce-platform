@@ -3,8 +3,8 @@ package api_gateway_dto
 import "time"
 
 type GetAddressTypeQueryRequest struct {
-	Limit int `form:"limit" binding:"required,gte=0"`
-	Page  int `form:"page" binding:"required,gte=0"`
+	Limit int `form:"limit" binding:"required,gte=1"`
+	Page  int `form:"page" binding:"required,gte=1"`
 }
 
 type GetAddressTypeQueryResponse struct {
@@ -26,15 +26,26 @@ type UpdateAddressTypeBodyRequest struct {
 }
 
 type UpdateAddressTypeUriRequest struct {
-	ID int `uri:"addressTypeID" binding:"required,gte=0"`
+	ID int `uri:"addressTypeID" binding:"required,gte=1"`
 }
 
 type UpdateAddressTypeByAdminResponse struct {
 }
 
 type DeleteAddressTypeQueryRequest struct {
-	ID int `uri:"addressTypeID" binding:"required,gte=0"`
+	ID int `uri:"addressTypeID" binding:"required,gte=1"`
 }
 
 type DeleteAddressTypeByAdminResponse struct {
+}
+
+type GetAddressTypeByIdQueryRequest struct {
+	ID int `uri:"addressTypeID" binding:"required,gte=1"`
+}
+
+type GetAddressTypeByIdResponse struct {
+	ID          int       `json:"id"`
+	AddressType string    `json:"address_type"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }

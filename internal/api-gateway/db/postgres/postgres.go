@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
@@ -15,11 +16,11 @@ import (
 )
 
 type postgres struct {
-	db *pgxpool.Pool
+	db     *pgxpool.Pool
+	tracer pkg.Tracer
 }
 
-// todo: inject tracer for distributed tracing
-func NewPostgresSQL(lifecycle fx.Lifecycle, manager *env.EnvManager) (pkg.Database, error) {
+func NewPostgresSQL(lifecycle fx.Lifecycle, manager *env.EnvManager, tracer pkg.Tracer) (pkg.Database, error) {
 	dbClient, err := pgxpool.New(context.Background(), fmt.Sprintf("%s/%s", manager.PostgreSQL.PostgresDSN, common.API_GATEWAY_DB))
 
 	if err != nil {
@@ -31,7 +32,8 @@ func NewPostgresSQL(lifecycle fx.Lifecycle, manager *env.EnvManager) (pkg.Databa
 	}
 
 	pg := &postgres{
-		db: dbClient,
+		db:     dbClient,
+		tracer: tracer,
 	}
 
 	// manage lifecycle of application, which is used to disconnect to database when application crash or shutdown
@@ -57,7 +59,9 @@ func (p *postgres) PrepareStatement(ctx context.Context, query string) (pkg.Prep
 
 // Exec implements pkg.Database.
 func (p *postgres) Exec(ctx context.Context, sql string, args ...any) error {
-	// todo: add open telemetry
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "Exec"))
+	defer span.End()
+
 	_, err := p.db.Exec(ctx, sql, args)
 
 	if err != nil {
@@ -69,7 +73,9 @@ func (p *postgres) Exec(ctx context.Context, sql string, args ...any) error {
 
 // ExecWithResult implements pkg.Database.
 func (p *postgres) ExecWithResult(ctx context.Context, sqlStr string, args ...any) (sql.Result, error) {
-	// todo: add open telemetry
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "ExecWithResult"))
+	defer span.End()
+
 	commandTag, err := p.db.Exec(ctx, sqlStr, args)
 
 	if err != nil {
@@ -83,7 +89,9 @@ func (p *postgres) ExecWithResult(ctx context.Context, sqlStr string, args ...an
 
 // Query implements pkg.Database.
 func (p *postgres) Query(ctx context.Context, sql string, args ...any) (pkg.Rows, error) {
-	// todo: add open telemetry
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "Query"))
+	defer span.End()
+
 	res, err := p.db.Query(ctx, sql, args)
 
 	if err != nil {
@@ -97,13 +105,17 @@ func (p *postgres) Query(ctx context.Context, sql string, args ...any) (pkg.Rows
 
 // QueryRow implements pkg.Database.
 func (p *postgres) QueryRow(ctx context.Context, sql string, args ...any) pkg.Row {
-	// todo: add open telemetry
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "QueryRow"))
+	defer span.End()
+
 	return p.db.QueryRow(ctx, sql, args)
 }
 
 // BeginTx implements pkg.Database.
 func (p *postgres) BeginTx(ctx context.Context) (pkg.Tx, error) {
-	// TODO: future add open telemetry
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "BeginTx"))
+	defer span.End()
+
 	transactionPgx, err := p.db.BeginTx(ctx, pgx.TxOptions{
 		IsoLevel: pgx.ReadCommitted,
 	})
@@ -114,16 +126,20 @@ func (p *postgres) BeginTx(ctx context.Context) (pkg.Tx, error) {
 
 	return &tx{
 		transaction: transactionPgx,
+		tracer:      p.tracer,
 	}, nil
 }
 
 type tx struct {
 	transaction pgx.Tx
+	tracer      pkg.Tracer
 }
 
 // Exec implements pkg.Tx.
 func (t *tx) Exec(ctx context.Context, sql string, args ...any) error {
-	// todo: add open telemetry
+	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "Exec"))
+	defer span.End()
+
 	_, err := t.transaction.Exec(ctx, sql, args)
 
 	if err != nil {
@@ -135,7 +151,9 @@ func (t *tx) Exec(ctx context.Context, sql string, args ...any) error {
 
 // ExecWithResult implements pkg.Tx.
 func (t *tx) ExecWithResult(ctx context.Context, sqlStr string, args ...any) (sql.Result, error) {
-	// todo: add open telemetry
+	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "ExecWithResult"))
+	defer span.End()
+
 	commandTag, err := t.transaction.Exec(ctx, sqlStr, args)
 
 	if err != nil {
@@ -149,7 +167,9 @@ func (t *tx) ExecWithResult(ctx context.Context, sqlStr string, args ...any) (sq
 
 // Query implements pkg.Tx.
 func (t *tx) Query(ctx context.Context, sql string, args ...any) (pkg.Rows, error) {
-	// todo: add open telemetry
+	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "Query"))
+	defer span.End()
+
 	res, err := t.transaction.Query(ctx, sql, args)
 
 	if err != nil {
@@ -163,13 +183,17 @@ func (t *tx) Query(ctx context.Context, sql string, args ...any) (pkg.Rows, erro
 
 // QueryRow implements pkg.Tx.
 func (t *tx) QueryRow(ctx context.Context, sql string, args ...any) pkg.Row {
-	// todo: add open telemetry
+	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "QueryRow"))
+	defer span.End()
+
 	return t.transaction.QueryRow(ctx, sql, args)
 }
 
 // Commit implements pkg.Tx.
 func (t *tx) Commit(ctx context.Context) error {
-	// todo: add open telemetry
+	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "Commit"))
+	defer span.End()
+
 	return t.transaction.Commit(ctx)
 }
 
@@ -180,7 +204,9 @@ func (t *tx) PrepareStatement(ctx context.Context, query string) (pkg.PrepareSta
 
 // Rollback implements pkg.Tx.
 func (t *tx) Rollback(ctx context.Context) error {
-	// TODO: add open telemetry
+	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "Rollback"))
+	defer span.End()
+
 	return t.transaction.Rollback(ctx)
 }
 
