@@ -29,3 +29,6 @@ type IAddressTypeRepository interface {
 
 	GetAddressTypeByID(ctx context.Context, id int) (*api_gateway_models.AddressType, error)
 }
+
+type IUserRepository interface {
+}

@@ -95,10 +95,13 @@ func main() {
 			// router and handler
 			api_gateway_router.NewRouter,
 			api_gateway_handler.NewAdminAddressTypeHandler,
+			api_gateway_handler.NewAuthenticationHandler,
 			// service
 			api_gateway_service.NewAdminAddressTypeService,
+			api_gateway_service.NewAuthenticationService,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
+			api_gateway_repository.NewUserRepository,
 			// tracer
 			NewTracerApiGatewayService,
 		),

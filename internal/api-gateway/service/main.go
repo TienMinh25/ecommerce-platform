@@ -12,3 +12,7 @@ type IAdminAddressTypeService interface {
 	DeleteAddressType(ctx context.Context, id int) error
 	GetAddressTypeByID(ctx context.Context, id int) (*api_gateway_dto.GetAddressTypeByIdResponse, error)
 }
+
+type IAuthenticationService interface {
+	Register(ctx context.Context, data api_gateway_dto.RegisterRequest) (*api_gateway_dto.RegisterResponse, error)
+}
