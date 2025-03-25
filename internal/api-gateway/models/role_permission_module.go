@@ -7,7 +7,7 @@ type PermissionDetailType struct {
 	Permissions []int `json:"permissions"`
 }
 
-type RolePermissionResource struct {
+type RolePermissionModule struct {
 	RoleID           int
 	PermissionDetail []PermissionDetailType
 	CreatedAt        time.Time

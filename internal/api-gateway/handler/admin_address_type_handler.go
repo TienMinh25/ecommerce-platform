@@ -38,6 +38,7 @@ func NewAdminAddressTypeHandler(
 //	@Param			request	body		api_gateway_dto.CreateAddressTypeByAdminRequest	true	"Request body"
 //	@Success		200		{object}	api_gateway_dto.CreateAddressTypeResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		409		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/address-types [post]
 func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
@@ -47,10 +48,12 @@ func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
 	var data api_gateway_dto.CreateAddressTypeByAdminRequest
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
 		return
 	}
 
+	// chi tra ra TechnicalError hoac BusinessError
 	res, err := a.service.CreateAddressType(c, data.AddressType)
 
 	if err != nil {
@@ -83,10 +86,12 @@ func (a *adminAddressTypeHandler) DeleteAddressType(ctx *gin.Context) {
 	var uri api_gateway_dto.DeleteAddressTypeQueryRequest
 
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
 		return
 	}
 
+	// chi tra ra BusinessError hoac TechnicalError
 	if err := a.service.DeleteAddressType(c, uri.ID); err != nil {
 		utils.HandleErrorResponse(ctx, err)
 		return
@@ -117,10 +122,12 @@ func (a *adminAddressTypeHandler) GetAddressTypes(ctx *gin.Context) {
 	var queryReq api_gateway_dto.GetAddressTypeQueryRequest
 
 	if err := ctx.ShouldBindQuery(&queryReq); err != nil {
+		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
 		return
 	}
 
+	// chi tra ra BusinessError hoac TechnicalError
 	res, totalItems, totalPages, hasNext, hasPrevious, errRes := a.service.GetAddressTypes(c, queryReq)
 
 	if errRes != nil {
@@ -147,6 +154,7 @@ func (a *adminAddressTypeHandler) GetAddressTypes(ctx *gin.Context) {
 //
 //	@Success		200				{object}	api_gateway_dto.UpdateAddressTypeResponseDocs
 //	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		409				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/address-types/{addressTypeID} [patch]
 func (a *adminAddressTypeHandler) UpdateAddressType(ctx *gin.Context) {
@@ -156,6 +164,7 @@ func (a *adminAddressTypeHandler) UpdateAddressType(ctx *gin.Context) {
 	var uri api_gateway_dto.UpdateAddressTypeUriRequest
 
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
 		return
 	}
@@ -163,10 +172,12 @@ func (a *adminAddressTypeHandler) UpdateAddressType(ctx *gin.Context) {
 	var data api_gateway_dto.UpdateAddressTypeBodyRequest
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
 		return
 	}
 
+	// chi tra ra BusinessError hoac TechnicalError
 	res, err := a.service.UpdateAddressType(c, uri.ID, data.AddressType)
 
 	if err != nil {
@@ -199,10 +210,12 @@ func (a *adminAddressTypeHandler) GetAddressTypeByID(ctx *gin.Context) {
 	var uri api_gateway_dto.GetAddressTypeByIdQueryRequest
 
 	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
 		return
 	}
 
+	// chi tra ra BusinessError hoac TechnicalError
 	res, err := a.service.GetAddressTypeByID(c, uri.ID)
 
 	if err != nil {

@@ -104,7 +104,7 @@ type span struct {
 }
 
 func (s *span) RecordError(err error) {
-	s.RecordError(err)
+	s.span.RecordError(err)
 }
 
 func (s *span) SetAttributes(key string, value string) {

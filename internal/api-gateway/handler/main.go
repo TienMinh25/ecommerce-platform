@@ -22,3 +22,19 @@ type IAuthenticationHandler interface {
 	ChangePassword(ctx *gin.Context)
 	VerifyPhone(ctx *gin.Context)
 }
+
+type IModuleHandler interface {
+	GetModuleByModuleID(ctx *gin.Context)
+	CreateModule(ctx *gin.Context)
+	UpdateModule(ctx *gin.Context)
+	GetModuleList(ctx *gin.Context)
+	DeleteModuleByModuleID(ctx *gin.Context)
+}
+
+type IPermissionsHandler interface {
+	GetPermissionByPermissionID(ctx *gin.Context)
+	CreatePermission(ctx *gin.Context)
+	GetPermissionsList(ctx *gin.Context)
+	UpdatePermissionByPermissionID(ctx *gin.Context)
+	DeletePermissionByPermissionID(ctx *gin.Context)
+}

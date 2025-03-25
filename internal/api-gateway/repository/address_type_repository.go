@@ -2,12 +2,14 @@ package api_gateway_repository
 
 import (
 	"context"
+	"errors"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"net/http"
 )
 
@@ -40,7 +42,22 @@ func (a *addressTypeRepository) CreateAddressType(ctx context.Context, addressTy
 	}
 
 	if err := a.db.Exec(ctx, sqlStr, args); err != nil {
-		return err
+		span.RecordError(err)
+		var pgError pgconn.PgError
+
+		if errors.As(err, &pgError) {
+			if pgError.Code == "23505" {
+				return utils.BusinessError{
+					Code:    http.StatusConflict,
+					Message: "Address type already exists",
+				}
+			}
+		}
+
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
 	}
 
 	return nil
@@ -60,9 +77,16 @@ func (a *addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pk
 	var addressType api_gateway_models.AddressType
 
 	if err := row.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
-		return nil, utils.BusinessError{
-			Message: "address type is not found",
-			Code:    http.StatusBadRequest,
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, utils.BusinessError{
+				Message: "id not found",
+				Code:    http.StatusBadRequest,
+			}
+		}
+
+		return nil, utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -82,13 +106,32 @@ func (a *addressTypeRepository) UpdateAddressType(ctx context.Context, id int, a
 	res, err := a.db.ExecWithResult(ctx, sqlStr, args)
 
 	if err != nil {
-		return err
+		span.RecordError(err)
+		var pgError pgconn.PgError
+
+		if errors.As(err, &pgError) {
+			if pgError.Code == "23505" {
+				return utils.BusinessError{
+					Code:    http.StatusConflict,
+					Message: "Address type already exists",
+				}
+			}
+		}
+
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
 	}
 
 	rowEffected, err := res.RowsAffected()
 
 	if err != nil {
-		return err
+		span.RecordError(err)
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
 	}
 
 	if rowEffected == 0 {
@@ -115,6 +158,7 @@ func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx p
 	err := tx.QueryRow(ctx, sqlCheckStr, argsCheck).Scan(&exists)
 
 	if err != nil {
+		span.RecordError(err)
 		return utils.TechnicalError{
 			Message: common.MSG_INTERNAL_ERROR,
 			Code:    http.StatusInternalServerError,
@@ -131,6 +175,7 @@ func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx p
 	// step 2: Delete address type
 	sqlDeleteStr := "DELETE FROM address_types WHERE id = @id"
 	if err = tx.Exec(ctx, sqlDeleteStr, argsCheck); err != nil {
+		span.RecordError(err)
 		return utils.TechnicalError{
 			Message: common.MSG_INTERNAL_ERROR,
 			Code:    http.StatusInternalServerError,
@@ -149,7 +194,11 @@ func (a *addressTypeRepository) GetListAddressTypes(ctx context.Context, limit, 
 	countQuery := "SELECT COUNT(*) FROM address_types"
 
 	if err := a.db.QueryRow(ctx, countQuery).Scan(&totalItems); err != nil {
-		return nil, 0, err
+		span.RecordError(err)
+		return nil, 0, utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
 	}
 
 	query := `SELECT id, address_type, created_at, updated_at FROM address_types ORDER BY id ASC LIMIT @limit OFFSET @offset`
@@ -160,7 +209,11 @@ func (a *addressTypeRepository) GetListAddressTypes(ctx context.Context, limit, 
 
 	rows, err := a.db.Query(ctx, query, args)
 	if err != nil {
-		return nil, 0, err
+		span.RecordError(err)
+		return nil, 0, utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
 	}
 	defer rows.Close()
 
@@ -168,7 +221,11 @@ func (a *addressTypeRepository) GetListAddressTypes(ctx context.Context, limit, 
 	for rows.Next() {
 		addressType := api_gateway_models.AddressType{}
 		if err := rows.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
-			return nil, 0, err
+			span.RecordError(err)
+			return nil, 0, utils.TechnicalError{
+				Message: common.MSG_INTERNAL_ERROR,
+				Code:    http.StatusInternalServerError,
+			}
 		}
 		addressTypes = append(addressTypes, addressType)
 	}
@@ -190,9 +247,17 @@ func (a *addressTypeRepository) GetAddressTypeByID(ctx context.Context, id int) 
 	row := a.db.QueryRow(ctx, query, args)
 
 	if err := row.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt); err != nil {
-		return nil, utils.BusinessError{
-			Message: "address type is not found",
-			Code:    http.StatusBadRequest,
+		span.RecordError(err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, utils.BusinessError{
+				Message: "id not found",
+				Code:    http.StatusBadRequest,
+			}
+		}
+
+		return nil, utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
