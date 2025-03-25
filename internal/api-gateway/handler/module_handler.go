@@ -25,6 +25,21 @@ func NewModuleHandler(
 	}
 }
 
+// GetModuleByModuleID godoc
+//
+//	@Summary		Get module by ID
+//	@Description	Get module details by module ID
+//	@Tags			Modules
+//	@Accept			json
+//
+//	@Security		BearerAuth
+//
+//	@Produce		json
+//	@Param			moduleID	path		int	true	"Module ID"
+//	@Success		200			{object}	api_gateway_dto.GetModuleResponseDocs
+//	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/modules/{moduleID} [get]
 func (m *moduleHandler) GetModuleByModuleID(ctx *gin.Context) {
 	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetModuleByModuleID"))
 	defer span.End()
@@ -47,6 +62,22 @@ func (m *moduleHandler) GetModuleByModuleID(ctx *gin.Context) {
 	utils.SuccessResponse[api_gateway_dto.GetModuleResponse](ctx, http.StatusOK, *module)
 }
 
+// CreateModule godoc
+//
+//	@Summary		Create a new module
+//	@Description	Create a new module with a given name
+//	@Tags			Modules
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			data	body		api_gateway_dto.CreateModuleRequest	true	"Module Data"
+//	@Success		201		{object}	api_gateway_dto.CreateModuleResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		409		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/modules [post]
 func (m *moduleHandler) CreateModule(ctx *gin.Context) {
 	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "CreateModule"))
 	defer span.End()
@@ -70,6 +101,23 @@ func (m *moduleHandler) CreateModule(ctx *gin.Context) {
 	utils.SuccessResponse[api_gateway_dto.CreateModuleResponse](ctx, http.StatusCreated, *res)
 }
 
+// UpdateModule godoc
+//
+//	@Summary		Update module by ID
+//	@Description	Update the module name using module ID
+//	@Tags			Modules
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			moduleID	path		int												true	"Module ID"
+//	@Param			data		body		api_gateway_dto.UpdateModuleByModuleIDRequest	true	"Module Data"
+//	@Success		200			{object}	api_gateway_dto.UpdateModuleByModuleIDResponseDocs
+//	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		409			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/modules/{moduleID} [patch]
 func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
 	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateModule"))
 	defer span.End()
@@ -82,7 +130,7 @@ func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
 		return
 	}
 
-	var uri api_gateway_dto.GetModuleByIDRequest
+	var uri api_gateway_dto.UpdateModuleURIRequest
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
@@ -100,6 +148,22 @@ func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
 	utils.SuccessResponse[api_gateway_dto.UpdateModuleByModuleIDResponse](ctx, http.StatusOK, *res)
 }
 
+// GetModuleList godoc
+//
+//	@Summary		Get module list
+//	@Description	Get a paginated list of modules
+//	@Tags			Modules
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			page	query		int	true	"Page number"
+//	@Param			limit	query		int	true	"Page size"
+//	@Success		200		{object}	api_gateway_dto.GetListModuleResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/modules [get]
 func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
 	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetModuleList"))
 	defer span.End()
@@ -121,4 +185,39 @@ func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
 	}
 
 	utils.PaginatedResponse[[]api_gateway_dto.GetModuleResponse](ctx, res, queryReq.Page, queryReq.Limit, totalPages, totalItems, hasNext, hasPrevious)
+}
+
+// DeleteModuleByModuleID godoc
+//
+//	@Summary		Delete module by ID
+//	@Description	Delete a module using its ID
+//	@Tags			Modules
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			moduleID	path		int	true	"Module ID"
+//	@Success		200			{object}	api_gateway_dto.DeletePermissionByPermissionIDURIResponseDocs
+//	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/modules/{moduleID} [delete]
+func (m *moduleHandler) DeleteModuleByModuleID(ctx *gin.Context) {
+	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "DeleteModuleByModuleID"))
+	defer span.End()
+
+	var uri api_gateway_dto.DeleteModuleURIRequest
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := m.service.DeleteModuleByModuleID(c, uri.ID); err != nil {
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse[api_gateway_dto.DeletePermissionByPermissionIDURIResponse](ctx, http.StatusOK, api_gateway_dto.DeletePermissionByPermissionIDURIResponse{})
 }

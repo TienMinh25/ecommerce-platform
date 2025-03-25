@@ -25,6 +25,19 @@ func NewPermissionHanlder(
 	}
 }
 
+// GetPermissionByPermissionID godoc
+//
+//	@Summary		Get a permission by ID
+//	@Description	Retrieve a specific permission by its ID
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			permissionID	path		string	true	"Permission ID"
+//	@Success		200				{object}	api_gateway_dto.GetPermissionResponseDocs
+//	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/permissions/{permissionID} [get]
 func (p *permissionHandler) GetPermissionByPermissionID(ctx *gin.Context) {
 	c, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetPermissionByPermissionID"))
 	defer span.End()
@@ -46,6 +59,19 @@ func (p *permissionHandler) GetPermissionByPermissionID(ctx *gin.Context) {
 	utils.SuccessResponse[api_gateway_dto.GetPermissionResponse](ctx, http.StatusOK, *permission)
 }
 
+// CreatePermission godoc
+//
+//	@Summary		Create a new permission
+//	@Description	Add a new permission with a given name
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			data	body		api_gateway_dto.CreateModuleRequest	true	"Permission Data"
+//	@Success		201		{object}	api_gateway_dto.CreatePermissionResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/permissions [post]
 func (p *permissionHandler) CreatePermission(ctx *gin.Context) {
 	c, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetPermissionByPermissionID"))
 	defer span.End()
@@ -69,6 +95,20 @@ func (p *permissionHandler) CreatePermission(ctx *gin.Context) {
 	utils.SuccessResponse[api_gateway_dto.CreatePermissionResponse](ctx, http.StatusCreated, *res)
 }
 
+// GetPermissionsList godoc
+//
+//	@Summary		Get a list of permissions
+//	@Description	Retrieve a paginated list of permissions
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			page	query		int	true	"Page number"
+//	@Param			limit	query		int	true	"Page size"
+//	@Success		200		{object}	api_gateway_dto.GetListPermissionResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/permissions [get]
 func (p *permissionHandler) GetPermissionsList(ctx *gin.Context) {
 	c, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetPermissionsList"))
 	defer span.End()
@@ -92,6 +132,20 @@ func (p *permissionHandler) GetPermissionsList(ctx *gin.Context) {
 	utils.PaginatedResponse[[]api_gateway_dto.GetPermissionResponse](ctx, res, queryReq.Page, queryReq.Limit, totalPages, totalItems, hasNext, hasPrevious)
 }
 
+// UpdatePermissionByPermissionID godoc
+//
+//	@Summary		Update a permission by ID
+//	@Description	Modify an existing permission's action
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			permissionID	path		string													true	"Permission ID"
+//	@Param			data			body		api_gateway_dto.UpdatePermissionByPermissionIDRequest	true	"Updated Data"
+//	@Success		200				{object}	api_gateway_dto.UpdatePermissionByIDResponseDocs
+//	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/permissions/{permissionID} [patch]
 func (p *permissionHandler) UpdatePermissionByPermissionID(ctx *gin.Context) {
 	c, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdatePermissionByPermissionID"))
 	defer span.End()
@@ -104,7 +158,7 @@ func (p *permissionHandler) UpdatePermissionByPermissionID(ctx *gin.Context) {
 		return
 	}
 
-	var uri api_gateway_dto.GetModuleByIDRequest
+	var uri api_gateway_dto.UpdatePermissionURIRequest
 	if err := ctx.ShouldBindUri(&uri); err != nil {
 		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
@@ -120,4 +174,37 @@ func (p *permissionHandler) UpdatePermissionByPermissionID(ctx *gin.Context) {
 	}
 
 	utils.SuccessResponse[api_gateway_dto.UpdatePermissionByPermissionIDResponse](ctx, http.StatusOK, *res)
+}
+
+// DeletePermissionByPermissionID godoc
+//
+//	@Summary		Delete a permission by ID
+//	@Description	Remove a specific permission from the system
+//	@Tags			permissions
+//	@Accept			json
+//	@Produce		json
+//	@Security		BearerAuth
+//	@Param			permissionID	path		string	true	"Permission ID"
+//	@Success		200				{object}	api_gateway_dto.DeletePermissionByPermissionIDURIResponseDocs
+//	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/permissions/{permissionID} [delete]
+func (p *permissionHandler) DeletePermissionByPermissionID(ctx *gin.Context) {
+	c, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "DeletePermissionByPermissionID"))
+	defer span.End()
+
+	var uri api_gateway_dto.DeletePermissionByPermissionIDURIRequest
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := p.service.DeletePermissionByPermissionID(c, uri.ID); err != nil {
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse[api_gateway_dto.DeletePermissionByPermissionIDURIResponse](ctx, http.StatusOK, api_gateway_dto.DeletePermissionByPermissionIDURIResponse{})
 }

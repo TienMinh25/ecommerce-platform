@@ -30,7 +30,7 @@ func (p *permissionRepository) GetPermissionByPermissionID(ctx context.Context, 
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetPermissionByPermissionID"))
 	defer span.End()
 
-	sqlStr := "SELECT id, action FROM permissions WHERE id = @id"
+	sqlStr := "SELECT id, action, created_at, updated_at FROM permissions WHERE id = @id"
 	args := pgx.NamedArgs{
 		"id": id,
 	}
@@ -39,7 +39,7 @@ func (p *permissionRepository) GetPermissionByPermissionID(ctx context.Context, 
 
 	var permission api_gateway_models.Permission
 
-	if err := row.Scan(&permission.ID, &permission.Action); err != nil {
+	if err := row.Scan(&permission.ID, &permission.Action, &permission.CreatedAt, &permission.UpdatedAt); err != nil {
 		span.RecordError(err)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, utils.BusinessError{
@@ -73,7 +73,7 @@ func (p *permissionRepository) GetPermissions(ctx context.Context, limit, page i
 		}
 	}
 
-	query := `SELECT id, action FROM permissions ORDER BY id ASC LIMIT @limit OFFSET @offset`
+	query := `SELECT id, action, created_at, updated_at FROM permissions ORDER BY id ASC LIMIT @limit OFFSET @offset`
 	args := pgx.NamedArgs{
 		"limit":  limit,
 		"offset": (page - 1) * limit,
@@ -92,7 +92,7 @@ func (p *permissionRepository) GetPermissions(ctx context.Context, limit, page i
 	var permissions []api_gateway_models.Permission
 	for rows.Next() {
 		permission := api_gateway_models.Permission{}
-		if err := rows.Scan(&permission.ID, &permission.Action); err != nil {
+		if err := rows.Scan(&permission.ID, &permission.Action, &permission.CreatedAt, &permission.UpdatedAt); err != nil {
 			span.RecordError(err)
 			return nil, 0, utils.TechnicalError{
 				Message: common.MSG_INTERNAL_ERROR,
@@ -178,6 +178,40 @@ func (p *permissionRepository) UpdatePermissionByPermissionId(ctx context.Contex
 	}
 
 	if rowEffected == 0 {
+		return utils.BusinessError{
+			Message: "The permission does not exist",
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	return nil
+}
+
+func (p *permissionRepository) DeletePermissionByPermissionID(ctx context.Context, id int) error {
+	sqlStr := "DELETE FROM permissions WHERE id = @id"
+	args := pgx.NamedArgs{
+		"id": id,
+	}
+
+	res, err := p.db.ExecWithResult(ctx, sqlStr, args)
+
+	if err != nil {
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	rowAffected, err := res.RowsAffected()
+
+	if err != nil {
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	if rowAffected == 0 {
 		return utils.BusinessError{
 			Message: "The permission does not exist",
 			Code:    http.StatusBadRequest,

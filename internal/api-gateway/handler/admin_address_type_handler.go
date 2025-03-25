@@ -38,6 +38,7 @@ func NewAdminAddressTypeHandler(
 //	@Param			request	body		api_gateway_dto.CreateAddressTypeByAdminRequest	true	"Request body"
 //	@Success		200		{object}	api_gateway_dto.CreateAddressTypeResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		409		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/address-types [post]
 func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
@@ -153,6 +154,7 @@ func (a *adminAddressTypeHandler) GetAddressTypes(ctx *gin.Context) {
 //
 //	@Success		200				{object}	api_gateway_dto.UpdateAddressTypeResponseDocs
 //	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		409				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/address-types/{addressTypeID} [patch]
 func (a *adminAddressTypeHandler) UpdateAddressType(ctx *gin.Context) {

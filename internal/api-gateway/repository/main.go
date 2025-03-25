@@ -43,6 +43,8 @@ type IModuleRepository interface {
 	BeginTransaction(ctx context.Context, options pgx.TxOptions) (pkg.Tx, error)
 
 	UpdateModuleByModuleID(ctx context.Context, id int, name string) error
+
+	DeleteModuleByModuleID(ctx context.Context, id int) error
 }
 
 type IPermissionRepository interface {
@@ -53,4 +55,10 @@ type IPermissionRepository interface {
 	CreatePermission(ctx context.Context, action string) error
 
 	UpdatePermissionByPermissionId(ctx context.Context, id int, action string) error
+
+	DeletePermissionByPermissionID(ctx context.Context, id int) error
+}
+
+type IRolePermissionModuleRepository interface {
+	SelectAllRolePermissionModules(ctx context.Context) ([]api_gateway_models.RolePermissionModule, error)
 }

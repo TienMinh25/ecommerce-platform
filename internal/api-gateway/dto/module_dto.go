@@ -15,7 +15,7 @@ type GetModuleResponse struct {
 }
 
 type GetModuleByIDRequest struct {
-	ID int `form:"id" binding:"required,gte=1"`
+	ID int `uri:"moduleID" binding:"required,gte=1"`
 }
 
 type CreateModuleRequest struct {
@@ -28,5 +28,13 @@ type UpdateModuleByModuleIDRequest struct {
 	Name string `json:"name" binding:"required,min=3,max=50,alpha"`
 }
 
+type UpdateModuleURIRequest struct {
+	ID int `uri:"moduleID" binding:"required,gte=1"`
+}
+
 type UpdateModuleByModuleIDResponse struct {
+}
+
+type DeleteModuleURIRequest struct {
+	ID int `uri:"moduleID" binding:"required,gte=1"`
 }

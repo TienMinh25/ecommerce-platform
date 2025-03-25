@@ -22,6 +22,7 @@ type IModuleService interface {
 	CreateModule(ctx context.Context, name string) (*api_gateway_dto.CreateModuleResponse, error)
 	GetModuleByModuleID(ctx context.Context, id int) (*api_gateway_dto.GetModuleResponse, error)
 	UpdateModuleByModuleID(ctx context.Context, id int, name string) (*api_gateway_dto.UpdateModuleByModuleIDResponse, error)
+	DeleteModuleByModuleID(ctx context.Context, id int) error
 }
 
 type IPermissionService interface {
@@ -29,4 +30,5 @@ type IPermissionService interface {
 	CreatePermission(ctx context.Context, action string) (*api_gateway_dto.CreatePermissionResponse, error)
 	GetPermissionByPermissionID(ctx context.Context, id int) (*api_gateway_dto.GetPermissionResponse, error)
 	UpdatePermissionByPermissionID(ctx context.Context, id int, action string) (*api_gateway_dto.UpdatePermissionByPermissionIDResponse, error)
+	DeletePermissionByPermissionID(ctx context.Context, id int) error
 }

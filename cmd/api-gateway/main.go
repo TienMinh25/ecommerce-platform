@@ -110,6 +110,7 @@ func main() {
 			NewTracerApiGatewayService,
 			api_gateway_repository.NewModuleRepository,
 			api_gateway_repository.NewPermissionRepository,
+			api_gateway_repository.NewRolePermissionModuleRepository,
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),

@@ -4,18 +4,21 @@ import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"math"
+	"net/http"
 )
 
 type permissionService struct {
-	repo   api_gateway_repository.IPermissionRepository
-	tracer pkg.Tracer
+	repo                     api_gateway_repository.IPermissionRepository
+	tracer                   pkg.Tracer
+	rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository
 }
 
-func NewPermissionService(repo api_gateway_repository.IPermissionRepository, tracer pkg.Tracer) IPermissionService {
-	return &permissionService{repo: repo, tracer: tracer}
+func NewPermissionService(repo api_gateway_repository.IPermissionRepository, tracer pkg.Tracer, rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository) IPermissionService {
+	return &permissionService{repo: repo, tracer: tracer, rolePermissionModuleRepo: rolePermissionModuleRepo}
 }
 
 func (p *permissionService) GetPermissionList(ctx context.Context, queryReq api_gateway_dto.GetPermissionRequest) ([]api_gateway_dto.GetPermissionResponse, int, int, bool, bool, error) {
@@ -32,8 +35,10 @@ func (p *permissionService) GetPermissionList(ctx context.Context, queryReq api_
 	permissionResponse := make([]api_gateway_dto.GetPermissionResponse, 0)
 	for _, permission := range permissions {
 		permissionResponse = append(permissionResponse, api_gateway_dto.GetPermissionResponse{
-			ID:     permission.ID,
-			Action: permission.Action,
+			ID:        permission.ID,
+			Action:    permission.Action,
+			CreatedAt: permission.CreatedAt,
+			UpdatedAt: permission.UpdatedAt,
 		})
 	}
 
@@ -71,8 +76,10 @@ func (p *permissionService) GetPermissionByPermissionID(ctx context.Context, id 
 	}
 
 	return &api_gateway_dto.GetPermissionResponse{
-		ID:     permission.ID,
-		Action: permission.Action,
+		ID:        permission.ID,
+		Action:    permission.Action,
+		CreatedAt: permission.CreatedAt,
+		UpdatedAt: permission.UpdatedAt,
 	}, nil
 }
 
@@ -88,4 +95,30 @@ func (p *permissionService) UpdatePermissionByPermissionID(ctx context.Context, 
 	}
 
 	return &api_gateway_dto.UpdatePermissionByPermissionIDResponse{}, nil
+}
+
+func (p *permissionService) DeletePermissionByPermissionID(ctx context.Context, id int) error {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "DeletePermissionByPermissionID"))
+	defer span.End()
+
+	res, err := p.rolePermissionModuleRepo.SelectAllRolePermissionModules(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	for _, rolePermissionModule := range res {
+		for _, permissionDetail := range rolePermissionModule.PermissionDetail {
+			for _, permission := range permissionDetail.Permissions {
+				if permission == id {
+					return utils.BusinessError{
+						Code:    http.StatusConflict,
+						Message: "Permission ID is already in use, cannot delete the permission",
+					}
+				}
+			}
+		}
+	}
+
+	return p.repo.DeletePermissionByPermissionID(ctx, id)
 }

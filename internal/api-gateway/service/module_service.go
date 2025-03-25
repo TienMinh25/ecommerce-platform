@@ -4,20 +4,24 @@ import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"math"
+	"net/http"
 )
 
 type moduleService struct {
-	repo   api_gateway_repository.IModuleRepository
-	tracer pkg.Tracer
+	repo                     api_gateway_repository.IModuleRepository
+	rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository
+	tracer                   pkg.Tracer
 }
 
-func NewModuleService(repo api_gateway_repository.IModuleRepository, tracer pkg.Tracer) IModuleService {
+func NewModuleService(repo api_gateway_repository.IModuleRepository, tracer pkg.Tracer, rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository) IModuleService {
 	return &moduleService{
-		repo:   repo,
-		tracer: tracer,
+		repo:                     repo,
+		tracer:                   tracer,
+		rolePermissionModuleRepo: rolePermissionModuleRepo,
 	}
 }
 
@@ -95,4 +99,30 @@ func (m *moduleService) UpdateModuleByModuleID(ctx context.Context, id int, name
 	}
 
 	return &api_gateway_dto.UpdateModuleByModuleIDResponse{}, nil
+}
+
+func (m *moduleService) DeleteModuleByModuleID(ctx context.Context, id int) error {
+	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "DeleteModuleByModuleID"))
+	defer span.End()
+
+	res, err := m.rolePermissionModuleRepo.SelectAllRolePermissionModules(ctx)
+
+	if err != nil {
+		return err
+	}
+
+	for _, rolePermissionModule := range res {
+		for _, permissionDetail := range rolePermissionModule.PermissionDetail {
+			for _, permission := range permissionDetail.Permissions {
+				if permission == id {
+					return utils.BusinessError{
+						Code:    http.StatusConflict,
+						Message: "Permission ID is already in use, cannot delete the permission",
+					}
+				}
+			}
+		}
+	}
+
+	return m.repo.DeleteModuleByModuleID(ctx, id)
 }

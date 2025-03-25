@@ -203,3 +203,37 @@ func (m *moduleRepository) UpdateModuleByModuleID(ctx context.Context, id int, n
 
 	return nil
 }
+
+func (m *moduleRepository) DeleteModuleByModuleID(ctx context.Context, id int) error {
+	sqlStr := "DELETE FROM modules WHERE id = @id"
+	args := pgx.NamedArgs{
+		"id": id,
+	}
+
+	res, err := m.db.ExecWithResult(ctx, sqlStr, args)
+
+	if err != nil {
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	rowAffected, err := res.RowsAffected()
+
+	if err != nil {
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	if rowAffected == 0 {
+		return utils.BusinessError{
+			Code:    http.StatusBadRequest,
+			Message: "Not found module to delete",
+		}
+	}
+
+	return nil
+}

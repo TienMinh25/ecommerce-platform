@@ -1,7 +1,9 @@
 package api_gateway_dto
 
+import "time"
+
 type GetPermissionIDRequest struct {
-	ID int `form:"id" binding:"required,gte=1"`
+	ID int `uri:"permissionID" binding:"required,gte=1"`
 }
 
 type GetPermissionRequest struct {
@@ -10,8 +12,10 @@ type GetPermissionRequest struct {
 }
 
 type GetPermissionResponse struct {
-	ID     int    `json:"id"`
-	Action string `json:"action"`
+	ID        int       `json:"id"`
+	Action    string    `json:"action"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type CreatePermissionRequest struct {
@@ -25,4 +29,14 @@ type UpdatePermissionByPermissionIDRequest struct {
 	Action string `json:"action" binding:"required,min=3,max=50,alpha"`
 }
 
+type UpdatePermissionURIRequest struct {
+	ID int `uri:"permissionID" binding:"required,gte=1"`
+}
+
 type UpdatePermissionByPermissionIDResponse struct{}
+
+type DeletePermissionByPermissionIDURIRequest struct {
+	ID int `uri:"permissionID" binding:"required,gte=1"`
+}
+
+type DeletePermissionByPermissionIDURIResponse struct{}

@@ -28,6 +28,7 @@ type IModuleHandler interface {
 	CreateModule(ctx *gin.Context)
 	UpdateModule(ctx *gin.Context)
 	GetModuleList(ctx *gin.Context)
+	DeleteModuleByModuleID(ctx *gin.Context)
 }
 
 type IPermissionsHandler interface {
@@ -35,4 +36,5 @@ type IPermissionsHandler interface {
 	CreatePermission(ctx *gin.Context)
 	GetPermissionsList(ctx *gin.Context)
 	UpdatePermissionByPermissionID(ctx *gin.Context)
+	DeletePermissionByPermissionID(ctx *gin.Context)
 }

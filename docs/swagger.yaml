@@ -20,12 +20,48 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.CreateModuleRequest:
+    properties:
+      name:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  api_gateway_dto.CreateModuleResponse:
+    type: object
+  api_gateway_dto.CreateModuleResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.CreateModuleResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.CreatePermissionResponse:
+    type: object
+  api_gateway_dto.CreatePermissionResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.CreatePermissionResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.DeleteAddressTypeByAdminResponse:
     type: object
   api_gateway_dto.DeleteAddressTypeResponseDocs:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.DeleteAddressTypeByAdminResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.DeletePermissionByPermissionIDURIResponse:
+    type: object
+  api_gateway_dto.DeletePermissionByPermissionIDURIResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.DeletePermissionByPermissionIDURIResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -57,6 +93,60 @@ definitions:
         type: integer
       updated_at:
         type: string
+    type: object
+  api_gateway_dto.GetListModuleResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetModuleResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetListPermissionResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetPermissionResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetModuleResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  api_gateway_dto.GetModuleResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetModuleResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetPermissionResponse:
+    properties:
+      action:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  api_gateway_dto.GetPermissionResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetPermissionResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
   api_gateway_dto.ListAddressTypesResponseDocs:
     properties:
@@ -97,6 +187,42 @@ definitions:
         $ref: '#/definitions/api_gateway_dto.UpdateAddressTypeByAdminResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.UpdateModuleByModuleIDRequest:
+    properties:
+      name:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  api_gateway_dto.UpdateModuleByModuleIDResponse:
+    type: object
+  api_gateway_dto.UpdateModuleByModuleIDResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateModuleByModuleIDResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.UpdatePermissionByIDResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdatePermissionByPermissionIDResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.UpdatePermissionByPermissionIDRequest:
+    properties:
+      action:
+        maxLength: 50
+        minLength: 3
+        type: string
+    required:
+    - action
+    type: object
+  api_gateway_dto.UpdatePermissionByPermissionIDResponse:
     type: object
 host: localhost:3000
 info:
@@ -159,6 +285,10 @@ paths:
             $ref: '#/definitions/api_gateway_dto.CreateAddressTypeResponseDocs'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "409":
+          description: Conflict
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
@@ -258,6 +388,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
           description: Internal Server Error
           schema:
@@ -267,6 +401,342 @@ paths:
       summary: Update address type by address id
       tags:
       - address-types
+  /modules:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of modules
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetListModuleResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get module list
+      tags:
+      - Modules
+    post:
+      consumes:
+      - application/json
+      description: Create a new module with a given name
+      parameters:
+      - description: Module Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.CreateModuleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api_gateway_dto.CreateModuleResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Create a new module
+      tags:
+      - Modules
+  /modules/{moduleID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a module using its ID
+      parameters:
+      - description: Module ID
+        in: path
+        name: moduleID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.DeletePermissionByPermissionIDURIResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Delete module by ID
+      tags:
+      - Modules
+    get:
+      consumes:
+      - application/json
+      description: Get module details by module ID
+      parameters:
+      - description: Module ID
+        in: path
+        name: moduleID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetModuleResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get module by ID
+      tags:
+      - Modules
+    patch:
+      consumes:
+      - application/json
+      description: Update the module name using module ID
+      parameters:
+      - description: Module ID
+        in: path
+        name: moduleID
+        required: true
+        type: integer
+      - description: Module Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateModuleByModuleIDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateModuleByModuleIDResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Update module by ID
+      tags:
+      - Modules
+  /permissions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a paginated list of permissions
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: Page size
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetListPermissionResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get a list of permissions
+      tags:
+      - permissions
+    post:
+      consumes:
+      - application/json
+      description: Add a new permission with a given name
+      parameters:
+      - description: Permission Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.CreateModuleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api_gateway_dto.CreatePermissionResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Create a new permission
+      tags:
+      - permissions
+  /permissions/{permissionID}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a specific permission from the system
+      parameters:
+      - description: Permission ID
+        in: path
+        name: permissionID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.DeletePermissionByPermissionIDURIResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Delete a permission by ID
+      tags:
+      - permissions
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific permission by its ID
+      parameters:
+      - description: Permission ID
+        in: path
+        name: permissionID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetPermissionResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get a permission by ID
+      tags:
+      - permissions
+    patch:
+      consumes:
+      - application/json
+      description: Modify an existing permission's action
+      parameters:
+      - description: Permission ID
+        in: path
+        name: permissionID
+        required: true
+        type: string
+      - description: Updated Data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdatePermissionByPermissionIDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdatePermissionByIDResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Update a permission by ID
+      tags:
+      - permissions
 securityDefinitions:
   BearerAuth:
     in: header
