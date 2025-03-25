@@ -96,14 +96,20 @@ func main() {
 			api_gateway_router.NewRouter,
 			api_gateway_handler.NewAdminAddressTypeHandler,
 			api_gateway_handler.NewAuthenticationHandler,
+			api_gateway_handler.NewModuleHandler,
+			api_gateway_handler.NewPermissionHanlder,
 			// service
 			api_gateway_service.NewAdminAddressTypeService,
 			api_gateway_service.NewAuthenticationService,
+			api_gateway_service.NewModuleService,
+			api_gateway_service.NewPermissionService,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
 			api_gateway_repository.NewUserRepository,
 			// tracer
 			NewTracerApiGatewayService,
+			api_gateway_repository.NewModuleRepository,
+			api_gateway_repository.NewPermissionRepository,
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),

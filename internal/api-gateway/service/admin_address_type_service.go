@@ -2,14 +2,13 @@ package api_gateway_service
 
 import (
 	"context"
-	"errors"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"math"
 	"net/http"
 )
@@ -33,27 +32,7 @@ func (a *adminAddressTypeService) CreateAddressType(ctx context.Context, address
 	err := a.repo.CreateAddressType(ctx, addressType)
 
 	if err != nil {
-		var pgError pgconn.PgError
-
-		if errors.As(err, &pgError) {
-			switch pgError.Code {
-			case "23505": // unique_violation
-				return nil, utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: "Address type already exists",
-				}
-			default:
-				return nil, utils.TechnicalError{
-					Code:    http.StatusInternalServerError,
-					Message: err.Error(),
-				}
-			}
-		}
-
-		return nil, utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		}
+		return nil, err
 	}
 
 	return &api_gateway_dto.CreateAddressTypeByAdminResponse{}, nil
@@ -63,6 +42,7 @@ func (a *adminAddressTypeService) GetAddressTypes(ctx context.Context, queryReq 
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetAddressTypes"))
 	defer span.End()
 
+	// chi tra ra BusinessError hoac TechnicalError
 	addressTypes, totalItems, err := a.repo.GetListAddressTypes(ctx, queryReq.Limit, queryReq.Page)
 
 	if err != nil {
@@ -91,30 +71,11 @@ func (a *adminAddressTypeService) UpdateAddressType(ctx context.Context, id int,
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateAddressType"))
 	defer span.End()
 
+	// chi tra ra TechnicalError hoac BusinessError
 	err := a.repo.UpdateAddressType(ctx, id, addressType)
 
 	if err != nil {
-		var pgError pgconn.PgError
-
-		if errors.As(err, &pgError) {
-			switch pgError.Code {
-			case "23505": // unique_violation
-				return nil, utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: "Address type already exists",
-				}
-			default:
-				return nil, utils.TechnicalError{
-					Code:    http.StatusInternalServerError,
-					Message: err.Error(),
-				}
-			}
-		}
-
-		return nil, utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		}
+		return nil, err
 	}
 
 	return &api_gateway_dto.UpdateAddressTypeByAdminResponse{}, nil
@@ -130,24 +91,33 @@ func (a *adminAddressTypeService) DeleteAddressType(ctx context.Context, id int)
 	})
 
 	if err != nil {
+		span.RecordError(err)
 		return utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
+			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
+	// chi tra ra BusinessError hoac TechnicalError
 	err = a.repo.DeleteAddressTypeByIDX(ctx, tx, id)
 
 	if err != nil {
+		originalError := err
+
 		if err = tx.Rollback(ctx); err != nil {
-			return err
+			span.RecordError(err)
 		}
 
-		return err
+		return originalError
 	}
 
 	if err = tx.Commit(ctx); err != nil {
-		return err
+		span.RecordError(err)
+
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
 	}
 
 	return nil

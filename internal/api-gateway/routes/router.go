@@ -22,11 +22,14 @@ func NewRouter(
 	router *gin.Engine,
 	adminAddressTypeHandler api_gateway_handler.IAdminAddressTypeHandler,
 	authenticationHandler api_gateway_handler.IAuthenticationHandler,
+	moduleHandler api_gateway_handler.IModuleHandler,
+
 ) *Router {
 	apiV1Group := router.Group("/api/v1")
 
 	registerAdminAddressManagementEndpoint(apiV1Group, adminAddressTypeHandler)
 	registerAuthenticationManagementEndpoint(apiV1Group, authenticationHandler)
+	registerModuleEndpoint(apiV1Group, moduleHandler)
 
 	return &Router{
 		Router: router,
@@ -42,6 +45,25 @@ func registerAdminAddressManagementEndpoint(group *gin.RouterGroup, handler api_
 	adminAddressGroup.GET("/:addressTypeID", handler.GetAddressTypeByID)
 	adminAddressGroup.PATCH("/:addressTypeID", handler.UpdateAddressType)
 	adminAddressGroup.DELETE("/:addressTypeID", handler.DeleteAddressType)
+}
+
+func registerModuleEndpoint(group *gin.RouterGroup, handler api_gateway_handler.IModuleHandler) {
+	adminModuleGroup := group.Group("/modules")
+
+	// todo: add middleware check permission to access api endpoint
+	adminModuleGroup.GET("/:moduleID", handler.GetModuleByModuleID)
+	adminModuleGroup.POST("", handler.CreateModule)
+	adminModuleGroup.PATCH("/:moduleID", handler.UpdateModule)
+	adminModuleGroup.GET("", handler.GetModuleList)
+}
+
+func registerPermissionEndPoint(group *gin.RouterGroup, handler api_gateway_handler.IPermissionsHandler) {
+	adminPermissionGroup := group.Group("/permissions")
+
+	adminPermissionGroup.GET("/:permissionID", handler.GetPermissionByPermissionID)
+	adminPermissionGroup.POST("", handler.CreatePermission)
+	adminPermissionGroup.PATCH("/:permissionID", handler.UpdatePermissionByPermissionID)
+	adminPermissionGroup.GET("", handler.GetPermissionsList)
 }
 
 func registerAuthenticationManagementEndpoint(group *gin.RouterGroup, handler api_gateway_handler.IAuthenticationHandler) {

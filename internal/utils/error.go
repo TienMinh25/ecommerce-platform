@@ -28,19 +28,25 @@ func castValidationError(arrayErrors validator.ValidationErrors) []ApiError {
 func msgForTag(fe validator.FieldError) string {
 	switch fe.Tag() {
 	case "required":
-		return fmt.Sprintf("Trường '%s' là bắt buộc.", fe.Field())
+		return fmt.Sprintf("The '%s' field is required.", fe.Field())
 	case "email":
-		return fmt.Sprintf("Trường '%s' phải là một địa chỉ email hợp lệ.", fe.Field())
+		return fmt.Sprintf("The '%s' field must be a valid email address.", fe.Field())
 	case "oneof":
-		return fmt.Sprintf("Giá trị của trường '%s' phải thuộc một trong các lựa chọn: [%s].", fe.Field(), strings.Join(strings.Split(fe.Param(), " "), ", "))
+		return fmt.Sprintf("The value of '%s' must be one of the following: [%s].", fe.Field(), strings.Join(strings.Split(fe.Param(), " "), ", "))
 	case "numeric":
-		return fmt.Sprintf("Trường '%s' phải là số.", fe.Field())
+		return fmt.Sprintf("The '%s' field must be a number.", fe.Field())
 	case "alphanum":
-		return fmt.Sprintf("Trường '%s' chỉ được chứa chữ cái và số.", fe.Field())
+		return fmt.Sprintf("The '%s' field can only contain letters and numbers.", fe.Field())
 	case "gte":
-		return fmt.Sprintf("Trường '%s' phải lớn hơn hoặc bằng '%v'", fe.Field(), fe.Param())
+		return fmt.Sprintf("The '%s' field must be greater than or equal to '%v'.", fe.Field(), fe.Param())
+	case "min":
+		return fmt.Sprintf("The '%s' field must be at least %v characters long.", fe.Field(), fe.Param())
+	case "max":
+		return fmt.Sprintf("The '%s' field cannot exceed %v characters.", fe.Field(), fe.Param())
+	case "alpha":
+		return fmt.Sprintf("The '%s' field can only contain letters.", fe.Field())
 	default:
-		return fmt.Sprintf("Trường '%s' không hợp lệ.", fe.Field())
+		return fmt.Sprintf("The '%s' field is invalid.", fe.Field())
 	}
 }
 

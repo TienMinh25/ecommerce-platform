@@ -32,3 +32,25 @@ type IAddressTypeRepository interface {
 
 type IUserRepository interface {
 }
+
+type IModuleRepository interface {
+	GetModules(ctx context.Context, limit, page int) ([]api_gateway_models.Module, int, error)
+
+	CreateModule(ctx context.Context, name string) error
+
+	GetModuleByModuleID(ctx context.Context, id int) (*api_gateway_models.Module, error)
+
+	BeginTransaction(ctx context.Context, options pgx.TxOptions) (pkg.Tx, error)
+
+	UpdateModuleByModuleID(ctx context.Context, id int, name string) error
+}
+
+type IPermissionRepository interface {
+	GetPermissionByPermissionID(ctx context.Context, id int) (*api_gateway_models.Permission, error)
+
+	GetPermissions(ctx context.Context, limit, page int) ([]api_gateway_models.Permission, int, error)
+
+	CreatePermission(ctx context.Context, action string) error
+
+	UpdatePermissionByPermissionId(ctx context.Context, id int, action string) error
+}

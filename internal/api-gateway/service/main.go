@@ -16,3 +16,17 @@ type IAdminAddressTypeService interface {
 type IAuthenticationService interface {
 	Register(ctx context.Context, data api_gateway_dto.RegisterRequest) (*api_gateway_dto.RegisterResponse, error)
 }
+
+type IModuleService interface {
+	GetModuleList(ctx context.Context, queryReq api_gateway_dto.GetModuleRequest) ([]api_gateway_dto.GetModuleResponse, int, int, bool, bool, error)
+	CreateModule(ctx context.Context, name string) (*api_gateway_dto.CreateModuleResponse, error)
+	GetModuleByModuleID(ctx context.Context, id int) (*api_gateway_dto.GetModuleResponse, error)
+	UpdateModuleByModuleID(ctx context.Context, id int, name string) (*api_gateway_dto.UpdateModuleByModuleIDResponse, error)
+}
+
+type IPermissionService interface {
+	GetPermissionList(ctx context.Context, queryReq api_gateway_dto.GetPermissionRequest) ([]api_gateway_dto.GetPermissionResponse, int, int, bool, bool, error)
+	CreatePermission(ctx context.Context, action string) (*api_gateway_dto.CreatePermissionResponse, error)
+	GetPermissionByPermissionID(ctx context.Context, id int) (*api_gateway_dto.GetPermissionResponse, error)
+	UpdatePermissionByPermissionID(ctx context.Context, id int, action string) (*api_gateway_dto.UpdatePermissionByPermissionIDResponse, error)
+}
