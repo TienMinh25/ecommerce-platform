@@ -37,3 +37,4 @@ type DeleteAddressTypeResponseDocs = ResponseSuccessDocs[DeleteAddressTypeByAdmi
 type UpdateAddressTypeResponseDocs = ResponseSuccessDocs[UpdateAddressTypeByAdminResponse]
 type CreateAddressTypeResponseDocs = ResponseSuccessDocs[CreateAddressTypeByAdminResponse]
 type ListAddressTypesResponseDocs = ResponseSuccessDocs[[]GetAddressTypeQueryResponse]
+type GetAddressTypeByIdResponseDocs = ResponseSuccessDocs[GetAddressTypeByIdResponse]

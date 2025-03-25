@@ -29,6 +29,24 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetAddressTypeByIdResponse:
+    properties:
+      address_type:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  api_gateway_dto.GetAddressTypeByIdResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetAddressTypeByIdResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.GetAddressTypeQueryResponse:
     properties:
       address_type:
@@ -181,6 +199,36 @@ paths:
       security:
       - BearerAuth: []
       summary: Delete address type
+      tags:
+      - address-types
+    get:
+      consumes:
+      - application/json
+      description: Get address type by id
+      parameters:
+      - description: address type id
+        in: path
+        name: addressTypeID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetAddressTypeByIdResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get address type by id
       tags:
       - address-types
     patch:

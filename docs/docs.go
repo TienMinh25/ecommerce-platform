@@ -116,6 +116,53 @@ const docTemplate = `{
             }
         },
         "/address-types/{addressTypeID}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get address type by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "address-types"
+                ],
+                "summary": "Get address type by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "address type id",
+                        "name": "addressTypeID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetAddressTypeByIdResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "security": [
                     {
@@ -260,6 +307,34 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.DeleteAddressTypeByAdminResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.GetAddressTypeByIdResponse": {
+            "type": "object",
+            "properties": {
+                "address_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetAddressTypeByIdResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetAddressTypeByIdResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"

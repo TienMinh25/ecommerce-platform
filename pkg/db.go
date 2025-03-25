@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"database/sql"
+	"github.com/jackc/pgx/v5"
 )
 
 type CommonOperation interface {
@@ -22,7 +23,9 @@ type CommonOperation interface {
 type Database interface {
 	PrepareStatement(ctx context.Context, query string) (PrepareStatement, error)
 
-	BeginTx(ctx context.Context) (Tx, error)
+	BeginTx(ctx context.Context, options pgx.TxOptions) (Tx, error)
+
+	BeginTxFunc(ctx context.Context, options pgx.TxOptions, f func(tx Tx) error) error
 
 	CommonOperation
 }
