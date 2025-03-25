@@ -23,11 +23,11 @@ func NewAddressTypeRepository(db pkg.Database, tracer pkg.Tracer) IAddressTypeRe
 	}
 }
 
-func (a *addressTypeRepository) BeginTransaction(ctx context.Context) (pkg.Tx, error) {
+func (a *addressTypeRepository) BeginTransaction(ctx context.Context, options pgx.TxOptions) (pkg.Tx, error) {
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "BeginTransaction"))
 	defer span.End()
 
-	return a.db.BeginTx(ctx)
+	return a.db.BeginTx(ctx, options)
 }
 
 func (a *addressTypeRepository) CreateAddressType(ctx context.Context, addressType string) error {

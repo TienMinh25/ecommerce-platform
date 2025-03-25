@@ -57,6 +57,37 @@ func (p *postgres) PrepareStatement(ctx context.Context, query string) (pkg.Prep
 	panic("using pgx automatically prepare statement, not using it if using pgx")
 }
 
+// BeginTxFunc implements pkg.Database
+func (p *postgres) BeginTxFunc(ctx context.Context, options pgx.TxOptions, f func(tx pkg.Tx) error) error {
+	transaction, err := p.BeginTx(ctx, options)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		if p := recover(); p != nil {
+			// Ghi log lỗi rollback nếu cần, nhưng không return
+			_ = transaction.Rollback(ctx)
+			// Re-panic sau khi đã cleanup resources
+			panic(p)
+		}
+	}()
+
+	if err = f(transaction); err != nil {
+		// Lưu lỗi gốc
+		originalErr := err
+		// Thử rollback, nhưng vẫn ưu tiên lỗi gốc
+		if rbErr := transaction.Rollback(ctx); rbErr != nil {
+			// Có thể log lỗi rollback hoặc kết hợp với lỗi gốc
+			return fmt.Errorf("execution error: %v, rollback error: %v", originalErr, rbErr)
+		}
+		return originalErr
+	}
+
+	// Commit transaction
+	return transaction.Commit(ctx)
+}
+
 // Exec implements pkg.Database.
 func (p *postgres) Exec(ctx context.Context, sql string, args ...any) error {
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "Exec"))
@@ -112,13 +143,11 @@ func (p *postgres) QueryRow(ctx context.Context, sql string, args ...any) pkg.Ro
 }
 
 // BeginTx implements pkg.Database.
-func (p *postgres) BeginTx(ctx context.Context) (pkg.Tx, error) {
+func (p *postgres) BeginTx(ctx context.Context, options pgx.TxOptions) (pkg.Tx, error) {
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "BeginTx"))
 	defer span.End()
 
-	transactionPgx, err := p.db.BeginTx(ctx, pgx.TxOptions{
-		IsoLevel: pgx.ReadCommitted,
-	})
+	transactionPgx, err := p.db.BeginTx(ctx, options)
 
 	if err != nil {
 		return nil, err

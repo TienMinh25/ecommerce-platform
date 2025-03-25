@@ -8,6 +8,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"math"
 	"net/http"
@@ -124,7 +125,9 @@ func (a *adminAddressTypeService) DeleteAddressType(ctx context.Context, id int)
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "DeleteAddressType"))
 	defer span.End()
 
-	tx, err := a.repo.BeginTransaction(ctx)
+	tx, err := a.repo.BeginTransaction(ctx, pgx.TxOptions{
+		IsoLevel: pgx.ReadCommitted,
+	})
 
 	if err != nil {
 		return utils.TechnicalError{
