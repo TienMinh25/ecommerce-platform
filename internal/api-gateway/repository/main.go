@@ -31,6 +31,9 @@ type IAddressTypeRepository interface {
 }
 
 type IUserRepository interface {
+	CheckUserExistsByEmail(ctx context.Context, email string) (bool, error)
+
+	CreateUserWithPassword(ctx context.Context, email, fullname, password string) error
 }
 
 type IModuleRepository interface {

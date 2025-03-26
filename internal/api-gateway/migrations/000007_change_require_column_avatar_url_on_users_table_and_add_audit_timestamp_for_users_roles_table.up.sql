@@ -1,0 +1,11 @@
+ALTER TABLE users
+    ALTER COLUMN avatar_url DROP NOT NULL;
+
+ALTER TABLE users_roles
+    ADD COLUMN created_at TIMESTAMP DEFAULT NOW() NOT NULL,
+ADD COLUMN updated_at TIMESTAMP DEFAULT NOW() NOT NULL;
+
+CREATE TRIGGER users_roles_updated_at_trigger
+    BEFORE UPDATE ON users_roles
+    FOR EACH ROW
+    EXECUTE FUNCTION update_modified_column();

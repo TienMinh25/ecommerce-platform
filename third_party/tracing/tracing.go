@@ -10,6 +10,7 @@ const (
 	ServiceLayer     Layer = "service"
 	RepositoryLayer  Layer = "repository"
 	DBLayer          Layer = "db"
+	InfraLayer       Layer = "infra"
 	TransactionLayer Layer = "transaction"
 )
 

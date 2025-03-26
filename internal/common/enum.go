@@ -14,3 +14,12 @@ const (
 	AddressTypeWork   AddressType = "WORK"
 	AddressTypePickup AddressType = "PICKUP"
 )
+
+type RoleName string
+
+const (
+	RoleAdmin     RoleName = "ADMIN"
+	RoleCustomer  RoleName = "CUSTOMER"
+	RoleDeliverer RoleName = "DELIVERER"
+	RoleSupplier  RoleName = "SUPPLIER"
+)

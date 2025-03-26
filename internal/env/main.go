@@ -21,6 +21,7 @@ type RedisConfig struct {
 	// redis
 	RedisAddress  string `envconfig:"REDIS_ADDRESS"`
 	RedisPassword string `envconfig:"REDIS_PASSWORD"`
+	RedisDB       int    `envconfig:"REDIS_DB"`
 }
 
 type MinioConfig struct {
