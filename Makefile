@@ -49,3 +49,9 @@ tests-cover:
 
 tests-clear:
 	@rm internal/repository/test-cover.out
+
+generate-public-key: generate-private-key
+	@openssl rsa -pubout -in jwtRSA256.key -out jwtRSA256.key.pub
+
+generate-private-key:
+	@openssl genpkey -algorithm RSA -out jwtRSA256.key

@@ -88,10 +88,13 @@ type EnvManager struct {
 	Kafka             *KafkaConfig
 	ServiceWorkerPool *ServiceWorkerPoolConfig
 
-	ApiSecretKey string `envconfig:"API_SECRET_KEY"`
+	OTPVerifyEmailTimeout int `envconfig:"OTP_VERIFY_EMAIL_TIMEOUT"`
 
-	OneSignalAppId      string `envconfig:"ONESIGNAL_APP_ID"`
-	OneSignalRestApiKey string `envconfig:"ONESIGNAL_REST_API_KEY"`
+	PrivateKeyPath string `envconfig:"PRIVATE_KEY_PATH"`
+	PublicKeyPath  string `envconfig:"PUBLIC_KEY_PATH"`
+
+	ExpireAccessToken  int `envconfig:"EXPIRE_ACCESS_TOKEN"`
+	ExpireRefreshToken int `envconfig:"EXPIRE_REFRESH_TOKEN"`
 
 	JetStreamName          string `envconfig:"JETSTREAM_STREAM_NAME"`
 	JetStreamDurable       string `envconfig:"JETSTREAM_DURABLE"`
@@ -102,7 +105,7 @@ type EnvManager struct {
 
 func NewEnvManager() *EnvManager {
 	dir, _ := os.Getwd()
-	err := godotenv.Load(fmt.Sprintf("%s/%s", dir, "configs/.env.dev"))
+	err := godotenv.Load(fmt.Sprintf("%s/%s", dir, "configs/.env.prod"))
 
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)

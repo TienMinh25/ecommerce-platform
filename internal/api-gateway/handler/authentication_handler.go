@@ -45,8 +45,25 @@ func (h *authenticationHandler) Register(ctx *gin.Context) {
 }
 
 func (h *authenticationHandler) Login(ctx *gin.Context) {
-	//TODO implement me
-	panic("implement me")
+	c, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "Login"))
+	defer span.End()
+
+	var data api_gateway_dto.LoginRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	// chi handle business error hoac technical error
+	res, err := h.service.Login(c, data)
+
+	if err != nil {
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse[api_gateway_dto.LoginResponse](ctx, http.StatusOK, *res)
 }
 
 func (h *authenticationHandler) VerifyEmailRegister(ctx *gin.Context) {

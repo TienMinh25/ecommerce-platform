@@ -7,6 +7,7 @@ import (
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
@@ -43,8 +44,9 @@ func (p *permissionRepository) GetPermissionByPermissionID(ctx context.Context, 
 		span.RecordError(err)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, utils.BusinessError{
-				Message: "permission is not found",
-				Code:    http.StatusBadRequest,
+				Message:   "permission is not found",
+				Code:      http.StatusBadRequest,
+				ErrorCode: errorcode.NOT_FOUND,
 			}
 		}
 
@@ -121,8 +123,9 @@ func (p *permissionRepository) CreatePermission(ctx context.Context, action stri
 		if errors.As(err, &pgError) {
 			if pgError.Code == "23505" {
 				return utils.BusinessError{
-					Message: fmt.Sprintf("The permission '%s' already exists", action),
-					Code:    http.StatusBadRequest,
+					Message:   fmt.Sprintf("The permission '%s' already exists", action),
+					Code:      http.StatusBadRequest,
+					ErrorCode: errorcode.ALREADY_EXISTS,
 				}
 			}
 		}
@@ -155,8 +158,9 @@ func (p *permissionRepository) UpdatePermissionByPermissionId(ctx context.Contex
 		if errors.As(err, &pgError) {
 			if pgError.Code == "23505" {
 				return utils.BusinessError{
-					Message: fmt.Sprintf("The permission '%s' already exists", action),
-					Code:    http.StatusBadRequest,
+					Message:   fmt.Sprintf("The permission '%s' already exists", action),
+					Code:      http.StatusBadRequest,
+					ErrorCode: errorcode.ALREADY_EXISTS,
 				}
 			}
 		}
@@ -179,8 +183,9 @@ func (p *permissionRepository) UpdatePermissionByPermissionId(ctx context.Contex
 
 	if rowEffected == 0 {
 		return utils.BusinessError{
-			Message: "The permission does not exist",
-			Code:    http.StatusBadRequest,
+			Message:   "The permission does not exist",
+			Code:      http.StatusBadRequest,
+			ErrorCode: errorcode.NOT_FOUND,
 		}
 	}
 
@@ -213,8 +218,9 @@ func (p *permissionRepository) DeletePermissionByPermissionID(ctx context.Contex
 
 	if rowAffected == 0 {
 		return utils.BusinessError{
-			Message: "The permission does not exist",
-			Code:    http.StatusBadRequest,
+			Message:   "The permission does not exist",
+			Code:      http.StatusBadRequest,
+			ErrorCode: errorcode.NOT_FOUND,
 		}
 	}
 

@@ -74,4 +74,5 @@ func registerAuthenticationManagementEndpoint(group *gin.RouterGroup, handler ap
 
 	// todo: add middleware check permission to access api endpoint
 	authenticationGroup.POST("/register", handler.Register)
+	authenticationGroup.POST("/login", handler.Login)
 }

@@ -6,6 +6,7 @@ import (
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
@@ -48,8 +49,9 @@ func (a *addressTypeRepository) CreateAddressType(ctx context.Context, addressTy
 		if errors.As(err, &pgError) {
 			if pgError.Code == "23505" {
 				return utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: "Address type already exists",
+					Code:      http.StatusConflict,
+					Message:   "Address type already exists",
+					ErrorCode: errorcode.ALREADY_EXISTS,
 				}
 			}
 		}
@@ -79,8 +81,9 @@ func (a *addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pk
 	if err := row.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, utils.BusinessError{
-				Message: "id not found",
-				Code:    http.StatusBadRequest,
+				Message:   "id not found",
+				Code:      http.StatusBadRequest,
+				ErrorCode: errorcode.NOT_FOUND,
 			}
 		}
 
@@ -112,8 +115,9 @@ func (a *addressTypeRepository) UpdateAddressType(ctx context.Context, id int, a
 		if errors.As(err, &pgError) {
 			if pgError.Code == "23505" {
 				return utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: "Address type already exists",
+					Code:      http.StatusConflict,
+					Message:   "Address type already exists",
+					ErrorCode: errorcode.ALREADY_EXISTS,
 				}
 			}
 		}
@@ -136,8 +140,9 @@ func (a *addressTypeRepository) UpdateAddressType(ctx context.Context, id int, a
 
 	if rowEffected == 0 {
 		return utils.BusinessError{
-			Message: "address type is not found",
-			Code:    http.StatusBadRequest,
+			Message:   "address type is not found",
+			Code:      http.StatusBadRequest,
+			ErrorCode: errorcode.NOT_FOUND,
 		}
 	}
 
@@ -167,8 +172,9 @@ func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx p
 
 	if exists {
 		return utils.BusinessError{
-			Message: "cannot delete address type as it is being used by customer, deliverer or supplier",
-			Code:    http.StatusBadRequest,
+			Message:   "cannot delete address type as it is being used by customer, deliverer or supplier",
+			Code:      http.StatusBadRequest,
+			ErrorCode: errorcode.CANNOT_DELETE,
 		}
 	}
 
@@ -250,8 +256,9 @@ func (a *addressTypeRepository) GetAddressTypeByID(ctx context.Context, id int) 
 		span.RecordError(err)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, utils.BusinessError{
-				Message: "id not found",
-				Code:    http.StatusBadRequest,
+				Message:   "id not found",
+				Code:      http.StatusBadRequest,
+				ErrorCode: errorcode.NOT_FOUND,
 			}
 		}
 

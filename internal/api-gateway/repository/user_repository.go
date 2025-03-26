@@ -2,8 +2,11 @@ package api_gateway_repository
 
 import (
 	"context"
+	"errors"
+	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
@@ -11,14 +14,16 @@ import (
 )
 
 type userRepository struct {
-	db     pkg.Database
-	tracer pkg.Tracer
+	db                     pkg.Database
+	tracer                 pkg.Tracer
+	userPasswordRepository IUserPasswordRepository
 }
 
-func NewUserRepository(db pkg.Database, tracer pkg.Tracer) IUserRepository {
+func NewUserRepository(db pkg.Database, tracer pkg.Tracer, userPasswordRepository IUserPasswordRepository) IUserRepository {
 	return &userRepository{
-		db:     db,
-		tracer: tracer,
+		db:                     db,
+		tracer:                 tracer,
+		userPasswordRepository: userPasswordRepository,
 	}
 }
 
@@ -106,4 +111,41 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 
 		return nil
 	})
+}
+
+func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (*api_gateway_models.User, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetUserByEmail"))
+	defer span.End()
+
+	getUserByEmailQuery := `SELECT id, fullname, email, avatar_url, birthdate, email_verified, status, phone_verified FROM users WHERE email = $1`
+
+	var user api_gateway_models.User
+
+	// get user info by email
+	if err := u.db.QueryRow(ctx, getUserByEmailQuery, email).Scan(&user.ID, &user.FullName, &user.Email, &user.AvatarURL,
+		&user.BirthDate, &user.EmailVerified, &user.Status, &user.PhoneVerified); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, utils.BusinessError{
+				Code:      http.StatusBadRequest,
+				Message:   common.INCORRECT_USER_PASSWORD,
+				ErrorCode: errorcode.NOT_FOUND,
+			}
+		}
+
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	// get user password by id
+	userPassword, err := u.userPasswordRepository.GetPasswordByID(ctx, user.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user.UserPassword = *userPassword
+
+	return &user, nil
 }

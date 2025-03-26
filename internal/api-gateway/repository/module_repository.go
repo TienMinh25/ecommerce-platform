@@ -7,6 +7,7 @@ import (
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
@@ -107,8 +108,9 @@ func (m *moduleRepository) CreateModule(ctx context.Context, name string) error 
 		if errors.As(err, &pgError) {
 			if pgError.Code == "23505" {
 				return utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: fmt.Sprintf("The module '%s' is already exists", name),
+					Code:      http.StatusConflict,
+					Message:   fmt.Sprintf("The module '%s' is already exists", name),
+					ErrorCode: errorcode.ALREADY_EXISTS,
 				}
 			}
 		}
@@ -139,8 +141,9 @@ func (m *moduleRepository) GetModuleByModuleID(ctx context.Context, id int) (*ap
 		span.RecordError(err)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, utils.BusinessError{
-				Message: "id not found",
-				Code:    http.StatusBadRequest,
+				Message:   "Module is not found",
+				Code:      http.StatusBadRequest,
+				ErrorCode: errorcode.NOT_FOUND,
 			}
 		}
 
@@ -172,8 +175,9 @@ func (m *moduleRepository) UpdateModuleByModuleID(ctx context.Context, id int, n
 		if errors.As(err, &pgError) {
 			if pgError.Code == "23505" {
 				return utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: fmt.Sprintf("The module '%s' is already exists and cannot be duplicated", name),
+					Code:      http.StatusConflict,
+					Message:   fmt.Sprintf("The module '%s' is already exists and cannot be duplicated", name),
+					ErrorCode: errorcode.ALREADY_EXISTS,
 				}
 			}
 		}
@@ -196,8 +200,9 @@ func (m *moduleRepository) UpdateModuleByModuleID(ctx context.Context, id int, n
 
 	if rowEffected == 0 {
 		return utils.BusinessError{
-			Code:    http.StatusBadRequest,
-			Message: "Not found module to update",
+			Code:      http.StatusBadRequest,
+			Message:   "Not found module to update",
+			ErrorCode: errorcode.NOT_FOUND,
 		}
 	}
 
@@ -230,8 +235,9 @@ func (m *moduleRepository) DeleteModuleByModuleID(ctx context.Context, id int) e
 
 	if rowAffected == 0 {
 		return utils.BusinessError{
-			Code:    http.StatusBadRequest,
-			Message: "Not found module to delete",
+			Code:      http.StatusBadRequest,
+			Message:   "Not found module to delete",
+			ErrorCode: errorcode.NOT_FOUND,
 		}
 	}
 

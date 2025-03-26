@@ -5,6 +5,7 @@ import (
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/jackc/pgx/v5"
+	"time"
 )
 
 // IAddressTypeRepository defines the interface for managing address types.
@@ -34,6 +35,12 @@ type IUserRepository interface {
 	CheckUserExistsByEmail(ctx context.Context, email string) (bool, error)
 
 	CreateUserWithPassword(ctx context.Context, email, fullname, password string) error
+
+	GetUserByEmail(ctx context.Context, email string) (*api_gateway_models.User, error)
+}
+
+type IUserPasswordRepository interface {
+	GetPasswordByID(ctx context.Context, id int) (*api_gateway_models.UserPassword, error)
 }
 
 type IModuleRepository interface {
@@ -64,4 +71,10 @@ type IPermissionRepository interface {
 
 type IRolePermissionModuleRepository interface {
 	SelectAllRolePermissionModules(ctx context.Context) ([]api_gateway_models.RolePermissionModule, error)
+}
+
+type IRefreshTokenRepository interface {
+	GetRefreshToken(ctx context.Context, refreshToken string) (*api_gateway_models.RefreshToken, error)
+
+	CreateRefreshToken(ctx context.Context, userID int, email string, expireAt time.Time, refreshToken string) error
 }
