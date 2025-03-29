@@ -1,87 +1,87 @@
 services:
-#  api-gateway:
-#    build:
-#      context: .
-#      dockerfile: cmd/api/Dockerfile
-#    image: ecommerce/api-gateway
-#    container_name: api-gateway
-#    restart: always
-#    env_file: configs/dev.env
-#    environment:
-#      - SERVICE_NAME=api-gateway
-#      - SERVICE_ADDRESS=:4401
-#      - API_SECRET_KEY=6d89aad1-59b6-4f37-9f82-ae0ccf32ceb5
-#      - ORDERS_SERVICE_ADDRESS=ecommerce_orders:4403
-#      - PARTNERS_SERVICE_ADDRESS=ecommerce_partners:4404
-#    ports:
-#      - 80:4401
-#    networks:
-#      - ecommerce_network
+  #  api-gateway:
+  #    build:
+  #      context: .
+  #      dockerfile: cmd/api/Dockerfile
+  #    image: ecommerce/api-gateway
+  #    container_name: api-gateway
+  #    restart: always
+  #    env_file: configs/dev.env
+  #    environment:
+  #      - SERVICE_NAME=api-gateway
+  #      - SERVICE_ADDRESS=:4401
+  #      - API_SECRET_KEY=6d89aad1-59b6-4f37-9f82-ae0ccf32ceb5
+  #      - ORDERS_SERVICE_ADDRESS=ecommerce_orders:4403
+  #      - PARTNERS_SERVICE_ADDRESS=ecommerce_partners:4404
+  #    ports:
+  #      - 80:4401
+  #    networks:
+  #      - ecommerce_network
 
-#  ecommerce_notifications:
-#    build:
-#      context: .
-#      dockerfile: cmd/notifications/Dockerfile
-#    image: ecommerce/notifications
-#    container_name: ecommerce_notifications
-#    restart: always
-#    env_file: configs/dev.env
-#    environment:
-#      - SERVICE_NAME=notifications
-#      - SERVICE_ADDRESS=:4402
-#      # Sua sau
-#      - MIGRATION_DIR=file:///api/migrations/notifications/
-#      - POSTGRES_DSN=postgres://admin:admin@postgres:5432/notificationsdb?sslmode=disable
-#    volumes:
-#      - ./migrations/notifications/:/api/migrations/notifications/
-#    ports:
-#      - 4402:4402
-#    networks:
-#      - ecommerce_network
+  #  ecommerce_notifications:
+  #    build:
+  #      context: .
+  #      dockerfile: cmd/notifications/Dockerfile
+  #    image: ecommerce/notifications
+  #    container_name: ecommerce_notifications
+  #    restart: always
+  #    env_file: configs/dev.env
+  #    environment:
+  #      - SERVICE_NAME=notifications
+  #      - SERVICE_ADDRESS=:4402
+  #      # Sua sau
+  #      - MIGRATION_DIR=file:///api/migrations/notifications/
+  #      - POSTGRES_DSN=postgres://admin:admin@postgres:5432/notificationsdb?sslmode=disable
+  #    volumes:
+  #      - ./migrations/notifications/:/api/migrations/notifications/
+  #    ports:
+  #      - 4402:4402
+  #    networks:
+  #      - ecommerce_network
 
-#  ecommerce_orders:
-#    build:
-#      context: .
-#      dockerfile: cmd/orders/Dockerfile
-#    image: ecommerce/orders
-#    container_name: ecommerce_orders
-#    restart: always
-#    env_file: configs/dev.env
-#    environment:
-#      - SERVICE_NAME=orders
-#      - SERVICE_ADDRESS=:4403
-#      # sua sau
-#      - MIGRATION_DIR=file:///api/migrations/orders/
-#      - PAYMENT_CALLBACK_URL=http://delivery.local/api/v1/orders/pay
-#      - READY_CALLBACK_URL=http://delivery.local/api/v1/orders/pickup
-#      - NOTIFICATION_AGENT_ID=87b77778-6a51-4ef7-a9cd-e2eec44aefaf
-#      - POSTGRES_DSN=postgres://admin:admin@postgres:5432/ordersdb?sslmode=disable
-#    volumes:
-#      - ./migrations/orders/:/api/migrations/orders/
-#    ports:
-#      - 4403:4403
-#    networks:
-#      - ecommerce_network
+  #  ecommerce_orders:
+  #    build:
+  #      context: .
+  #      dockerfile: cmd/orders/Dockerfile
+  #    image: ecommerce/orders
+  #    container_name: ecommerce_orders
+  #    restart: always
+  #    env_file: configs/dev.env
+  #    environment:
+  #      - SERVICE_NAME=orders
+  #      - SERVICE_ADDRESS=:4403
+  #      # sua sau
+  #      - MIGRATION_DIR=file:///api/migrations/orders/
+  #      - PAYMENT_CALLBACK_URL=http://delivery.local/api/v1/orders/pay
+  #      - READY_CALLBACK_URL=http://delivery.local/api/v1/orders/pickup
+  #      - NOTIFICATION_AGENT_ID=87b77778-6a51-4ef7-a9cd-e2eec44aefaf
+  #      - POSTGRES_DSN=postgres://admin:admin@postgres:5432/ordersdb?sslmode=disable
+  #    volumes:
+  #      - ./migrations/orders/:/api/migrations/orders/
+  #    ports:
+  #      - 4403:4403
+  #    networks:
+  #      - ecommerce_network
 
-#  ecommerce_partners:
-#    build:
-#      context: .
-#      dockerfile: cmd/partners/Dockerfile
-#    image: delivery/partners
-#    container_name: ecommerce_partners
-#    restart: always
-#    env_file: configs/dev.env
-#    environment:
-#      - SERVICE_NAME=partners
-#      - SERVICE_ADDRESS=:4404
-#      - MIGRATION_DIR=file:///api/migrations/partners/
-#      - POSTGRES_DSN=postgres://admin:admin@postgres:5432/partnersdb?sslmode=disable
-#    volumes:
-#      - ./migrations/partners/:/api/migrations/partners/
-#    ports:
-#      - 4404:4404
-#    networks:
-#      - ecommerce_network
+  #  ecommerce_partners:
+  #    build:
+  #      context: .
+  #      dockerfile: cmd/partners/Dockerfile
+  #    image: delivery/partners
+  #    container_name: ecommerce_partners
+  #    restart: always
+  #    env_file: configs/dev.env
+  #    environment:
+  #      - SERVICE_NAME=partners
+  #      - SERVICE_ADDRESS=:4404
+  #      - MIGRATION_DIR=file:///api/migrations/partners/
+  #      - POSTGRES_DSN=postgres://admin:admin@postgres:5432/partnersdb?sslmode=disable
+  #    volumes:
+  #      - ./migrations/partners/:/api/migrations/partners/
+  #    ports:
+  #      - 4404:4404
+  #    networks:
+  #      - ecommerce_network
 
   postgres:
     image: postgres:17
@@ -97,12 +97,14 @@ services:
       - ecommerce_network
 
   redis:
-    image: redis:7.4
+    image: redis/redis-stack:latest
     restart: on-failure
     container_name: redis
-    command: '--requirepass ed1821bc8bb645a298717c0af3382262'
+    environment:
+      - REDIS_ARGS="-requirepass ed1821bc8bb645a298717c0af3382262"
     ports:
       - "6379:6379"
+      - "8001:8001"
     networks:
       - ecommerce_network
 

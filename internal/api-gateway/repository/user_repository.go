@@ -27,25 +27,29 @@ func NewUserRepository(db pkg.Database, tracer pkg.Tracer, userPasswordRepositor
 	}
 }
 
-func (u *userRepository) CheckUserExistsByEmail(ctx context.Context, email string) (bool, error) {
+func (u *userRepository) CheckUserExistsByEmail(ctx context.Context, email string) error {
 	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "CheckUserExistsByEmail"))
 	defer span.End()
 
-	sqlStr := `SELECT EXISTS (SELECT 1 FROM users WHERE email = @email)`
-
-	args := pgx.NamedArgs{
-		"email": email,
-	}
+	sqlStr := `SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)`
 
 	var isExists bool
-	if err := u.db.QueryRow(ctx, sqlStr, args).Scan(&isExists); err != nil {
-		return false, utils.TechnicalError{
+	if err := u.db.QueryRow(ctx, sqlStr, email).Scan(&isExists); err != nil {
+		return utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
-	return isExists, nil
+	if isExists {
+		return utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "User is already exists",
+			ErrorCode: errorcode.ALREADY_EXISTS,
+		}
+	}
+
+	return nil
 }
 
 func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, fullname, password string) error {
@@ -54,15 +58,10 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 
 	return u.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
 		// insert user
-		userInsertQuery := `INSERT INTO users (email, fullname) VALUES (@email, @fullname) RETURNING id`
-
-		args := pgx.NamedArgs{
-			"email":    email,
-			"fullname": fullname,
-		}
+		userInsertQuery := `INSERT INTO users (email, fullname) VALUES ($1, $2) RETURNING id`
 
 		var userID int
-		if err := tx.QueryRow(ctx, userInsertQuery, args).Scan(&userID); err != nil {
+		if err := tx.QueryRow(ctx, userInsertQuery, email, fullname).Scan(&userID); err != nil {
 			return utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,
@@ -70,14 +69,9 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 		}
 
 		// insert user password
-		userPasswordInsertQuery := `INSERT INTO user_password (id, password) VALUES (@id, @password)`
+		userPasswordInsertQuery := `INSERT INTO user_password (id, password) VALUES ($1, $2)`
 
-		args = pgx.NamedArgs{
-			"id":       userID,
-			"password": password,
-		}
-
-		if err := tx.Exec(ctx, userPasswordInsertQuery, args); err != nil {
+		if err := tx.Exec(ctx, userPasswordInsertQuery, userID, password); err != nil {
 			return utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,
@@ -95,14 +89,9 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 		}
 
 		// save info into user_role
-		userRoleInsertQuery := `INSERT INTO users_roles (role_id, user_id) VALUES (@roleID, @userID)`
+		userRoleInsertQuery := `INSERT INTO users_roles (role_id, user_id) VALUES ($1, $2)`
 
-		args = pgx.NamedArgs{
-			"roleID": roleID,
-			"userID": userID,
-		}
-
-		if err := tx.Exec(ctx, userRoleInsertQuery, args); err != nil {
+		if err := tx.Exec(ctx, userRoleInsertQuery, roleID, userID); err != nil {
 			return utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,
@@ -137,6 +126,40 @@ func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (*api
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
+
+	// get user roles
+	getUserRolesQuery := `SELECT r.id, r.role_name 
+	FROM roles r
+	INNER JOIN users_roles ur ON r.id = ur.role_id
+	WHERE ur.user_id = $1`
+
+	roleRows, err := u.db.Query(ctx, getUserRolesQuery, user.ID)
+	if err != nil {
+		// trả về techincal error ở đây vì nếu scan ko thành công do query ko có dữ liệu hay
+		// như nào thì là lỗi dưới dữ liệu mình tổ chức -> trả về internal server error
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+	defer roleRows.Close()
+
+	var roles []api_gateway_models.Role
+
+	for roleRows.Next() {
+		var role api_gateway_models.Role
+
+		if err = roleRows.Scan(&role.ID, &role.RoleName); err != nil {
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		roles = append(roles, role)
+	}
+
+	user.Role = roles
 
 	// get user password by id
 	userPassword, err := u.userPasswordRepository.GetPasswordByID(ctx, user.ID)

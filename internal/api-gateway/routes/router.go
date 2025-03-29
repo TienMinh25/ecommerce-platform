@@ -12,7 +12,7 @@ type Router struct {
 // @title						Ecommerce API
 // @version					1.0
 // @description				API for ecommerce
-// @host						localhost:3000
+// @host						server.local:3000
 // @BasePath					/api/v1
 //
 // @securityDefinitions.apikey	BearerAuth

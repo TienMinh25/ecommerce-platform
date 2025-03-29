@@ -93,7 +93,7 @@ func (p *postgres) Exec(ctx context.Context, sql string, args ...any) error {
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "Exec"))
 	defer span.End()
 
-	_, err := p.db.Exec(ctx, sql, args)
+	_, err := p.db.Exec(ctx, sql, args...)
 
 	if err != nil {
 		return err
@@ -107,7 +107,7 @@ func (p *postgres) ExecWithResult(ctx context.Context, sqlStr string, args ...an
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "ExecWithResult"))
 	defer span.End()
 
-	commandTag, err := p.db.Exec(ctx, sqlStr, args)
+	commandTag, err := p.db.Exec(ctx, sqlStr, args...)
 
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (p *postgres) Query(ctx context.Context, sql string, args ...any) (pkg.Rows
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "Query"))
 	defer span.End()
 
-	res, err := p.db.Query(ctx, sql, args)
+	res, err := p.db.Query(ctx, sql, args...)
 
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (p *postgres) QueryRow(ctx context.Context, sql string, args ...any) pkg.Ro
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "QueryRow"))
 	defer span.End()
 
-	return p.db.QueryRow(ctx, sql, args)
+	return p.db.QueryRow(ctx, sql, args...)
 }
 
 // BeginTx implements pkg.Database.
@@ -169,7 +169,7 @@ func (t *tx) Exec(ctx context.Context, sql string, args ...any) error {
 	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "Exec"))
 	defer span.End()
 
-	_, err := t.transaction.Exec(ctx, sql, args)
+	_, err := t.transaction.Exec(ctx, sql, args...)
 
 	if err != nil {
 		return err
@@ -183,7 +183,7 @@ func (t *tx) ExecWithResult(ctx context.Context, sqlStr string, args ...any) (sq
 	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "ExecWithResult"))
 	defer span.End()
 
-	commandTag, err := t.transaction.Exec(ctx, sqlStr, args)
+	commandTag, err := t.transaction.Exec(ctx, sqlStr, args...)
 
 	if err != nil {
 		return nil, err
@@ -199,7 +199,7 @@ func (t *tx) Query(ctx context.Context, sql string, args ...any) (pkg.Rows, erro
 	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "Query"))
 	defer span.End()
 
-	res, err := t.transaction.Query(ctx, sql, args)
+	res, err := t.transaction.Query(ctx, sql, args...)
 
 	if err != nil {
 		return nil, err
@@ -215,7 +215,7 @@ func (t *tx) QueryRow(ctx context.Context, sql string, args ...any) pkg.Row {
 	ctx, span := t.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.TransactionLayer, "QueryRow"))
 	defer span.End()
 
-	return t.transaction.QueryRow(ctx, sql, args)
+	return t.transaction.QueryRow(ctx, sql, args...)
 }
 
 // Commit implements pkg.Tx.

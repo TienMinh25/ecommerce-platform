@@ -10,16 +10,16 @@ const (
 type AddressType string
 
 const (
-	AddressTypeHome   AddressType = "HOME"
-	AddressTypeWork   AddressType = "WORK"
-	AddressTypePickup AddressType = "PICKUP"
+	AddressTypeHome   AddressType = "home"
+	AddressTypeWork   AddressType = "work"
+	AddressTypePickup AddressType = "pickup"
 )
 
 type RoleName string
 
 const (
-	RoleAdmin     RoleName = "ADMIN"
-	RoleCustomer  RoleName = "CUSTOMER"
-	RoleDeliverer RoleName = "DELIVERER"
-	RoleSupplier  RoleName = "SUPPLIER"
+	RoleAdmin     RoleName = "admin"
+	RoleCustomer  RoleName = "customer"
+	RoleDeliverer RoleName = "deliverer"
+	RoleSupplier  RoleName = "supplier"
 )

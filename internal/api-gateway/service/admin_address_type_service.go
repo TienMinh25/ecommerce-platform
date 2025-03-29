@@ -29,7 +29,13 @@ func (a *adminAddressTypeService) CreateAddressType(ctx context.Context, address
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CreateAddressType"))
 	defer span.End()
 
-	err := a.repo.CreateAddressType(ctx, addressType)
+	err := a.repo.CheckAddressTypeExistsByName(ctx, addressType)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = a.repo.CreateAddressType(ctx, addressType)
 
 	if err != nil {
 		return nil, err

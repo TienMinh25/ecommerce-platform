@@ -7,7 +7,6 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
-	"github.com/jackc/pgx/v5"
 	"net/http"
 	"time"
 )
@@ -33,16 +32,9 @@ func (r *refreshTokenRepository) CreateRefreshToken(ctx context.Context, userID 
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateRefreshToken"))
 	defer span.End()
 
-	queryInsert := `INSERT INTO refresh_token (user_id, email, token, expires_at) VALUES (@userID, @email, @token, @expiresAt)`
+	queryInsert := `INSERT INTO refresh_token (user_id, email, token, expires_at) VALUES ($1, $2, $3, $4)`
 
-	args := pgx.NamedArgs{
-		"userID":    userID,
-		"email":     email,
-		"token":     refreshToken,
-		"expiresAt": expiresAt,
-	}
-
-	if err := r.db.Exec(ctx, queryInsert, args); err != nil {
+	if err := r.db.Exec(ctx, queryInsert, userID, email, refreshToken, expiresAt); err != nil {
 		return utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,

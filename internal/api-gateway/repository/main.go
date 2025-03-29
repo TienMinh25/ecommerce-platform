@@ -29,10 +29,12 @@ type IAddressTypeRepository interface {
 	GetListAddressTypes(ctx context.Context, limit, page int) ([]api_gateway_models.AddressType, int, error)
 
 	GetAddressTypeByID(ctx context.Context, id int) (*api_gateway_models.AddressType, error)
+
+	CheckAddressTypeExistsByName(ctx context.Context, name string) error
 }
 
 type IUserRepository interface {
-	CheckUserExistsByEmail(ctx context.Context, email string) (bool, error)
+	CheckUserExistsByEmail(ctx context.Context, email string) error
 
 	CreateUserWithPassword(ctx context.Context, email, fullname, password string) error
 
@@ -55,6 +57,8 @@ type IModuleRepository interface {
 	UpdateModuleByModuleID(ctx context.Context, id int, name string) error
 
 	DeleteModuleByModuleID(ctx context.Context, id int) error
+
+	CheckModuleExistsByName(ctx context.Context, name string) error
 }
 
 type IPermissionRepository interface {
@@ -67,6 +71,8 @@ type IPermissionRepository interface {
 	UpdatePermissionByPermissionId(ctx context.Context, id int, action string) error
 
 	DeletePermissionByPermissionID(ctx context.Context, id int) error
+
+	CheckPermissionExistsByName(ctx context.Context, name string) error
 }
 
 type IRolePermissionModuleRepository interface {

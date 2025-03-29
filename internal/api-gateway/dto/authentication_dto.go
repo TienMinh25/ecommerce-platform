@@ -6,10 +6,11 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	FullName     string `json:"full_name"`
-	AvatarURL    string `json:"avatar_url"`
+	AccessToken  string              `json:"access_token"`
+	RefreshToken string              `json:"refresh_token"`
+	FullName     string              `json:"full_name"`
+	AvatarURL    string              `json:"avatar_url"`
+	Roles        []RoleLoginResponse `json:"roles"`
 }
 
 type RegisterRequest struct {

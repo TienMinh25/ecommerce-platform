@@ -1,12 +1,12 @@
 package common
 
 type ResponseSuccess[T any] struct {
-	Data     T        `json:"data,omitempty"`
+	Data     T        `json:"data"`
 	Metadata Metadata `json:"metadata"`
 }
 
 type ResponseSuccessPagingation[T any] struct {
-	Data     T                      `json:"data,omitempty"`
+	Data     T                      `json:"data"`
 	Metadata MetadataWithPagination `json:"metadata"`
 }
 

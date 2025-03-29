@@ -36,7 +36,7 @@ func NewAdminAddressTypeHandler(
 //
 //	@Security		BearerAuth
 //	@Param			request	body		api_gateway_dto.CreateAddressTypeByAdminRequest	true	"Request body"
-//	@Success		200		{object}	api_gateway_dto.CreateAddressTypeResponseDocs
+//	@Success		201		{object}	api_gateway_dto.CreateAddressTypeResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		409		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs

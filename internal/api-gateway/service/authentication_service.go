@@ -46,18 +46,10 @@ func (a *authenticationService) Register(ctx context.Context, data api_gateway_d
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "Register"))
 	defer span.End()
 
-	isExists, err := a.userRepo.CheckUserExistsByEmail(ctx, data.Email)
+	err := a.userRepo.CheckUserExistsByEmail(ctx, data.Email)
 
 	if err != nil {
 		return nil, err
-	}
-
-	if isExists {
-		return nil, utils.BusinessError{
-			Code:      http.StatusBadRequest,
-			Message:   "User is already exists",
-			ErrorCode: errorcode.ALREADY_EXISTS,
-		}
 	}
 
 	// hash password
@@ -100,20 +92,20 @@ func (a *authenticationService) Login(ctx context.Context, data api_gateway_dto.
 		return nil, err
 	}
 
+	if !userInfo.EmailVerified {
+		return nil, utils.BusinessError{
+			Code:      http.StatusUnauthorized,
+			Message:   "Please verify your email link to this account",
+			ErrorCode: errorcode.NOT_VERIFY_EMAIL,
+		}
+	}
+
 	// check password correct or not
 	if isValidPassword := utils.CheckPasswordHash(data.Password, userInfo.UserPassword.Password); !isValidPassword {
 		return nil, utils.BusinessError{
 			Code:      http.StatusUnauthorized,
 			Message:   common.INCORRECT_USER_PASSWORD,
 			ErrorCode: errorcode.UNAUTHORIZED,
-		}
-	}
-
-	if !userInfo.EmailVerified {
-		return nil, utils.BusinessError{
-			Code:      http.StatusUnauthorized,
-			Message:   "Please verify your email link to this account",
-			ErrorCode: errorcode.NOT_VERIFY_EMAIL,
 		}
 	}
 
@@ -140,10 +132,26 @@ func (a *authenticationService) Login(ctx context.Context, data api_gateway_dto.
 		return nil, err
 	}
 
+	avatarURL := ""
+
+	if userInfo.AvatarURL != nil {
+		avatarURL = *userInfo.AvatarURL
+	}
+
+	var rolesResponse []api_gateway_dto.RoleLoginResponse
+
+	for _, role := range userInfo.Role {
+		rolesResponse = append(rolesResponse, api_gateway_dto.RoleLoginResponse{
+			ID:   role.ID,
+			Name: role.RoleName,
+		})
+	}
+
 	return &api_gateway_dto.LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		FullName:     userInfo.FullName,
-		AvatarURL:    userInfo.AvatarURL,
+		AvatarURL:    avatarURL,
+		Roles:        rolesResponse,
 	}, nil
 }

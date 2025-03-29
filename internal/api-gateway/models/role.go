@@ -5,7 +5,7 @@ import "time"
 type Role struct {
 	ID          int
 	RoleName    string
-	Description string
+	Description *string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
