@@ -4,7 +4,7 @@ import "time"
 
 type Permission struct {
 	ID        int
-	Action    string
+	Name      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }

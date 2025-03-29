@@ -58,8 +58,14 @@ func (m *moduleService) CreateModule(ctx context.Context, name string) (*api_gat
 	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CreateModule"))
 	defer span.End()
 
+	err := m.repo.CheckModuleExistsByName(ctx, name)
+
+	if err != nil {
+		return nil, err
+	}
+
 	// chi tra ra BusinessError hoac TechnicalError
-	err := m.repo.CreateModule(ctx, name)
+	err = m.repo.CreateModule(ctx, name)
 
 	if err != nil {
 		return nil, err

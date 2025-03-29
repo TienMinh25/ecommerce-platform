@@ -94,8 +94,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
+                    "201": {
+                        "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/api_gateway_dto.CreateAddressTypeResponseDocs"
                         }
@@ -266,6 +266,98 @@ const docTemplate = `{
                     },
                     "409": {
                         "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login the system",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.LoginResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/register": {
+            "post": {
+                "description": "register account",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Register new account customer",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.RegisterRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.RegisterResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
                         }
@@ -816,9 +908,9 @@ const docTemplate = `{
                 "address_type": {
                     "type": "string",
                     "enum": [
-                        "HOME",
-                        "WORK",
-                        "PICKUP"
+                        "home",
+                        "work",
+                        "pickup"
                     ]
                 }
             }
@@ -1010,14 +1102,14 @@ const docTemplate = `{
         "api_gateway_dto.GetPermissionResponse": {
             "type": "object",
             "properties": {
-                "action": {
-                    "type": "string"
-                },
                 "created_at": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
+                },
+                "name": {
+                    "type": "string"
                 },
                 "updated_at": {
                     "type": "string"
@@ -1049,11 +1141,91 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 6
+                }
+            }
+        },
+        "api_gateway_dto.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.LoginResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.LoginResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.Metadata": {
             "type": "object",
             "properties": {
                 "code": {
                     "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.RegisterRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "full_name",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 6
+                }
+            }
+        },
+        "api_gateway_dto.RegisterResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.RegisterResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.RegisterResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
                 }
             }
         },
@@ -1075,9 +1247,9 @@ const docTemplate = `{
                 "address_type": {
                     "type": "string",
                     "enum": [
-                        "HOME",
-                        "WORK",
-                        "PICKUP"
+                        "home",
+                        "work",
+                        "pickup"
                     ]
                 }
             }
@@ -1137,10 +1309,10 @@ const docTemplate = `{
         "api_gateway_dto.UpdatePermissionByPermissionIDRequest": {
             "type": "object",
             "required": [
-                "action"
+                "name"
             ],
             "properties": {
-                "action": {
+                "name": {
                     "type": "string",
                     "maxLength": 50,
                     "minLength": 3
@@ -1162,7 +1334,7 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:3000",
+	Host:             "server.local:3000",
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "Ecommerce API",

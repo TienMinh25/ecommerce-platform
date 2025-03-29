@@ -6,6 +6,7 @@ import (
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
@@ -36,23 +37,10 @@ func (a *addressTypeRepository) CreateAddressType(ctx context.Context, addressTy
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateAddressType"))
 	defer span.End()
 
-	sqlStr := "INSERT INTO address_types(address_type) VALUES(@addressType)"
-	args := pgx.NamedArgs{
-		"addressType": addressType,
-	}
+	sqlStr := `INSERT INTO address_types(address_type) VALUES($1)`
 
-	if err := a.db.Exec(ctx, sqlStr, args); err != nil {
+	if err := a.db.Exec(ctx, sqlStr, addressType); err != nil {
 		span.RecordError(err)
-		var pgError pgconn.PgError
-
-		if errors.As(err, &pgError) {
-			if pgError.Code == "23505" {
-				return utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: "Address type already exists",
-				}
-			}
-		}
 
 		return utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
@@ -67,20 +55,18 @@ func (a *addressTypeRepository) GetAddressTypeByNameX(ctx context.Context, tx pk
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetAddressTypeByNameX"))
 	defer span.End()
 
-	sqlStr := "SELECT id, address_type, created_at, updated_at FROM address_types WHERE address_type = @addressType"
-	args := pgx.NamedArgs{
-		"addressType": name,
-	}
+	sqlStr := "SELECT id, address_type, created_at, updated_at FROM address_types WHERE address_type = $1"
 
-	row := tx.QueryRow(ctx, sqlStr, args)
+	row := tx.QueryRow(ctx, sqlStr, name)
 
 	var addressType api_gateway_models.AddressType
 
 	if err := row.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, utils.BusinessError{
-				Message: "id not found",
-				Code:    http.StatusBadRequest,
+				Message:   "id not found",
+				Code:      http.StatusBadRequest,
+				ErrorCode: errorcode.NOT_FOUND,
 			}
 		}
 
@@ -97,23 +83,20 @@ func (a *addressTypeRepository) UpdateAddressType(ctx context.Context, id int, a
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateAddressType"))
 	defer span.End()
 
-	sqlStr := "UPDATE address_types SET address_type = @addressType WHERE id = @id"
-	args := pgx.NamedArgs{
-		"addressType": addressType,
-		"id":          id,
-	}
+	sqlStr := "UPDATE address_types SET address_type = $1 WHERE id = $2"
 
-	res, err := a.db.ExecWithResult(ctx, sqlStr, args)
+	res, err := a.db.ExecWithResult(ctx, sqlStr, addressType, id)
 
 	if err != nil {
 		span.RecordError(err)
-		var pgError pgconn.PgError
+		var pgError *pgconn.PgError
 
 		if errors.As(err, &pgError) {
 			if pgError.Code == "23505" {
 				return utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: "Address type already exists",
+					Code:      http.StatusConflict,
+					Message:   "Address type already exists",
+					ErrorCode: errorcode.ALREADY_EXISTS,
 				}
 			}
 		}
@@ -136,8 +119,9 @@ func (a *addressTypeRepository) UpdateAddressType(ctx context.Context, id int, a
 
 	if rowEffected == 0 {
 		return utils.BusinessError{
-			Message: "address type is not found",
-			Code:    http.StatusBadRequest,
+			Message:   "address type is not found",
+			Code:      http.StatusBadRequest,
+			ErrorCode: errorcode.NOT_FOUND,
 		}
 	}
 
@@ -149,13 +133,10 @@ func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx p
 	defer span.End()
 
 	// step 1: check address type in address table
-	sqlCheckStr := "SELECT EXISTS(SELECT 1 FROM addresses WHERE address_type_id = @id)"
-	argsCheck := pgx.NamedArgs{
-		"id": id,
-	}
+	sqlCheckStr := "SELECT EXISTS(SELECT 1 FROM addresses WHERE address_type_id = $1)"
 
 	var exists bool
-	err := tx.QueryRow(ctx, sqlCheckStr, argsCheck).Scan(&exists)
+	err := tx.QueryRow(ctx, sqlCheckStr, id).Scan(&exists)
 
 	if err != nil {
 		span.RecordError(err)
@@ -167,14 +148,15 @@ func (a *addressTypeRepository) DeleteAddressTypeByIDX(ctx context.Context, tx p
 
 	if exists {
 		return utils.BusinessError{
-			Message: "cannot delete address type as it is being used by customer, deliverer or supplier",
-			Code:    http.StatusBadRequest,
+			Message:   "cannot delete address type as it is being used by customer, deliverer or supplier",
+			Code:      http.StatusBadRequest,
+			ErrorCode: errorcode.CANNOT_DELETE,
 		}
 	}
 
 	// step 2: Delete address type
-	sqlDeleteStr := "DELETE FROM address_types WHERE id = @id"
-	if err = tx.Exec(ctx, sqlDeleteStr, argsCheck); err != nil {
+	sqlDeleteStr := "DELETE FROM address_types WHERE id = $1"
+	if err = tx.Exec(ctx, sqlDeleteStr, id); err != nil {
 		span.RecordError(err)
 		return utils.TechnicalError{
 			Message: common.MSG_INTERNAL_ERROR,
@@ -201,13 +183,9 @@ func (a *addressTypeRepository) GetListAddressTypes(ctx context.Context, limit, 
 		}
 	}
 
-	query := `SELECT id, address_type, created_at, updated_at FROM address_types ORDER BY id ASC LIMIT @limit OFFSET @offset`
-	args := pgx.NamedArgs{
-		"limit":  limit,
-		"offset": (page - 1) * limit,
-	}
+	query := `SELECT id, address_type, created_at, updated_at FROM address_types ORDER BY id ASC LIMIT $1 OFFSET $2`
 
-	rows, err := a.db.Query(ctx, query, args)
+	rows, err := a.db.Query(ctx, query, limit, (page-1)*limit)
 	if err != nil {
 		span.RecordError(err)
 		return nil, 0, utils.TechnicalError{
@@ -220,7 +198,7 @@ func (a *addressTypeRepository) GetListAddressTypes(ctx context.Context, limit, 
 	var addressTypes []api_gateway_models.AddressType
 	for rows.Next() {
 		addressType := api_gateway_models.AddressType{}
-		if err := rows.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
+		if err = rows.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
 			span.RecordError(err)
 			return nil, 0, utils.TechnicalError{
 				Message: common.MSG_INTERNAL_ERROR,
@@ -239,19 +217,17 @@ func (a *addressTypeRepository) GetAddressTypeByID(ctx context.Context, id int) 
 
 	var addressType api_gateway_models.AddressType
 
-	query := `SELECT id, address_type, created_at, updated_at FROM address_types WHERE id = @id`
-	args := pgx.NamedArgs{
-		"id": id,
-	}
+	query := `SELECT id, address_type, created_at, updated_at FROM address_types WHERE id = $1`
 
-	row := a.db.QueryRow(ctx, query, args)
+	row := a.db.QueryRow(ctx, query, id)
 
-	if err := row.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt); err != nil {
+	if err := row.Scan(&addressType.ID, &addressType.AddressType, &addressType.CreatedAt, &addressType.UpdatedAt); err != nil {
 		span.RecordError(err)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, utils.BusinessError{
-				Message: "id not found",
-				Code:    http.StatusBadRequest,
+				Message:   "id not found",
+				Code:      http.StatusBadRequest,
+				ErrorCode: errorcode.NOT_FOUND,
 			}
 		}
 
@@ -262,4 +238,29 @@ func (a *addressTypeRepository) GetAddressTypeByID(ctx context.Context, id int) 
 	}
 
 	return &addressType, nil
+}
+
+func (a *addressTypeRepository) CheckAddressTypeExistsByName(ctx context.Context, name string) error {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "CheckAddressTypeExistsByName"))
+	defer span.End()
+
+	sqlCheck := "SELECT EXISTS (SELECT 1 FROM address_types WHERE address_type = $1)"
+
+	var isExists bool
+	if err := a.db.QueryRow(ctx, sqlCheck, name).Scan(&isExists); err != nil {
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	if isExists {
+		return utils.BusinessError{
+			Message:   "Address type already exists",
+			ErrorCode: errorcode.ALREADY_EXISTS,
+			Code:      http.StatusConflict,
+		}
+	}
+
+	return nil
 }

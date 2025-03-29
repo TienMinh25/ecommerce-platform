@@ -4,9 +4,9 @@ definitions:
     properties:
       address_type:
         enum:
-        - HOME
-        - WORK
-        - PICKUP
+        - home
+        - work
+        - pickup
         type: string
     required:
     - address_type
@@ -132,12 +132,12 @@ definitions:
     type: object
   api_gateway_dto.GetPermissionResponse:
     properties:
-      action:
-        type: string
       created_at:
         type: string
       id:
         type: integer
+      name:
+        type: string
       updated_at:
         type: string
     type: object
@@ -157,10 +157,64 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  api_gateway_dto.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      avatar_url:
+        type: string
+      full_name:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  api_gateway_dto.LoginResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.LoginResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.Metadata:
     properties:
       code:
         type: integer
+    type: object
+  api_gateway_dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 6
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    type: object
+  api_gateway_dto.RegisterResponse:
+    type: object
+  api_gateway_dto.RegisterResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.RegisterResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
   api_gateway_dto.ResponseErrorDocs:
     properties:
@@ -172,9 +226,9 @@ definitions:
     properties:
       address_type:
         enum:
-        - HOME
-        - WORK
-        - PICKUP
+        - home
+        - work
+        - pickup
         type: string
     required:
     - address_type
@@ -215,16 +269,16 @@ definitions:
     type: object
   api_gateway_dto.UpdatePermissionByPermissionIDRequest:
     properties:
-      action:
+      name:
         maxLength: 50
         minLength: 3
         type: string
     required:
-    - action
+    - name
     type: object
   api_gateway_dto.UpdatePermissionByPermissionIDResponse:
     type: object
-host: localhost:3000
+host: server.local:3000
 info:
   contact: {}
   description: API for ecommerce
@@ -279,8 +333,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/api_gateway_dto.CreateAddressTypeResponseDocs'
         "400":
@@ -401,6 +455,66 @@ paths:
       summary: Update address type by address id
       tags:
       - address-types
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: login
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.LoginResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: Login the system
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: register account
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api_gateway_dto.RegisterResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: Register new account customer
+      tags:
+      - auth
   /modules:
     get:
       consumes:

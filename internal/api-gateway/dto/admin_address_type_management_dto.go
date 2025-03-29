@@ -15,14 +15,14 @@ type GetAddressTypeQueryResponse struct {
 }
 
 type CreateAddressTypeByAdminRequest struct {
-	AddressType string `json:"address_type" binding:"required,oneof=HOME WORK PICKUP"`
+	AddressType string `json:"address_type" binding:"required,oneof=home work pickup"`
 }
 
 type CreateAddressTypeByAdminResponse struct {
 }
 
 type UpdateAddressTypeBodyRequest struct {
-	AddressType string `json:"address_type" binding:"required,oneof=HOME WORK PICKUP"`
+	AddressType string `json:"address_type" binding:"required,oneof=home work pickup"`
 }
 
 type UpdateAddressTypeUriRequest struct {

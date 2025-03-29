@@ -12,6 +12,8 @@ type Address struct {
 	Province      string
 	PostalCode    string
 	Country       string
+	Longtitude    *float64
+	Latitude      *float64
 	IsDefault     bool
 	AddressTypeID int
 	CreatedAt     time.Time

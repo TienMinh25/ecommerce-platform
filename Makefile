@@ -9,10 +9,6 @@ protoc-compile:
 		--go-grpc_opt=module=github.com/TienMinh25/delivery-system/internal \
 		internal/protos/*.proto
 
-api-doc-generate:
-	swag fmt
-	swag init -g cmd/api/main.go internal/user/handlers.go
-
 migration-create:
 	@migrate create -ext sql -dir $(dir_api_gateway) -seq $(name)
 
@@ -27,7 +23,7 @@ fix-dirty-db:
 
 generate-public-key: generate-private-key
 	@openssl rsa -pubout -in jwtRSA256.key -out jwtRSA256.key.pub
-	
+
 generate-private-key:
 	@openssl genpkey -algorithm RSA -out jwtRSA256.key
 
@@ -49,3 +45,9 @@ tests-cover:
 
 tests-clear:
 	@rm internal/repository/test-cover.out
+
+generate-public-key: generate-private-key
+	@openssl rsa -pubout -in jwtRSA256.key -out jwtRSA256.key.pub
+
+generate-private-key:
+	@openssl genpkey -algorithm RSA -out jwtRSA256.key

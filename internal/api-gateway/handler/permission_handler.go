@@ -166,7 +166,7 @@ func (p *permissionHandler) UpdatePermissionByPermissionID(ctx *gin.Context) {
 	}
 
 	// chi tra ve BusinessError hoac TechnicalError
-	res, err := p.service.UpdatePermissionByPermissionID(c, uri.ID, data.Action)
+	res, err := p.service.UpdatePermissionByPermissionID(c, uri.ID, data.Name)
 
 	if err != nil {
 		utils.HandleErrorResponse(ctx, err)

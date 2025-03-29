@@ -22,6 +22,20 @@ func NewAuthenticationHandler(tracer pkg.Tracer, service api_gateway_service.IAu
 	}
 }
 
+// Register implements IAuthenticationService.
+// Register godoc
+//
+//	@Summary		Register new account customer
+//	@Tags			auth
+//	@Description	register account
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			request	body		api_gateway_dto.RegisterRequest	true	"Request body"
+//	@Success		201		{object}	api_gateway_dto.RegisterResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/auth/register [post]
 func (h *authenticationHandler) Register(ctx *gin.Context) {
 	c, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "Register"))
 	defer span.End()
@@ -44,9 +58,40 @@ func (h *authenticationHandler) Register(ctx *gin.Context) {
 	utils.SuccessResponse[api_gateway_dto.RegisterResponse](ctx, http.StatusCreated, *res)
 }
 
+// Login implements IAuthenticationService.
+// Login godoc
+//
+//	@Summary		Login the system
+//	@Tags			auth
+//	@Description	login
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			request	body		api_gateway_dto.LoginRequest	true	"Request body"
+//	@Success		200		{object}	api_gateway_dto.LoginResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/auth/login [post]
 func (h *authenticationHandler) Login(ctx *gin.Context) {
-	//TODO implement me
-	panic("implement me")
+	c, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "Login"))
+	defer span.End()
+
+	var data api_gateway_dto.LoginRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	// chi handle business error hoac technical error
+	res, err := h.service.Login(c, data)
+
+	if err != nil {
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse[api_gateway_dto.LoginResponse](ctx, http.StatusOK, *res)
 }
 
 func (h *authenticationHandler) VerifyEmailRegister(ctx *gin.Context) {

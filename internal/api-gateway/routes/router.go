@@ -12,7 +12,7 @@ type Router struct {
 // @title						Ecommerce API
 // @version					1.0
 // @description				API for ecommerce
-// @host						localhost:3000
+// @host						server.local:3000
 // @BasePath					/api/v1
 //
 // @securityDefinitions.apikey	BearerAuth
@@ -74,4 +74,5 @@ func registerAuthenticationManagementEndpoint(group *gin.RouterGroup, handler ap
 
 	// todo: add middleware check permission to access api endpoint
 	authenticationGroup.POST("/register", handler.Register)
+	authenticationGroup.POST("/login", handler.Login)
 }
