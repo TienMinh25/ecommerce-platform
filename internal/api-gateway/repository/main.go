@@ -39,10 +39,13 @@ type IUserRepository interface {
 	CreateUserWithPassword(ctx context.Context, email, fullname, password string) error
 
 	GetUserByEmail(ctx context.Context, email string) (*api_gateway_models.User, error)
+
+	GetUserIDByEmail(ctx context.Context, email string) (int, error)
 }
 
 type IUserPasswordRepository interface {
 	GetPasswordByID(ctx context.Context, id int) (*api_gateway_models.UserPassword, error)
+	InsertOrUpdateUserPassword(ctx context.Context, password *api_gateway_models.UserPassword) error
 }
 
 type IModuleRepository interface {
@@ -80,7 +83,11 @@ type IRolePermissionModuleRepository interface {
 }
 
 type IRefreshTokenRepository interface {
-	GetRefreshToken(ctx context.Context, refreshToken string) (*api_gateway_models.RefreshToken, error)
+	GetRefreshToken(ctx context.Context, refreshToken string, userID int) (*api_gateway_models.RefreshToken, error)
 
-	CreateRefreshToken(ctx context.Context, userID int, email string, expireAt time.Time, refreshToken string) error
+	CreateRefreshToken(ctx context.Context, userID int, expireAt time.Time, refreshToken string) error
+
+	DeleteRefreshToken(ctx context.Context, refreshToken string, userID int) error
+
+	RefreshToken(ctx context.Context, userID int, oldRefreshToken, refreshToken string, expireAt time.Time) error
 }

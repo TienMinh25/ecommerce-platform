@@ -7,4 +7,5 @@ const (
 	NOT_FOUND        = "4004"
 	CANNOT_DELETE    = "4005"
 	INACTIVE_ACCOUNT = "4006"
+	OTP_TIMEOUT      = "4007"
 )

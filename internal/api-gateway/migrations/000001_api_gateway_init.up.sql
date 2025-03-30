@@ -58,9 +58,8 @@ CREATE TABLE IF NOT EXISTS addresses (
 
 -- refresh token table
 CREATE TABLE IF NOT EXISTS refresh_token (
-                                             id BIGSERIAL PRIMARY KEY,
-                                             user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    email VARCHAR(255) NOT NULL,
+    id BIGSERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     token VARCHAR(255) NOT NULL UNIQUE,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

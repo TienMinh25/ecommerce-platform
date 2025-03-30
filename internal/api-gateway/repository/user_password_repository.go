@@ -49,3 +49,22 @@ func (u *userPasswordRepository) GetPasswordByID(ctx context.Context, id int) (*
 
 	return &userPassword, nil
 }
+
+func (u *userPasswordRepository) InsertOrUpdateUserPassword(ctx context.Context, password *api_gateway_models.UserPassword) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "InsertOrUpdateUserPassword"))
+	defer span.End()
+
+	upsertQuery := `INSERT INTO user_password (id, password)
+	VALUES ($1, $2)
+	ON CONFLICT(id)
+	DO UPDATE SET password = EXCLUDED.password`
+
+	if err := u.db.Exec(ctx, upsertQuery, password.ID, password.Password); err != nil {
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return nil
+}

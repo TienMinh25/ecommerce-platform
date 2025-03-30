@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rsa"
 	"fmt"
+	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -30,12 +31,14 @@ type JwtPayload struct {
 	UserID   int
 	Email    string
 	FullName string
+	Role     []api_gateway_dto.RoleLoginResponse
 }
 
 type UserClaims struct {
-	UserID   int    `json:"user_id"`
-	Email    string `json:"email"`
-	FullName string `json:"full_name"`
+	UserID   int                                 `json:"user_id"`
+	Email    string                              `json:"email"`
+	FullName string                              `json:"full_name"`
+	Role     []api_gateway_dto.RoleLoginResponse `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -69,7 +72,7 @@ func NewJwtService(env *env.EnvManager, tracer pkg.Tracer) (IJwtService, error) 
 	return &JwtKeyManager{privateKey: privateKey, publicKey: publicKey, env: env, tracer: tracer}, nil
 }
 
-func (km *JwtKeyManager) newUserClaims(userID int, email, fullname string, duration time.Duration) (*UserClaims, error) {
+func (km *JwtKeyManager) newUserClaims(userID int, email, fullname string, role []api_gateway_dto.RoleLoginResponse, duration time.Duration) (*UserClaims, error) {
 	tokenID, err := uuid.NewRandom()
 
 	if err != nil {
@@ -83,6 +86,7 @@ func (km *JwtKeyManager) newUserClaims(userID int, email, fullname string, durat
 		UserID:   userID,
 		Email:    email,
 		FullName: fullname,
+		Role:     role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        tokenID.String(),
 			Subject:   email,
@@ -96,7 +100,7 @@ func (km *JwtKeyManager) GenerateToken(ctx context.Context, payload JwtPayload) 
 	ctx, span := km.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GenerateToken"))
 	defer span.End()
 
-	claimsAccessToken, errClaims := km.newUserClaims(payload.UserID, payload.Email, payload.FullName, time.Duration(km.env.ExpireAccessToken)*time.Minute)
+	claimsAccessToken, errClaims := km.newUserClaims(payload.UserID, payload.Email, payload.FullName, payload.Role, time.Duration(km.env.ExpireAccessToken)*time.Minute)
 
 	if errClaims != nil {
 		return "", "", errClaims

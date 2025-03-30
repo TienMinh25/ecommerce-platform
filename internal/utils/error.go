@@ -45,6 +45,8 @@ func msgForTag(fe validator.FieldError) string {
 		return fmt.Sprintf("The '%s' field cannot exceed %v characters.", fe.Field(), fe.Param())
 	case "alpha":
 		return fmt.Sprintf("The '%s' field can only contain letters.", fe.Field())
+	case "len":
+		return fmt.Sprintf("The '%s' field must be equal %v characters.", fe.Field(), fe.Param())
 	default:
 		return fmt.Sprintf("The '%s' field is invalid.", fe.Field())
 	}

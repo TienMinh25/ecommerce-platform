@@ -172,3 +172,28 @@ func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (*api
 
 	return &user, nil
 }
+
+func (u *userRepository) GetUserIDByEmail(ctx context.Context, email string) (int, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetUserUserIDByEmail"))
+	defer span.End()
+
+	getUserIDByEmailQuery := `SELECT id from users WHERE email = $1`
+
+	var userID int
+
+	if err := u.db.QueryRow(ctx, getUserIDByEmailQuery, email).Scan(&userID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, utils.BusinessError{
+				Code:    http.StatusBadRequest,
+				Message: common.INVALID_EMAIL,
+			}
+		}
+
+		return 0, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return userID, nil
+}

@@ -1,6 +1,3 @@
-ALTER TABLE users
-ALTER COLUMN avatar_url SET NOT NULL;
-
 ALTER TABLE users_roles
 DROP COLUMN created_at,
 DROP COLUMN updated_at;

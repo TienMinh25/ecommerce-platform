@@ -14,13 +14,13 @@ type IAuthenticationHandler interface {
 	Register(ctx *gin.Context)
 	Login(ctx *gin.Context)
 	VerifyEmailRegister(ctx *gin.Context)
+	ResendVerifyEmail(ctx *gin.Context)
 	Logout(ctx *gin.Context)
 	RefreshToken(ctx *gin.Context)
 	CheckToken(ctx *gin.Context)
 	ForgotPassword(ctx *gin.Context)
 	ResetPassword(ctx *gin.Context)
 	ChangePassword(ctx *gin.Context)
-	VerifyPhone(ctx *gin.Context)
 }
 
 type IModuleHandler interface {

@@ -38,6 +38,7 @@ func NewModuleHandler(
 //	@Param			moduleID	path		int	true	"Module ID"
 //	@Success		200			{object}	api_gateway_dto.GetModuleResponseDocs
 //	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules/{moduleID} [get]
 func (m *moduleHandler) GetModuleByModuleID(ctx *gin.Context) {
@@ -75,6 +76,7 @@ func (m *moduleHandler) GetModuleByModuleID(ctx *gin.Context) {
 //	@Param			data	body		api_gateway_dto.CreateModuleRequest	true	"Module Data"
 //	@Success		201		{object}	api_gateway_dto.CreateModuleResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		409		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules [post]
@@ -115,6 +117,7 @@ func (m *moduleHandler) CreateModule(ctx *gin.Context) {
 //	@Param			data		body		api_gateway_dto.UpdateModuleByModuleIDRequest	true	"Module Data"
 //	@Success		200			{object}	api_gateway_dto.UpdateModuleByModuleIDResponseDocs
 //	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		409			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules/{moduleID} [patch]
@@ -162,6 +165,7 @@ func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
 //	@Param			limit	query		int	true	"Page size"
 //	@Success		200		{object}	api_gateway_dto.GetListModuleResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules [get]
 func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
@@ -200,6 +204,7 @@ func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
 //	@Param			moduleID	path		int	true	"Module ID"
 //	@Success		200			{object}	api_gateway_dto.DeletePermissionByPermissionIDURIResponseDocs
 //	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules/{moduleID} [delete]
 func (m *moduleHandler) DeleteModuleByModuleID(ctx *gin.Context) {
