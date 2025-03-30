@@ -7,6 +7,7 @@ import (
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
@@ -59,13 +60,9 @@ func (m *moduleRepository) GetModules(ctx context.Context, limit, page int) ([]a
 		}
 	}
 
-	query := `SELECT id, name, created_at, updated_at FROM modules ORDER BY id ASC LIMIT @limit OFFSET @offset`
-	args := pgx.NamedArgs{
-		"limit":  limit,
-		"offset": (page - 1) * limit,
-	}
+	query := `SELECT id, name, created_at, updated_at FROM modules ORDER BY id ASC LIMIT $1 OFFSET $2`
 
-	rows, err := m.db.Query(ctx, query, args)
+	rows, err := m.db.Query(ctx, query, limit, (page-1)*limit)
 	if err != nil {
 		span.RecordError(err)
 		return nil, 0, utils.TechnicalError{
@@ -95,23 +92,28 @@ func (m *moduleRepository) CreateModule(ctx context.Context, name string) error 
 	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateModule"))
 	defer span.End()
 
-	sqlStr := "INSERT INTO modules(name) VALUES(@name)"
-	args := pgx.NamedArgs{
-		"name": name,
+	sqlCheck := "SELECT EXISTS (SELECT 1 FROM modules WHERE name = $1)"
+	var checkExists bool
+	if err := m.db.QueryRow(ctx, sqlCheck, name).Scan(&checkExists); err != nil {
+		span.RecordError(err)
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
 	}
 
-	if err := m.db.Exec(ctx, sqlStr, args); err != nil {
-		span.RecordError(err)
-		var pgError pgconn.PgError
-
-		if errors.As(err, &pgError) {
-			if pgError.Code == "23505" {
-				return utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: fmt.Sprintf("The module '%s' is already exists", name),
-				}
-			}
+	if checkExists {
+		return utils.BusinessError{
+			Message:   "Module already exists",
+			ErrorCode: errorcode.ALREADY_EXISTS,
+			Code:      http.StatusConflict,
 		}
+	}
+
+	sqlStr := "INSERT INTO modules(name) VALUES($1)"
+
+	if err := m.db.Exec(ctx, sqlStr, name); err != nil {
+		span.RecordError(err)
 
 		return utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
@@ -126,12 +128,9 @@ func (m *moduleRepository) GetModuleByModuleID(ctx context.Context, id int) (*ap
 	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetModuleByModuleID"))
 	defer span.End()
 
-	sqlStr := "SELECT id, name, created_at, updated_at FROM modules WHERE id = @id"
-	args := pgx.NamedArgs{
-		"id": id,
-	}
+	sqlStr := "SELECT id, name, created_at, updated_at FROM modules WHERE id = $1"
 
-	row := m.db.QueryRow(ctx, sqlStr, args)
+	row := m.db.QueryRow(ctx, sqlStr, id)
 
 	var module api_gateway_models.Module
 
@@ -139,8 +138,9 @@ func (m *moduleRepository) GetModuleByModuleID(ctx context.Context, id int) (*ap
 		span.RecordError(err)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, utils.BusinessError{
-				Message: "id not found",
-				Code:    http.StatusBadRequest,
+				Message:   "Module is not found",
+				Code:      http.StatusBadRequest,
+				ErrorCode: errorcode.NOT_FOUND,
 			}
 		}
 
@@ -157,23 +157,20 @@ func (m *moduleRepository) UpdateModuleByModuleID(ctx context.Context, id int, n
 	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateModuleByModuleID"))
 	defer span.End()
 
-	sqlStr := "UPDATE modules SET name = @name WHERE id = @id"
-	args := pgx.NamedArgs{
-		"name": name,
-		"id":   id,
-	}
+	sqlStr := "UPDATE modules SET name = $1 WHERE id = $2"
 
-	res, err := m.db.ExecWithResult(ctx, sqlStr, args)
+	res, err := m.db.ExecWithResult(ctx, sqlStr, name, id)
 
 	if err != nil {
 		span.RecordError(err)
-		var pgError pgconn.PgError
+		var pgError *pgconn.PgError
 
 		if errors.As(err, &pgError) {
 			if pgError.Code == "23505" {
 				return utils.BusinessError{
-					Code:    http.StatusConflict,
-					Message: fmt.Sprintf("The module '%s' is already exists and cannot be duplicated", name),
+					Code:      http.StatusConflict,
+					Message:   fmt.Sprintf("The module '%s' is already exists and cannot be duplicated", name),
+					ErrorCode: errorcode.ALREADY_EXISTS,
 				}
 			}
 		}
@@ -196,8 +193,9 @@ func (m *moduleRepository) UpdateModuleByModuleID(ctx context.Context, id int, n
 
 	if rowEffected == 0 {
 		return utils.BusinessError{
-			Code:    http.StatusBadRequest,
-			Message: "Not found module to update",
+			Code:      http.StatusBadRequest,
+			Message:   "Not found module to update",
+			ErrorCode: errorcode.NOT_FOUND,
 		}
 	}
 
@@ -205,12 +203,9 @@ func (m *moduleRepository) UpdateModuleByModuleID(ctx context.Context, id int, n
 }
 
 func (m *moduleRepository) DeleteModuleByModuleID(ctx context.Context, id int) error {
-	sqlStr := "DELETE FROM modules WHERE id = @id"
-	args := pgx.NamedArgs{
-		"id": id,
-	}
+	sqlStr := "DELETE FROM modules WHERE id = $1"
 
-	res, err := m.db.ExecWithResult(ctx, sqlStr, args)
+	res, err := m.db.ExecWithResult(ctx, sqlStr, id)
 
 	if err != nil {
 		return utils.TechnicalError{
@@ -230,8 +225,34 @@ func (m *moduleRepository) DeleteModuleByModuleID(ctx context.Context, id int) e
 
 	if rowAffected == 0 {
 		return utils.BusinessError{
-			Code:    http.StatusBadRequest,
-			Message: "Not found module to delete",
+			Code:      http.StatusBadRequest,
+			Message:   "Not found module to delete",
+			ErrorCode: errorcode.NOT_FOUND,
+		}
+	}
+
+	return nil
+}
+
+func (m *moduleRepository) CheckModuleExistsByName(ctx context.Context, name string) error {
+	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "CheckModuleExistsByName"))
+	defer span.End()
+
+	sqlStr := `SELECT EXISTS (SELECT 1 FROM modules WHERE name = $1)`
+
+	var isExists bool
+	if err := m.db.QueryRow(ctx, sqlStr, name).Scan(&isExists); err != nil {
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	if isExists {
+		return utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "Module is already exists",
+			ErrorCode: errorcode.ALREADY_EXISTS,
 		}
 	}
 

@@ -36,7 +36,7 @@ func (p *permissionService) GetPermissionList(ctx context.Context, queryReq api_
 	for _, permission := range permissions {
 		permissionResponse = append(permissionResponse, api_gateway_dto.GetPermissionResponse{
 			ID:        permission.ID,
-			Action:    permission.Action,
+			Name:      permission.Name,
 			CreatedAt: permission.CreatedAt,
 			UpdatedAt: permission.UpdatedAt,
 		})
@@ -50,12 +50,18 @@ func (p *permissionService) GetPermissionList(ctx context.Context, queryReq api_
 	return permissionResponse, totalItems, totalPages, hasNext, hasPrevious, nil
 }
 
-func (p *permissionService) CreatePermission(ctx context.Context, action string) (*api_gateway_dto.CreatePermissionResponse, error) {
+func (p *permissionService) CreatePermission(ctx context.Context, name string) (*api_gateway_dto.CreatePermissionResponse, error) {
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CreatePermission"))
 	defer span.End()
 
+	err := p.repo.CheckPermissionExistsByName(ctx, name)
+
+	if err != nil {
+		return nil, err
+	}
+
 	// chi tra ra BusinessError hoac TechnicalError
-	err := p.repo.CreatePermission(ctx, action)
+	err = p.repo.CreatePermission(ctx, name)
 
 	if err != nil {
 		return nil, err
@@ -77,7 +83,7 @@ func (p *permissionService) GetPermissionByPermissionID(ctx context.Context, id 
 
 	return &api_gateway_dto.GetPermissionResponse{
 		ID:        permission.ID,
-		Action:    permission.Action,
+		Name:      permission.Name,
 		CreatedAt: permission.CreatedAt,
 		UpdatedAt: permission.UpdatedAt,
 	}, nil

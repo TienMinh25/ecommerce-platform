@@ -45,19 +45,22 @@ func msgForTag(fe validator.FieldError) string {
 		return fmt.Sprintf("The '%s' field cannot exceed %v characters.", fe.Field(), fe.Param())
 	case "alpha":
 		return fmt.Sprintf("The '%s' field can only contain letters.", fe.Field())
+	case "len":
+		return fmt.Sprintf("The '%s' field must be equal %v characters.", fe.Field(), fe.Param())
 	default:
 		return fmt.Sprintf("The '%s' field is invalid.", fe.Field())
 	}
 }
 
 type TechnicalError struct {
-	Code    int    `json:"code"`
+	Code    int    `json:"-"`
 	Message string `json:"message"`
 }
 
 type BusinessError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code      int    `json:"-"`
+	Message   string `json:"message"`
+	ErrorCode string `json:"error_code"`
 }
 
 func (err TechnicalError) Error() string {
@@ -88,12 +91,12 @@ func HandleErrorResponse(ctx *gin.Context, err error) {
 	var businessError BusinessError
 
 	if errors.As(err, &techError) {
-		ErrorResponse(ctx, techError.Code, techError.Message)
+		ErrorResponse(ctx, techError.Code, techError)
 		return
 	}
 
 	if errors.As(err, &businessError) {
-		ErrorResponse(ctx, businessError.Code, businessError.Message)
+		ErrorResponse(ctx, businessError.Code, businessError)
 		return
 	}
 

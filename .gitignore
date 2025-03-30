@@ -3,3 +3,9 @@
 .vscode
 
 vendor
+
+configs/.env.prod
+configs/.env.uat
+configs/.env.sit
+jwtRSA256.key
+jwtRSA256.key.pub

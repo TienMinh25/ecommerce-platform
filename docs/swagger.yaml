@@ -1,12 +1,44 @@
 basePath: /api/v1
 definitions:
+  api_gateway_dto.ChangePasswordRequest:
+    properties:
+      new_password:
+        maxLength: 32
+        minLength: 6
+        type: string
+      old_password:
+        maxLength: 32
+        minLength: 6
+        type: string
+    required:
+    - new_password
+    - old_password
+    type: object
+  api_gateway_dto.ChangePasswordResponse:
+    type: object
+  api_gateway_dto.ChangePasswordResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.ChangePasswordResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.CheckTokenResponse:
+    type: object
+  api_gateway_dto.CheckTokenResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.CheckTokenResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.CreateAddressTypeByAdminRequest:
     properties:
       address_type:
         enum:
-        - HOME
-        - WORK
-        - PICKUP
+        - home
+        - work
+        - pickup
         type: string
     required:
     - address_type
@@ -62,6 +94,22 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.DeletePermissionByPermissionIDURIResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.ForgotPasswordRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  api_gateway_dto.ForgotPasswordResponse:
+    type: object
+  api_gateway_dto.ForgotPasswordResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.ForgotPasswordResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -132,12 +180,12 @@ definitions:
     type: object
   api_gateway_dto.GetPermissionResponse:
     properties:
-      action:
-        type: string
       created_at:
         type: string
       id:
         type: integer
+      name:
+        type: string
       updated_at:
         type: string
     type: object
@@ -157,10 +205,138 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  api_gateway_dto.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      avatar_url:
+        type: string
+      full_name:
+        type: string
+      refresh_token:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
+        type: array
+    type: object
+  api_gateway_dto.LoginResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.LoginResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.LogoutRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  api_gateway_dto.LogoutResponse:
+    type: object
+  api_gateway_dto.LogoutResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.LogoutResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.Metadata:
     properties:
       code:
         type: integer
+    type: object
+  api_gateway_dto.RefreshTokenResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  api_gateway_dto.RefreshTokenResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.RefreshTokenResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.RegisterRequest:
+    properties:
+      email:
+        type: string
+      full_name:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 6
+        type: string
+    required:
+    - email
+    - full_name
+    - password
+    type: object
+  api_gateway_dto.RegisterResponse:
+    type: object
+  api_gateway_dto.RegisterResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.RegisterResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.ResendVerifyEmailRequest:
+    properties:
+      email:
+        type: string
+    required:
+    - email
+    type: object
+  api_gateway_dto.ResendVerifyEmailResponse:
+    type: object
+  api_gateway_dto.ResendVerifyEmailResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.ResendVerifyEmailResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.ResetPasswordRequest:
+    properties:
+      email:
+        type: string
+      otp:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 6
+        type: string
+    required:
+    - email
+    - otp
+    - password
+    type: object
+  api_gateway_dto.ResetPasswordResponse:
+    type: object
+  api_gateway_dto.ResetPasswordResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.ResetPasswordResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
   api_gateway_dto.ResponseErrorDocs:
     properties:
@@ -168,13 +344,20 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.RoleLoginResponse:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
   api_gateway_dto.UpdateAddressTypeBodyRequest:
     properties:
       address_type:
         enum:
-        - HOME
-        - WORK
-        - PICKUP
+        - home
+        - work
+        - pickup
         type: string
     required:
     - address_type
@@ -215,16 +398,35 @@ definitions:
     type: object
   api_gateway_dto.UpdatePermissionByPermissionIDRequest:
     properties:
-      action:
+      name:
         maxLength: 50
         minLength: 3
         type: string
     required:
-    - action
+    - name
     type: object
   api_gateway_dto.UpdatePermissionByPermissionIDResponse:
     type: object
-host: localhost:3000
+  api_gateway_dto.VerifyEmailRequest:
+    properties:
+      email:
+        type: string
+      otp:
+        type: string
+    required:
+    - email
+    - otp
+    type: object
+  api_gateway_dto.VerifyEmailResponse:
+    type: object
+  api_gateway_dto.VerifyEmailResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.VerifyEmailResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+host: server.local:3000
 info:
   contact: {}
   description: API for ecommerce
@@ -258,10 +460,16 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
       summary: Get list address types
       tags:
       - address-types
@@ -279,12 +487,16 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             $ref: '#/definitions/api_gateway_dto.CreateAddressTypeResponseDocs'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "409":
@@ -322,6 +534,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
           description: Internal Server Error
           schema:
@@ -350,6 +566,10 @@ paths:
             $ref: '#/definitions/api_gateway_dto.GetAddressTypeByIdResponseDocs'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
@@ -388,6 +608,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "409":
           description: Conflict
           schema:
@@ -401,6 +625,312 @@ paths:
       summary: Update address type by address id
       tags:
       - address-types
+  /auth/change-password:
+    post:
+      consumes:
+      - application/json
+      description: change password
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ChangePasswordResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: change password
+      tags:
+      - auth
+  /auth/check-token:
+    get:
+      consumes:
+      - application/json
+      description: check token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.CheckTokenResponseDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: check token
+      tags:
+      - auth
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: call to send OTP through mail or mobile phone (if verify)
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.ForgotPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ForgotPasswordResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: forgot password
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: login
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.LoginResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: Login the system
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      consumes:
+      - application/json
+      description: logout account
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.LogoutRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.LogoutResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: logout
+      tags:
+      - auth
+  /auth/refresh-token:
+    post:
+      consumes:
+      - application/json
+      description: refresh token
+      parameters:
+      - description: '{refresh_token}'
+        in: header
+        name: X-Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.RefreshTokenResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: refresh token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: register account
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api_gateway_dto.RegisterResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: Register new account customer
+      tags:
+      - auth
+  /auth/resend-verify-email:
+    post:
+      consumes:
+      - application/json
+      description: resend otp to verify email
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.ResendVerifyEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResendVerifyEmailResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: resend otp to verify email
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      consumes:
+      - application/json
+      description: reset password (used for forgot password)
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.ResetPasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResetPasswordResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: reset password (used for forgot password)
+      tags:
+      - auth
+  /auth/verify-email:
+    post:
+      consumes:
+      - application/json
+      description: verify email
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.VerifyEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.VerifyEmailResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: verify email register
+      tags:
+      - auth
   /modules:
     get:
       consumes:
@@ -426,6 +956,10 @@ paths:
             $ref: '#/definitions/api_gateway_dto.GetListModuleResponseDocs'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
@@ -457,6 +991,10 @@ paths:
             $ref: '#/definitions/api_gateway_dto.CreateModuleResponseDocs'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "409":
@@ -494,6 +1032,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
           description: Internal Server Error
           schema:
@@ -522,6 +1064,10 @@ paths:
             $ref: '#/definitions/api_gateway_dto.GetModuleResponseDocs'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
@@ -558,6 +1104,10 @@ paths:
             $ref: '#/definitions/api_gateway_dto.UpdateModuleByModuleIDResponseDocs'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "409":
@@ -600,6 +1150,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
           description: Internal Server Error
           schema:
@@ -629,6 +1183,10 @@ paths:
             $ref: '#/definitions/api_gateway_dto.CreatePermissionResponseDocs'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
@@ -662,6 +1220,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
           description: Internal Server Error
           schema:
@@ -690,6 +1252,10 @@ paths:
             $ref: '#/definitions/api_gateway_dto.GetPermissionResponseDocs'
         "400":
           description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
@@ -728,6 +1294,10 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
         "500":
           description: Internal Server Error
           schema:
@@ -740,5 +1310,6 @@ paths:
 securityDefinitions:
   BearerAuth:
     in: header
+    name: Authorization
     type: apiKey
 swagger: "2.0"

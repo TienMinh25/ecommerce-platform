@@ -3,6 +3,7 @@ package api_gateway_service
 import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
+	"time"
 )
 
 type IAdminAddressTypeService interface {
@@ -15,6 +16,14 @@ type IAdminAddressTypeService interface {
 
 type IAuthenticationService interface {
 	Register(ctx context.Context, data api_gateway_dto.RegisterRequest) (*api_gateway_dto.RegisterResponse, error)
+	Login(ctx context.Context, data api_gateway_dto.LoginRequest) (*api_gateway_dto.LoginResponse, error)
+	VerifyEmail(ctx context.Context, data api_gateway_dto.VerifyEmailRequest) error
+	Logout(ctx context.Context, data api_gateway_dto.LogoutRequest, userID int) error
+	ResendVerifyEmail(ctx context.Context, data api_gateway_dto.ResendVerifyEmailRequest) error
+	RefreshToken(ctx context.Context, refreshToken string) (*api_gateway_dto.RefreshTokenResponse, error)
+	ForgotPassword(ctx context.Context, data api_gateway_dto.ForgotPasswordRequest) error
+	ResetPassword(ctx context.Context, data api_gateway_dto.ResetPasswordRequest) error
+	ChangePassword(ctx context.Context, data api_gateway_dto.ChangePasswordRequest, userID int) error
 }
 
 type IModuleService interface {
@@ -31,4 +40,15 @@ type IPermissionService interface {
 	GetPermissionByPermissionID(ctx context.Context, id int) (*api_gateway_dto.GetPermissionResponse, error)
 	UpdatePermissionByPermissionID(ctx context.Context, id int, action string) (*api_gateway_dto.UpdatePermissionByPermissionIDResponse, error)
 	DeletePermissionByPermissionID(ctx context.Context, id int) error
+}
+
+type IOtpCacheService interface {
+	CacheOTP(ctx context.Context, otp, email string, tll time.Duration) error
+	GetValueString(ctx context.Context, key string) (string, error)
+	DeleteOTP(ctx context.Context, otp string) error
+}
+
+type IJwtService interface {
+	GenerateToken(ctx context.Context, payload JwtPayload) (string, string, error)
+	VerifyToken(ctx context.Context, accessToken string) (*UserClaims, error)
 }

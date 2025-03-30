@@ -1,6 +1,7 @@
 package api_gateway_handler
 
 import (
+	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_service "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -36,13 +37,16 @@ func NewAdminAddressTypeHandler(
 //
 //	@Security		BearerAuth
 //	@Param			request	body		api_gateway_dto.CreateAddressTypeByAdminRequest	true	"Request body"
-//	@Success		200		{object}	api_gateway_dto.CreateAddressTypeResponseDocs
+//	@Success		201		{object}	api_gateway_dto.CreateAddressTypeResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		409		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/address-types [post]
 func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
-	c, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "CreateAddressType"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := a.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "CreateAddressType"))
 	defer span.End()
 
 	var data api_gateway_dto.CreateAddressTypeByAdminRequest
@@ -54,7 +58,7 @@ func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
 	}
 
 	// chi tra ra TechnicalError hoac BusinessError
-	res, err := a.service.CreateAddressType(c, data.AddressType)
+	res, err := a.service.CreateAddressType(ct, data.AddressType)
 
 	if err != nil {
 		utils.HandleErrorResponse(ctx, err)
@@ -77,10 +81,13 @@ func (a *adminAddressTypeHandler) CreateAddressType(ctx *gin.Context) {
 //	@Param			addressTypeID	path		int	true	"address type id"
 //	@Success		200				{object}	api_gateway_dto.DeleteAddressTypeResponseDocs
 //	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/address-types/{addressTypeID} [delete]
 func (a *adminAddressTypeHandler) DeleteAddressType(ctx *gin.Context) {
-	c, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "DeleteAddressType"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := a.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "DeleteAddressType"))
 	defer span.End()
 
 	var uri api_gateway_dto.DeleteAddressTypeQueryRequest
@@ -92,7 +99,7 @@ func (a *adminAddressTypeHandler) DeleteAddressType(ctx *gin.Context) {
 	}
 
 	// chi tra ra BusinessError hoac TechnicalError
-	if err := a.service.DeleteAddressType(c, uri.ID); err != nil {
+	if err := a.service.DeleteAddressType(ct, uri.ID); err != nil {
 		utils.HandleErrorResponse(ctx, err)
 		return
 	}
@@ -109,14 +116,18 @@ func (a *adminAddressTypeHandler) DeleteAddressType(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //
+//	@Security		BearerAuth
 //	@Param			limit	query		int	true	"Limit number of records returned"
 //	@Param			page	query		int	true	"page"
 //	@Success		200		{object}	api_gateway_dto.ListAddressTypesResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/address-types [get]
 func (a *adminAddressTypeHandler) GetAddressTypes(ctx *gin.Context) {
-	c, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetAddressTypes"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := a.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetAddressTypes"))
 	defer span.End()
 
 	var queryReq api_gateway_dto.GetAddressTypeQueryRequest
@@ -128,7 +139,7 @@ func (a *adminAddressTypeHandler) GetAddressTypes(ctx *gin.Context) {
 	}
 
 	// chi tra ra BusinessError hoac TechnicalError
-	res, totalItems, totalPages, hasNext, hasPrevious, errRes := a.service.GetAddressTypes(c, queryReq)
+	res, totalItems, totalPages, hasNext, hasPrevious, errRes := a.service.GetAddressTypes(ct, queryReq)
 
 	if errRes != nil {
 		utils.HandleErrorResponse(ctx, errRes)
@@ -154,11 +165,14 @@ func (a *adminAddressTypeHandler) GetAddressTypes(ctx *gin.Context) {
 //
 //	@Success		200				{object}	api_gateway_dto.UpdateAddressTypeResponseDocs
 //	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		409				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/address-types/{addressTypeID} [patch]
 func (a *adminAddressTypeHandler) UpdateAddressType(ctx *gin.Context) {
-	c, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateAddressType"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := a.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateAddressType"))
 	defer span.End()
 
 	var uri api_gateway_dto.UpdateAddressTypeUriRequest
@@ -178,7 +192,7 @@ func (a *adminAddressTypeHandler) UpdateAddressType(ctx *gin.Context) {
 	}
 
 	// chi tra ra BusinessError hoac TechnicalError
-	res, err := a.service.UpdateAddressType(c, uri.ID, data.AddressType)
+	res, err := a.service.UpdateAddressType(ct, uri.ID, data.AddressType)
 
 	if err != nil {
 		utils.HandleErrorResponse(ctx, err)
@@ -200,11 +214,14 @@ func (a *adminAddressTypeHandler) UpdateAddressType(ctx *gin.Context) {
 //	@Security		BearerAuth
 //	@Param			addressTypeID	path		int	true	"address type id"
 //	@Success		200				{object}	api_gateway_dto.GetAddressTypeByIdResponseDocs
+//	@Failure		401				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/address-types/{addressTypeID} [get]
 func (a *adminAddressTypeHandler) GetAddressTypeByID(ctx *gin.Context) {
-	c, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetAddressTypeByID"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := a.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetAddressTypeByID"))
 	defer span.End()
 
 	var uri api_gateway_dto.GetAddressTypeByIdQueryRequest
@@ -216,7 +233,7 @@ func (a *adminAddressTypeHandler) GetAddressTypeByID(ctx *gin.Context) {
 	}
 
 	// chi tra ra BusinessError hoac TechnicalError
-	res, err := a.service.GetAddressTypeByID(c, uri.ID)
+	res, err := a.service.GetAddressTypeByID(ct, uri.ID)
 
 	if err != nil {
 		utils.HandleErrorResponse(ctx, err)

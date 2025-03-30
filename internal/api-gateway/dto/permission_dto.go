@@ -13,20 +13,20 @@ type GetPermissionRequest struct {
 
 type GetPermissionResponse struct {
 	ID        int       `json:"id"`
-	Action    string    `json:"action"`
+	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type CreatePermissionRequest struct {
-	Action string `json:"action" binding:"required,min=3,max=50,alpha"`
+	Name string `json:"name" binding:"required,min=3,max=50,alpha"`
 }
 
 type CreatePermissionResponse struct {
 }
 
 type UpdatePermissionByPermissionIDRequest struct {
-	Action string `json:"action" binding:"required,min=3,max=50,alpha"`
+	Name string `json:"name" binding:"required,min=3,max=50,alpha"`
 }
 
 type UpdatePermissionURIRequest struct {
