@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/address-types": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get list address types",
                 "consumes": [
                     "application/json"
@@ -378,17 +383,6 @@ const docTemplate = `{
                     "auth"
                 ],
                 "summary": "check token",
-                "parameters": [
-                    {
-                        "description": "Request body",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api_gateway_dto.CheckTokenRequest"
-                        }
-                    }
-                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -562,11 +556,6 @@ const docTemplate = `{
         },
         "/auth/refresh-token": {
             "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
                 "description": "refresh token",
                 "consumes": [
                     "application/json"
@@ -580,13 +569,11 @@ const docTemplate = `{
                 "summary": "refresh token",
                 "parameters": [
                     {
-                        "description": "Request body",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/api_gateway_dto.RefreshTokenRequest"
-                        }
+                        "type": "string",
+                        "description": "{refresh_token}",
+                        "name": "X-Authorization",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1422,9 +1409,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api_gateway_dto.CheckTokenRequest": {
-            "type": "object"
-        },
         "api_gateway_dto.CheckTokenResponse": {
             "type": "object"
         },
@@ -1790,17 +1774,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api_gateway_dto.RefreshTokenRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
         "api_gateway_dto.RefreshTokenResponse": {
             "type": "object",
             "properties": {
@@ -2055,6 +2028,7 @@ const docTemplate = `{
     "securityDefinitions": {
         "BearerAuth": {
             "type": "apiKey",
+            "name": "Authorization",
             "in": "header"
         }
     }

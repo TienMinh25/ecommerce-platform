@@ -55,3 +55,10 @@ func (o *otpCache) GetValueString(ctx context.Context, key string) (string, erro
 
 	return res, nil
 }
+
+func (o *otpCache) DeleteOTP(ctx context.Context, otp string) error {
+	ctx, span := o.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "DeleteOTP"))
+	defer span.End()
+
+	return o.redisCache.Delete(ctx, otp)
+}

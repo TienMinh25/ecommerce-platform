@@ -137,12 +137,12 @@ func (km *JwtKeyManager) VerifyToken(ctx context.Context, accessToken string) (*
 		return km.publicKey, nil
 	})
 
-	if err != nil {
-		return nil, utils.TechnicalError{Code: http.StatusInternalServerError, Message: common.MSG_INTERNAL_ERROR}
-	}
-
 	if !token.Valid {
 		return nil, utils.BusinessError{Code: http.StatusUnauthorized, Message: "Invalid token", ErrorCode: errorcode.UNAUTHORIZED}
+	}
+
+	if err != nil {
+		return nil, utils.TechnicalError{Code: http.StatusInternalServerError, Message: err.Error()}
 	}
 
 	claims, _ := token.Claims.(*UserClaims)

@@ -20,7 +20,7 @@ type IAuthenticationService interface {
 	VerifyEmail(ctx context.Context, data api_gateway_dto.VerifyEmailRequest) error
 	Logout(ctx context.Context, data api_gateway_dto.LogoutRequest, userID int) error
 	ResendVerifyEmail(ctx context.Context, data api_gateway_dto.ResendVerifyEmailRequest) error
-	RefreshToken(ctx context.Context, data api_gateway_dto.RefreshTokenRequest, claims *UserClaims) (*api_gateway_dto.RefreshTokenResponse, error)
+	RefreshToken(ctx context.Context, refreshToken string) (*api_gateway_dto.RefreshTokenResponse, error)
 	ForgotPassword(ctx context.Context, data api_gateway_dto.ForgotPasswordRequest) error
 	ResetPassword(ctx context.Context, data api_gateway_dto.ResetPasswordRequest) error
 	ChangePassword(ctx context.Context, data api_gateway_dto.ChangePasswordRequest, userID int) error
@@ -45,6 +45,7 @@ type IPermissionService interface {
 type IOtpCacheService interface {
 	CacheOTP(ctx context.Context, otp, email string, tll time.Duration) error
 	GetValueString(ctx context.Context, key string) (string, error)
+	DeleteOTP(ctx context.Context, otp string) error
 }
 
 type IJwtService interface {

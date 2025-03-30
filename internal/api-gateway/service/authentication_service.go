@@ -142,7 +142,7 @@ func (a *authenticationService) Login(ctx context.Context, data api_gateway_dto.
 		return nil, err
 	}
 
-	if err = a.refreshTokenRepository.CreateRefreshToken(ctx, userInfo.ID, time.Now().Add(time.Duration(a.env.ExpireRefreshToken)*time.Hour*24), refreshToken); err != nil {
+	if err = a.refreshTokenRepository.CreateRefreshToken(ctx, userInfo.ID, userInfo.Email, time.Now().Add(time.Duration(a.env.ExpireRefreshToken)*time.Hour*24), refreshToken); err != nil {
 		return nil, err
 	}
 
@@ -178,6 +178,19 @@ func (a *authenticationService) VerifyEmail(ctx context.Context, data api_gatewa
 		}
 	}
 
+	// enable email verify
+	if err = a.userRepo.VerifyEmail(ctx, data.Email); err != nil {
+		return err
+	}
+
+	// delete otp after verify
+	if err = a.cacheService.DeleteOTP(ctx, data.OTP); err != nil {
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
 	return nil
 }
 
@@ -208,24 +221,24 @@ func (a *authenticationService) ResendVerifyEmail(ctx context.Context, data api_
 		}
 	}
 
-	// push message
+	// todo: push message
 
 	return nil
 }
 
-func (a *authenticationService) RefreshToken(ctx context.Context, data api_gateway_dto.RefreshTokenRequest, claims *UserClaims) (*api_gateway_dto.RefreshTokenResponse, error) {
+func (a *authenticationService) RefreshToken(ctx context.Context, refreshToken string) (*api_gateway_dto.RefreshTokenResponse, error) {
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "RefreshToken"))
 	defer span.End()
 
 	// step 1: check have refresh token or not
-	oldRefreshToken, err := a.refreshTokenRepository.GetRefreshToken(ctx, data.RefreshToken, claims.UserID)
+	oldRefreshToken, err := a.refreshTokenRepository.GetRefreshToken(ctx, refreshToken)
 
 	if err != nil {
 		return nil, err
 	}
 
 	// step 2: get user by email (get information to create new access token)
-	userInfo, err := a.userRepo.GetUserByEmail(ctx, claims.Email)
+	userInfo, err := a.userRepo.GetUserByEmail(ctx, oldRefreshToken.Email)
 
 	if err != nil {
 		return nil, err
@@ -253,7 +266,7 @@ func (a *authenticationService) RefreshToken(ctx context.Context, data api_gatew
 	}
 
 	// delete and save new refresh token (in one transaction)
-	if err = a.refreshTokenRepository.RefreshToken(ctx, userInfo.ID, oldRefreshToken.Token, refreshToken, time.Now().Add(time.Duration(a.env.ExpireRefreshToken)*time.Hour*24)); err != nil {
+	if err = a.refreshTokenRepository.RefreshToken(ctx, userInfo.ID, userInfo.Email, oldRefreshToken.Token, refreshToken, time.Now().Add(time.Duration(a.env.ExpireRefreshToken)*time.Hour*24)); err != nil {
 		return nil, err
 	}
 

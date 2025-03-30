@@ -25,19 +25,19 @@ func NewRefreshTokenRepository(db pkg.Database, tracer pkg.Tracer) IRefreshToken
 	}
 }
 
-func (r *refreshTokenRepository) GetRefreshToken(ctx context.Context, refreshToken string, userID int) (*api_gateway_models.RefreshToken, error) {
+func (r *refreshTokenRepository) GetRefreshToken(ctx context.Context, refreshToken string) (*api_gateway_models.RefreshToken, error) {
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetRefreshToken"))
 	defer span.End()
 
-	query := `SELECT token, expires_at FROM refresh_token WHERE token = $1 AND user_id = $2`
+	query := `SELECT token, email, expires_at FROM refresh_token WHERE token = $1`
 
 	var res api_gateway_models.RefreshToken
 
-	if err := r.db.QueryRow(ctx, query, refreshToken, userID).Scan(&res.Token, &res.ExpiresAt); err != nil {
+	if err := r.db.QueryRow(ctx, query, refreshToken).Scan(&res.Token, &res.Email, &res.ExpiresAt); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, utils.BusinessError{
-				Message: "Refresh token is not found",
-				Code:    http.StatusBadRequest,
+				Message: "Refresh token is invalid",
+				Code:    http.StatusUnauthorized,
 			}
 		}
 
@@ -50,13 +50,13 @@ func (r *refreshTokenRepository) GetRefreshToken(ctx context.Context, refreshTok
 	return &res, nil
 }
 
-func (r *refreshTokenRepository) CreateRefreshToken(ctx context.Context, userID int, expiresAt time.Time, refreshToken string) error {
+func (r *refreshTokenRepository) CreateRefreshToken(ctx context.Context, userID int, email string, expiresAt time.Time, refreshToken string) error {
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateRefreshToken"))
 	defer span.End()
 
-	queryInsert := `INSERT INTO refresh_token (user_id, token, expires_at) VALUES ($1, $2, $3)`
+	queryInsert := `INSERT INTO refresh_token (user_id, email, token, expires_at) VALUES ($1, $2, $3, $4)`
 
-	if err := r.db.Exec(ctx, queryInsert, userID, refreshToken, expiresAt); err != nil {
+	if err := r.db.Exec(ctx, queryInsert, userID, email, refreshToken, expiresAt); err != nil {
 		return utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
@@ -82,7 +82,7 @@ func (r *refreshTokenRepository) DeleteRefreshToken(ctx context.Context, refresh
 	return nil
 }
 
-func (r *refreshTokenRepository) RefreshToken(ctx context.Context, userID int, oldRefreshToken, refreshToken string, expiresAt time.Time) error {
+func (r *refreshTokenRepository) RefreshToken(ctx context.Context, userID int, email string, oldRefreshToken, refreshToken string, expiresAt time.Time) error {
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "RefreshToken"))
 	defer span.End()
 
@@ -96,9 +96,9 @@ func (r *refreshTokenRepository) RefreshToken(ctx context.Context, userID int, o
 			}
 		}
 
-		queryInsert := `INSERT INTO refresh_token (user_id, token, expires_at) VALUES ($1, $2, $3)`
+		queryInsert := `INSERT INTO refresh_token (user_id, email, token, expires_at) VALUES ($1, $2, $3, $4)`
 
-		if err := r.db.Exec(ctx, queryInsert, userID, refreshToken, expiresAt); err != nil {
+		if err := r.db.Exec(ctx, queryInsert, userID, email, refreshToken, expiresAt); err != nil {
 			return utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,

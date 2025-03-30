@@ -197,3 +197,19 @@ func (u *userRepository) GetUserIDByEmail(ctx context.Context, email string) (in
 
 	return userID, nil
 }
+
+func (u *userRepository) VerifyEmail(ctx context.Context, email string) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "VerifyEmail"))
+	defer span.End()
+
+	query := `UPDATE users SET email_verified = $1 WHERE email = $2`
+
+	if err := u.db.Exec(ctx, query, true, email); err != nil {
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return nil
+}

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/TienMinh25/ecommerce-platform/infrastructure"
+	"github.com/TienMinh25/ecommerce-platform/internal/api-gateway/middleware"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/s3"
@@ -89,6 +90,8 @@ func main() {
 			env.NewEnvManager,
 			// minio
 			s3.NewStorage,
+			// middleware,
+			middleware.NewJwtMiddleware,
 			// infrastructure
 			infrastructure.NewRedisCache,
 			// database,

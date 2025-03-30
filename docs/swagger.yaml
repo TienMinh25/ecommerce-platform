@@ -23,8 +23,6 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
-  api_gateway_dto.CheckTokenRequest:
-    type: object
   api_gateway_dto.CheckTokenResponse:
     type: object
   api_gateway_dto.CheckTokenResponseDocs:
@@ -262,13 +260,6 @@ definitions:
       code:
         type: integer
     type: object
-  api_gateway_dto.RefreshTokenRequest:
-    properties:
-      refresh_token:
-        type: string
-    required:
-    - refresh_token
-    type: object
   api_gateway_dto.RefreshTokenResponse:
     properties:
       access_token:
@@ -477,6 +468,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
       summary: Get list address types
       tags:
       - address-types
@@ -669,13 +662,6 @@ paths:
       consumes:
       - application/json
       description: check token
-      parameters:
-      - description: Request body
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/api_gateway_dto.CheckTokenRequest'
       produces:
       - application/json
       responses:
@@ -798,12 +784,11 @@ paths:
       - application/json
       description: refresh token
       parameters:
-      - description: Request body
-        in: body
-        name: request
+      - description: '{refresh_token}'
+        in: header
+        name: X-Authorization
         required: true
-        schema:
-          $ref: '#/definitions/api_gateway_dto.RefreshTokenRequest'
+        type: string
       produces:
       - application/json
       responses:
@@ -823,8 +808,6 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
-      security:
-      - BearerAuth: []
       summary: refresh token
       tags:
       - auth
@@ -1327,5 +1310,6 @@ paths:
 securityDefinitions:
   BearerAuth:
     in: header
+    name: Authorization
     type: apiKey
 swagger: "2.0"

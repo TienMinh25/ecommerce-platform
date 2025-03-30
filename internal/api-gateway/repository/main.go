@@ -41,6 +41,8 @@ type IUserRepository interface {
 	GetUserByEmail(ctx context.Context, email string) (*api_gateway_models.User, error)
 
 	GetUserIDByEmail(ctx context.Context, email string) (int, error)
+
+	VerifyEmail(ctx context.Context, email string) error
 }
 
 type IUserPasswordRepository interface {
@@ -83,11 +85,11 @@ type IRolePermissionModuleRepository interface {
 }
 
 type IRefreshTokenRepository interface {
-	GetRefreshToken(ctx context.Context, refreshToken string, userID int) (*api_gateway_models.RefreshToken, error)
+	GetRefreshToken(ctx context.Context, refreshToken string) (*api_gateway_models.RefreshToken, error)
 
-	CreateRefreshToken(ctx context.Context, userID int, expireAt time.Time, refreshToken string) error
+	CreateRefreshToken(ctx context.Context, userID int, email string, expireAt time.Time, refreshToken string) error
 
 	DeleteRefreshToken(ctx context.Context, refreshToken string, userID int) error
 
-	RefreshToken(ctx context.Context, userID int, oldRefreshToken, refreshToken string, expireAt time.Time) error
+	RefreshToken(ctx context.Context, userID int, email string, oldRefreshToken, refreshToken string, expireAt time.Time) error
 }

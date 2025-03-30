@@ -1,6 +1,7 @@
 package api_gateway_handler
 
 import (
+	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_service "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -42,7 +43,9 @@ func NewModuleHandler(
 //	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules/{moduleID} [get]
 func (m *moduleHandler) GetModuleByModuleID(ctx *gin.Context) {
-	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetModuleByModuleID"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := m.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetModuleByModuleID"))
 	defer span.End()
 
 	var uri api_gateway_dto.GetModuleByIDRequest
@@ -53,7 +56,7 @@ func (m *moduleHandler) GetModuleByModuleID(ctx *gin.Context) {
 	}
 
 	// chi tra ra technical error or business error
-	module, err := m.service.GetModuleByModuleID(c, uri.ID)
+	module, err := m.service.GetModuleByModuleID(ct, uri.ID)
 
 	if err != nil {
 		utils.HandleErrorResponse(ctx, err)
@@ -81,7 +84,9 @@ func (m *moduleHandler) GetModuleByModuleID(ctx *gin.Context) {
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules [post]
 func (m *moduleHandler) CreateModule(ctx *gin.Context) {
-	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "CreateModule"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := m.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "CreateModule"))
 	defer span.End()
 
 	var data api_gateway_dto.CreateModuleRequest
@@ -93,7 +98,7 @@ func (m *moduleHandler) CreateModule(ctx *gin.Context) {
 	}
 
 	// chi tra ra BusinessError hoac TechnicalError
-	res, err := m.service.CreateModule(c, data.Name)
+	res, err := m.service.CreateModule(ct, data.Name)
 
 	if err != nil {
 		utils.HandleErrorResponse(ctx, err)
@@ -122,7 +127,9 @@ func (m *moduleHandler) CreateModule(ctx *gin.Context) {
 //	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules/{moduleID} [patch]
 func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
-	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateModule"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := m.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateModule"))
 	defer span.End()
 
 	var data api_gateway_dto.UpdateModuleByModuleIDRequest
@@ -141,7 +148,7 @@ func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
 	}
 
 	// chi tra ra BusinessError hoac TechnicalError
-	res, err := m.service.UpdateModuleByModuleID(c, uri.ID, data.Name)
+	res, err := m.service.UpdateModuleByModuleID(ct, uri.ID, data.Name)
 
 	if err != nil {
 		utils.HandleErrorResponse(ctx, err)
@@ -169,7 +176,9 @@ func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules [get]
 func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
-	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetModuleList"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := m.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetModuleList"))
 	defer span.End()
 
 	var queryReq api_gateway_dto.GetModuleRequest
@@ -181,7 +190,7 @@ func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
 	}
 
 	// chi nen tra ra BusinessError hoac TechnicalError
-	res, totalItems, totalPages, hasNext, hasPrevious, errRes := m.service.GetModuleList(c, queryReq)
+	res, totalItems, totalPages, hasNext, hasPrevious, errRes := m.service.GetModuleList(ct, queryReq)
 
 	if errRes != nil {
 		utils.HandleErrorResponse(ctx, errRes)
@@ -208,7 +217,9 @@ func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
 //	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/modules/{moduleID} [delete]
 func (m *moduleHandler) DeleteModuleByModuleID(ctx *gin.Context) {
-	c, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "DeleteModuleByModuleID"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := m.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "DeleteModuleByModuleID"))
 	defer span.End()
 
 	var uri api_gateway_dto.DeleteModuleURIRequest
@@ -219,7 +230,7 @@ func (m *moduleHandler) DeleteModuleByModuleID(ctx *gin.Context) {
 		return
 	}
 
-	if err := m.service.DeleteModuleByModuleID(c, uri.ID); err != nil {
+	if err := m.service.DeleteModuleByModuleID(ct, uri.ID); err != nil {
 		utils.HandleErrorResponse(ctx, err)
 		return
 	}

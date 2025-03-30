@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
                                      id BIGSERIAL PRIMARY KEY,
                                      fullname VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
-    avatar_url VARCHAR(500) NOT NULL,
+    avatar_url VARCHAR(500),
     phone VARCHAR(15),
     birthdate DATE,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS addresses (
 CREATE TABLE IF NOT EXISTS refresh_token (
     id BIGSERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    email VARCHAR(255) NOT NULL,
     token VARCHAR(255) NOT NULL UNIQUE,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

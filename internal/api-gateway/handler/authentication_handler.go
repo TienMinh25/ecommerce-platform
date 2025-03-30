@@ -1,6 +1,7 @@
 package api_gateway_handler
 
 import (
+	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_service "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -180,7 +181,9 @@ func (h *authenticationHandler) ResendVerifyEmail(ctx *gin.Context) {
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/auth/logout [post]
 func (h *authenticationHandler) Logout(ctx *gin.Context) {
-	c, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "Logout"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "Logout"))
 	defer span.End()
 
 	req, _ := ctx.Get("user")
@@ -193,7 +196,7 @@ func (h *authenticationHandler) Logout(ctx *gin.Context) {
 		return
 	}
 
-	err := h.service.Logout(c, data, claims.UserID)
+	err := h.service.Logout(ct, data, claims.UserID)
 
 	if err != nil {
 		utils.HandleErrorResponse(ctx, err)
@@ -212,28 +215,27 @@ func (h *authenticationHandler) Logout(ctx *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //
-//	@Security		BearerAuth
-//	@Param			request	body		api_gateway_dto.RefreshTokenRequest	true	"Request body"
-//	@Success		200		{object}	api_gateway_dto.RefreshTokenResponseDocs
-//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
-//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
-//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Param			X-Authorization	header		string	true	"{refresh_token}"
+//
+//	@Success		200				{object}	api_gateway_dto.RefreshTokenResponseDocs
+//	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/auth/refresh-token [post]
 func (h *authenticationHandler) RefreshToken(ctx *gin.Context) {
 	c, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "RefreshToken"))
 	defer span.End()
 
-	req, _ := ctx.Get("user")
-	claims := req.(*api_gateway_service.UserClaims)
-
-	var data api_gateway_dto.RefreshTokenRequest
-
-	if err := ctx.ShouldBindJSON(&data); err != nil {
-		utils.HandleValidateData(ctx, err)
+	refreshHeader := ctx.GetHeader("X-Authorization")
+	if refreshHeader == "" {
+		utils.ErrorResponse(ctx, http.StatusUnauthorized, utils.BusinessError{
+			Code:    http.StatusUnauthorized,
+			Message: "Missing authorization header",
+		})
 		return
 	}
 
-	res, err := h.service.RefreshToken(c, data, claims)
+	res, err := h.service.RefreshToken(c, refreshHeader)
 
 	if err != nil {
 		utils.HandleErrorResponse(ctx, err)
@@ -253,13 +255,14 @@ func (h *authenticationHandler) RefreshToken(ctx *gin.Context) {
 //	@Produce		json
 //
 //	@Security		BearerAuth
-//	@Param			request	body		api_gateway_dto.CheckTokenRequest	true	"Request body"
-//	@Success		200		{object}	api_gateway_dto.CheckTokenResponseDocs
-//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
-//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Success		200	{object}	api_gateway_dto.CheckTokenResponseDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/auth/check-token [get]
 func (h *authenticationHandler) CheckToken(ctx *gin.Context) {
-	_, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "CheckToken"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	_, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "CheckToken"))
 	defer span.End()
 
 	utils.SuccessResponse[api_gateway_dto.CheckTokenResponse](ctx, http.StatusOK, api_gateway_dto.CheckTokenResponse{})
@@ -347,7 +350,9 @@ func (h *authenticationHandler) ResetPassword(ctx *gin.Context) {
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/auth/change-password [post]
 func (h *authenticationHandler) ChangePassword(ctx *gin.Context) {
-	c, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "ChangePassword"))
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "ChangePassword"))
 	defer span.End()
 
 	req, _ := ctx.Get("user")
@@ -360,7 +365,7 @@ func (h *authenticationHandler) ChangePassword(ctx *gin.Context) {
 		return
 	}
 
-	if err := h.service.ChangePassword(c, data, claims.UserID); err != nil {
+	if err := h.service.ChangePassword(ct, data, claims.UserID); err != nil {
 		utils.HandleErrorResponse(ctx, err)
 		return
 	}
