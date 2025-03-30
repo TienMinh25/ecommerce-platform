@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification</title>
+    <style>
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        .header img {
+            max-width: 100px;
+        }
+        .body {
+            padding: 20px;
+            text-align: center;
+        }
+        .body h1 {
+            font-size: 24px;
+            color: #333333;
+        }
+        .body p {
+            font-size: 16px;
+            color: #555555;
+        }
+        .otp {
+            font-size: 32px;
+            font-weight: bold;
+            color: #007BFF;
+            margin-top: 20px;
+        }
+        .footer {
+            background-color: #f1f1f1;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            color: #777777;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <!-- Header -->
+    <div class="header">
+        <img src="http://localhost:9000/email-image/24dd9970-2523-44b6-b967-100b866d2ea8.jpg" alt="Logo">
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+        <h1>Xin chào, {{name}}!</h1>
+        <p>Mã OTP của bạn để xác thực là:</p>
+        <div class="otp">{{otp_code}}</div>
+        <p>Mã này chỉ có hiệu lực trong {{expiry_time}} phút. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        © 2025 Minh-Plaza. Tất cả các quyền được bảo lưu.
+    </div>
+</div>
+</body>
+</html>

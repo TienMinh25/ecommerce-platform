@@ -2,11 +2,11 @@ package env
 
 import (
 	"fmt"
-	"log"
-	"os"
-
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"log"
+	"path/filepath"
+	"runtime"
 )
 
 type PostgreSQLConfig struct {
@@ -77,16 +77,21 @@ type ServerConfig struct {
 	ServerAddresss string `envconfig:"SERVER_ADDRESS"`
 }
 
+type NotificationServerConfig struct {
+	ServerAddresss string `envconfig:"NOTIFICATION_ADDRESS"`
+}
+
 type EnvManager struct {
-	ServerConfig      *ServerConfig
-	PostgreSQL        *PostgreSQLConfig
-	Redis             *RedisConfig
-	Jeager            *JeagerConfig
-	Mail              *MailConfig
-	Mongo             *MongoDBConfig
-	MinioConfig       *MinioConfig
-	Kafka             *KafkaConfig
-	ServiceWorkerPool *ServiceWorkerPoolConfig
+	ServerConfig             *ServerConfig
+	PostgreSQL               *PostgreSQLConfig
+	Redis                    *RedisConfig
+	Jeager                   *JeagerConfig
+	Mail                     *MailConfig
+	Mongo                    *MongoDBConfig
+	MinioConfig              *MinioConfig
+	Kafka                    *KafkaConfig
+	ServiceWorkerPool        *ServiceWorkerPoolConfig
+	NotificationServerConfig *NotificationServerConfig
 
 	OTPVerifyEmailTimeout int `envconfig:"OTP_VERIFY_EMAIL_TIMEOUT"`
 
@@ -95,17 +100,17 @@ type EnvManager struct {
 
 	ExpireAccessToken  int `envconfig:"EXPIRE_ACCESS_TOKEN"`
 	ExpireRefreshToken int `envconfig:"EXPIRE_REFRESH_TOKEN"`
-
-	JetStreamName          string `envconfig:"JETSTREAM_STREAM_NAME"`
-	JetStreamDurable       string `envconfig:"JETSTREAM_DURABLE"`
-	JetStreamOrdersTopic   string `envconfig:"JETSTREAM_ORDERS_TOPIC"`
-	JetStreamProductsTopic string `envconfig:"JETSTREAM_PRODUCTS_TOPIC"`
-	JetStreamPartnersTopic string `envconfig:"JETSTREAM_PARTNERS_TOPIC"`
 }
 
 func NewEnvManager() *EnvManager {
-	dir, _ := os.Getwd()
-	err := godotenv.Load(fmt.Sprintf("%s/%s", dir, "configs/.env.prod"))
+	_, filename, _, ok := runtime.Caller(0)
+
+	if !ok {
+		return nil
+	}
+
+	configPath := filepath.Join(filepath.Dir(filename), "../../configs/.env.prod")
+	err := godotenv.Load(configPath)
 
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
@@ -115,7 +120,7 @@ func NewEnvManager() *EnvManager {
 
 	var config EnvManager
 
-	if err := envconfig.Process("", &config); err != nil {
+	if err = envconfig.Process("", &config); err != nil {
 		log.Fatalf("Failed to load environment variables: %v", err)
 	}
 

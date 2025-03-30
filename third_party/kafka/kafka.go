@@ -12,7 +12,7 @@ import (
 )
 
 type queue struct {
-	groupID     string                             // group consumer id
+	groupID     string                             // group consumer id -> pass by truyen vao
 	producer    *kafkaconfluent.Producer           // producer
 	consumer    *kafkaconfluent.Consumer           // consumer
 	subscribers map[string][]*pkg.SubscriptionInfo // information of subscribers
@@ -170,7 +170,7 @@ func (q *queue) Produce(ctx context.Context, topic string, payload []byte) error
 	}
 
 	// Commit transaction
-	if err := q.producer.CommitTransaction(ctx); err != nil {
+	if err = q.producer.CommitTransaction(ctx); err != nil {
 		_ = q.producer.AbortTransaction(ctx)
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
