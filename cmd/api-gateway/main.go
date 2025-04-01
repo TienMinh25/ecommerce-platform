@@ -7,6 +7,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
+	"github.com/TienMinh25/ecommerce-platform/third_party/kafka"
 	"github.com/TienMinh25/ecommerce-platform/third_party/s3"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"log"
@@ -76,11 +77,40 @@ func NewTracerApiGatewayService(env *env.EnvManager, lifecycle fx.Lifecycle) (pk
 		},
 		OnStop: func(ctx context.Context) error {
 			log.Println("🛑 Shutting down tracer for api gateway service...")
+
 			return tracer.Shutdown(ctx)
 		},
 	})
 
 	return tracer, err
+}
+
+func NewMessageBroker(lifecycle fx.Lifecycle, config *env.EnvManager, tracer pkg.Tracer) (pkg.MessageQueue, error) {
+	messageBroker, err := kafka.NewQueue(config, config.ServerConfig.ConsumeGroup, tracer)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// consume message
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			log.Println("Starting message broker for api gateway service...")
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			log.Printf("Stopping message broker for api gateway service...")
+
+			if errClose := messageBroker.Close(); errClose != nil {
+				return errClose
+			}
+
+			return nil
+		},
+	})
+
+	return messageBroker, nil
 }
 
 func NewDatabase(lifecycle fx.Lifecycle, manager *env.EnvManager, tracer pkg.Tracer) (pkg.Database, error) {
@@ -98,6 +128,7 @@ func main() {
 			middleware.NewJwtMiddleware,
 			// infrastructure
 			infrastructure.NewRedisCache,
+			NewMessageBroker,
 			// database,
 			NewDatabase,
 			// gin engine

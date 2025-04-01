@@ -23,11 +23,11 @@ func NewPostgresSQL(lifecycle fx.Lifecycle, manager *env.EnvManager, tracer pkg.
 	dbClient, err := pgxpool.New(context.Background(), fmt.Sprintf("%s/%s", manager.PostgreSQL.PostgresDSN, dbname))
 
 	if err != nil {
-		return nil, fmt.Errorf("unable to create connection pool to database %s, error: %w", dbname, err)
+		return nil, fmt.Errorf("unable to create connection pool to database %s, error: %w\n", dbname, err)
 	}
 
 	if err = dbClient.Ping(context.Background()); err != nil {
-		return nil, fmt.Errorf("cannot ping to database %s, error: %w", dbname, err)
+		return nil, fmt.Errorf("cannot ping to database %s, error: %w\n", dbname, err)
 	}
 
 	pg := &postgres{
@@ -38,11 +38,11 @@ func NewPostgresSQL(lifecycle fx.Lifecycle, manager *env.EnvManager, tracer pkg.
 	// manage lifecycle of application, which is used to disconnect to database when application crash or shutdown
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			fmt.Printf("Postgres connection is connect successfully to database %s", dbname)
+			fmt.Printf("Postgres connection is connect successfully to database %s\n", dbname)
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			fmt.Printf("Close connection to database %s.....", dbname)
+			fmt.Printf("Close connection to database %s.....\n", dbname)
 			pg.db.Close()
 			return nil
 		},
@@ -78,7 +78,7 @@ func (p *postgres) BeginTxFunc(ctx context.Context, options pgx.TxOptions, f fun
 		// Thử rollback, nhưng vẫn ưu tiên lỗi gốc
 		if rbErr := transaction.Rollback(ctx); rbErr != nil {
 			// Có thể log lỗi rollback hoặc kết hợp với lỗi gốc
-			return fmt.Errorf("execution error: %v, rollback error: %v", originalErr, rbErr)
+			return fmt.Errorf("execution error: %v, rollback error: %v\n", originalErr, rbErr)
 		}
 		return originalErr
 	}

@@ -1,7 +1,6 @@
 package env
 
 import (
-	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 	"log"
@@ -43,7 +42,6 @@ type JeagerConfig struct {
 type KafkaConfig struct {
 	// kafka
 	KafkaBrokers               string `envconfig:"KAFKA_BROKERS" default:"localhost:29092,localhost:29093,localhost:29094"`
-	KafkaGroupID               string `envconfig:"KAFKA_GROUP_ID" default:"my-consumer-group"`
 	KafkaRequestTimeout        int    `envconfig:"KAFKA_REQUEST_TIMEOUT" default:"3000"`
 	KafkaRetryAttempts         int    `envconfig:"KAFKA_RETRY_ATTEMPTS" default:"3"`
 	KafkaRetyDelay             int    `envconfig:"KAFKA_RETRY_DELAY" default:"2000"`
@@ -75,10 +73,12 @@ type ServiceWorkerPoolConfig struct {
 
 type ServerConfig struct {
 	ServerAddresss string `envconfig:"SERVER_ADDRESS"`
+	ConsumeGroup   string `envconfig:"API_GATEWAY_CONSUME_GROUP"`
 }
 
 type NotificationServerConfig struct {
 	ServerAddresss string `envconfig:"NOTIFICATION_ADDRESS"`
+	ConsumeGroup   string `envconfig:"NOTIFICATION_CONSUME_GROUP"`
 }
 
 type EnvManager struct {
@@ -100,6 +100,8 @@ type EnvManager struct {
 
 	ExpireAccessToken  int `envconfig:"EXPIRE_ACCESS_TOKEN"`
 	ExpireRefreshToken int `envconfig:"EXPIRE_REFRESH_TOKEN"`
+
+	TopicVerifyOTP string `envconfig:"TOPIC_VERIFY_OTP"`
 }
 
 func NewEnvManager() *EnvManager {

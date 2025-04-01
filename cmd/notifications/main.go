@@ -5,11 +5,13 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/adaptor"
 	notification_repository "github.com/TienMinh25/ecommerce-platform/internal/notifcations/repository"
 	notification_service "github.com/TienMinh25/ecommerce-platform/internal/notifcations/service"
 	notification_handler "github.com/TienMinh25/ecommerce-platform/internal/notifcations/transport/grpc/handler"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
+	"github.com/TienMinh25/ecommerce-platform/third_party/kafka"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"go.uber.org/fx"
 	"google.golang.org/grpc"
@@ -72,6 +74,41 @@ func StartServer(lifecycle fx.Lifecycle, env *env.EnvManager, notificationHandle
 	})
 }
 
+func NewMessageBroker(lifecycle fx.Lifecycle, config *env.EnvManager, tracer pkg.Tracer, service notification_service.INotificationService) (pkg.MessageQueue, error) {
+	messageBroker, err := kafka.NewQueue(config, config.NotificationServerConfig.ConsumeGroup, tracer)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// consume message
+	lifecycle.Append(fx.Hook{
+		OnStart: func(ctx context.Context) error {
+			log.Println("Starting message broker for notification service...")
+
+			// subscribes all topic needed for notification service in here
+			// topic verify otp
+			messageBroker.Subscribe(&pkg.SubscriptionInfo{
+				Topic:    config.TopicVerifyOTP,
+				Callback: service.SendOTPByEmail,
+			})
+
+			return nil
+		},
+		OnStop: func(ctx context.Context) error {
+			log.Printf("Stopping message broker for notification service...")
+
+			if errClose := messageBroker.Close(); errClose != nil {
+				return errClose
+			}
+
+			return nil
+		},
+	})
+
+	return messageBroker, nil
+}
+
 func main() {
 	app := fx.New(
 		fx.Provide(
@@ -87,8 +124,13 @@ func main() {
 			notification_repository.NewNotificationRepository,
 			// tracer
 			NewTracerNotificationService,
+			// kafka,
+			NewMessageBroker,
+			// adapter
+			adaptor.NewGmailSmtpAdapter,
 		),
 		fx.Invoke(StartServer),
+		fx.Invoke(func(messageBroker pkg.MessageQueue) {}),
 	)
 
 	app.Run()

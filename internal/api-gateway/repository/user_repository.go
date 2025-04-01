@@ -213,3 +213,28 @@ func (u *userRepository) VerifyEmail(ctx context.Context, email string) error {
 
 	return nil
 }
+
+func (u *userRepository) GetFullNameByEmail(ctx context.Context, email string) (string, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetFullNameByEmail"))
+	defer span.End()
+
+	getFullNameByEmailQuery := `SELECT fullname FROM users WHERE email = $1`
+
+	var fullName string
+
+	if err := u.db.QueryRow(ctx, getFullNameByEmailQuery, email).Scan(&fullName); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", utils.BusinessError{
+				Code:    http.StatusBadRequest,
+				Message: "Wrong email",
+			}
+		}
+
+		return "", utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return fullName, nil
+}

@@ -2,20 +2,22 @@ package api_gateway_service
 
 import (
 	"context"
+	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"google.golang.org/protobuf/proto"
 	"net/http"
 	"time"
 )
 
-// todo: inject kafka
 type authenticationService struct {
 	tracer                 pkg.Tracer
 	userRepo               api_gateway_repository.IUserRepository
@@ -24,6 +26,7 @@ type authenticationService struct {
 	cacheService           IOtpCacheService
 	jwtService             IJwtService
 	refreshTokenRepository api_gateway_repository.IRefreshTokenRepository
+	messageBroker          pkg.MessageQueue
 }
 
 func NewAuthenticationService(
@@ -34,6 +37,7 @@ func NewAuthenticationService(
 	env *env.EnvManager,
 	jwtService IJwtService,
 	refreshTokenRepository api_gateway_repository.IRefreshTokenRepository,
+	messageBroker pkg.MessageQueue,
 ) IAuthenticationService {
 	return &authenticationService{
 		tracer:                 tracer,
@@ -43,6 +47,7 @@ func NewAuthenticationService(
 		jwtService:             jwtService,
 		refreshTokenRepository: refreshTokenRepository,
 		userPasswordRepo:       userPasswordRepo,
+		messageBroker:          messageBroker,
 	}
 }
 
@@ -73,7 +78,7 @@ func (a *authenticationService) Register(ctx context.Context, data api_gateway_d
 		return nil, err
 	}
 
-	// TODO: generate OTP and send to notification service to send verify email
+	// generate OTP and send to notification service to send verify email
 	otp := utils.GenerateOTP()
 
 	if err = a.cacheService.CacheOTP(ctx, otp, data.Email, time.Duration(a.env.OTPVerifyEmailTimeout)*time.Minute); err != nil {
@@ -82,6 +87,25 @@ func (a *authenticationService) Register(ctx context.Context, data api_gateway_d
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
+
+	// send to kafka
+	go func() {
+		message := &notification_proto_gen.VerifyOTPMessage{
+			Otp:      otp,
+			To:       data.Email,
+			Fullname: data.FullName,
+			Type:     notification_proto_gen.TypeVerifyOTP_EMAIL,
+		}
+
+		rawBytes, errorMarshal := proto.Marshal(message)
+
+		if errorMarshal != nil {
+			fmt.Printf("Failed to marshal OTP message: %#v\n", errorMarshal)
+			return
+		}
+
+		a.messageBroker.Produce(ctx, a.env.TopicVerifyOTP, rawBytes)
+	}()
 
 	return &api_gateway_dto.RegisterResponse{}, nil
 }
@@ -207,21 +231,43 @@ func (a *authenticationService) Logout(ctx context.Context, data api_gateway_dto
 	return nil
 }
 
-// TODO: used kafka produce in here
 func (a *authenticationService) ResendVerifyEmail(ctx context.Context, data api_gateway_dto.ResendVerifyEmailRequest) error {
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "ResendVerifyEmail"))
 	defer span.End()
 
+	fullName, err := a.userRepo.GetFullNameByEmail(ctx, data.Email)
+
+	if err != nil {
+		return err
+	}
+
 	otp := utils.GenerateOTP()
 
-	if err := a.cacheService.CacheOTP(ctx, otp, data.Email, time.Duration(a.env.OTPVerifyEmailTimeout)*time.Minute); err != nil {
+	if err = a.cacheService.CacheOTP(ctx, otp, data.Email, time.Duration(a.env.OTPVerifyEmailTimeout)*time.Minute); err != nil {
 		return utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
-	// todo: push message
+	// send to kafka
+	go func() {
+		message := &notification_proto_gen.VerifyOTPMessage{
+			Otp:      otp,
+			To:       data.Email,
+			Fullname: fullName,
+			Type:     notification_proto_gen.TypeVerifyOTP_EMAIL,
+		}
+
+		rawBytes, errorMarshal := proto.Marshal(message)
+
+		if errorMarshal != nil {
+			fmt.Printf("Failed to marshal OTP message: %#v\n", errorMarshal)
+			return
+		}
+
+		a.messageBroker.Produce(ctx, a.env.TopicVerifyOTP, rawBytes)
+	}()
 
 	return nil
 }
@@ -276,21 +322,43 @@ func (a *authenticationService) RefreshToken(ctx context.Context, refreshToken s
 	}, nil
 }
 
-// TODO: inject kafka to produce infor
 func (a *authenticationService) ForgotPassword(ctx context.Context, data api_gateway_dto.ForgotPasswordRequest) error {
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "ForgotPassword"))
 	defer span.End()
 
+	fullName, err := a.userRepo.GetFullNameByEmail(ctx, data.Email)
+
+	if err != nil {
+		return err
+	}
+
 	otp := utils.GenerateOTP()
 
-	if err := a.cacheService.CacheOTP(ctx, otp, data.Email, time.Duration(a.env.OTPVerifyEmailTimeout)*time.Minute); err != nil {
+	if err = a.cacheService.CacheOTP(ctx, otp, data.Email, time.Duration(a.env.OTPVerifyEmailTimeout)*time.Minute); err != nil {
 		return utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
-	// push kafka message
+	// send to kafka
+	go func() {
+		message := &notification_proto_gen.VerifyOTPMessage{
+			Otp:      otp,
+			To:       data.Email,
+			Fullname: fullName,
+			Type:     notification_proto_gen.TypeVerifyOTP_EMAIL,
+		}
+
+		rawBytes, errorMarshal := proto.Marshal(message)
+
+		if errorMarshal != nil {
+			fmt.Printf("Failed to marshal OTP message: %#v\n", errorMarshal)
+			return
+		}
+
+		a.messageBroker.Produce(ctx, a.env.TopicVerifyOTP, rawBytes)
+	}()
 
 	return nil
 }
