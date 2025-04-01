@@ -43,6 +43,8 @@ type IUserRepository interface {
 	GetUserIDByEmail(ctx context.Context, email string) (int, error)
 
 	VerifyEmail(ctx context.Context, email string) error
+
+	GetFullNameByEmail(ctx context.Context, email string) (string, error)
 }
 
 type IUserPasswordRepository interface {

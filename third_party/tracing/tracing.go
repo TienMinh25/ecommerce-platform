@@ -13,6 +13,7 @@ const (
 	InfraLayer       Layer = "infra"
 	TransactionLayer Layer = "transaction"
 	MiddlewareLayer  Layer = "middleware"
+	KafkaLayer       Layer = "kafka"
 )
 
 func GetSpanName(layer Layer, spanName string) string {

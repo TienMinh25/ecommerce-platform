@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification</title>
+    <style>
+        body {
+            font-family: 'Poppins', Arial, sans-serif;
+            background-color: #e8eef7; /* Màu nền tươi sáng hơn */
+            margin: 0;
+            padding: 30px 0; /* Thêm padding trên dưới */
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 20px auto; /* Thêm margin */
+            background-color: #ffffff;
+            border-radius: 12px; /* Bo góc nhiều hơn */
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15); /* Shadow đậm hơn */
+            overflow: hidden;
+        }
+        .header {
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            padding: 30px 20px; /* Tăng padding */
+        }
+        .header img {
+            max-width: 120px; /* Logo lớn hơn */
+        }
+        .body {
+            padding: 35px 25px; /* Tăng padding */
+            text-align: center;
+        }
+        .body h1 {
+            font-size: 26px;
+            color: #333333;
+            margin-bottom: 20px;
+        }
+        .body p {
+            font-size: 16px;
+            color: #555555;
+            line-height: 1.6; /* Tăng line-height */
+            margin: 15px 0; /* Khoảng cách giữa các đoạn */
+        }
+        .otp-container {
+            background-color: #f0f7ff; /* Background cho container OTP */
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 4px solid #007BFF; /* Viền bên trái */
+        }
+        .otp {
+            font-size: 36px;
+            font-weight: bold;
+            color: #007BFF;
+            letter-spacing: 5px; /* Khoảng cách giữa các số */
+        }
+        .notice {
+            background-color: #fef8e8; /* Màu nền cho notice */
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #ffeeba;
+        }
+        .notice p {
+            color: #856404;
+            margin: 0;
+        }
+        .footer {
+            background-color: #f1f1f1;
+            text-align: center;
+            padding: 20px; /* Tăng padding */
+            font-size: 14px;
+            color: #777777;
+        }
+    </style>
+</head>
+<body>
+<div class="email-container">
+    <!-- Header -->
+    <div class="header">
+        <img src="http://localhost:9000/email-image/24dd9970-2523-44b6-b967-100b866d2ea8.jpg" alt="Logo">
+    </div>
+
+    <!-- Body -->
+    <div class="body">
+        <h1>Xin chào, {{.Name}}!</h1>
+        <p>Mã OTP của bạn để xác thực là:</p>
+
+        <div class="otp-container">
+            <div class="otp">{{.OTPCode}}</div>
+        </div>
+
+        <div class="notice">
+            <p>Mã này chỉ có hiệu lực trong <strong>{{.ExpireTime}} phút</strong>. Vui lòng không chia sẻ mã này với bất kỳ ai.</p>
+        </div>
+
+        <p>Nếu bạn không yêu cầu mã này, vui lòng bỏ qua email này hoặc liên hệ với đội hỗ trợ của chúng tôi.</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        © 2025 Minh-Plaza. Tất cả các quyền được bảo lưu.
+    </div>
+</div>
+</body>
+</html>

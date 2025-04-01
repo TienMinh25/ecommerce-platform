@@ -1,12 +1,11 @@
 package env
 
 import (
-	"fmt"
-	"log"
-	"os"
-
 	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
+	"log"
+	"path/filepath"
+	"runtime"
 )
 
 type PostgreSQLConfig struct {
@@ -43,7 +42,6 @@ type JeagerConfig struct {
 type KafkaConfig struct {
 	// kafka
 	KafkaBrokers               string `envconfig:"KAFKA_BROKERS" default:"localhost:29092,localhost:29093,localhost:29094"`
-	KafkaGroupID               string `envconfig:"KAFKA_GROUP_ID" default:"my-consumer-group"`
 	KafkaRequestTimeout        int    `envconfig:"KAFKA_REQUEST_TIMEOUT" default:"3000"`
 	KafkaRetryAttempts         int    `envconfig:"KAFKA_RETRY_ATTEMPTS" default:"3"`
 	KafkaRetyDelay             int    `envconfig:"KAFKA_RETRY_DELAY" default:"2000"`
@@ -54,11 +52,10 @@ type KafkaConfig struct {
 }
 
 type MailConfig struct {
-	MailHogFrom     string `envconfig:"MAILHOG_FROM"`
-	MailHogSmtpHost string `envconfig:"MAILHOG_SMTP_SERVER"`
-	MailHogPort     string `envconfig:"MAILHOG_PORT"`
-	MailHogUserName string `envconfig:"MAILHOG_USERNAME"`
-	MailHogPassword string `envconfig:"MAILHOG_PASSWORD"`
+	MailHost     string `envconfig:"MAIL_HOST"`
+	MailUser     string `envconfig:"MAIL_USER"`
+	MailPassword string `envconfig:"MAIL_PASSWORD"`
+	MailFrom     string `envconfig:"MAIL_FROM"`
 }
 
 type MongoDBConfig struct {
@@ -75,18 +72,25 @@ type ServiceWorkerPoolConfig struct {
 
 type ServerConfig struct {
 	ServerAddresss string `envconfig:"SERVER_ADDRESS"`
+	ConsumeGroup   string `envconfig:"API_GATEWAY_CONSUME_GROUP"`
+}
+
+type NotificationServerConfig struct {
+	ServerAddresss string `envconfig:"NOTIFICATION_ADDRESS"`
+	ConsumeGroup   string `envconfig:"NOTIFICATION_CONSUME_GROUP"`
 }
 
 type EnvManager struct {
-	ServerConfig      *ServerConfig
-	PostgreSQL        *PostgreSQLConfig
-	Redis             *RedisConfig
-	Jeager            *JeagerConfig
-	Mail              *MailConfig
-	Mongo             *MongoDBConfig
-	MinioConfig       *MinioConfig
-	Kafka             *KafkaConfig
-	ServiceWorkerPool *ServiceWorkerPoolConfig
+	ServerConfig             *ServerConfig
+	PostgreSQL               *PostgreSQLConfig
+	Redis                    *RedisConfig
+	Jeager                   *JeagerConfig
+	Mail                     *MailConfig
+	Mongo                    *MongoDBConfig
+	MinioConfig              *MinioConfig
+	Kafka                    *KafkaConfig
+	ServiceWorkerPool        *ServiceWorkerPoolConfig
+	NotificationServerConfig *NotificationServerConfig
 
 	OTPVerifyEmailTimeout int `envconfig:"OTP_VERIFY_EMAIL_TIMEOUT"`
 
@@ -96,16 +100,18 @@ type EnvManager struct {
 	ExpireAccessToken  int `envconfig:"EXPIRE_ACCESS_TOKEN"`
 	ExpireRefreshToken int `envconfig:"EXPIRE_REFRESH_TOKEN"`
 
-	JetStreamName          string `envconfig:"JETSTREAM_STREAM_NAME"`
-	JetStreamDurable       string `envconfig:"JETSTREAM_DURABLE"`
-	JetStreamOrdersTopic   string `envconfig:"JETSTREAM_ORDERS_TOPIC"`
-	JetStreamProductsTopic string `envconfig:"JETSTREAM_PRODUCTS_TOPIC"`
-	JetStreamPartnersTopic string `envconfig:"JETSTREAM_PARTNERS_TOPIC"`
+	TopicVerifyOTP string `envconfig:"TOPIC_VERIFY_OTP"`
 }
 
 func NewEnvManager() *EnvManager {
-	dir, _ := os.Getwd()
-	err := godotenv.Load(fmt.Sprintf("%s/%s", dir, "configs/.env.prod"))
+	_, filename, _, ok := runtime.Caller(0)
+
+	if !ok {
+		return nil
+	}
+
+	configPath := filepath.Join(filepath.Dir(filename), "../../configs/.env.prod")
+	err := godotenv.Load(configPath)
 
 	if err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
@@ -115,7 +121,7 @@ func NewEnvManager() *EnvManager {
 
 	var config EnvManager
 
-	if err := envconfig.Process("", &config); err != nil {
+	if err = envconfig.Process("", &config); err != nil {
 		log.Fatalf("Failed to load environment variables: %v", err)
 	}
 

@@ -1,4 +1,4 @@
-package api_gateway_postgres
+package postgres
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 
-	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/jackc/pgx/v5"
@@ -20,15 +19,15 @@ type postgres struct {
 	tracer pkg.Tracer
 }
 
-func NewPostgresSQL(lifecycle fx.Lifecycle, manager *env.EnvManager, tracer pkg.Tracer) (pkg.Database, error) {
-	dbClient, err := pgxpool.New(context.Background(), fmt.Sprintf("%s/%s", manager.PostgreSQL.PostgresDSN, common.API_GATEWAY_DB))
+func NewPostgresSQL(lifecycle fx.Lifecycle, manager *env.EnvManager, tracer pkg.Tracer, dbname string) (pkg.Database, error) {
+	dbClient, err := pgxpool.New(context.Background(), fmt.Sprintf("%s/%s", manager.PostgreSQL.PostgresDSN, dbname))
 
 	if err != nil {
-		return nil, fmt.Errorf("unable to create connection pool to database %s, error: %w", common.API_GATEWAY_DB, err)
+		return nil, fmt.Errorf("unable to create connection pool to database %s, error: %w\n", dbname, err)
 	}
 
 	if err = dbClient.Ping(context.Background()); err != nil {
-		return nil, fmt.Errorf("cannot ping to database %s, error: %w", common.API_GATEWAY_DB, err)
+		return nil, fmt.Errorf("cannot ping to database %s, error: %w\n", dbname, err)
 	}
 
 	pg := &postgres{
@@ -39,11 +38,11 @@ func NewPostgresSQL(lifecycle fx.Lifecycle, manager *env.EnvManager, tracer pkg.
 	// manage lifecycle of application, which is used to disconnect to database when application crash or shutdown
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			fmt.Printf("Postgres connection is connect successfully to database %s", common.API_GATEWAY_DB)
+			fmt.Printf("Postgres connection is connect successfully to database %s\n", dbname)
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			fmt.Printf("Close connectio to database %s.....", common.API_GATEWAY_DB)
+			fmt.Printf("Close connection to database %s.....\n", dbname)
 			pg.db.Close()
 			return nil
 		},
@@ -79,7 +78,7 @@ func (p *postgres) BeginTxFunc(ctx context.Context, options pgx.TxOptions, f fun
 		// Thử rollback, nhưng vẫn ưu tiên lỗi gốc
 		if rbErr := transaction.Rollback(ctx); rbErr != nil {
 			// Có thể log lỗi rollback hoặc kết hợp với lỗi gốc
-			return fmt.Errorf("execution error: %v, rollback error: %v", originalErr, rbErr)
+			return fmt.Errorf("execution error: %v, rollback error: %v\n", originalErr, rbErr)
 		}
 		return originalErr
 	}

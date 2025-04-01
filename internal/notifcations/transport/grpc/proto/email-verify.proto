@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "./notification_proto_gen";
+
+enum TypeVerifyOTP {
+  EMAIL = 0;
+  PHONE = 1;
+}
+
+message VerifyOTPMessage {
+  TypeVerifyOTP type = 1;
+  string otp = 2;
+  string to = 3;
+  string fullname = 4;
+}

@@ -12,7 +12,7 @@ type MessageQueue interface {
 
 type Subscriber interface {
 	// Subscribe Subscribes to a topic or queue for receiving messages, returning an error if the subcription fails.
-	Subscribe(ctx context.Context, payload *SubscriptionInfo) error
+	Subscribe(payload *SubscriptionInfo) error
 }
 
 type Publisher interface {

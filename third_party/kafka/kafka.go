@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
+	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	kafkaconfluent "github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/google/uuid"
 	"sync"
@@ -12,25 +13,27 @@ import (
 )
 
 type queue struct {
-	groupID     string                             // group consumer id
+	groupID     string                             // group consumer id -> pass by truyen vao
 	producer    *kafkaconfluent.Producer           // producer
 	consumer    *kafkaconfluent.Consumer           // consumer
 	subscribers map[string][]*pkg.SubscriptionInfo // information of subscribers
 	mu          sync.RWMutex                       // concurrent lock when have multiple subscribers subscrie
-	workerPool  *pkg.Pool                          // woker pool to process message
+	workerPool  *pkg.Pool                          // worker pool to process message
 	ctx         context.Context
 	cancel      context.CancelFunc
 	wg          sync.WaitGroup
+	tracer      pkg.Tracer
 }
 
-func NewQueue(config *env.EnvManager) (pkg.MessageQueue, error) {
+func NewQueue(config *env.EnvManager, groupID string, tracer pkg.Tracer) (pkg.MessageQueue, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	q := &queue{
-		groupID:     config.Kafka.KafkaGroupID,
+		groupID:     groupID,
 		ctx:         ctx,
 		cancel:      cancel,
 		subscribers: make(map[string][]*pkg.SubscriptionInfo, 0),
+		tracer:      tracer,
 	}
 
 	producer, err := newKafkaProducer(config.Kafka.KafkaBrokers, config.Kafka.KafkaRetryAttempts, config.Kafka.KafkaProducerMaxWait)
@@ -41,7 +44,7 @@ func NewQueue(config *env.EnvManager) (pkg.MessageQueue, error) {
 	}
 	q.producer = producer
 
-	q.consumer, err = newKafkaConsumer(config.Kafka.KafkaBrokers, fmt.Sprintf("%s", config.Kafka.KafkaGroupID), config.Kafka.KafkaConsumerFetchMinBytes, config.Kafka.KafkaConsumerFetchMaxBytes, config.Kafka.KafkaConsumerMaxWait)
+	q.consumer, err = newKafkaConsumer(config.Kafka.KafkaBrokers, fmt.Sprintf("%s", groupID), config.Kafka.KafkaConsumerFetchMinBytes, config.Kafka.KafkaConsumerFetchMaxBytes, config.Kafka.KafkaConsumerMaxWait)
 	if err != nil {
 		q.producer.Close()
 		cancel()
@@ -49,6 +52,7 @@ func NewQueue(config *env.EnvManager) (pkg.MessageQueue, error) {
 	}
 
 	q.workerPool = pkg.NewPool(config.ServiceWorkerPool.CapacityWorkerPool, config.ServiceWorkerPool.MessageSize, q.processMessage)
+	q.workerPool.Start()
 
 	// Start the message consumer loop
 	// consume all message from all topic which is subscribed
@@ -138,8 +142,11 @@ func (q *queue) Close() error {
 	return nil
 }
 
-// Publish implements pkg.Queue.
+// Produce implements pkg.Queue.
 func (q *queue) Produce(ctx context.Context, topic string, payload []byte) error {
+	ctx, span := q.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.KafkaLayer, "Produce"))
+	defer span.End()
+
 	// begin transaction
 	err := q.producer.BeginTransaction()
 
@@ -163,14 +170,13 @@ func (q *queue) Produce(ctx context.Context, topic string, payload []byte) error
 		return err
 	}
 
-	select {
-	case <-ctx.Done():
-		_ = q.producer.AbortTransaction(ctx)
+	if ctx.Err() != nil {
+		_ = q.producer.AbortTransaction(context.Background())
 		return ctx.Err()
 	}
 
 	// Commit transaction
-	if err := q.producer.CommitTransaction(ctx); err != nil {
+	if err = q.producer.CommitTransaction(ctx); err != nil {
 		_ = q.producer.AbortTransaction(ctx)
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
@@ -180,7 +186,7 @@ func (q *queue) Produce(ctx context.Context, topic string, payload []byte) error
 
 // Subscribe implements pkg.Queue.
 // chi subscribe topic cho consumer -> chi ra rang group consumer do se poll luon message tu topic do tren kafka ve
-func (q *queue) Subscribe(ctx context.Context, payload *pkg.SubscriptionInfo) error {
+func (q *queue) Subscribe(payload *pkg.SubscriptionInfo) error {
 	if payload == nil || payload.Topic == "" || payload.Callback == nil {
 		return fmt.Errorf("invalid subscription info")
 	}
@@ -188,16 +194,16 @@ func (q *queue) Subscribe(ctx context.Context, payload *pkg.SubscriptionInfo) er
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	// Store subscription info
-	q.subscribers[payload.Topic] = append(q.subscribers[payload.Topic], payload)
-
-	topics := make([]string, 0, len(q.subscribers))
-
-	for topic := range q.subscribers {
-		topics = append(topics, topic)
+	// check if topic already subscribe before
+	if _, exists := q.subscribers[payload.Topic]; exists {
+		q.subscribers[payload.Topic] = append(q.subscribers[payload.Topic], payload)
+		return nil
 	}
 
-	return q.consumer.SubscribeTopics(topics, nil)
+	// Store subscription info if the first time subscribe
+	q.subscribers[payload.Topic] = []*pkg.SubscriptionInfo{payload}
+
+	return q.consumer.Subscribe(payload.Topic, nil)
 }
 
 // consumeMessages is the main consumer loop
@@ -253,10 +259,12 @@ func (q *queue) processMessage(message interface{}) error {
 	handlers := q.subscribers[topic]
 	q.mu.RUnlock()
 
-	if len(handlers) == 0 {
-		// No handlers for this topic, commit message and return
-		_, err := q.consumer.CommitMessage(msg)
-		return err
+	// Commit the message offset
+	// commit immediately -> because just notification, not important!
+	_, err := q.consumer.CommitMessage(msg)
+
+	if err != nil {
+		return fmt.Errorf("failed to commit message: %w", err)
 	}
 
 	// Process message with all registered handlers
@@ -269,13 +277,6 @@ func (q *queue) processMessage(message interface{}) error {
 			// Log the error but continue processing with other handlers
 			fmt.Printf("Error processing message for topic %s: %v\n", topic, err)
 		}
-	}
-
-	// Commit the message offset
-	_, err := q.consumer.CommitMessage(msg)
-
-	if err != nil {
-		return fmt.Errorf("failed to commit message: %w", err)
 	}
 
 	return lastErr
