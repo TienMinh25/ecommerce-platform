@@ -52,11 +52,10 @@ type KafkaConfig struct {
 }
 
 type MailConfig struct {
-	MailHogFrom     string `envconfig:"MAILHOG_FROM"`
-	MailHogSmtpHost string `envconfig:"MAILHOG_SMTP_SERVER"`
-	MailHogPort     string `envconfig:"MAILHOG_PORT"`
-	MailHogUserName string `envconfig:"MAILHOG_USERNAME"`
-	MailHogPassword string `envconfig:"MAILHOG_PASSWORD"`
+	MailHost     string `envconfig:"MAIL_HOST"`
+	MailUser     string `envconfig:"MAIL_USER"`
+	MailPassword string `envconfig:"MAIL_PASSWORD"`
+	MailFrom     string `envconfig:"MAIL_FROM"`
 }
 
 type MongoDBConfig struct {

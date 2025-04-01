@@ -133,7 +133,7 @@ func (a *authenticationService) Login(ctx context.Context, data api_gateway_dto.
 		return nil, utils.BusinessError{
 			Code:      http.StatusUnauthorized,
 			Message:   common.INCORRECT_USER_PASSWORD,
-			ErrorCode: errorcode.UNAUTHORIZED,
+			ErrorCode: errorcode.EMAIL_OR_PASSWORD_INCOORECT,
 		}
 	}
 
