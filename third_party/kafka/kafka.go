@@ -259,10 +259,12 @@ func (q *queue) processMessage(message interface{}) error {
 	handlers := q.subscribers[topic]
 	q.mu.RUnlock()
 
-	if len(handlers) == 0 {
-		// No handlers for this topic, commit message and return
-		_, err := q.consumer.CommitMessage(msg)
-		return err
+	// Commit the message offset
+	// commit immediately -> because just notification, not important!
+	_, err := q.consumer.CommitMessage(msg)
+
+	if err != nil {
+		return fmt.Errorf("failed to commit message: %w", err)
 	}
 
 	// Process message with all registered handlers
@@ -275,13 +277,6 @@ func (q *queue) processMessage(message interface{}) error {
 			// Log the error but continue processing with other handlers
 			fmt.Printf("Error processing message for topic %s: %v\n", topic, err)
 		}
-	}
-
-	// Commit the message offset
-	_, err := q.consumer.CommitMessage(msg)
-
-	if err != nil {
-		return fmt.Errorf("failed to commit message: %w", err)
 	}
 
 	return lastErr

@@ -1,12 +1,17 @@
 package adaptor
 
 import (
+	"bytes"
+	"embed"
 	"fmt"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
-	"net/smtp"
-	"strings"
+	"gopkg.in/gomail.v2"
+	"html/template"
 )
+
+//go:embed template/*
+var templateFolder embed.FS
 
 type gmailSmtpAdapter struct {
 	tracer pkg.Tracer
@@ -21,30 +26,44 @@ func NewGmailSmtpAdapter(tracer pkg.Tracer, env *env.EnvManager) IGmailSmtpAdapt
 }
 
 func (g *gmailSmtpAdapter) SendMail(data SendMailRequest) error {
-	smtpHost := "smtp.gmail.com"
-	smtpPort := "3000"
-	senderEmail := "dominh12223@gmail.com"
-	senderPassword := "uhed ysci skqp dnar"
+	templateFile, err := templateFolder.ReadFile("template/otp-verify-email.html")
 
-	subject := "Xác nhận đăng ký tài khoản"
-	body := fmt.Sprintf("Xin chào %s,\n\nMã xác nhận của bạn là: %s\nVui lòng nhập mã này để hoàn tất đăng ký.\n\nCảm ơn!",
-		data.FullName, data.OTP)
-
-	headers := []string{
-		"From: " + senderEmail,
-		"To: " + data.To,
-		"Subject: " + subject,
-		"MIME-Version: 1.0",
-		"Content-Type: text/plain; charset=\"utf-8\"",
-		"",
-		body,
-	}
-	message := strings.Join(headers, "\r\n")
-
-	auth := smtp.PlainAuth("", senderEmail, senderPassword, smtpHost)
-	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, senderEmail, []string{data.To}, []byte(message))
 	if err != nil {
-		return fmt.Errorf("lỗi gửi mail: %v", err)
+		return err
+	}
+
+	tmpl, err := template.New("email").Parse(string(templateFile))
+
+	if err != nil {
+		return err
+	}
+
+	dataMail := struct {
+		Name       string
+		OTPCode    string
+		ExpireTime int
+	}{
+		Name:       data.FullName,
+		OTPCode:    data.OTP,
+		ExpireTime: g.env.OTPVerifyEmailTimeout,
+	}
+
+	var bodyMail bytes.Buffer
+	if err = tmpl.Execute(&bodyMail, dataMail); err != nil {
+		return err
+	}
+
+	m := gomail.NewMessage()
+	m.SetHeader("To", data.To)
+	m.SetHeader("From", g.env.Mail.MailFrom)
+	m.SetHeader("Subject", "Xác nhận email của bạn")
+	m.SetBody("text/html", bodyMail.String())
+
+	// send mail
+	d := gomail.NewDialer(g.env.Mail.MailHost, 587, g.env.Mail.MailUser, g.env.Mail.MailPassword)
+
+	if err = d.DialAndSend(m); err != nil {
+		return err
 	}
 
 	fmt.Println("Email xác nhận đã gửi đến", data.To)
