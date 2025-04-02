@@ -95,6 +95,7 @@ func (a *authenticationService) Register(ctx context.Context, data api_gateway_d
 			To:       data.Email,
 			Fullname: data.FullName,
 			Type:     notification_proto_gen.TypeVerifyOTP_EMAIL,
+			Purpose:  notification_proto_gen.PurposeOTP_EMAIL_VERIFICATION,
 		}
 
 		rawBytes, errorMarshal := proto.Marshal(message)
@@ -257,6 +258,7 @@ func (a *authenticationService) ResendVerifyEmail(ctx context.Context, data api_
 			To:       data.Email,
 			Fullname: fullName,
 			Type:     notification_proto_gen.TypeVerifyOTP_EMAIL,
+			Purpose:  notification_proto_gen.PurposeOTP_EMAIL_VERIFICATION,
 		}
 
 		rawBytes, errorMarshal := proto.Marshal(message)
@@ -348,6 +350,7 @@ func (a *authenticationService) ForgotPassword(ctx context.Context, data api_gat
 			To:       data.Email,
 			Fullname: fullName,
 			Type:     notification_proto_gen.TypeVerifyOTP_EMAIL,
+			Purpose:  notification_proto_gen.PurposeOTP_PASSWORD_RESET,
 		}
 
 		rawBytes, errorMarshal := proto.Marshal(message)

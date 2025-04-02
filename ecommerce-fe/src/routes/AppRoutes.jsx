@@ -15,6 +15,9 @@ import DashboardLayout from '../components/layout/DashboardLayout';
 import Dashboard from '../pages/Dashboard';
 import UserManagementComponent from '../pages/Module/Dashboard/UserManagementComponent';
 import RoleManagementComponent from '../pages/Module/Dashboard/RoleManagementComponent';
+import EmailVerificationPage from "../pages/Auth/EmailVerificationPage.jsx";
+import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage.jsx";
+import ResetPasswordPage from "../pages/Auth/ResetPasswordPage.jsx";
 
 const AppRoutes = () => {
   return (
@@ -23,6 +26,9 @@ const AppRoutes = () => {
       <Route element={<PublicRoute />}>
         <Route path='/login' element={<Login />} />
         <Route path='/register' element={<Register />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
       </Route>
 
       {/* Private Routes */}

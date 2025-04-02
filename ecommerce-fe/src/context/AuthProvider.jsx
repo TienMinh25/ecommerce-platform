@@ -52,9 +52,13 @@ export const AuthProvider = ({ children }) => {
       // Set user state
       setUser(user);
 
-      return { success: true };
+      return { success: true, error: null, needVerification: false };
     } catch (error) {
-      return { success: false, error: error.response.data.error.message || 'Login failed' };
+      if (error.response.data.error["error_code"] === "4002") {
+        return {success: false, error: error.response.data.error.message, needVerification: true}
+      }
+
+      return { success: false, error: error.response.data.error.message || 'Login failed', needVerification: false };
     } finally {
       setIsLoading(false);
     }
@@ -98,9 +102,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout function
-  const logout = () => {
+  const logout = async () => {
     try {
-      authService.logout(localStorage.getItem('refresh_token'))
+      await authService.logout(localStorage.getItem('refresh_token'))
       // Clear local storage
       localStorage.removeItem('access_token');
       localStorage.removeItem('refresh_token');
@@ -114,6 +118,46 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const verifyOTP = async (dataVerify) => {
+    try {
+      await authService.verifyOTP(dataVerify)
+
+      return {success: true}
+    } catch (error) {
+      return {success: false, error: error.response.data.error.message || "Verify email failed, please try again!"}
+    }
+  }
+
+  const resendVerifyEmailOTP = async (dataResend) => {
+    try {
+      await authService.resendEmailOTP(dataResend)
+
+      return {success: true}
+    } catch (error) {
+      return {success: false, error: error.response.data.error.message || "Resend otp to verify email failed, please try again!"}
+    }
+  }
+
+  const sendPasswordResetOTP = async (data) => {
+    try {
+      await authService.sendPasswordResetOTP(data)
+
+      return {success: true, error: null}
+    } catch (error) {
+      return {success: false, error: error.response.data.error.message || "Send otp forgot password failed, please try again!"}
+    }
+  }
+
+  const resetPassword = async (data) => {
+    try {
+      await authService.resetPassword(data)
+
+      return {success: true, error: null}
+    } catch (error) {
+      return {success: false, error: error.response.data.error.message || "Reset password failed, please try again!"}
+    }
+  }
+
   const value = {
     user,
     isLoading,
@@ -121,6 +165,10 @@ export const AuthProvider = ({ children }) => {
     register,
     socialLogin,
     logout,
+    verifyOTP,
+    resendVerifyEmailOTP,
+    sendPasswordResetOTP,
+    resetPassword,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

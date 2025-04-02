@@ -48,4 +48,36 @@ export const authService = {
       return null;
     }
   },
+
+  verifyOTP: async (dataVerify) => {
+    try {
+      await api.post('/auth/verify-email', dataVerify)
+    } catch (error) {
+      throw error
+    }
+  },
+
+  resendEmailOTP: async (dataResend) => {
+    try {
+      await api.post('/auth/resend-verify-email', dataResend)
+    } catch (error) {
+      throw error
+    }
+  },
+
+  sendPasswordResetOTP: async (data) => {
+    try {
+      await api.post('/auth/forgot-password', data)
+    } catch (error) {
+      throw error
+    }
+  },
+
+  resetPassword: async (data) => {
+    try {
+      await api.post('/auth/reset-password', data)
+    } catch (error) {
+      throw error
+    }
+  }
 };

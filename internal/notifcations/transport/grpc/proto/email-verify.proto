@@ -7,9 +7,15 @@ enum TypeVerifyOTP {
   PHONE = 1;
 }
 
+enum PurposeOTP {
+  EMAIL_VERIFICATION = 0;
+  PASSWORD_RESET = 1;
+}
+
 message VerifyOTPMessage {
   TypeVerifyOTP type = 1;
   string otp = 2;
   string to = 3;
   string fullname = 4;
+  PurposeOTP purpose = 5;
 }

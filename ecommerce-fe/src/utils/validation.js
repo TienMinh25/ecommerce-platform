@@ -23,3 +23,22 @@ export const registerSchema = yup.object().shape({
     .oneOf([true], 'Bạn phải đồng ý với điều khoản sử dụng')
     .required('Bạn phải đồng ý với điều khoản sử dụng'),
 });
+
+export const forgotPasswordSchema = yup.object({
+  email: yup
+      .string()
+      .email('Email không hợp lệ')
+      .required('Vui lòng nhập email của bạn'),
+});
+
+// Schema validation
+export const resetPasswordSchema = yup.object({
+  password: yup
+      .string()
+      .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
+      .required('Vui lòng nhập mật khẩu mới'),
+  confirmPassword: yup
+      .string()
+      .oneOf([yup.ref('password'), null], 'Mật khẩu không khớp')
+      .required('Vui lòng xác nhận mật khẩu'),
+});
