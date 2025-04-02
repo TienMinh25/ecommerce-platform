@@ -53,12 +53,17 @@ const RegisterForm = () => {
       if (result.success) {
         toast({
           title: 'Đăng ký thành công',
-          description: 'Chào mừng bạn đến với Shop!',
+          description: 'Vui lòng xác thực email của bạn',
           status: 'success',
           duration: 3000,
           isClosable: true,
         });
-        navigate('/', { replace: true });
+
+        // Chuyển hướng đến trang xác thực email và truyền email qua location state
+        navigate('/verify-email', {
+          replace: true,
+          state: { email: data.email, isRegister: true }
+        });
       } else {
         throw new Error(result.error || 'Đăng ký thất bại');
       }
@@ -76,108 +81,148 @@ const RegisterForm = () => {
   };
 
   return (
-    <Box as='form' onSubmit={handleSubmit(onSubmit)} w='full'>
-      <Stack spacing={4}>
-        <Box as='h1' fontSize='2xl' fontWeight='bold' mb={2}>
-          Tạo tài khoản mới
-        </Box>
-        <Text color='gray.600' mb={6}>
-          Đăng ký để mua sắm và nhận nhiều ưu đãi hơn
-        </Text>
+      <Box as='form' onSubmit={handleSubmit(onSubmit)} w='full'>
+        <Stack spacing={4}>
+          <Box as='h1' fontSize='2xl' fontWeight='bold' mb={2} color="gray.800">
+            Tạo tài khoản mới
+          </Box>
+          <Text color='gray.700' mb={6} fontWeight="medium">
+            Đăng ký để mua sắm và nhận nhiều ưu đãi hơn
+          </Text>
 
-        <FormControl isInvalid={errors.name} id='name'>
-          <FormLabel>Họ và tên</FormLabel>
-          <Input
-            {...register('full_name')}
-            type='text'
-            placeholder='Nguyễn Văn A'
-            size='lg'
-          />
-          <FormErrorMessage>{errors.name?.message}</FormErrorMessage>
-        </FormControl>
-
-        <FormControl isInvalid={errors.email} id='email'>
-          <FormLabel>Email</FormLabel>
-          <Input
-            {...register('email')}
-            type='email'
-            placeholder='your@email.com'
-            size='lg'
-          />
-          <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
-        </FormControl>
-
-        <FormControl isInvalid={errors.password} id='password'>
-          <FormLabel>Mật khẩu</FormLabel>
-          <InputGroup size='lg'>
+          <FormControl isInvalid={errors.name} id='name'>
+            <FormLabel fontWeight="medium" color="gray.700">Họ và tên</FormLabel>
             <Input
-              {...register('password')}
-              type={showPassword ? 'text' : 'password'}
-              placeholder='********'
+                {...register('full_name')}
+                type='text'
+                placeholder='Nguyễn Văn A'
+                size='lg'
+                bg="white"
+                borderColor="gray.300"
+                _hover={{ borderColor: 'brand.400' }}
+                _focus={{
+                  borderColor: 'brand.500',
+                  boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)'
+                }}
             />
-            <InputRightElement>
-              <IconButton
-                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-                icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                variant='ghost'
-                onClick={() => setShowPassword(!showPassword)}
+            <FormErrorMessage fontWeight="medium">{errors.name?.message}</FormErrorMessage>
+          </FormControl>
+
+          <FormControl isInvalid={errors.email} id='email'>
+            <FormLabel fontWeight="medium" color="gray.700">Email</FormLabel>
+            <Input
+                {...register('email')}
+                type='email'
+                placeholder='your@email.com'
+                size='lg'
+                bg="white"
+                borderColor="gray.300"
+                _hover={{ borderColor: 'brand.400' }}
+                _focus={{
+                  borderColor: 'brand.500',
+                  boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)'
+                }}
+            />
+            <FormErrorMessage fontWeight="medium">{errors.email?.message}</FormErrorMessage>
+          </FormControl>
+
+          <FormControl isInvalid={errors.password} id='password'>
+            <FormLabel fontWeight="medium" color="gray.700">Mật khẩu</FormLabel>
+            <InputGroup size='lg'>
+              <Input
+                  {...register('password')}
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder='********'
+                  bg="white"
+                  borderColor="gray.300"
+                  _hover={{ borderColor: 'brand.400' }}
+                  _focus={{
+                    borderColor: 'brand.500',
+                    boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)'
+                  }}
               />
-            </InputRightElement>
-          </InputGroup>
-          <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
-        </FormControl>
+              <InputRightElement>
+                <IconButton
+                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                    variant='ghost'
+                    color="gray.500"
+                    _hover={{ color: 'brand.500', bg: 'brand.50' }}
+                    onClick={() => setShowPassword(!showPassword)}
+                />
+              </InputRightElement>
+            </InputGroup>
+            <FormErrorMessage fontWeight="medium">{errors.password?.message}</FormErrorMessage>
+          </FormControl>
 
-        <FormControl isInvalid={errors.agreeTerms} id='agreeTerms'>
-          <Stack direction='row' align='start' spacing={1} pt={4}>
-            <Checkbox
-              {...register('agreeTerms')}
-              colorScheme='brand'
+          <FormControl isInvalid={errors.agreeTerms} id='agreeTerms'>
+            <Stack direction='row' align='start' spacing={1} pt={4}>
+              <Checkbox
+                  {...register('agreeTerms')}
+                  colorScheme='brand'
+                  size='lg'
+              />
+              <Text fontSize='sm' color='gray.700' fontWeight="medium">
+                Tôi đồng ý với{' '}
+                <Link
+                    color='brand.600'
+                    fontWeight='bold'
+                    _hover={{ color: 'brand.700', textDecoration: 'underline' }}
+                >
+                  Điều khoản sử dụng
+                </Link>{' '}
+                và{' '}
+                <Link
+                    color='brand.600'
+                    fontWeight='bold'
+                    _hover={{ color: 'brand.700', textDecoration: 'underline' }}
+                >
+                  Chính sách bảo mật
+                </Link>{' '}
+                của Shop
+              </Text>
+            </Stack>
+            <FormErrorMessage fontWeight="medium">{errors.agreeTerms?.message}</FormErrorMessage>
+          </FormControl>
+
+          <Button
+              type='submit'
               size='lg'
-            />
-            <Text fontSize='sm' color='gray.600'>
-              Tôi đồng ý với{' '}
-              <Link color='brand.500' fontWeight='semibold'>
-                Điều khoản sử dụng
-              </Link>{' '}
-              và{' '}
-              <Link color='brand.500' fontWeight='semibold'>
-                Chính sách bảo mật
-              </Link>{' '}
-              của Shop
-            </Text>
-          </Stack>
-          <FormErrorMessage>{errors.agreeTerms?.message}</FormErrorMessage>
-        </FormControl>
-
-        <Button
-          type='submit'
-          size='lg'
-          colorScheme='brand'
-          isLoading={isLoading}
-          loadingText='Đang đăng ký...'
-          w='full'
-          mt={6}
-        >
-          Đăng ký
-        </Button>
-
-        <Divider my={6} />
-
-        <SocialLogin buttonText='Đăng ký với' />
-
-        <Text mt={4} textAlign='center'>
-          Đã có tài khoản?{' '}
-          <Link
-            as={RouterLink}
-            to='/login'
-            color='brand.500'
-            fontWeight='semibold'
+              colorScheme='brand'
+              isLoading={isLoading}
+              loadingText='Đang đăng ký...'
+              w='full'
+              mt={6}
+              fontWeight="bold"
+              fontSize="md"
+              py={6}
+              boxShadow="md"
+              _hover={{
+                transform: 'translateY(-1px)',
+                boxShadow: 'lg',
+              }}
           >
-            Đăng nhập
-          </Link>
-        </Text>
-      </Stack>
-    </Box>
+            Đăng ký
+          </Button>
+
+          <Divider my={6} borderColor="gray.300" />
+
+          <SocialLogin buttonText='Đăng ký với' />
+
+          <Text mt={4} textAlign='center' color="gray.700">
+            Đã có tài khoản?{' '}
+            <Link
+                as={RouterLink}
+                to='/login'
+                color='brand.600'
+                fontWeight='bold'
+                _hover={{ color: 'brand.700', textDecoration: 'underline' }}
+            >
+              Đăng nhập
+            </Link>
+          </Text>
+        </Stack>
+      </Box>
   );
 };
 

@@ -42,6 +42,7 @@ func (service *notificationService) SendOTPByEmail(ctx context.Context, message 
 		To:       otpMessage.To,
 		FullName: otpMessage.Fullname,
 		OTP:      otpMessage.Otp,
+		Purpose:  otpMessage.Purpose,
 	}); err != nil {
 		span.RecordError(err)
 		return err

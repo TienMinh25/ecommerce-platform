@@ -42,37 +42,43 @@ const SocialLogin = ({ buttonText = 'Đăng nhập với' }) => {
   };
 
   return (
-    <VStack spacing={4} width='full'>
-      <Text textAlign='center' color='gray.500' fontSize='sm'>
-        {buttonText}
-      </Text>
+      <VStack spacing={4} width='full'>
+        <Text textAlign='center' color='gray.700' fontSize='sm' fontWeight="medium">
+          {buttonText}
+        </Text>
 
-      <HStack spacing={4} width='full'>
-        <Button
-          onClick={() => handleSocialLogin('google')}
-          leftIcon={<FaGoogle />}
-          colorScheme='red'
-          variant='outline'
-          size='lg'
-          flex='1'
-          isLoading={isLoading.google}
-        >
-          Google
-        </Button>
+        <HStack spacing={4} width='full'>
+          <Button
+              onClick={() => handleSocialLogin('google')}
+              leftIcon={<FaGoogle />}
+              colorScheme='red'
+              variant='outline'
+              size='lg'
+              flex='1'
+              isLoading={isLoading.google}
+              _hover={{
+                bg: 'red.100',
+              }}
+          >
+            Google
+          </Button>
 
-        <Button
-          onClick={() => handleSocialLogin('facebook')}
-          leftIcon={<FaFacebook />}
-          colorScheme='facebook'
-          variant='outline'
-          size='lg'
-          flex='1'
-          isLoading={isLoading.facebook}
-        >
-          Facebook
-        </Button>
-      </HStack>
-    </VStack>
+          <Button
+              onClick={() => handleSocialLogin('facebook')}
+              leftIcon={<FaFacebook />}
+              colorScheme='facebook'
+              variant='outline'
+              size='lg'
+              flex='1'
+              isLoading={isLoading.facebook}
+              _hover={{
+                bg: 'blue.100',
+              }}
+          >
+            Facebook
+          </Button>
+        </HStack>
+      </VStack>
   );
 };
 

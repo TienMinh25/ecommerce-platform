@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"gopkg.in/gomail.v2"
 	"html/template"
@@ -26,7 +27,17 @@ func NewGmailSmtpAdapter(tracer pkg.Tracer, env *env.EnvManager) IGmailSmtpAdapt
 }
 
 func (g *gmailSmtpAdapter) SendMail(data SendMailRequest) error {
-	templateFile, err := templateFolder.ReadFile("template/otp-verify-email.html")
+	var templateFile []byte
+	var subject string
+	var err error
+
+	if data.Purpose == notification_proto_gen.PurposeOTP_PASSWORD_RESET {
+		templateFile, err = templateFolder.ReadFile("template/otp-forgot-password.html")
+		subject = "Đặt lại mật khẩu của bạn"
+	} else {
+		templateFile, err = templateFolder.ReadFile("template/otp-verify-email.html")
+		subject = "Xác nhận email của bạn"
+	}
 
 	if err != nil {
 		return err
@@ -56,7 +67,7 @@ func (g *gmailSmtpAdapter) SendMail(data SendMailRequest) error {
 	m := gomail.NewMessage()
 	m.SetHeader("To", data.To)
 	m.SetHeader("From", g.env.Mail.MailFrom)
-	m.SetHeader("Subject", "Xác nhận email của bạn")
+	m.SetHeader("Subject", subject)
 	m.SetBody("text/html", bodyMail.String())
 
 	// send mail

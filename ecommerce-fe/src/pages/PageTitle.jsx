@@ -21,6 +21,7 @@ const PageTitle = ({ title, suffix = 'Minh Plaza' }) => {
         '/register': 'Đăng ký',
         '/about': 'Về chúng tôi',
         '/contact': 'Liên hệ',
+        '/verify-email': 'Xác thực email',
       };
 
       pageTitle = pageTitles[path] || 'Mua sắm trực tuyến';
