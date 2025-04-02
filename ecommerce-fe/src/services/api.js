@@ -32,6 +32,7 @@ api.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
         return config;
     },
     (error) => Promise.reject(error)
@@ -43,16 +44,11 @@ api.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
 
-        // Prevent infinite loops
-        if (originalRequest._retry) {
-            return Promise.reject(error);
-        }
-
         // Handle 401 Unauthorized errors
         if (error.response &&
             error.response.status === 401 &&
             error.response.data &&
-            error.response.data.code === 4001) {
+            error.response.data.error["error_code"] === "4001") {
 
             if (isRefreshing) {
                 // If a refresh is already in progress, add the request to queue
@@ -63,13 +59,11 @@ api.interceptors.response.use(
                         // Create a NEW request with the same config but new token
                         const newRequest = { ...originalRequest };
                         newRequest.headers.Authorization = `Bearer ${token}`;
-                        newRequest._retry = true; // Mark as retried to prevent loops
                         return axios(newRequest);
                     })
                     .catch(err => Promise.reject(err));
             }
 
-            originalRequest._retry = true;
             isRefreshing = true;
 
             try {
@@ -84,14 +78,14 @@ api.interceptors.response.use(
                 // Use a direct axios call (NOT through the api instance) to avoid interceptors
                 const response = await axios({
                     method: 'post',
-                    url: 'http://server.local:3000/api/v1/auth/refresh',
+                    url: 'http://server.local:3000/api/v1/auth/refresh-token',
                     headers: {
-                        'X-Authorization': `Bearer ${refreshToken}`
+                        'X-Authorization': `${refreshToken}`
                     }
                 });
 
-                if (response.data && response.data.access_token) {
-                    const { access_token, refresh_token } = response.data;
+                if (response.data && response.data.data) {
+                    const { access_token, refresh_token } = response.data.data;
 
                     // Store new tokens
                     localStorage.setItem('access_token', access_token);
@@ -105,7 +99,6 @@ api.interceptors.response.use(
                     // Create a new request with the same config
                     const newRequest = { ...originalRequest };
                     newRequest.headers['Authorization'] = `Bearer ${access_token}`;
-                    newRequest._retry = true; // Mark as retried to prevent loops
 
                     // Process all queued requests
                     processQueue(null, access_token);
@@ -122,10 +115,9 @@ api.interceptors.response.use(
                 // If refresh token also returns 401, logout
                 if (refreshError.response &&
                     refreshError.response.status === 401) {
-                    // Clear storage and redirect to login
                     localStorage.removeItem('access_token');
                     localStorage.removeItem('refresh_token');
-                    localStorage.removeItem('user_info');
+                    localStorage.removeItem('user');
                     window.location.href = '/login';
                 }
 
@@ -139,7 +131,7 @@ api.interceptors.response.use(
         if (error.response &&
             error.response.status === 401 &&
             error.response.data &&
-            error.response.data.code === 4008) {
+            error.response.data.error["error_code"] === "4008") {
             return Promise.reject(error);
         }
 

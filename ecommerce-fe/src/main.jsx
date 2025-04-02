@@ -8,13 +8,11 @@ import './index.css';
 import { AuthProvider } from './context/AuthProvider';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
     <BrowserRouter>
-      <ChakraProvider theme={theme}>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </ChakraProvider>
+        <ChakraProvider theme={theme}>
+            <AuthProvider>
+                <App />
+            </AuthProvider>
+        </ChakraProvider>
     </BrowserRouter>
-  </React.StrictMode>,
 );

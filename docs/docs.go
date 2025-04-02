@@ -1410,7 +1410,21 @@ const docTemplate = `{
             }
         },
         "api_gateway_dto.CheckTokenResponse": {
-            "type": "object"
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                    }
+                }
+            }
         },
         "api_gateway_dto.CheckTokenResponseDocs": {
             "type": "object",

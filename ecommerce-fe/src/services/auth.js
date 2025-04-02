@@ -14,8 +14,7 @@ export const authService = {
   register: async (userData) => {
     // eslint-disable-next-line no-useless-catch
     try {
-      const response = await api.post('/auth/register', userData);
-      return response.data;
+      await api.post('/auth/register', userData);
     } catch (error) {
       throw error;
     }
@@ -31,13 +30,22 @@ export const authService = {
     }
   },
 
-  logout: async () => {
+  logout: async (refreshToken) => {
     try {
-      await api.post('/auth/logout');
-      return true;
+      await api.post('/auth/logout', {"refresh-token": refreshToken});
     } catch (error) {
-      console.error('Logout error:', error);
-      return false;
+      throw error
+    }
+  },
+
+  // Thêm function để validate token
+  validateToken: async () => {
+    try {
+      const response = await api.get('/auth/check-token');
+      return response.data;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return null;
     }
   },
 };

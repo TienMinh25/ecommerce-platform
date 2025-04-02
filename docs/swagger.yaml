@@ -24,6 +24,15 @@ definitions:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
   api_gateway_dto.CheckTokenResponse:
+    properties:
+      avatar_url:
+        type: string
+      full_name:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
+        type: array
     type: object
   api_gateway_dto.CheckTokenResponseDocs:
     properties:
