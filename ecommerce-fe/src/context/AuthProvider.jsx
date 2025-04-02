@@ -1,4 +1,6 @@
-import { createContext, useEffect, useState } from 'react';
+import {createContext, useEffect, useLayoutEffect, useState} from 'react';
+import {authService} from "../services/auth.js";
+import {User} from "./type.js"
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const AuthContext = createContext(null);
@@ -8,20 +10,23 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     // Check if user is already logged in
     const checkAuthStatus = async () => {
       try {
-        // Try to get the current user from localStorage or cookies
-        const token = localStorage.getItem('token');
-        if (token) {
-          // TODO: Validate token with backend
-          setUser({ id: '1', name: 'John Doe', email: 'john@example.com' }); // Placeholder user
+        let authToken = localStorage.getItem("access_token")
+
+        if (authToken) {
+          let data = authService.validateToken().data
+
+          if (data) {
+            let user = new User(data["full_name"], data["avatar_url"], data["roles"])
+            localStorage.setItem("user", JSON.stringify(user));
+            setUser(user);
+          }
         }
       } catch (error) {
         console.error('Authentication error:', error);
-        // Clear any invalid auth data
-        localStorage.removeItem('token');
       } finally {
         setIsLoading(false);
       }
@@ -34,22 +39,22 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual login logic with API
-      // const response = await authService.login(credentials);
-      const mockResponse = {
-        user: { id: '1', name: 'John Doe', email: credentials.email },
-        token: 'mock-jwt-token',
-      };
+      const response = await authService.login(credentials);
 
+      let data = response.data;
       // Save token
-      localStorage.setItem('token', mockResponse.token);
+      localStorage.setItem('access_token', data["access_token"]);
+      localStorage.setItem("refresh_token", data["refresh_token"]);
 
+      let user = new User(data["full_name"], data["avatar_url"], data["roles"])
+
+      localStorage.setItem("user", JSON.stringify(user));
       // Set user state
-      setUser(mockResponse.user);
+      setUser(user);
+
       return { success: true };
     } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: error.message || 'Login failed' };
+      return { success: false, error: error.response.data.error.message || 'Login failed' };
     } finally {
       setIsLoading(false);
     }
@@ -59,27 +64,17 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     setIsLoading(true);
     try {
-      // TODO: Implement actual registration logic with API
-      // const response = await authService.register(userData);
-      const mockResponse = {
-        user: { id: '1', name: userData.name, email: userData.email },
-        token: 'mock-jwt-token',
-      };
+      await authService.register(userData);
 
-      // Save token
-      localStorage.setItem('token', mockResponse.token);
-
-      // Set user state
-      setUser(mockResponse.user);
       return { success: true };
     } catch (error) {
-      console.error('Registration error:', error);
-      return { success: false, error: error.message || 'Registration failed' };
+      return { success: false, error: error.response.data.error.message || 'Registration failed' };
     } finally {
       setIsLoading(false);
     }
   };
 
+  // todo: lam sau
   // Social login function
   const socialLogin = async (provider) => {
     setIsLoading(true);
@@ -104,15 +99,23 @@ export const AuthProvider = ({ children }) => {
 
   // Logout function
   const logout = () => {
-    // Clear local storage
-    localStorage.removeItem('token');
-    // Clear user state
-    setUser(null);
+    try {
+      authService.logout(localStorage.getItem('refresh_token'))
+      // Clear local storage
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('user')
+      // Clear user state
+      setUser(null);
+
+      return {success: true}
+    } catch (error) {
+      return {success: false, error: error.response.data.error.message || "Something was wrong!"}
+    }
   };
 
   const value = {
     user,
-    isAuthenticated: !!user,
     isLoading,
     login,
     register,

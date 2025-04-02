@@ -432,3 +432,35 @@ func (a *authenticationService) ChangePassword(ctx context.Context, data api_gat
 
 	return a.userPasswordRepo.InsertOrUpdateUserPassword(ctx, userPassword)
 }
+
+func (a *authenticationService) CheckToken(ctx context.Context, email string) (*api_gateway_dto.CheckTokenResponse, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CheckToken"))
+	defer span.End()
+
+	userInfo, err := a.userRepo.GetUserByEmail(ctx, email)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var rolesResponse []api_gateway_dto.RoleLoginResponse
+
+	for _, role := range userInfo.Role {
+		rolesResponse = append(rolesResponse, api_gateway_dto.RoleLoginResponse{
+			ID:   role.ID,
+			Name: role.RoleName,
+		})
+	}
+
+	avatarURL := ""
+
+	if userInfo.AvatarURL != nil {
+		avatarURL = *userInfo.AvatarURL
+	}
+
+	return &api_gateway_dto.CheckTokenResponse{
+		FullName:  userInfo.FullName,
+		AvatarURL: avatarURL,
+		Roles:     rolesResponse,
+	}, nil
+}

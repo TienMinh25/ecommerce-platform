@@ -26,7 +26,6 @@ import SocialLogin from './SocialLogin';
 
 const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
@@ -39,11 +38,9 @@ const RegisterForm = () => {
   } = useForm({
     resolver: yupResolver(registerSchema),
     defaultValues: {
-      name: '',
       email: '',
       password: '',
-      confirmPassword: '',
-      phone: '',
+      full_name: '',
       agreeTerms: false,
     },
   });
@@ -51,7 +48,6 @@ const RegisterForm = () => {
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      // TODO: Call register API
       const result = await signUp(data);
 
       if (result.success) {
@@ -92,7 +88,7 @@ const RegisterForm = () => {
         <FormControl isInvalid={errors.name} id='name'>
           <FormLabel>Họ và tên</FormLabel>
           <Input
-            {...register('name')}
+            {...register('full_name')}
             type='text'
             placeholder='Nguyễn Văn A'
             size='lg'
@@ -109,17 +105,6 @@ const RegisterForm = () => {
             size='lg'
           />
           <FormErrorMessage>{errors.email?.message}</FormErrorMessage>
-        </FormControl>
-
-        <FormControl isInvalid={errors.phone} id='phone'>
-          <FormLabel>Số điện thoại</FormLabel>
-          <Input
-            {...register('phone')}
-            type='tel'
-            placeholder='0911234567'
-            size='lg'
-          />
-          <FormErrorMessage>{errors.phone?.message}</FormErrorMessage>
         </FormControl>
 
         <FormControl isInvalid={errors.password} id='password'>
@@ -140,28 +125,6 @@ const RegisterForm = () => {
             </InputRightElement>
           </InputGroup>
           <FormErrorMessage>{errors.password?.message}</FormErrorMessage>
-        </FormControl>
-
-        <FormControl isInvalid={errors.confirmPassword} id='confirmPassword'>
-          <FormLabel>Xác nhận mật khẩu</FormLabel>
-          <InputGroup size='lg'>
-            <Input
-              {...register('confirmPassword')}
-              type={showConfirmPassword ? 'text' : 'password'}
-              placeholder='********'
-            />
-            <InputRightElement>
-              <IconButton
-                aria-label={
-                  showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'
-                }
-                icon={showConfirmPassword ? <ViewOffIcon /> : <ViewIcon />}
-                variant='ghost'
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              />
-            </InputRightElement>
-          </InputGroup>
-          <FormErrorMessage>{errors.confirmPassword?.message}</FormErrorMessage>
         </FormControl>
 
         <FormControl isInvalid={errors.agreeTerms} id='agreeTerms'>

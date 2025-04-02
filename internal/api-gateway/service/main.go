@@ -24,6 +24,7 @@ type IAuthenticationService interface {
 	ForgotPassword(ctx context.Context, data api_gateway_dto.ForgotPasswordRequest) error
 	ResetPassword(ctx context.Context, data api_gateway_dto.ResetPasswordRequest) error
 	ChangePassword(ctx context.Context, data api_gateway_dto.ChangePasswordRequest, userID int) error
+	CheckToken(ctx context.Context, email string) (*api_gateway_dto.CheckTokenResponse, error)
 }
 
 type IModuleService interface {

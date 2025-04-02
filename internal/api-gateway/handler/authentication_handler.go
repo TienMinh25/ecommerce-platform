@@ -262,10 +262,20 @@ func (h *authenticationHandler) RefreshToken(ctx *gin.Context) {
 func (h *authenticationHandler) CheckToken(ctx *gin.Context) {
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)
-	_, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "CheckToken"))
+	ct, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "CheckToken"))
 	defer span.End()
 
-	utils.SuccessResponse[api_gateway_dto.CheckTokenResponse](ctx, http.StatusOK, api_gateway_dto.CheckTokenResponse{})
+	req, _ := ctx.Get("user")
+	claims := req.(*api_gateway_service.UserClaims)
+
+	res, err := h.service.CheckToken(ct, claims.Email)
+
+	if err != nil {
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse[api_gateway_dto.CheckTokenResponse](ctx, http.StatusOK, *res)
 }
 
 // ForgotPassword implements IAuthenticationService.

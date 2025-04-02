@@ -47,7 +47,11 @@ type RefreshTokenResponse struct {
 
 type CheckTokenRequest struct{}
 
-type CheckTokenResponse struct{}
+type CheckTokenResponse struct {
+	FullName  string              `json:"full_name"`
+	AvatarURL string              `json:"avatar_url"`
+	Roles     []RoleLoginResponse `json:"roles"`
+}
 
 type ForgotPasswordRequest struct {
 	Email string `json:"email" binding:"required,email"`
