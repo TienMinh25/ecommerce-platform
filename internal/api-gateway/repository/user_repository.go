@@ -27,7 +27,7 @@ func NewUserRepository(db pkg.Database, tracer pkg.Tracer, userPasswordRepositor
 	}
 }
 
-func (u *userRepository) CheckUserExistsByEmail(ctx context.Context, email string) error {
+func (u *userRepository) CheckUserExistsByEmail(ctx context.Context, email string) (bool, error) {
 	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "CheckUserExistsByEmail"))
 	defer span.End()
 
@@ -35,21 +35,13 @@ func (u *userRepository) CheckUserExistsByEmail(ctx context.Context, email strin
 
 	var isExists bool
 	if err := u.db.QueryRow(ctx, sqlStr, email).Scan(&isExists); err != nil {
-		return utils.TechnicalError{
+		return false, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
-	if isExists {
-		return utils.BusinessError{
-			Code:      http.StatusBadRequest,
-			Message:   "User is already exists",
-			ErrorCode: errorcode.ALREADY_EXISTS,
-		}
-	}
-
-	return nil
+	return isExists, nil
 }
 
 func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, fullname, password string) error {
@@ -98,8 +90,72 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 			}
 		}
 
+		// todo: assign role permission based on module
+
 		return nil
 	})
+}
+
+func (u *userRepository) GetUserByEmailWithoutPassword(ctx context.Context, email string) (*api_gateway_models.User, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetUserByEmailWithoutPassword"))
+	defer span.End()
+
+	getUserByEmailQuery := `SELECT id, fullname, email, avatar_url, birthdate, email_verified, status, phone_verified FROM users WHERE email = $1`
+
+	var user api_gateway_models.User
+
+	// get user info by email
+	if err := u.db.QueryRow(ctx, getUserByEmailQuery, email).Scan(&user.ID, &user.FullName, &user.Email, &user.AvatarURL,
+		&user.BirthDate, &user.EmailVerified, &user.Status, &user.PhoneVerified); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, utils.BusinessError{
+				Code:      http.StatusBadRequest,
+				Message:   common.INCORRECT_USER_PASSWORD,
+				ErrorCode: errorcode.NOT_FOUND,
+			}
+		}
+
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	// get user roles
+	getUserRolesQuery := `SELECT r.id, r.role_name 
+    FROM roles r
+    INNER JOIN users_roles ur ON r.id = ur.role_id
+    WHERE ur.user_id = $1`
+
+	roleRows, err := u.db.Query(ctx, getUserRolesQuery, user.ID)
+	if err != nil {
+		// trả về techincal error ở đây vì nếu scan ko thành công do query ko có dữ liệu hay
+		// như nào thì là lỗi dưới dữ liệu mình tổ chức -> trả về internal server error
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+	defer roleRows.Close()
+
+	var roles []api_gateway_models.Role
+
+	for roleRows.Next() {
+		var role api_gateway_models.Role
+
+		if err = roleRows.Scan(&role.ID, &role.RoleName); err != nil {
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		roles = append(roles, role)
+	}
+
+	user.Role = roles
+
+	return &user, nil
 }
 
 func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (*api_gateway_models.User, error) {
@@ -129,9 +185,9 @@ func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (*api
 
 	// get user roles
 	getUserRolesQuery := `SELECT r.id, r.role_name 
-	FROM roles r
-	INNER JOIN users_roles ur ON r.id = ur.role_id
-	WHERE ur.user_id = $1`
+    FROM roles r
+    INNER JOIN users_roles ur ON r.id = ur.role_id
+    WHERE ur.user_id = $1`
 
 	roleRows, err := u.db.Query(ctx, getUserRolesQuery, user.ID)
 	if err != nil {
@@ -237,4 +293,47 @@ func (u *userRepository) GetFullNameByEmail(ctx context.Context, email string) (
 	}
 
 	return fullName, nil
+}
+
+func (u *userRepository) CreateUserBasedOauth(ctx context.Context, user *api_gateway_models.User) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateUserBasedOauth"))
+	defer span.End()
+
+	return u.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pkg.Tx) error {
+		// create user
+		userInsertQuery := `INSERT INTO users (email, fullname, avatar_url, email_verified) VALUES ($1, $2, $3, $4) RETURNING id`
+
+		var userID int
+
+		if err := tx.QueryRow(ctx, userInsertQuery, user.Email, user.FullName, user.AvatarURL, user.EmailVerified).Scan(&userID); err != nil {
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		// get id from role
+		getRoleQuery := `SELECT id from roles WHERE role_name = $1`
+		var roleID int
+		if err := tx.QueryRow(ctx, getRoleQuery, common.RoleCustomer).Scan(&roleID); err != nil {
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		// save info into user_role
+		userRoleInsertQuery := `INSERT INTO users_roles (role_id, user_id) VALUES ($1, $2)`
+
+		if err := tx.Exec(ctx, userRoleInsertQuery, roleID, userID); err != nil {
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		// todo: assign role permission based on module
+
+		return nil
+	})
 }

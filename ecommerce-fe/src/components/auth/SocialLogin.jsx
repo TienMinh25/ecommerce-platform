@@ -15,18 +15,17 @@ const SocialLogin = ({ buttonText = 'Đăng nhập với' }) => {
     setIsLoading((prev) => ({ ...prev, [provider]: true }));
 
     try {
-      // TODO: Implement actual social login flow
-      const result = await socialLogin(provider);
+      // Lưu provider vào localStorage để sử dụng khi callback
+      localStorage.setItem('oauth_provider', provider);
 
-      if (result.success) {
-        toast({
-          title: 'Đăng nhập thành công',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
+      // Lấy URL xác thực từ backend
+      const result = await socialLogin(null, null, provider, true);
+
+      if (result.url) {
+        // Chuyển hướng đến URL xác thực
+        window.location.href = result.url;
       } else {
-        throw new Error(result.error || `Đăng nhập với ${provider} thất bại`);
+        throw new Error(`Không thể lấy URL đăng nhập cho ${provider}`);
       }
     } catch (error) {
       toast({
@@ -36,8 +35,8 @@ const SocialLogin = ({ buttonText = 'Đăng nhập với' }) => {
         duration: 5000,
         isClosable: true,
       });
-    } finally {
       setIsLoading((prev) => ({ ...prev, [provider]: false }));
+      localStorage.removeItem('oauth_provider');
     }
   };
 

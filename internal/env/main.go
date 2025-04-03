@@ -80,6 +80,25 @@ type NotificationServerConfig struct {
 	ConsumeGroup   string `envconfig:"NOTIFICATION_CONSUME_GROUP"`
 }
 
+type GoogleOAuthConfig struct {
+	ClientID       string `envconfig:"GOOGLE_CLIENT_ID"`
+	ClientSecret   string `envconfig:"GOOGLE_CLIENT_SECRET"`
+	ClientTokenURL string `envconfig:"GOOGLE_CLIENT_TOKEN_URL"`
+	ClientInfoURL  string `envconfig:"GOOGLE_CLIENT_INFO_URL"`
+}
+
+type FacebookOAuthConfig struct {
+	ClientID       string `envconfig:"FACEBOOK_CLIENT_ID"`
+	ClientSecret   string `envconfig:"FACEBOOK_CLIENT_SECRET"`
+	ClientTokenURL string `envconfig:"FACEBOOK_CLIENT_TOKEN_URL"`
+	ClientInfoURL  string `envconfig:"FACEBOOK_CLIENT_INFO_URL"`
+}
+
+type ClientConfig struct {
+	ClientHost string `envconfig:"CLIENT_HOST"`
+	ClientPort int    `envconfig:"CLIENT_PORT"`
+}
+
 type EnvManager struct {
 	ServerConfig             *ServerConfig
 	PostgreSQL               *PostgreSQLConfig
@@ -91,6 +110,11 @@ type EnvManager struct {
 	Kafka                    *KafkaConfig
 	ServiceWorkerPool        *ServiceWorkerPoolConfig
 	NotificationServerConfig *NotificationServerConfig
+	GoogleOAuth              *GoogleOAuthConfig
+	FacebookOAuth            *FacebookOAuthConfig
+	Client                   *ClientConfig
+
+	RedirectURI string `envconfig:"REDIRECT_URI"`
 
 	OTPVerifyEmailTimeout int `envconfig:"OTP_VERIFY_EMAIL_TIMEOUT"`
 

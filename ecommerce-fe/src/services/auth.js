@@ -20,10 +20,19 @@ export const authService = {
     }
   },
 
-  socialLogin: async (provider, token) => {
-    // eslint-disable-next-line no-useless-catch
+  // Thêm các phương thức OAuth
+  getAuthorizationURL: async (provider) => {
     try {
-      const response = await api.post(`/auth/${provider}`, { token });
+      const response = await api.get(`/auth/oauth/url?oauth_provider=${provider}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  exchangeOAuthCode: async (code, state, provider) => {
+    try {
+      const response = await api.get(`/auth/oauth/exchange?code=${code}&state=${state}&oauth_provider=${provider}`);
       return response.data;
     } catch (error) {
       throw error;
@@ -32,7 +41,7 @@ export const authService = {
 
   logout: async (refreshToken) => {
     try {
-      await api.post('/auth/logout', {"refresh-token": refreshToken});
+      await api.post('/auth/logout', {"refresh_token": refreshToken});
     } catch (error) {
       throw error
     }
@@ -42,6 +51,7 @@ export const authService = {
   validateToken: async () => {
     try {
       const response = await api.get('/auth/check-token');
+
       return response.data;
     } catch (error) {
       console.error('Token validation error:', error);

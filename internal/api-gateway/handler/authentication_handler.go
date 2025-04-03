@@ -2,24 +2,32 @@ package api_gateway_handler
 
 import (
 	"context"
+	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_service "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/TienMinh25/ecommerce-platform/internal/env"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"net/url"
 )
 
 type authenticationHandler struct {
-	tracer  pkg.Tracer
-	service api_gateway_service.IAuthenticationService
+	tracer            pkg.Tracer
+	service           api_gateway_service.IAuthenticationService
+	env               *env.EnvManager
+	oauthCacheService api_gateway_service.IOauthCacheService
 }
 
-func NewAuthenticationHandler(tracer pkg.Tracer, service api_gateway_service.IAuthenticationService) IAuthenticationHandler {
+func NewAuthenticationHandler(tracer pkg.Tracer, service api_gateway_service.IAuthenticationService, env *env.EnvManager, oauthCacheService api_gateway_service.IOauthCacheService) IAuthenticationHandler {
 	return &authenticationHandler{
-		tracer:  tracer,
-		service: service,
+		tracer:            tracer,
+		service:           service,
+		env:               env,
+		oauthCacheService: oauthCacheService,
 	}
 }
 
@@ -381,4 +389,95 @@ func (h *authenticationHandler) ChangePassword(ctx *gin.Context) {
 	}
 
 	utils.SuccessResponse[api_gateway_dto.ChangePasswordResponse](ctx, http.StatusOK, api_gateway_dto.ChangePasswordResponse{})
+}
+
+// GetAuthorizationURL implements IAuthenticationService.
+// GetAuthorizationURL godoc
+//
+//	@Summary		get authorization url
+//	@Tags			auth
+//	@Description	get authorization url
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			oauth_provider	query		string	true	"type of oauth provider"	Enums(google, facebook)
+//	@Success		200				{object}	api_gateway_dto.GetAuthorizationURLResponseDocs
+//	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/auth/oauth/url [get]
+func (h *authenticationHandler) GetAuthorizationURL(ctx *gin.Context) {
+	c, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetAuthorizationURL"))
+	defer span.End()
+
+	var data api_gateway_dto.GetAuthorizationURLRequest
+	if err := ctx.ShouldBindQuery(&data); err != nil {
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	authorizationURL, err := h.service.GetAuthorizationURL(c, data)
+
+	if err != nil {
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.GetAuthorizationURLResponse{
+		AuthorizationURL: authorizationURL,
+	})
+}
+
+func (h *authenticationHandler) CallbackOauth(ctx *gin.Context) {
+	_, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "CallbackOauth"))
+	defer span.End()
+
+	code := ctx.Query("code")
+	state := ctx.Query("state")
+
+	u, _ := url.Parse(fmt.Sprintf("http://%s:%d/oauth", h.env.Client.ClientHost, h.env.Client.ClientPort))
+	q := u.Query()
+	q.Set("code", code)
+	q.Set("state", state)
+	u.RawQuery = q.Encode()
+
+	ctx.Redirect(http.StatusSeeOther, u.String())
+}
+
+func (h *authenticationHandler) ExchangeOAuthCode(ctx *gin.Context) {
+	c, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "ExchangeOAuthCode"))
+	defer span.End()
+
+	var data api_gateway_dto.ExchangeOauthCodeRequest
+
+	if err := ctx.ShouldBindQuery(&data); err != nil {
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	stateFromCache, err := h.oauthCacheService.GetAndDeleteOauthState(c, data.State)
+
+	if err != nil {
+		utils.ErrorResponse(ctx, http.StatusInternalServerError, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		})
+		return
+	}
+
+	if stateFromCache != data.State {
+		utils.ErrorResponse(ctx, http.StatusBadRequest, utils.BusinessError{
+			Code:    http.StatusBadRequest,
+			Message: "State code is not match, please try again",
+		})
+		return
+	}
+
+	res, err := h.service.ExchangeOAuthCode(c, data)
+
+	if err != nil {
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse[api_gateway_dto.ExchangeOauthCodeResponse](ctx, http.StatusOK, *res)
 }

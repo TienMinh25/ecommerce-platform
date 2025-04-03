@@ -2,10 +2,13 @@ package api_gateway_service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
+	"github.com/TienMinh25/ecommerce-platform/internal/api-gateway/httpclient"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
+	api_gateway_client_response "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service/response"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/transport/grpc/proto/notification_proto_gen"
@@ -13,8 +16,10 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -27,6 +32,8 @@ type authenticationService struct {
 	jwtService             IJwtService
 	refreshTokenRepository api_gateway_repository.IRefreshTokenRepository
 	messageBroker          pkg.MessageQueue
+	oauthCacheService      IOauthCacheService
+	httpClient             pkg.HTTPClient
 }
 
 func NewAuthenticationService(
@@ -38,6 +45,8 @@ func NewAuthenticationService(
 	jwtService IJwtService,
 	refreshTokenRepository api_gateway_repository.IRefreshTokenRepository,
 	messageBroker pkg.MessageQueue,
+	oauthCacheService IOauthCacheService,
+	httpClient pkg.HTTPClient,
 ) IAuthenticationService {
 	return &authenticationService{
 		tracer:                 tracer,
@@ -48,6 +57,8 @@ func NewAuthenticationService(
 		refreshTokenRepository: refreshTokenRepository,
 		userPasswordRepo:       userPasswordRepo,
 		messageBroker:          messageBroker,
+		oauthCacheService:      oauthCacheService,
+		httpClient:             httpClient,
 	}
 }
 
@@ -55,10 +66,18 @@ func (a *authenticationService) Register(ctx context.Context, data api_gateway_d
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "Register"))
 	defer span.End()
 
-	err := a.userRepo.CheckUserExistsByEmail(ctx, data.Email)
+	isExists, err := a.userRepo.CheckUserExistsByEmail(ctx, data.Email)
 
 	if err != nil {
 		return nil, err
+	}
+
+	if !isExists {
+		return nil, utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "User is already exists",
+			ErrorCode: errorcode.ALREADY_EXISTS,
+		}
 	}
 
 	// hash password
@@ -440,7 +459,7 @@ func (a *authenticationService) CheckToken(ctx context.Context, email string) (*
 	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CheckToken"))
 	defer span.End()
 
-	userInfo, err := a.userRepo.GetUserByEmail(ctx, email)
+	userInfo, err := a.userRepo.GetUserByEmailWithoutPassword(ctx, email)
 
 	if err != nil {
 		return nil, err
@@ -466,4 +485,357 @@ func (a *authenticationService) CheckToken(ctx context.Context, email string) (*
 		AvatarURL: avatarURL,
 		Roles:     rolesResponse,
 	}, nil
+}
+
+func (a *authenticationService) GetAuthorizationURL(ctx context.Context, data api_gateway_dto.GetAuthorizationURLRequest) (string, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetAuthorizationURL"))
+	defer span.End()
+
+	var authorizationURL string
+
+	state := uuid.New().String()
+
+	if err := a.oauthCacheService.SaveOauthState(ctx, state); err != nil {
+		return "", utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	switch data.OAuthProvider {
+	case api_gateway_dto.FacebookOAuth:
+		u, _ := url.Parse("https://www.facebook.com/v22.0/dialog/oauth")
+		q := u.Query()
+		q.Set("client_id", a.env.FacebookOAuth.ClientID)
+		q.Set("redirect_uri", a.env.RedirectURI)
+		q.Set("response_type", "code")
+		q.Set("state", state)
+		q.Set("scope", "email public_profile")
+		u.RawQuery = q.Encode()
+		authorizationURL = u.String()
+	case api_gateway_dto.GoogleOAuth:
+		u, _ := url.Parse("https://accounts.google.com/o/oauth2/v2/auth")
+		q := u.Query()
+		q.Set("client_id", a.env.GoogleOAuth.ClientID)
+		q.Set("response_type", "code")
+		q.Set("access_type", "offline")
+		q.Set("redirect_uri", a.env.RedirectURI)
+		q.Set("scope", "openid profile email")
+		q.Set("state", state)
+		u.RawQuery = q.Encode()
+		authorizationURL = u.String()
+	default:
+		authorizationURL = ""
+	}
+
+	return authorizationURL, nil
+}
+
+func (a *authenticationService) ExchangeOAuthCode(ctx context.Context, data api_gateway_dto.ExchangeOauthCodeRequest) (*api_gateway_dto.ExchangeOauthCodeResponse, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "ExchangeOAuthCode"))
+	defer span.End()
+
+	// step 1: call authorization to get access token
+	token, err := a.getTokenFromOauthServer(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// step 2: use access token to get information about user
+	userInfo, err := a.getUserInfo(ctx, token, data.OAuthProvider)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// step 3: if already exists -> login, if not, insert new user
+	res, err := a.loginOrRegisterOAuthUser(ctx, userInfo, data.OAuthProvider)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (a *authenticationService) getTokenFromOauthServer(ctx context.Context, data api_gateway_dto.ExchangeOauthCodeRequest) (interface{}, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "getTokenFromOauthServer"))
+	defer span.End()
+
+	var response *pkg.ResponseAPI
+	var err error
+
+	switch data.OAuthProvider {
+	case api_gateway_dto.GoogleOAuth:
+		request := map[string]string{
+			"code":          data.Code,
+			"client_id":     a.env.GoogleOAuth.ClientID,
+			"client_secret": a.env.GoogleOAuth.ClientSecret,
+			"grant_type":    "authorization_code",
+			"redirect_uri":  a.env.RedirectURI,
+		}
+
+		response, err = a.httpClient.SendRequest(
+			ctx,
+			http.MethodPost,
+			a.env.GoogleOAuth.ClientTokenURL,
+			httpclient.WithFormBody(request),
+			httpclient.WithHeader("Accept", "application/json"),
+		)
+	case api_gateway_dto.FacebookOAuth:
+		urlCallFacebook, _ := url.Parse(a.env.FacebookOAuth.ClientTokenURL)
+		query := urlCallFacebook.Query()
+
+		query.Set("client_id", a.env.FacebookOAuth.ClientID)
+		query.Set("client_secret", a.env.FacebookOAuth.ClientSecret)
+		query.Set("redirect_uri", a.env.RedirectURI)
+		query.Set("code", data.Code)
+
+		urlCallFacebook.RawQuery = query.Encode()
+
+		response, err = a.httpClient.SendRequest(
+			ctx,
+			http.MethodGet,
+			urlCallFacebook.String(),
+			httpclient.WithHeader("Accept", "application/json"),
+		)
+	}
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	if response == nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	var tokenGoogle api_gateway_client_response.GoogleTokenResponse
+	var tokenFacebook api_gateway_client_response.FacebookTokenResponse
+
+	if data.OAuthProvider == api_gateway_dto.FacebookOAuth {
+		if err = json.Unmarshal(response.RawBody, &tokenFacebook); err != nil {
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		return tokenFacebook, nil
+	}
+
+	if err = json.Unmarshal(response.RawBody, &tokenGoogle); err != nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return tokenGoogle, nil
+}
+
+func (a *authenticationService) getUserInfo(ctx context.Context, token interface{}, oauthProvider api_gateway_dto.OAuthProvider) (interface{}, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "getUserInfo"))
+	defer span.End()
+
+	if oauthProvider == api_gateway_dto.GoogleOAuth {
+		userInfoURL := a.env.GoogleOAuth.ClientInfoURL
+		tokenGoogle := token.(api_gateway_client_response.GoogleTokenResponse)
+
+		resp, err := a.httpClient.SendRequest(
+			ctx,
+			http.MethodGet,
+			userInfoURL,
+			httpclient.WithHeader("Authorization", "Bearer "+tokenGoogle.AccessToken),
+		)
+
+		if err != nil {
+			span.RecordError(err)
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		var userInfo api_gateway_client_response.GoogleUserInfo
+
+		if err = json.Unmarshal(resp.RawBody, &userInfo); err != nil {
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		return userInfo, nil
+	}
+
+	userInfoURL := a.env.FacebookOAuth.ClientInfoURL + "?fields=id,name,email,picture"
+	tokenFacebook := token.(api_gateway_client_response.FacebookTokenResponse)
+
+	resp, err := a.httpClient.SendRequest(
+		ctx,
+		http.MethodGet,
+		userInfoURL,
+		httpclient.WithHeader("Authorization", "Bearer "+tokenFacebook.AccessToken),
+	)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	var userInfo api_gateway_client_response.FacebookUserInfoResponse
+
+	if err = json.Unmarshal(resp.RawBody, &userInfo); err != nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return userInfo, nil
+}
+
+func (a *authenticationService) loginOrRegisterOAuthUser(ctx context.Context, userInfo interface{}, oauthProvider api_gateway_dto.OAuthProvider) (*api_gateway_dto.ExchangeOauthCodeResponse, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "loginOrRegisterOAuthUser"))
+	defer span.End()
+
+	userOauth := a.extractInfo(ctx, userInfo, oauthProvider)
+
+	// check exists user or not
+	isExists, err := a.userRepo.CheckUserExistsByEmail(ctx, userOauth.Email)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, err
+	}
+
+	var user *api_gateway_models.User
+
+	if isExists {
+		// get user info from database and return to client
+		user, err = a.userRepo.GetUserByEmailWithoutPassword(ctx, userOauth.Email)
+
+		if err != nil {
+			span.RecordError(err)
+			return nil, err
+		}
+	} else {
+		// create new user based on information get from oauth provider
+		userCreated := &api_gateway_models.User{
+			Email:         userOauth.Email,
+			FullName:      userOauth.Name,
+			AvatarURL:     &userOauth.AvatarURL,
+			EmailVerified: userOauth.VerifiedEmail,
+		}
+
+		if err = a.userRepo.CreateUserBasedOauth(ctx, userCreated); err != nil {
+			span.RecordError(err)
+			return nil, err
+		}
+
+		user, err = a.userRepo.GetUserByEmailWithoutPassword(ctx, userOauth.Email)
+
+		if err != nil {
+			span.RecordError(err)
+			return nil, err
+		}
+	}
+
+	// generate token and return user
+	var rolesResponse []api_gateway_dto.RoleLoginResponse
+
+	for _, role := range user.Role {
+		rolesResponse = append(rolesResponse, api_gateway_dto.RoleLoginResponse{
+			ID:   role.ID,
+			Name: role.RoleName,
+		})
+	}
+
+	// generate access token, save refresh token to database
+	accessToken, refreshToken, err := a.jwtService.GenerateToken(ctx, JwtPayload{
+		UserID:   user.ID,
+		Email:    user.Email,
+		FullName: user.FullName,
+		Role:     rolesResponse,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if err = a.refreshTokenRepository.CreateRefreshToken(ctx, user.ID, user.Email, time.Now().Add(time.Duration(a.env.ExpireRefreshToken)*time.Hour*24), refreshToken); err != nil {
+		return nil, err
+	}
+
+	avatarURL := ""
+
+	if user.AvatarURL != nil {
+		avatarURL = *user.AvatarURL
+	}
+
+	return &api_gateway_dto.ExchangeOauthCodeResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+		FullName:     user.FullName,
+		AvatarURL:    avatarURL,
+		Roles:        rolesResponse,
+	}, nil
+}
+
+func (a *authenticationService) extractInfo(ctx context.Context, userInfo interface{}, oauthProvider api_gateway_dto.OAuthProvider) *struct {
+	Email         string
+	Name          string
+	AvatarURL     string
+	VerifiedEmail bool
+} {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "extractInfo"))
+	defer span.End()
+
+	if oauthProvider == api_gateway_dto.GoogleOAuth {
+		userGoogle := userInfo.(api_gateway_client_response.GoogleUserInfo)
+
+		return &struct {
+			Email         string
+			Name          string
+			AvatarURL     string
+			VerifiedEmail bool
+		}{
+			Email:         userGoogle.Email,
+			Name:          userGoogle.Name,
+			AvatarURL:     userGoogle.Picture,
+			VerifiedEmail: userGoogle.VerifiedEmail,
+		}
+	}
+
+	userFacebook := userInfo.(api_gateway_client_response.FacebookUserInfoResponse)
+	var verifiedEmail bool
+
+	if userFacebook.Email != "" {
+		verifiedEmail = true
+	} else {
+		verifiedEmail = false
+	}
+
+	return &struct {
+		Email         string
+		Name          string
+		AvatarURL     string
+		VerifiedEmail bool
+	}{
+		Email:         userFacebook.Email,
+		Name:          userFacebook.Name,
+		AvatarURL:     userFacebook.Picture.Data.Url,
+		VerifiedEmail: verifiedEmail,
+	}
 }

@@ -10,15 +10,15 @@ type Router struct {
 	Router *gin.Engine
 }
 
-//	@title						Ecommerce API
-//	@version					1.0
-//	@description				API for ecommerce
-//	@host						server.local:3000
-//	@BasePath					/api/v1
+// @title						Ecommerce API
+// @version					1.0
+// @description				API for ecommerce
+// @host						server.local:3000
+// @BasePath					/api/v1
 //
-//	@securityDefinitions.apikey	BearerAuth
-//	@in							header
-//	@name						Authorization
+// @securityDefinitions.apikey	BearerAuth
+// @in							header
+// @name						Authorization
 func NewRouter(
 	router *gin.Engine,
 	adminAddressTypeHandler api_gateway_handler.IAdminAddressTypeHandler,
@@ -73,16 +73,27 @@ func registerPermissionEndPoint(group *gin.RouterGroup, accessTokenMiddleware *m
 
 func registerAuthenticationManagementEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, handler api_gateway_handler.IAuthenticationHandler) {
 	authenticationGroup := group.Group("/auth")
+	{
+		authenticationGroup.POST("/register", handler.Register)
+		authenticationGroup.POST("/login", handler.Login)
+		authenticationGroup.POST("/verify-email", handler.VerifyEmailRegister)
+		authenticationGroup.POST("/resend-verify-email", handler.ResendVerifyEmail)
+		authenticationGroup.POST("/refresh-token", handler.RefreshToken)
+		authenticationGroup.POST("/forgot-password", handler.ForgotPassword)
+		authenticationGroup.POST("/reset-password", handler.ResetPassword)
 
-	// todo: add middleware check permission to access api endpoint
-	authenticationGroup.POST("/register", handler.Register)
-	authenticationGroup.POST("/login", handler.Login)
-	authenticationGroup.POST("/verify-email", handler.VerifyEmailRegister)
-	authenticationGroup.POST("/resend-verify-email", handler.ResendVerifyEmail)
-	authenticationGroup.POST("/logout", accessTokenMiddleware.JwtAccessTokenMiddleware(), handler.Logout)
-	authenticationGroup.POST("/refresh-token", handler.RefreshToken)
-	authenticationGroup.GET("/check-token", accessTokenMiddleware.JwtAccessTokenMiddleware(), handler.CheckToken)
-	authenticationGroup.POST("/forgot-password", handler.ForgotPassword)
-	authenticationGroup.POST("/reset-password", handler.ResetPassword)
-	authenticationGroup.POST("/change-password", accessTokenMiddleware.JwtAccessTokenMiddleware(), handler.ChangePassword)
+		// Routes oauth
+		authenticationGroup.GET("/oauth/url", handler.GetAuthorizationURL)
+		authenticationGroup.GET("/oauth/callback", handler.CallbackOauth)
+		authenticationGroup.GET("/oauth/exchange", handler.ExchangeOAuthCode)
+
+		authenticated := authenticationGroup.Group("/")
+
+		authenticated.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+		{
+			authenticated.POST("/logout", handler.Logout)
+			authenticated.GET("/check-token", handler.CheckToken)
+			authenticated.POST("/change-password", handler.ChangePassword)
+		}
+	}
 }

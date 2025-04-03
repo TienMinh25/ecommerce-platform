@@ -25,6 +25,8 @@ type IAuthenticationService interface {
 	ResetPassword(ctx context.Context, data api_gateway_dto.ResetPasswordRequest) error
 	ChangePassword(ctx context.Context, data api_gateway_dto.ChangePasswordRequest, userID int) error
 	CheckToken(ctx context.Context, email string) (*api_gateway_dto.CheckTokenResponse, error)
+	GetAuthorizationURL(ctx context.Context, data api_gateway_dto.GetAuthorizationURLRequest) (string, error)
+	ExchangeOAuthCode(ctx context.Context, data api_gateway_dto.ExchangeOauthCodeRequest) (*api_gateway_dto.ExchangeOauthCodeResponse, error)
 }
 
 type IModuleService interface {
@@ -52,4 +54,9 @@ type IOtpCacheService interface {
 type IJwtService interface {
 	GenerateToken(ctx context.Context, payload JwtPayload) (string, string, error)
 	VerifyToken(ctx context.Context, accessToken string) (*UserClaims, error)
+}
+
+type IOauthCacheService interface {
+	SaveOauthState(ctx context.Context, state string) error
+	GetAndDeleteOauthState(ctx context.Context, state string) (string, error)
 }

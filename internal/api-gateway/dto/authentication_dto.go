@@ -73,3 +73,32 @@ type ChangePasswordRequest struct {
 }
 
 type ChangePasswordResponse struct{}
+
+type ExchangeOauthCodeRequest struct {
+	Code          string        `form:"code" binding:"required"`
+	OAuthProvider OAuthProvider `form:"oauth_provider" binding:"required,oneof=google facebook"`
+	State         string        `form:"state" binding:"required"`
+}
+
+type ExchangeOauthCodeResponse struct {
+	AccessToken  string              `json:"access_token"`
+	RefreshToken string              `json:"refresh_token"`
+	FullName     string              `json:"full_name"`
+	AvatarURL    string              `json:"avatar_url"`
+	Roles        []RoleLoginResponse `json:"roles"`
+}
+
+type OAuthProvider string
+
+const (
+	GoogleOAuth   OAuthProvider = "google"
+	FacebookOAuth OAuthProvider = "facebook"
+)
+
+type GetAuthorizationURLRequest struct {
+	OAuthProvider OAuthProvider `form:"oauth_provider" binding:"required,oneof=google facebook"`
+}
+
+type GetAuthorizationURLResponse struct {
+	AuthorizationURL string `json:"authorization_url"`
+}
