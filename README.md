@@ -4,6 +4,9 @@
 E-commerce Platform là một hệ thống thương mại điện tử được xây dựng với kiến trúc microservices, hỗ trợ thanh toán trực tuyến, xử lý đơn hàng, quản lý sản phẩm và thông báo thời gian thực. Hệ thống được thiết kế nhằm đảm bảo hiệu suất cao, khả năng mở rộng và tính linh hoạt trong việc tích hợp với các dịch vụ bên thứ ba.
 
 ## 🏗 Kiến trúc hệ thống
+
+<img src="design-system/High%20level%20architecture.png" alt="System Design" width="800"/>
+
 Hệ thống sử dụng kiến trúc microservices, giao tiếp qua gRPC và sự kiện Kafka. Các thành phần chính bao gồm:
 
 ### 1️⃣ **API Gateway**
