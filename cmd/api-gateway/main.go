@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/TienMinh25/ecommerce-platform/infrastructure"
+	"github.com/TienMinh25/ecommerce-platform/internal/api-gateway/httpclient"
 	"github.com/TienMinh25/ecommerce-platform/internal/api-gateway/middleware"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
@@ -146,6 +147,7 @@ func main() {
 			api_gateway_service.NewPermissionService,
 			api_gateway_service.NewOTPCacheService,
 			api_gateway_service.NewJwtService,
+			api_gateway_service.NewOauthCacheService,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
 			api_gateway_repository.NewUserRepository,
@@ -156,6 +158,8 @@ func main() {
 			api_gateway_repository.NewRefreshTokenRepository,
 			// tracer
 			NewTracerApiGatewayService,
+			// adapter
+			httpclient.NewHTTPClient,
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),

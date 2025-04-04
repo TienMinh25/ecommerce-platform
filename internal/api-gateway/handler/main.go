@@ -21,6 +21,9 @@ type IAuthenticationHandler interface {
 	ForgotPassword(ctx *gin.Context)
 	ResetPassword(ctx *gin.Context)
 	ChangePassword(ctx *gin.Context)
+	GetAuthorizationURL(ctx *gin.Context)
+	CallbackOauth(ctx *gin.Context)
+	ExchangeOAuthCode(ctx *gin.Context)
 }
 
 type IModuleHandler interface {

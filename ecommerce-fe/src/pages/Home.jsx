@@ -176,286 +176,297 @@ const Home = () => {
   const columns = useBreakpointValue({ base: 2, md: 3, lg: 4 });
 
   return (
-    <Box>
-      {/* Hero Slider */}
-      <Box position='relative' overflow='hidden' mb={10}>
-        <Flex
-          ref={sliderRef}
-          transition='transform 0.5s ease'
-          transform={`translateX(-${currentSlide * 100}%)`}
-        >
-          {slides.map((slide) => (
-            <Box
-              key={slide.id}
-              w='100%'
-              position='relative'
-              minW='100%'
-              h={{ base: '200px', md: '300px', lg: '400px' }}
-            >
-              <Image
-                src={slide.image}
-                alt={slide.title}
-                objectFit='cover'
-                w='100%'
-                h='100%'
-              />
-              <Box
-                position='absolute'
-                top='0'
-                left='0'
-                right='0'
-                bottom='0'
-                bg='rgba(0,0,0,0.4)'
-                display='flex'
-                alignItems='center'
-                justifyContent='center'
-              >
-                <Container maxW='container.lg'>
-                  <Stack
-                    spacing={4}
-                    color='white'
-                    textAlign={{ base: 'center', md: 'left' }}
-                  >
-                    <Heading as='h1' size='xl' fontWeight='bold'>
-                      {slide.title}
-                    </Heading>
-                    <Text fontSize={{ base: 'md', md: 'lg' }}>
-                      {slide.description}
-                    </Text>
-                    <Box>
-                      <Button
-                        as={RouterLink}
-                        to={slide.buttonLink}
-                        colorScheme='brand'
-                        size='lg'
-                      >
-                        {slide.buttonText}
-                      </Button>
-                    </Box>
-                  </Stack>
-                </Container>
-              </Box>
-            </Box>
-          ))}
-        </Flex>
-
-        <IconButton
-          aria-label='Previous slide'
-          icon={<ChevronLeftIcon boxSize={8} />}
-          position='absolute'
-          left={{ base: 2, md: 8 }}
-          top='50%'
-          transform='translateY(-50%)'
-          borderRadius='full'
-          onClick={prevSlide}
-          bg='white'
-          opacity='0.8'
-          _hover={{ opacity: 1 }}
-        />
-
-        <IconButton
-          aria-label='Next slide'
-          icon={<ChevronRightIcon boxSize={8} />}
-          position='absolute'
-          right={{ base: 2, md: 8 }}
-          top='50%'
-          transform='translateY(-50%)'
-          borderRadius='full'
-          onClick={nextSlide}
-          bg='white'
-          opacity='0.8'
-          _hover={{ opacity: 1 }}
-        />
-      </Box>
-
-      <Container maxW='container.xl' py={8}>
-        {/* Featured Categories */}
-        <Box mb={16}>
-          <Flex justify='space-between' align='center' mb={8}>
-            <Heading as='h2' size='lg'>
-              Danh mục nổi bật
-            </Heading>
-            <Button
-              as={RouterLink}
-              to='/categories'
-              variant='link'
-              colorScheme='brand'
-              rightIcon={<FaArrowRight />}
-            >
-              Xem tất cả
-            </Button>
-          </Flex>
-
-          <Grid
-            templateColumns={{
-              base: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(6, 1fr)',
-            }}
-            gap={6}
+      <Box>
+        {/* Hero Slider */}
+        <Box position='relative' overflow='hidden' mb={10}>
+          <Flex
+              ref={sliderRef}
+              transition='transform 0.5s ease'
+              transform={`translateX(-${currentSlide * 100}%)`}
           >
-            {featuredCategories.map((category) => (
-              <GridItem key={category.id}>
+            {slides.map((slide) => (
                 <Box
-                  as={RouterLink}
-                  to={category.link}
-                  borderRadius='lg'
-                  overflow='hidden'
-                  transition='transform 0.3s'
-                  _hover={{ transform: 'translateY(-5px)' }}
+                    key={slide.id}
+                    w='100%'
+                    position='relative'
+                    minW='100%'
+                    h={{ base: '200px', md: '300px', lg: '400px' }}
                 >
-                  <AspectRatio ratio={1}>
-                    <Image
-                      src={category.image}
-                      alt={category.name}
+                  <Image
+                      src={slide.image}
+                      alt={slide.title}
                       objectFit='cover'
-                    />
-                  </AspectRatio>
+                      w='100%'
+                      h='100%'
+                  />
                   <Box
-                    position='absolute'
-                    bottom='0'
-                    left='0'
-                    right='0'
-                    bg='rgba(0,0,0,0.7)'
-                    p={3}
-                    textAlign='center'
+                      position='absolute'
+                      top='0'
+                      left='0'
+                      right='0'
+                      bottom='0'
+                      bg='rgba(0,0,0,0.4)'
+                      display='flex'
+                      alignItems='center'
+                      justifyContent='center'
                   >
-                    <Text color='white' fontWeight='semibold'>
-                      {category.name}
-                    </Text>
+                    <Container maxW='container.lg'>
+                      <Stack
+                          spacing={4}
+                          color='white'
+                          textAlign={{ base: 'center', md: 'left' }}
+                      >
+                        <Heading as='h1' size='xl' fontWeight='bold'>
+                          {slide.title}
+                        </Heading>
+                        <Text fontSize={{ base: 'md', md: 'lg' }}>
+                          {slide.description}
+                        </Text>
+                        <Box>
+                          <Button
+                              as={RouterLink}
+                              to={slide.buttonLink}
+                              colorScheme='brand'
+                              size='lg'
+                          >
+                            {slide.buttonText}
+                          </Button>
+                        </Box>
+                      </Stack>
+                    </Container>
                   </Box>
                 </Box>
-              </GridItem>
             ))}
-          </Grid>
-        </Box>
-
-        {/* Popular Products */}
-        <Box mb={16}>
-          <Flex justify='space-between' align='center' mb={8}>
-            <Heading as='h2' size='lg'>
-              Sản phẩm nổi bật
-            </Heading>
-            <Button
-              as={RouterLink}
-              to='/products'
-              variant='link'
-              colorScheme='brand'
-              rightIcon={<FaArrowRight />}
-            >
-              Xem tất cả
-            </Button>
           </Flex>
 
-          <Grid
-            templateColumns={{
-              base: 'repeat(2, 1fr)',
-              md: 'repeat(3, 1fr)',
-              lg: 'repeat(4, 1fr)',
-            }}
-            gap={6}
-          >
-            {popularProducts.map((product) => (
-              <GridItem key={product.id}>
-                <ProductCard product={product} />
+          <IconButton
+              aria-label='Previous slide'
+              icon={<ChevronLeftIcon boxSize={8} />}
+              position='absolute'
+              left={{ base: 2, md: 8 }}
+              top='50%'
+              transform='translateY(-50%)'
+              borderRadius='full'
+              onClick={prevSlide}
+              bg='white'
+              opacity='0.8'
+              _hover={{ opacity: 1 }}
+          />
+
+          <IconButton
+              aria-label='Next slide'
+              icon={<ChevronRightIcon boxSize={8} />}
+              position='absolute'
+              right={{ base: 2, md: 8 }}
+              top='50%'
+              transform='translateY(-50%)'
+              borderRadius='full'
+              onClick={nextSlide}
+              bg='white'
+              opacity='0.8'
+              _hover={{ opacity: 1 }}
+          />
+        </Box>
+
+        <Container maxW='container.xl' py={8}>
+          {/* Featured Categories */}
+          <Box mb={16}>
+            <Flex justify='space-between' align='center' mb={8}>
+              <Heading as='h2' size='lg'>
+                Danh mục nổi bật
+              </Heading>
+              <Button
+                  as={RouterLink}
+                  to='/categories'
+                  variant='link'
+                  colorScheme='brand'
+                  rightIcon={<FaArrowRight />}
+              >
+                Xem tất cả
+              </Button>
+            </Flex>
+
+            <Grid
+                templateColumns={{
+                  base: 'repeat(2, 1fr)',
+                  md: 'repeat(3, 1fr)',
+                  lg: 'repeat(6, 1fr)',
+                }}
+                gap={6}
+            >
+              {featuredCategories.map((category) => (
+                  <GridItem key={category.id} w='100%'>
+                    <Box
+                        as={RouterLink}
+                        to={category.link}
+                        position='relative'
+                        borderRadius='lg'
+                        overflow='hidden'
+                        transition='transform 0.3s'
+                        _hover={{ transform: 'translateY(-5px)' }}
+                        w='100%'
+                        h='100%'
+                    >
+                      <AspectRatio ratio={1} w='100%'>
+                        <Image
+                            src={category.image}
+                            alt={category.name}
+                            objectFit='cover'
+                            w='100%'
+                            h='100%'
+                        />
+                      </AspectRatio>
+                      <Box
+                          position='absolute'
+                          bottom='0'
+                          left='0'
+                          right='0'
+                          bg='rgba(0,0,0,0.7)'
+                          p={3}
+                          textAlign='center'
+                      >
+                        <Text
+                            color='white'
+                            fontWeight='semibold'
+                            fontSize={{ base: 'sm', md: 'md' }}
+                            isTruncated
+                        >
+                          {category.name}
+                        </Text>
+                      </Box>
+                    </Box>
+                  </GridItem>
+              ))}
+            </Grid>
+          </Box>
+
+          {/* Rest of the component remains the same */}
+          {/* Popular Products */}
+          <Box mb={16}>
+            <Flex justify='space-between' align='center' mb={8}>
+              <Heading as='h2' size='lg'>
+                Sản phẩm nổi bật
+              </Heading>
+              <Button
+                  as={RouterLink}
+                  to='/products'
+                  variant='link'
+                  colorScheme='brand'
+                  rightIcon={<FaArrowRight />}
+              >
+                Xem tất cả
+              </Button>
+            </Flex>
+
+            <Grid
+                templateColumns={{
+                  base: 'repeat(2, 1fr)',
+                  md: 'repeat(3, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                }}
+                gap={6}
+            >
+              {popularProducts.map((product) => (
+                  <GridItem key={product.id}>
+                    <ProductCard product={product} />
+                  </GridItem>
+              ))}
+            </Grid>
+          </Box>
+
+          {/* Features */}
+          <Box mb={16}>
+            <Grid
+                templateColumns={{
+                  base: 'repeat(1, 1fr)',
+                  md: 'repeat(2, 1fr)',
+                  lg: 'repeat(4, 1fr)',
+                }}
+                gap={8}
+            >
+              <GridItem>
+                <VStack align='center' spacing={4}>
+                  <Box
+                      p={4}
+                      borderRadius='full'
+                      bg='brand.50'
+                      color='brand.500'
+                      fontSize='2xl'
+                  >
+                    🚚
+                  </Box>
+                  <Text fontWeight='bold' fontSize='lg'>
+                    Giao hàng miễn phí
+                  </Text>
+                  <Text textAlign='center' color='gray.600'>
+                    Cho đơn hàng từ 299.000đ
+                  </Text>
+                </VStack>
               </GridItem>
-            ))}
-          </Grid>
-        </Box>
 
-        {/* Features */}
-        <Box mb={16}>
-          <Grid
-            templateColumns={{
-              base: 'repeat(1, 1fr)',
-              md: 'repeat(2, 1fr)',
-              lg: 'repeat(4, 1fr)',
-            }}
-            gap={8}
-          >
-            <GridItem>
-              <VStack align='center' spacing={4}>
-                <Box
-                  p={4}
-                  borderRadius='full'
-                  bg='brand.50'
-                  color='brand.500'
-                  fontSize='2xl'
-                >
-                  🚚
-                </Box>
-                <Text fontWeight='bold' fontSize='lg'>
-                  Giao hàng miễn phí
-                </Text>
-                <Text textAlign='center' color='gray.600'>
-                  Cho đơn hàng từ 299.000đ
-                </Text>
-              </VStack>
-            </GridItem>
+              <GridItem>
+                <VStack align='center' spacing={4}>
+                  <Box
+                      p={4}
+                      borderRadius='full'
+                      bg='brand.50'
+                      color='brand.500'
+                      fontSize='2xl'
+                  >
+                    🔄
+                  </Box>
+                  <Text fontWeight='bold' fontSize='lg'>
+                    Đổi trả dễ dàng
+                  </Text>
+                  <Text textAlign='center' color='gray.600'>
+                    30 ngày đổi trả miễn phí
+                  </Text>
+                </VStack>
+              </GridItem>
 
-            <GridItem>
-              <VStack align='center' spacing={4}>
-                <Box
-                  p={4}
-                  borderRadius='full'
-                  bg='brand.50'
-                  color='brand.500'
-                  fontSize='2xl'
-                >
-                  🔄
-                </Box>
-                <Text fontWeight='bold' fontSize='lg'>
-                  Đổi trả dễ dàng
-                </Text>
-                <Text textAlign='center' color='gray.600'>
-                  30 ngày đổi trả miễn phí
-                </Text>
-              </VStack>
-            </GridItem>
+              <GridItem>
+                <VStack align='center' spacing={4}>
+                  <Box
+                      p={4}
+                      borderRadius='full'
+                      bg='brand.50'
+                      color='brand.500'
+                      fontSize='2xl'
+                  >
+                    💰
+                  </Box>
+                  <Text fontWeight='bold' fontSize='lg'>
+                    Thanh toán an toàn
+                  </Text>
+                  <Text textAlign='center' color='gray.600'>
+                    Nhiều phương thức thanh toán
+                  </Text>
+                </VStack>
+              </GridItem>
 
-            <GridItem>
-              <VStack align='center' spacing={4}>
-                <Box
-                  p={4}
-                  borderRadius='full'
-                  bg='brand.50'
-                  color='brand.500'
-                  fontSize='2xl'
-                >
-                  💰
-                </Box>
-                <Text fontWeight='bold' fontSize='lg'>
-                  Thanh toán an toàn
-                </Text>
-                <Text textAlign='center' color='gray.600'>
-                  Nhiều phương thức thanh toán
-                </Text>
-              </VStack>
-            </GridItem>
-
-            <GridItem>
-              <VStack align='center' spacing={4}>
-                <Box
-                  p={4}
-                  borderRadius='full'
-                  bg='brand.50'
-                  color='brand.500'
-                  fontSize='2xl'
-                >
-                  🎁
-                </Box>
-                <Text fontWeight='bold' fontSize='lg'>
-                  Ưu đãi thành viên
-                </Text>
-                <Text textAlign='center' color='gray.600'>
-                  Tích điểm và nhận quà hấp dẫn
-                </Text>
-              </VStack>
-            </GridItem>
-          </Grid>
-        </Box>
-      </Container>
-    </Box>
+              <GridItem>
+                <VStack align='center' spacing={4}>
+                  <Box
+                      p={4}
+                      borderRadius='full'
+                      bg='brand.50'
+                      color='brand.500'
+                      fontSize='2xl'
+                  >
+                    🎁
+                  </Box>
+                  <Text fontWeight='bold' fontSize='lg'>
+                    Ưu đãi thành viên
+                  </Text>
+                  <Text textAlign='center' color='gray.600'>
+                    Tích điểm và nhận quà hấp dẫn
+                  </Text>
+                </VStack>
+              </GridItem>
+            </Grid>
+          </Box>
+        </Container>
+      </Box>
   );
 };
 

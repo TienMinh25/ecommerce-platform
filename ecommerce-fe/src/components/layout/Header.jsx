@@ -22,23 +22,31 @@ import {
   MenuDivider,
   MenuItem,
   MenuList,
-  Skeleton,
   Text,
   useBreakpointValue,
   useDisclosure,
   VStack,
 } from '@chakra-ui/react';
-import {useEffect, useState} from 'react';
-import { FaBell, FaHeart, FaShoppingCart } from 'react-icons/fa';
+import { useState } from 'react';
+import { FaBell, FaShoppingCart, FaStore, FaShippingFast, FaUserShield } from 'react-icons/fa';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Logo from '../ui/Logo';
+
+// Định nghĩa constants cho các role
+const ROLE_CUSTOMER = 'customer';
+const ROLE_SUPPLIER = 'supplier';
+const ROLE_DELIVERER = 'deliverer';
+const ROLE_ADMIN = 'admin';
+
+// Mảng các role quản lý
+const MANAGEMENT_ROLES = [ROLE_SUPPLIER, ROLE_DELIVERER, ROLE_ADMIN];
 
 const Header = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
-  const { user, logout, isLoading } = useAuth(); // Lấy thêm isLoading từ useAuth
+  const { user, logout } = useAuth();
 
   const isMobile = useBreakpointValue({ base: true, md: false });
 
@@ -49,22 +57,22 @@ const Header = () => {
     }
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
-  useEffect(() => {
-    
-  }, [user]);
+  // Sử dụng phương thức hasRole từ class User
+  const isSupplier = user?.hasRole(ROLE_SUPPLIER) || false;
+  const isDeliverer = user?.hasRole(ROLE_DELIVERER) || false;
+  const isAdmin = user?.hasRole(ROLE_ADMIN) || false;
 
-  // Component hiển thị khi đang loading
-  const AuthSkeleton = () => (
-      <HStack spacing={{ base: 2, md: 4 }}>
-        <Skeleton height="40px" width="80px" />
-        <Skeleton height="40px" width="80px" />
-      </HStack>
-  );
+  // Kiểm tra xem người dùng có bất kỳ vai trò quản lý nào
+  const hasManagementRole = user?.hasAnyRole(MANAGEMENT_ROLES) || false;
 
   return (
       <Box
@@ -135,107 +143,177 @@ const Header = () => {
                   />
               )}
 
-              {isLoading ? (
-                  <AuthSkeleton />
-              ) : user !== null ? (
-                  <>
-                    <IconButton
-                        as={RouterLink}
-                        to='/favorites'
-                        aria-label='Favorites'
-                        icon={<FaHeart />}
-                        variant='ghost'
-                        display={{ base: 'none', md: 'flex' }}
+              {/* Notification icon */}
+              <Box
+                  position='relative'
+                  display={{ base: 'none', md: 'block' }}
+              >
+                <IconButton
+                    as={RouterLink}
+                    to='/notifications'
+                    aria-label='Notifications'
+                    icon={<FaBell />}
+                    variant='ghost'
+                />
+                <Badge
+                    position='absolute'
+                    top='-2px'
+                    right='-2px'
+                    colorScheme='red'
+                    borderRadius='full'
+                    size='xs'
+                >
+                  3
+                </Badge>
+              </Box>
+
+              {/* Cart icon */}
+              <Box position='relative'>
+                <IconButton
+                    as={RouterLink}
+                    to='/cart'
+                    aria-label='Shopping Cart'
+                    icon={<FaShoppingCart />}
+                    variant='ghost'
+                />
+                <Badge
+                    position='absolute'
+                    top='-2px'
+                    right='-2px'
+                    colorScheme='brand'
+                    borderRadius='full'
+                    size='xs'
+                >
+                  2
+                </Badge>
+              </Box>
+
+              {/* User menu */}
+              <Menu>
+                <MenuButton
+                    as={Button}
+                    rightIcon={<ChevronDownIcon />}
+                    variant='ghost'
+                    display={{ base: 'none', md: 'flex' }}
+                    minW="auto"
+                    h="40px"
+                    px={3}
+                    _hover={{
+                      bg: 'gray.100',
+                    }}
+                    _active={{
+                      bg: 'gray.200',
+                    }}
+                >
+                  <Flex align="center" h="100%">
+                    <Avatar
+                        size='sm'
+                        name={user?.fullname || 'User'}
+                        src={user?.avatarUrl}
+                        mr={2}
                     />
-
-                    <Box
-                        position='relative'
-                        display={{ base: 'none', md: 'block' }}
+                    <Text
+                        display={{ base: 'none', lg: 'block' }}
+                        fontWeight="medium"
+                        fontSize="sm"
+                        mt="1px"
                     >
-                      <IconButton
-                          as={RouterLink}
-                          to='/notifications'
-                          aria-label='Notifications'
-                          icon={<FaBell />}
-                          variant='ghost'
-                      />
-                      <Badge
-                          position='absolute'
-                          top='-2px'
-                          right='-2px'
-                          colorScheme='red'
-                          borderRadius='full'
-                          size='xs'
-                      >
-                        3
-                      </Badge>
-                    </Box>
+                      {user?.fullname || 'Tài khoản'}
+                    </Text>
+                  </Flex>
+                </MenuButton>
+                <MenuList
+                    zIndex={1000}
+                    p={0}
+                    overflow="hidden"
+                    borderRadius="md"
+                    boxShadow="lg"
+                >
+                  <MenuItem
+                      as={RouterLink}
+                      to='/account/profile'
+                      py={3}
+                      _hover={{ bg: 'gray.50' }}
+                      w="full"
+                  >
+                    Tài khoản của tôi
+                  </MenuItem>
+                  <MenuItem
+                      as={RouterLink}
+                      to='/account/orders'
+                      py={3}
+                      _hover={{ bg: 'gray.50' }}
+                      w="full"
+                  >
+                    Đơn hàng của tôi
+                  </MenuItem>
 
-                    <Box position='relative'>
-                      <IconButton
-                          as={RouterLink}
-                          to='/cart'
-                          aria-label='Shopping Cart'
-                          icon={<FaShoppingCart />}
-                          variant='ghost'
-                      />
-                      <Badge
-                          position='absolute'
-                          top='-2px'
-                          right='-2px'
-                          colorScheme='brand'
-                          borderRadius='full'
-                          size='xs'
-                      >
-                        2
-                      </Badge>
-                    </Box>
+                  {isSupplier && (
+                      <>
+                        <MenuDivider m={0} />
+                        <MenuItem
+                            as={RouterLink}
+                            to='/supplier/dashboard'
+                            py={3}
+                            _hover={{ bg: 'gray.50' }}
+                            w="full"
+                        >
+                          <Flex align="center">
+                            <FaStore style={{ marginRight: '8px' }} />
+                            Quản lý cửa hàng
+                          </Flex>
+                        </MenuItem>
+                      </>
+                  )}
 
-                    <Menu>
-                      <MenuButton
-                          as={Button}
-                          rightIcon={<ChevronDownIcon />}
-                          variant='ghost'
-                          display={{ base: 'none', md: 'flex' }}
-                      >
-                        <Avatar
-                            size='xs'
-                            name={user?.name || 'User'}
-                            src={user?.avatar}
-                            mr={2}
-                        />
-                        <Text display={{ base: 'none', lg: 'block' }}>
-                          {user?.name || 'Tài khoản'}
-                        </Text>
-                      </MenuButton>
-                      <MenuList>
-                        <MenuItem as={RouterLink} to='/account/profile'>
-                          Tài khoản của tôi
+                  {isDeliverer && (
+                      <>
+                        <MenuDivider m={0} />
+                        <MenuItem
+                            as={RouterLink}
+                            to='/delivery/orders'
+                            py={3}
+                            _hover={{ bg: 'gray.50' }}
+                            w="full"
+                        >
+                          <Flex align="center">
+                            <FaShippingFast style={{ marginRight: '8px' }} />
+                            Quản lý giao hàng
+                          </Flex>
                         </MenuItem>
-                        <MenuItem as={RouterLink} to='/account/orders'>
-                          Đơn hàng
+                      </>
+                  )}
+
+                  {isAdmin && (
+                      <>
+                        <MenuDivider m={0} />
+                        <MenuItem
+                            as={RouterLink}
+                            to='/dashboard'
+                            py={3}
+                            _hover={{ bg: 'gray.50' }}
+                            w="full"
+                        >
+                          <Flex align="center">
+                            <FaUserShield style={{ marginRight: '8px' }} />
+                            Trang quản trị
+                          </Flex>
                         </MenuItem>
-                        <MenuDivider />
-                        <MenuItem onClick={handleLogout}>Đăng xuất</MenuItem>
-                      </MenuList>
-                    </Menu>
-                  </>
-              ) : (
-                  <>
-                    <Button
-                        as={RouterLink}
-                        to='/login'
-                        variant='ghost'
-                        colorScheme='brand'
-                        display={{ base: 'none', md: 'flex' }}
-                    >
-                      Đăng nhập
-                    </Button>
-                    <Button as={RouterLink} to='/register' colorScheme='brand'>
-                      Đăng ký
-                    </Button>
-                  </>
-              )}
+                      </>
+                  )}
+
+                  <MenuDivider m={0} />
+                  <MenuItem
+                      onClick={handleLogout}
+                      color="red.500"
+                      py={3}
+                      _hover={{ bg: 'red.50' }}
+                      w="full"
+                  >
+                    Đăng xuất
+                  </MenuItem>
+                </MenuList>
+              </Menu>
             </HStack>
           </Flex>
         </Container>
@@ -245,135 +323,267 @@ const Header = () => {
           <DrawerOverlay />
           <DrawerContent>
             <DrawerCloseButton />
-            <DrawerHeader>
+            <DrawerHeader borderBottomWidth="1px" py={3} px={4}>
               <Logo />
             </DrawerHeader>
 
-            <DrawerBody>
-              <VStack align='stretch' spacing={4}>
-                {isLoading ? (
-                    <Skeleton height="100px" width="100%" />
-                ) : user != null ? (
-                    <Flex alignItems='center' p={2} mb={4}>
-                      <Avatar
-                          size='md'
-                          name={user?.name}
-                          src={user?.avatar}
-                          mr={3}
-                      />
-                      <Box>
-                        <Text fontWeight='bold'>{user?.name}</Text>
-                        <Text fontSize='sm' color='gray.600'>
-                          {user?.email}
-                        </Text>
-                      </Box>
-                    </Flex>
-                ) : (
-                    <HStack justify='space-between' mb={4}>
-                      <Button
-                          as={RouterLink}
-                          to='/login'
-                          colorScheme='brand'
-                          variant='outline'
-                          flex='1'
-                          onClick={onClose}
-                      >
-                        Đăng nhập
-                      </Button>
-                      <Button
-                          as={RouterLink}
-                          to='/register'
-                          colorScheme='brand'
-                          flex='1'
-                          onClick={onClose}
-                      >
-                        Đăng ký
-                      </Button>
-                    </HStack>
-                )}
+            <DrawerBody px={0}>
+              <VStack align='stretch' spacing={0}>
+                {/* User profile in drawer */}
+                <Flex
+                    alignItems='center'
+                    p={4}
+                    bg="gray.50"
+                    borderBottomWidth="1px"
+                >
+                  <Avatar
+                      size='md'
+                      name={user?.fullname}
+                      src={user?.avatarUrl}
+                      mr={3}
+                  />
+                  <Box>
+                    <Text fontWeight='bold'>{user?.fullname}</Text>
+                    <Text fontSize='sm' color='gray.600'>
+                      {user?.email || user?.fullname}
+                    </Text>
+                  </Box>
+                </Flex>
 
-                <Box as='form' onSubmit={handleSearch} mb={4}>
-                  <InputGroup>
-                    <Input
-                        placeholder='Tìm kiếm sản phẩm...'
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    <InputRightElement>
-                      <IconButton
-                          aria-label='Search'
-                          icon={<SearchIcon />}
-                          type='submit'
-                          variant='ghost'
+                <Box px={4} py={3}>
+                  <Box as='form' onSubmit={handleSearch}>
+                    <InputGroup>
+                      <Input
+                          placeholder='Tìm kiếm sản phẩm...'
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
                       />
-                    </InputRightElement>
-                  </InputGroup>
+                      <InputRightElement>
+                        <IconButton
+                            aria-label='Search'
+                            icon={<SearchIcon />}
+                            type='submit'
+                            variant='ghost'
+                        />
+                      </InputRightElement>
+                    </InputGroup>
+                  </Box>
                 </Box>
 
-                <Box as={RouterLink} to='/' py={2} onClick={onClose}>
-                  Trang chủ
-                </Box>
-                <Box as={RouterLink} to='/products' py={2} onClick={onClose}>
-                  Sản phẩm
-                </Box>
-                <Box as={RouterLink} to='/categories' py={2} onClick={onClose}>
+                {/* Danh mục sản phẩm */}
+                <Box py={2} px={4} bg="gray.100" fontWeight="bold" color="gray.700">
                   Danh mục
                 </Box>
-                <Box as={RouterLink} to='/promotions' py={2} onClick={onClose}>
+
+                <Box
+                    as={RouterLink}
+                    to='/'
+                    py={3}
+                    px={4}
+                    borderBottomWidth="1px"
+                    bg="white"
+                    _hover={{ bg: 'gray.50' }}
+                    onClick={onClose}
+                    fontWeight="medium"
+                    w="full"
+                >
+                  Trang chủ
+                </Box>
+
+                <Box
+                    as={RouterLink}
+                    to='/products'
+                    py={3}
+                    px={4}
+                    borderBottomWidth="1px"
+                    bg="white"
+                    _hover={{ bg: 'gray.50' }}
+                    onClick={onClose}
+                    fontWeight="medium"
+                    w="full"
+                >
+                  Sản phẩm
+                </Box>
+
+                <Box
+                    as={RouterLink}
+                    to='/categories'
+                    py={3}
+                    px={4}
+                    borderBottomWidth="1px"
+                    bg="white"
+                    _hover={{ bg: 'gray.50' }}
+                    onClick={onClose}
+                    fontWeight="medium"
+                    w="full"
+                >
+                  Danh mục
+                </Box>
+
+                <Box
+                    as={RouterLink}
+                    to='/promotions'
+                    py={3}
+                    px={4}
+                    borderBottomWidth="1px"
+                    bg="white"
+                    _hover={{ bg: 'gray.50' }}
+                    onClick={onClose}
+                    fontWeight="medium"
+                    w="full"
+                >
                   Khuyến mãi
                 </Box>
 
-                {!isLoading && user != null && (
-                    <>
-                      <Box as='hr' my={2} borderColor='gray.200' />
+                {/* Tài khoản */}
+                <Box py={2} px={4} bg="gray.100" fontWeight="bold" color="gray.700">
+                  Tài khoản
+                </Box>
 
-                      <Box
-                          as={RouterLink}
-                          to='/account/profile'
-                          py={2}
-                          onClick={onClose}
-                      >
-                        Tài khoản của tôi
-                      </Box>
-                      <Box
-                          as={RouterLink}
-                          to='/account/orders'
-                          py={2}
-                          onClick={onClose}
-                      >
-                        Đơn hàng
-                      </Box>
-                      <Box as={RouterLink} to='/favorites' py={2} onClick={onClose}>
-                        Sản phẩm yêu thích
-                      </Box>
-                      <Box as={RouterLink} to='/cart' py={2} onClick={onClose}>
-                        Giỏ hàng
-                      </Box>
-                      <Box
-                          as={RouterLink}
-                          to='/notifications'
-                          py={2}
-                          onClick={onClose}
-                      >
-                        Thông báo
-                      </Box>
+                <Box
+                    as={RouterLink}
+                    to='/account/profile'
+                    py={3}
+                    px={4}
+                    borderBottomWidth="1px"
+                    bg="white"
+                    _hover={{ bg: 'gray.50' }}
+                    onClick={onClose}
+                    fontWeight="medium"
+                    w="full"
+                >
+                  Hồ sơ cá nhân
+                </Box>
 
-                      <Box as='hr' my={2} borderColor='gray.200' />
+                <Box
+                    as={RouterLink}
+                    to='/account/orders'
+                    py={3}
+                    px={4}
+                    borderBottomWidth="1px"
+                    bg="white"
+                    _hover={{ bg: 'gray.50' }}
+                    onClick={onClose}
+                    fontWeight="medium"
+                    w="full"
+                >
+                  Đơn hàng của tôi
+                </Box>
 
-                      <Box
-                          as='button'
-                          py={2}
-                          color='red.500'
-                          textAlign='left'
-                          onClick={() => {
-                            handleLogout();
-                            onClose();
-                          }}
-                      >
-                        Đăng xuất
-                      </Box>
-                    </>
+                <Box
+                    as={RouterLink}
+                    to='/cart'
+                    py={3}
+                    px={4}
+                    borderBottomWidth="1px"
+                    bg="white"
+                    _hover={{ bg: 'gray.50' }}
+                    onClick={onClose}
+                    fontWeight="medium"
+                    w="full"
+                >
+                  Giỏ hàng
+                </Box>
+
+                <Box
+                    as={RouterLink}
+                    to='/notifications'
+                    py={3}
+                    px={4}
+                    borderBottomWidth="1px"
+                    bg="white"
+                    _hover={{ bg: 'gray.50' }}
+                    onClick={onClose}
+                    fontWeight="medium"
+                    w="full"
+                >
+                  Thông báo
+                </Box>
+
+                {/* Các tùy chọn dựa trên role */}
+                {hasManagementRole && (
+                    <Box py={2} px={4} bg="gray.100" fontWeight="bold" color="gray.700">
+                      Quản lý
+                    </Box>
                 )}
+
+                {isSupplier && (
+                    <Box
+                        as={RouterLink}
+                        to='/supplier/dashboard'
+                        py={3}
+                        px={4}
+                        borderBottomWidth="1px"
+                        bg="white"
+                        _hover={{ bg: 'gray.50' }}
+                        onClick={onClose}
+                        fontWeight="medium"
+                        w="full"
+                    >
+                      <Flex align="center">
+                        <FaStore style={{ marginRight: '8px' }} />
+                        Quản lý cửa hàng
+                      </Flex>
+                    </Box>
+                )}
+
+                {isDeliverer && (
+                    <Box
+                        as={RouterLink}
+                        to='/delivery/orders'
+                        py={3}
+                        px={4}
+                        borderBottomWidth="1px"
+                        bg="white"
+                        _hover={{ bg: 'gray.50' }}
+                        onClick={onClose}
+                        fontWeight="medium"
+                        w="full"
+                    >
+                      <Flex align="center">
+                        <FaShippingFast style={{ marginRight: '8px' }} />
+                        Quản lý giao hàng
+                      </Flex>
+                    </Box>
+                )}
+
+                {isAdmin && (
+                    <Box
+                        as={RouterLink}
+                        to='/admin/dashboard'
+                        py={3}
+                        px={4}
+                        borderBottomWidth="1px"
+                        bg="white"
+                        _hover={{ bg: 'gray.50' }}
+                        onClick={onClose}
+                        fontWeight="medium"
+                        w="full"
+                    >
+                      <Flex align="center">
+                        <FaUserShield style={{ marginRight: '8px' }} />
+                        Trang quản trị
+                      </Flex>
+                    </Box>
+                )}
+
+                <Box
+                    as='button'
+                    py={3}
+                    px={4}
+                    color='red.500'
+                    textAlign='left'
+                    w="full"
+                    bg="white"
+                    _hover={{ bg: 'red.50' }}
+                    fontWeight="medium"
+                    onClick={() => {
+                      handleLogout();
+                      onClose();
+                    }}
+                >
+                  Đăng xuất
+                </Box>
               </VStack>
             </DrawerBody>
           </DrawerContent>

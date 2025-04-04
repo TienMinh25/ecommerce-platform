@@ -18,53 +18,57 @@ import RoleManagementComponent from '../pages/Module/Dashboard/RoleManagementCom
 import EmailVerificationPage from "../pages/Auth/EmailVerificationPage.jsx";
 import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage.jsx";
+import OAuthCallbackPage from "../pages/Auth/OAuthCallbackPage.jsx";
 
 const AppRoutes = () => {
-  return (
-    <Routes>
-      {/* Public Routes */}
-      <Route element={<PublicRoute />}>
-        <Route path='/login' element={<Login />} />
-        <Route path='/register' element={<Register />} />
-          <Route path="/verify-email" element={<EmailVerificationPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-      </Route>
+    return (
+        <Routes>
+            {/* Public Routes */}
+            <Route element={<PublicRoute />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
 
-      {/* Private Routes */}
-      <Route element={<PrivateRoute />}>
-        <Route element={<MainLayout />}>
-          <Route path='/products' element={<ProductListing />} />
-          <Route path='/products/:id' element={<ProductDetail />} />
-        </Route>
-      </Route>
+                <Route path="/verify-email" element={<EmailVerificationPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/oauth" element={<OAuthCallbackPage />} />
+            </Route>
 
-      {/* Dashboard Routes */}
-      <Route element={<PrivateRoute />}>
-        <Route path='/dashboard' element={<DashboardLayout />}>
-          {/* Main dashboard */}
-          <Route index element={<Dashboard />} />
+            {/* Private Routes */}
+            <Route element={<PrivateRoute />}>
+                <Route element={<MainLayout />}>
+                    <Route path='/products' element={<ProductListing />} />
+                    <Route path='/products/:id' element={<ProductDetail />} />
+                </Route>
+            </Route>
 
-          {/* Routes - render when clicks into the sidebar button */}
-          <Route path='users' element={<UserManagementComponent />} />
-          <Route path='roles' element={<RoleManagementComponent />} />
-          {/* <Route path='permissions' element={<DashboardComponent />} />
+            {/* Dashboard Routes */}
+            <Route element={<PrivateRoute />}>
+                <Route element={<MainLayout />}>
+                    <Route path='/' element={<Home />} />
+                </Route>
+                <Route path='/dashboard' element={<DashboardLayout />}>
+                    {/* Main dashboard */}
+                    <Route index element={<Dashboard />} />
+
+                    {/* Routes - render when clicks into the sidebar button */}
+                    <Route path='users' element={<UserManagementComponent />} />
+                    <Route path='roles' element={<RoleManagementComponent />} />
+                    {/* <Route path='permissions' element={<DashboardComponent />} />
           <Route path='resources' element={<DashboardComponent />} />
           <Route path='suppliers' element={<DashboardComponent />} />
           <Route path='deliverers' element={<DashboardComponent />} /> */}
-        </Route>
-      </Route>
+                </Route>
+            </Route>
 
-      {/* Mixed Access Routes */}
-      <Route element={<MainLayout />}>
-        <Route path='/' element={<Home />} />
-      </Route>
+            {/* Mixed Access Routes */}
 
-      {/* 404 Route */}
-      <Route path='/404' element={<NotFound />} />
-      <Route path='*' element={<Navigate to='/404' replace />} />
-    </Routes>
-  );
+
+            {/* 404 Route */}
+            <Route path='/404' element={<NotFound />} />
+            <Route path='*' element={<Navigate to='/404' replace />} />
+        </Routes>
+    );
 };
 
 export default AppRoutes;

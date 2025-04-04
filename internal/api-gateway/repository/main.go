@@ -34,17 +34,21 @@ type IAddressTypeRepository interface {
 }
 
 type IUserRepository interface {
-	CheckUserExistsByEmail(ctx context.Context, email string) error
+	CheckUserExistsByEmail(ctx context.Context, email string) (bool, error)
 
 	CreateUserWithPassword(ctx context.Context, email, fullname, password string) error
 
 	GetUserByEmail(ctx context.Context, email string) (*api_gateway_models.User, error)
+
+	GetUserByEmailWithoutPassword(ctx context.Context, email string) (*api_gateway_models.User, error)
 
 	GetUserIDByEmail(ctx context.Context, email string) (int, error)
 
 	VerifyEmail(ctx context.Context, email string) error
 
 	GetFullNameByEmail(ctx context.Context, email string) (string, error)
+
+	CreateUserBasedOauth(ctx context.Context, user *api_gateway_models.User) error
 }
 
 type IUserPasswordRepository interface {
