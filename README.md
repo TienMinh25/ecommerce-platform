@@ -71,6 +71,9 @@ docker-compose up -d
 ## 📄 Tài liệu API
 Xem tài liệu API đầy đủ trong thư mục `docs`.
 
+## 📄 Tài liệu thiết kế chi tiết cho từng service
+Xem tài liệu đầy đủ tại thư mục desgin-system
+
 ## 📝 License
 Dự án này được phát hành dưới giấy phép MIT.
 
