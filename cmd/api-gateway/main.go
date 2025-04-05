@@ -156,6 +156,7 @@ func main() {
 			api_gateway_repository.NewRolePermissionModuleRepository,
 			api_gateway_repository.NewUserPasswordRepository,
 			api_gateway_repository.NewRefreshTokenRepository,
+			api_gateway_repository.NewRoleRepository,
 			// tracer
 			NewTracerApiGatewayService,
 			// adapter
@@ -163,6 +164,8 @@ func main() {
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),
+		// todo: change to service and handler of role
+		fx.Invoke(func(role api_gateway_repository.IRoleRepository) {}),
 	)
 
 	app.Run()

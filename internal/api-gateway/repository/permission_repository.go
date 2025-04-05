@@ -2,7 +2,6 @@ package api_gateway_repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
@@ -12,19 +11,78 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
+	"log"
 	"net/http"
 )
 
 type permissionRepository struct {
 	db     pkg.Database
 	tracer pkg.Tracer
+	redis  pkg.ICache
 }
 
-func NewPermissionRepository(db pkg.Database, tracer pkg.Tracer) IPermissionRepository {
-	return &permissionRepository{
+func NewPermissionRepository(db pkg.Database, tracer pkg.Tracer, redis pkg.ICache) IPermissionRepository {
+	permissionRepo := &permissionRepository{
 		db:     db,
 		tracer: tracer,
+		redis:  redis,
 	}
+
+	go func() {
+		if err := permissionRepo.syncDataWithRedis(context.Background()); err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	return permissionRepo
+}
+
+func (p *permissionRepository) syncDataWithRedis(ctx context.Context) error {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "permissionRepo.syncDataWithRedis"))
+	defer span.End()
+
+	//	get data from database
+	query := `SELECT id, name FROM permissions`
+
+	rows, err := p.db.Query(ctx, query)
+
+	if err != nil {
+		span.RecordError(err)
+		fmt.Printf("error syncing data when query permissions: %#v", err)
+		return errors.Wrap(err, "permissionRepo.syncDataWithRedis")
+	}
+
+	defer rows.Close()
+
+	permissionMap := make(map[string]int)
+
+	for rows.Next() {
+		var id int
+		var name string
+
+		if err = rows.Scan(&id, &name); err != nil {
+			fmt.Printf("error syncing data when scan data permissions: %#v", err)
+			span.RecordError(err)
+			return errors.Wrap(err, "permissionRepo.syncDataWithRedis.rows.Scan")
+		}
+
+		permissionMap[name] = id
+	}
+
+	// sync to redis
+	for name, id := range permissionMap {
+		key := fmt.Sprintf("permission:%s", name)
+
+		if err = p.redis.Set(ctx, key, id, redis.KeepTTL); err != nil {
+			span.RecordError(err)
+			fmt.Printf("error syncing data when set permissions into redis: %#v", err)
+			return errors.Wrap(err, "permissionRepo.syncDataWithRedis.redis.Set")
+		}
+	}
+
+	return nil
 }
 
 func (p *permissionRepository) GetPermissionByPermissionID(ctx context.Context, id int) (*api_gateway_models.Permission, error) {

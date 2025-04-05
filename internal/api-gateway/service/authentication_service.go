@@ -72,7 +72,7 @@ func (a *authenticationService) Register(ctx context.Context, data api_gateway_d
 		return nil, err
 	}
 
-	if !isExists {
+	if isExists {
 		return nil, utils.BusinessError{
 			Code:      http.StatusBadRequest,
 			Message:   "User is already exists",
@@ -305,7 +305,7 @@ func (a *authenticationService) RefreshToken(ctx context.Context, refreshToken s
 	}
 
 	// step 2: get user by email (get information to create new access token)
-	userInfo, err := a.userRepo.GetUserByEmail(ctx, oldRefreshToken.Email)
+	userInfo, err := a.userRepo.GetUserByEmailWithoutPassword(ctx, oldRefreshToken.Email)
 
 	if err != nil {
 		return nil, err

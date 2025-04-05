@@ -22,6 +22,7 @@ func NewRolePermissionModuleRepository(db pkg.Database, tracer pkg.Tracer) IRole
 	}
 }
 
+// todo: change
 func (r *rolePermissionModuleRepository) SelectAllRolePermissionModules(ctx context.Context) ([]api_gateway_models.RolePermissionModule, error) {
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "SelectAllRolePermissionModules"))
 	defer span.End()

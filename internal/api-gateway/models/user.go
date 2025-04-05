@@ -9,7 +9,7 @@ const (
 	UserStatusInactive UserStatus = "INACTIVE"
 )
 
-// used pointer to hande null value in database when convert
+// User used pointer to hande null value in database when convert
 type User struct {
 	ID            int
 	FullName      string

@@ -86,6 +86,9 @@ type IPermissionRepository interface {
 	CheckPermissionExistsByName(ctx context.Context, name string) error
 }
 
+type IRoleRepository interface {
+}
+
 type IRolePermissionModuleRepository interface {
 	SelectAllRolePermissionModules(ctx context.Context) ([]api_gateway_models.RolePermissionModule, error)
 }

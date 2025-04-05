@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/brianvoe/gofakeit/v7"
 	"log"
-	"math/rand"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,7 +36,7 @@ func main() {
 	seedPermissions(ctx, pool)
 	seedAddressTypes(ctx, pool)
 	seedAdmin(ctx, pool)
-	seedUsers(ctx, pool, 2000000) // Số lượng user có thể thay đổi ở đây
+	seedUsers(ctx, pool, 2000) // Số lượng user có thể thay đổi ở đây
 
 	fmt.Println("✅ Seed completed successfully")
 }
@@ -105,14 +105,6 @@ func seedAdmin(ctx context.Context, db *pgxpool.Pool) {
 }
 
 func seedUsers(ctx context.Context, db *pgxpool.Pool, total int) {
-	roleMap := map[string]int{}
-	rows, _ := db.Query(ctx, `SELECT id, role_name FROM roles`)
-	for rows.Next() {
-		var id int
-		var role string
-		_ = rows.Scan(&id, &role)
-		roleMap[role] = id
-	}
 	emails := map[string]bool{"admin@admin.com": true}
 	for i := 0; i < total; i++ {
 		name := gofakeit.Name()
@@ -132,25 +124,38 @@ func seedUsers(ctx context.Context, db *pgxpool.Pool, total int) {
 		hash, _ := utils.HashPassword("123456")
 		_, _ = db.Exec(ctx, `INSERT INTO user_password (id, password) VALUES ($1, $2)`, userID, hash)
 
-		// Chọn role mặc định là customer, nhưng vẫn có thể có supplier, deliverer
-		roles := []string{"customer", "supplier", "deliverer"}
-		chosen := roles[rand.Intn(len(roles))]
-		roleID := roleMap[chosen]
-
-		// Lấy quyền của customer (các quyền tối thiểu của người dùng)
-		customerRoleID := roleMap["customer"]
-		var permDetails []PermissionDetail
-		rows, _ := db.Query(ctx, `SELECT permission_detail FROM role_user_permissions WHERE role_id = $1`, customerRoleID)
-		for rows.Next() {
-			var permissionDetail []byte
-			_ = rows.Scan(&permissionDetail)
-			var permission []PermissionDetail
-			_ = json.Unmarshal(permissionDetail, &permission)
-			permDetails = append(permDetails, permission...)
+		permissionDetail := []api_gateway_models.PermissionDetailType{
+			{
+				ModuleID:    1,
+				Permissions: []int{4, 2},
+			},
+			{
+				ModuleID:    4,
+				Permissions: []int{1, 2, 3, 4},
+			},
+			{
+				ModuleID:    5,
+				Permissions: []int{1, 4},
+			},
+			{
+				ModuleID:    6,
+				Permissions: []int{1, 4, 3},
+			},
+			{
+				ModuleID:    7,
+				Permissions: []int{4},
+			},
+			{
+				ModuleID:    8,
+				Permissions: []int{1, 4, 3},
+			},
 		}
 
-		// Gán quyền cho user
-		bytes, _ := json.Marshal(permDetails)
-		_, _ = db.Exec(ctx, `INSERT INTO role_user_permissions (role_id, user_id, permission_detail) VALUES ($1, $2, $3)`, roleID, userID, bytes)
+		permBytes, err := json.Marshal(permissionDetail)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		_, _ = db.Exec(ctx, `INSERT INTO role_user_permissions (role_id, user_id, permission_detail) VALUES ($1, $2, $3::jsonb)`, 1, userID, string(permBytes))
 	}
 }
