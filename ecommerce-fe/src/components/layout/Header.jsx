@@ -39,9 +39,6 @@ const ROLE_SUPPLIER = 'supplier';
 const ROLE_DELIVERER = 'deliverer';
 const ROLE_ADMIN = 'admin';
 
-// Mảng các role quản lý
-const MANAGEMENT_ROLES = [ROLE_SUPPLIER, ROLE_DELIVERER, ROLE_ADMIN];
-
 const Header = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [searchQuery, setSearchQuery] = useState('');
@@ -70,9 +67,6 @@ const Header = () => {
   const isSupplier = user?.hasRole(ROLE_SUPPLIER) || false;
   const isDeliverer = user?.hasRole(ROLE_DELIVERER) || false;
   const isAdmin = user?.hasRole(ROLE_ADMIN) || false;
-
-  // Kiểm tra xem người dùng có bất kỳ vai trò quản lý nào
-  const hasManagementRole = user?.hasAnyRole(MANAGEMENT_ROLES) || false;
 
   return (
       <Box
@@ -499,13 +493,6 @@ const Header = () => {
                 >
                   Thông báo
                 </Box>
-
-                {/* Các tùy chọn dựa trên role */}
-                {hasManagementRole && (
-                    <Box py={2} px={4} bg="gray.100" fontWeight="bold" color="gray.700">
-                      Quản lý
-                    </Box>
-                )}
 
                 {isSupplier && (
                     <Box

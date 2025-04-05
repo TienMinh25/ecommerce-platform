@@ -7,6 +7,8 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	"net/http"
 )
 
@@ -22,6 +24,8 @@ func NewRolePermissionModuleRepository(db pkg.Database, tracer pkg.Tracer) IRole
 	}
 }
 
+// todo: change
+// todo: deprecated
 func (r *rolePermissionModuleRepository) SelectAllRolePermissionModules(ctx context.Context) ([]api_gateway_models.RolePermissionModule, error) {
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "SelectAllRolePermissionModules"))
 	defer span.End()
@@ -69,4 +73,28 @@ func (r *rolePermissionModuleRepository) SelectAllRolePermissionModules(ctx cont
 	}
 
 	return rolePermissions, nil
+}
+
+func (r *rolePermissionModuleRepository) HasRequiredPermissionOnModule(ctx context.Context, userID, moduleID int, requiredPermission []int) (bool, error) {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "HasRequiredPermissionOnModule"))
+	defer span.End()
+
+	hasRequiredPermissionQuery := `SELECT 1 FROM jsonb_to_recordset(
+        (SELECT permission_detail FROM role_user_permissions where user_id = $1)
+	) AS tmp(module_id INT, permissions INT[])
+	WHERE tmp.module_id = $2 AND tmp.permissions @> $3`
+
+	var isRequired int
+	if err := r.db.QueryRow(ctx, hasRequiredPermissionQuery, userID, moduleID, requiredPermission).Scan(&isRequired); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
+
+		return false, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: err.Error(),
+		}
+	}
+
+	return true, nil
 }

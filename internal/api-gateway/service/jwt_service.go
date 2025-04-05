@@ -31,14 +31,14 @@ type JwtPayload struct {
 	UserID   int
 	Email    string
 	FullName string
-	Role     []api_gateway_dto.RoleLoginResponse
+	Role     api_gateway_dto.RoleLoginResponse
 }
 
 type UserClaims struct {
-	UserID   int                                 `json:"user_id"`
-	Email    string                              `json:"email"`
-	FullName string                              `json:"full_name"`
-	Role     []api_gateway_dto.RoleLoginResponse `json:"role"`
+	UserID   int                               `json:"user_id"`
+	Email    string                            `json:"email"`
+	FullName string                            `json:"full_name"`
+	Role     api_gateway_dto.RoleLoginResponse `json:"role"`
 	jwt.RegisteredClaims
 }
 
@@ -72,7 +72,7 @@ func NewJwtService(env *env.EnvManager, tracer pkg.Tracer) (IJwtService, error) 
 	return &JwtKeyManager{privateKey: privateKey, publicKey: publicKey, env: env, tracer: tracer}, nil
 }
 
-func (km *JwtKeyManager) newUserClaims(userID int, email, fullname string, role []api_gateway_dto.RoleLoginResponse, duration time.Duration) (*UserClaims, error) {
+func (km *JwtKeyManager) newUserClaims(userID int, email, fullname string, role api_gateway_dto.RoleLoginResponse, duration time.Duration) (*UserClaims, error) {
 	tokenID, err := uuid.NewRandom()
 
 	if err != nil {

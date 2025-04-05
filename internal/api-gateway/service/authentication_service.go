@@ -72,7 +72,7 @@ func (a *authenticationService) Register(ctx context.Context, data api_gateway_d
 		return nil, err
 	}
 
-	if !isExists {
+	if isExists {
 		return nil, utils.BusinessError{
 			Code:      http.StatusBadRequest,
 			Message:   "User is already exists",
@@ -165,21 +165,16 @@ func (a *authenticationService) Login(ctx context.Context, data api_gateway_dto.
 		}
 	}
 
-	var rolesResponse []api_gateway_dto.RoleLoginResponse
-
-	for _, role := range userInfo.Role {
-		rolesResponse = append(rolesResponse, api_gateway_dto.RoleLoginResponse{
-			ID:   role.ID,
-			Name: role.RoleName,
-		})
-	}
+	var roleResponse api_gateway_dto.RoleLoginResponse
+	roleResponse.ID = userInfo.Role.ID
+	roleResponse.Name = userInfo.Role.RoleName
 
 	// generate access token, save refresh token to database
 	accessToken, refreshToken, err := a.jwtService.GenerateToken(ctx, JwtPayload{
 		UserID:   userInfo.ID,
 		Email:    userInfo.Email,
 		FullName: userInfo.FullName,
-		Role:     rolesResponse,
+		Role:     roleResponse,
 	})
 
 	if err != nil {
@@ -201,7 +196,7 @@ func (a *authenticationService) Login(ctx context.Context, data api_gateway_dto.
 		RefreshToken: refreshToken,
 		FullName:     userInfo.FullName,
 		AvatarURL:    avatarURL,
-		Roles:        rolesResponse,
+		Role:         roleResponse,
 	}, nil
 }
 
@@ -305,27 +300,22 @@ func (a *authenticationService) RefreshToken(ctx context.Context, refreshToken s
 	}
 
 	// step 2: get user by email (get information to create new access token)
-	userInfo, err := a.userRepo.GetUserByEmail(ctx, oldRefreshToken.Email)
+	userInfo, err := a.userRepo.GetUserByEmailWithoutPassword(ctx, oldRefreshToken.Email)
 
 	if err != nil {
 		return nil, err
 	}
 
-	var rolesResponse []api_gateway_dto.RoleLoginResponse
-
-	for _, role := range userInfo.Role {
-		rolesResponse = append(rolesResponse, api_gateway_dto.RoleLoginResponse{
-			ID:   role.ID,
-			Name: role.RoleName,
-		})
-	}
+	var roleResponse api_gateway_dto.RoleLoginResponse
+	roleResponse.ID = userInfo.Role.ID
+	roleResponse.Name = userInfo.Role.RoleName
 
 	// generate access token, save refresh token to database
 	accessToken, refreshToken, err := a.jwtService.GenerateToken(ctx, JwtPayload{
 		UserID:   userInfo.ID,
 		Email:    userInfo.Email,
 		FullName: userInfo.FullName,
-		Role:     rolesResponse,
+		Role:     roleResponse,
 	})
 
 	if err != nil {
@@ -465,14 +455,9 @@ func (a *authenticationService) CheckToken(ctx context.Context, email string) (*
 		return nil, err
 	}
 
-	var rolesResponse []api_gateway_dto.RoleLoginResponse
-
-	for _, role := range userInfo.Role {
-		rolesResponse = append(rolesResponse, api_gateway_dto.RoleLoginResponse{
-			ID:   role.ID,
-			Name: role.RoleName,
-		})
-	}
+	var roleResponse api_gateway_dto.RoleLoginResponse
+	roleResponse.ID = userInfo.Role.ID
+	roleResponse.Name = userInfo.Role.RoleName
 
 	avatarURL := ""
 
@@ -483,7 +468,7 @@ func (a *authenticationService) CheckToken(ctx context.Context, email string) (*
 	return &api_gateway_dto.CheckTokenResponse{
 		FullName:  userInfo.FullName,
 		AvatarURL: avatarURL,
-		Roles:     rolesResponse,
+		Role:      roleResponse,
 	}, nil
 }
 
@@ -752,14 +737,9 @@ func (a *authenticationService) loginOrRegisterOAuthUser(ctx context.Context, us
 		}
 	}
 
-	// generate token and return user
-	var rolesResponse []api_gateway_dto.RoleLoginResponse
-
-	for _, role := range user.Role {
-		rolesResponse = append(rolesResponse, api_gateway_dto.RoleLoginResponse{
-			ID:   role.ID,
-			Name: role.RoleName,
-		})
+	roleResponse := api_gateway_dto.RoleLoginResponse{
+		ID:   user.Role.ID,
+		Name: user.Role.RoleName,
 	}
 
 	// generate access token, save refresh token to database
@@ -767,7 +747,7 @@ func (a *authenticationService) loginOrRegisterOAuthUser(ctx context.Context, us
 		UserID:   user.ID,
 		Email:    user.Email,
 		FullName: user.FullName,
-		Role:     rolesResponse,
+		Role:     roleResponse,
 	})
 
 	if err != nil {
@@ -789,7 +769,7 @@ func (a *authenticationService) loginOrRegisterOAuthUser(ctx context.Context, us
 		RefreshToken: refreshToken,
 		FullName:     user.FullName,
 		AvatarURL:    avatarURL,
-		Roles:        rolesResponse,
+		Role:         roleResponse,
 	}, nil
 }
 

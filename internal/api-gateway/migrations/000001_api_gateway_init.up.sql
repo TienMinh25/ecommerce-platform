@@ -22,13 +22,6 @@ CREATE TABLE IF NOT EXISTS roles (
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
 
--- users_roles table
-CREATE TABLE IF NOT EXISTS users_roles (
-                                           role_id INTEGER REFERENCES roles(id) ON DELETE CASCADE,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    PRIMARY KEY (role_id, user_id)
-    );
-
 -- user_password table
 CREATE TABLE IF NOT EXISTS user_password (
                                              id BIGSERIAL PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

@@ -18,6 +18,5 @@ DROP INDEX IF EXISTS idx_addresses_user_id;
 DROP TABLE IF EXISTS refresh_token;
 DROP TABLE IF EXISTS addresses;
 DROP TABLE IF EXISTS user_password;
-DROP TABLE IF EXISTS users_roles;
 DROP TABLE IF EXISTS roles;
 DROP TABLE IF EXISTS users;

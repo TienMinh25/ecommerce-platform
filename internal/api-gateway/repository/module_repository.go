@@ -2,7 +2,6 @@ package api_gateway_repository
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
@@ -12,19 +11,80 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/pkg/errors"
+	"github.com/redis/go-redis/v9"
+	"log"
 	"net/http"
 )
 
 type moduleRepository struct {
 	db     pkg.Database
 	tracer pkg.Tracer
+	redis  pkg.ICache
 }
 
-func NewModuleRepository(db pkg.Database, tracer pkg.Tracer) IModuleRepository {
-	return &moduleRepository{
+func NewModuleRepository(db pkg.Database, tracer pkg.Tracer, redis pkg.ICache) IModuleRepository {
+	moduleRepo := &moduleRepository{
 		db:     db,
 		tracer: tracer,
+		redis:  redis,
 	}
+
+	go func() {
+		err := moduleRepo.syncDataWithRedis(context.Background())
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
+
+	return moduleRepo
+}
+
+func (m *moduleRepository) syncDataWithRedis(ctx context.Context) error {
+	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "moduleRepository.syncDataWithRedis"))
+	defer span.End()
+
+	//	get data from database
+	query := `SELECT id, name FROM modules`
+
+	rows, err := m.db.Query(ctx, query)
+
+	if err != nil {
+		span.RecordError(err)
+		fmt.Printf("error syncing modules when query roles: %#v", err)
+		return errors.Wrap(err, "moduleRepo.syncDataWithRedis")
+	}
+
+	defer rows.Close()
+
+	moduleMap := make(map[string]int)
+
+	for rows.Next() {
+		var id int
+		var name string
+
+		if err = rows.Scan(&id, &name); err != nil {
+			fmt.Printf("error syncing data when scan data modules: %#v", err)
+			span.RecordError(err)
+			return errors.Wrap(err, "moduleRepo.syncDataWithRedis.rows.Scan")
+		}
+
+		moduleMap[name] = id
+	}
+
+	// sync to redis
+	for name, id := range moduleMap {
+		key := fmt.Sprintf("module:%s", name)
+
+		if err = m.redis.Set(ctx, key, id, redis.KeepTTL); err != nil {
+			span.RecordError(err)
+			fmt.Printf("error syncing data when set modules into redis: %#v", err)
+			return errors.Wrap(err, "moduleRepo.syncDataWithRedis.redis.Set")
+		}
+	}
+
+	return nil
 }
 
 func (m *moduleRepository) BeginTransaction(ctx context.Context, options pgx.TxOptions) (pkg.Tx, error) {
