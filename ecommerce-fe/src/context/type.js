@@ -7,7 +7,6 @@ class User {
 
     // Kiểm tra xem user có role cụ thể hay không
     hasRole(roleName) {
-        console.log(roleName)
         if (!this.role) return false;
 
         return this.role.name === roleName;

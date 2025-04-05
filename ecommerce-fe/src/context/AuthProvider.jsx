@@ -31,7 +31,6 @@ export const AuthProvider = ({ children }) => {
               let user = new User(data["full_name"], data["avatar_url"], data["role"]);
               localStorage.setItem("user", JSON.stringify(user));
               setUser(user);
-              console.log("Authentication successful:", user);
             }
           } catch (validationError) {
             console.error('Token validation failed:', validationError);
@@ -128,8 +127,6 @@ export const AuthProvider = ({ children }) => {
         const response = await authService.exchangeOAuthCode(code, state, provider);
 
         let data = response.data;
-
-        console.log("OAuth data received:", data);
 
         // Lưu token
         localStorage.setItem('access_token', data.access_token);
