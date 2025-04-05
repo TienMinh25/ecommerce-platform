@@ -38,14 +38,16 @@ const (
 type ModuleName string
 
 const (
-	UserManagement     ModuleName = "User Management"
-	RolePermission     ModuleName = "Role & Permission"
-	ProductManagement  ModuleName = "Product Management"
-	Cart               ModuleName = "Cart"
-	OrderManagement    ModuleName = "Order Management"
-	Payment            ModuleName = "Payment"
-	ShippingManagement ModuleName = "Shipping Management"
-	ReviewRating       ModuleName = "Review & Rating"
-	StoreManagement    ModuleName = "Store Management"
-	Onboarding         ModuleName = "Onboarding"
+	UserManagement        ModuleName = "User Management"
+	RolePermission        ModuleName = "Role & Permission"
+	ProductManagement     ModuleName = "Product Management"
+	Cart                  ModuleName = "Cart"
+	OrderManagement       ModuleName = "Order Management"
+	Payment               ModuleName = "Payment"
+	ShippingManagement    ModuleName = "Shipping Management"
+	ReviewRating          ModuleName = "Review & Rating"
+	StoreManagement       ModuleName = "Store Management"
+	Onboarding            ModuleName = "Onboarding"
+	AddressTypeManagement ModuleName = "Address Type Management"
+	ModuleManagement      ModuleName = "Module Management"
 )

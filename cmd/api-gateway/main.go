@@ -127,6 +127,7 @@ func main() {
 			s3.NewStorage,
 			// middleware,
 			middleware.NewJwtMiddleware,
+			middleware.NewPermissionMiddleware,
 			// infrastructure
 			infrastructure.NewRedisCache,
 			NewMessageBroker,

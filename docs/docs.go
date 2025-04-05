@@ -1466,11 +1466,8 @@ const docTemplate = `{
                 "full_name": {
                     "type": "string"
                 },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
-                    }
+                "role": {
+                    "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
                 }
             }
         },
@@ -1492,12 +1489,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "address_type": {
-                    "type": "string",
-                    "enum": [
-                        "home",
-                        "work",
-                        "pickup"
-                    ]
+                    "type": "string"
                 }
             }
         },
@@ -1803,11 +1795,8 @@ const docTemplate = `{
                 "refresh_token": {
                     "type": "string"
                 },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
-                    }
+                "role": {
+                    "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
                 }
             }
         },
@@ -1999,12 +1988,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "address_type": {
-                    "type": "string",
-                    "enum": [
-                        "home",
-                        "work",
-                        "pickup"
-                    ]
+                    "type": "string"
                 }
             }
         },

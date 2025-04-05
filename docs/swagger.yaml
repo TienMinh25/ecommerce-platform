@@ -29,10 +29,8 @@ definitions:
         type: string
       full_name:
         type: string
-      roles:
-        items:
-          $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
-        type: array
+      role:
+        $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
     type: object
   api_gateway_dto.CheckTokenResponseDocs:
     properties:
@@ -44,10 +42,6 @@ definitions:
   api_gateway_dto.CreateAddressTypeByAdminRequest:
     properties:
       address_type:
-        enum:
-        - home
-        - work
-        - pickup
         type: string
     required:
     - address_type
@@ -248,10 +242,8 @@ definitions:
         type: string
       refresh_token:
         type: string
-      roles:
-        items:
-          $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
-        type: array
+      role:
+        $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
     type: object
   api_gateway_dto.LoginResponseDocs:
     properties:
@@ -375,10 +367,6 @@ definitions:
   api_gateway_dto.UpdateAddressTypeBodyRequest:
     properties:
       address_type:
-        enum:
-        - home
-        - work
-        - pickup
         type: string
     required:
     - address_type

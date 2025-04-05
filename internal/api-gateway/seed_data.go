@@ -59,7 +59,7 @@ func seedModules(ctx context.Context, db *pgxpool.Pool) {
 	modules := []string{
 		"User Management", "Role & Permission", "Product Management", "Cart",
 		"Order Management", "Payment", "Shipping Management", "Review & Rating",
-		"Store Management", "Onboarding",
+		"Store Management", "Onboarding", "Address Type Management", "Module Management",
 	}
 	for _, m := range modules {
 		_, _ = db.Exec(ctx, `INSERT INTO modules (name) VALUES ($1) ON CONFLICT DO NOTHING`, m)
@@ -94,7 +94,7 @@ func seedAdmin(ctx context.Context, db *pgxpool.Pool) {
 	db.QueryRow(ctx, `SELECT id FROM roles WHERE role_name='admin'`).Scan(&roleID)
 
 	permissions := []PermissionDetail{}
-	for i := 1; i <= 10; i++ {
+	for i := 1; i <= 12; i++ {
 		permissions = append(permissions, PermissionDetail{
 			ModuleID:    i,
 			Permissions: []int{1, 2, 3, 4, 5, 6},

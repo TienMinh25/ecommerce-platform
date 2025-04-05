@@ -1,0 +1,2 @@
+ALTER TABLE role_user_permissions
+DROP CONSTRAINT role_user_permissions_user_id_unique;

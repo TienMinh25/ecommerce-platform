@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
 
             if (data) {
               // Tạo đối tượng user từ data nhận được
-              let user = new User(data["full_name"], data["avatar_url"], data["roles"]);
+              let user = new User(data["full_name"], data["avatar_url"], data["role"]);
               localStorage.setItem("user", JSON.stringify(user));
               setUser(user);
               console.log("Authentication successful:", user);
@@ -66,7 +66,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('access_token', data["access_token"]);
       localStorage.setItem("refresh_token", data["refresh_token"]);
 
-      let user = new User(data["full_name"], data["avatar_url"], data["roles"])
+      let user = new User(data["full_name"], data["avatar_url"], data["role"])
 
       localStorage.setItem("user", JSON.stringify(user));
       // Set user state
@@ -139,7 +139,7 @@ export const AuthProvider = ({ children }) => {
         let user = new User(
             data.full_name,
             data.avatar_url,
-            data.roles || []
+            data.role
         );
 
         localStorage.setItem("user", JSON.stringify(user));

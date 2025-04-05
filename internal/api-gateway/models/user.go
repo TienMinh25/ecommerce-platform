@@ -23,5 +23,5 @@ type User struct {
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	UserPassword  UserPassword
-	Role          []Role
+	Role          Role
 }

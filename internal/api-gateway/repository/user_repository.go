@@ -229,33 +229,24 @@ func (u *userRepository) GetUserByEmailWithoutPassword(ctx context.Context, emai
 		INNER JOIN roles r
 		ON r.id = rup.role_id`
 
-	roleRows, err := u.db.Query(ctx, getUserRolesQuery, user.ID)
-	if err != nil {
-		// trả về techincal error ở đây vì nếu scan ko thành công do query ko có dữ liệu hay
-		// như nào thì là lỗi dưới dữ liệu mình tổ chức -> trả về internal server error
+	var role api_gateway_models.Role
+
+	if err := u.db.QueryRow(ctx, getUserRolesQuery, user.ID).Scan(&role.ID, &role.RoleName); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, utils.BusinessError{
+				Code:      http.StatusBadRequest,
+				Message:   "Something went wrong",
+				ErrorCode: errorcode.NOT_FOUND,
+			}
+		}
+
 		return nil, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
-	defer roleRows.Close()
 
-	var roles []api_gateway_models.Role
-
-	for roleRows.Next() {
-		var role api_gateway_models.Role
-
-		if err = roleRows.Scan(&role.ID, &role.RoleName); err != nil {
-			return nil, utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: common.MSG_INTERNAL_ERROR,
-			}
-		}
-
-		roles = append(roles, role)
-	}
-
-	user.Role = roles
+	user.Role = role
 
 	return &user, nil
 }
@@ -285,8 +276,7 @@ func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (*api
 		}
 	}
 
-	// get user roles
-	// get role + permission -> get by user id -> many role, permission
+	// get user role
 	getUserRolesQuery := `SELECT r.id, r.role_name
 		FROM (SELECT id FROM users WHERE id = $1) temp_u
 		INNER JOIN role_user_permissions rup
@@ -294,33 +284,24 @@ func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (*api
 		INNER JOIN roles r
 		ON r.id = rup.role_id`
 
-	roleRows, err := u.db.Query(ctx, getUserRolesQuery, user.ID)
-	if err != nil {
-		// trả về techincal error ở đây vì nếu scan ko thành công do query ko có dữ liệu hay
-		// như nào thì là lỗi dưới dữ liệu mình tổ chức -> trả về internal server error
+	var role api_gateway_models.Role
+
+	if err := u.db.QueryRow(ctx, getUserRolesQuery, user.ID).Scan(&role.ID, &role.RoleName); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, utils.BusinessError{
+				Code:      http.StatusBadRequest,
+				Message:   "Something went wrong",
+				ErrorCode: errorcode.NOT_FOUND,
+			}
+		}
+
 		return nil, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
-	defer roleRows.Close()
 
-	var roles []api_gateway_models.Role
-
-	for roleRows.Next() {
-		var role api_gateway_models.Role
-
-		if err = roleRows.Scan(&role.ID, &role.RoleName); err != nil {
-			return nil, utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: common.MSG_INTERNAL_ERROR,
-			}
-		}
-
-		roles = append(roles, role)
-	}
-
-	user.Role = roles
+	user.Role = role
 
 	// get user password by id
 	userPassword, err := u.userPasswordRepository.GetPasswordByID(ctx, user.ID)
