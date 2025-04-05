@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
 import { Box, Flex, useMediaQuery } from '@chakra-ui/react';
-import { Outlet } from 'react-router-dom';
+import {Navigate, Outlet, useLocation} from 'react-router-dom';
 import DashboardHeader from '../../pages/Module/DashboardHeader';
 import DashboardSidebar from '../../pages/Module/DashboardSidebar';
 import DashboardFooter from '../../pages/Module/DashboardFooter';
+import useAuth from "../../hooks/useAuth.js";
 
 // Define the header height and spacing
 const headerHeight = "64px";
@@ -24,6 +25,17 @@ export const SidebarContext = createContext({
 export const useSidebar = () => useContext(SidebarContext);
 
 const DashboardLayout = () => {
+  const location = useLocation();
+  const { user } = useAuth(); // Get user from auth context
+
+  // Check if user has admin role
+  const isAdmin = user?.role?.name === 'admin';
+
+  // If user is not admin, redirect to home page
+  if (!isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
   // Check if the viewport is mobile-sized
   const [isMobileResult] = useMediaQuery("(max-width: 768px)");
   // Stabilize isMobile value with useEffect to prevent constant updates

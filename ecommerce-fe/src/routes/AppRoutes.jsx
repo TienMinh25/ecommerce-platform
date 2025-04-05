@@ -34,14 +34,6 @@ const AppRoutes = () => {
                 <Route path="/oauth" element={<OAuthCallbackPage />} />
             </Route>
 
-            {/* Private Routes */}
-            <Route element={<PrivateRoute />}>
-                <Route element={<MainLayout />}>
-                    <Route path='/products' element={<ProductListing />} />
-                    <Route path='/products/:id' element={<ProductDetail />} />
-                </Route>
-            </Route>
-
             {/* Dashboard Routes */}
             <Route element={<PrivateRoute />}>
                 <Route element={<MainLayout />}>
@@ -61,8 +53,15 @@ const AppRoutes = () => {
                 </Route>
             </Route>
 
-            {/* Mixed Access Routes */}
 
+
+            {/* Private Routes */}
+            <Route element={<PrivateRoute />}>
+                <Route element={<MainLayout />}>
+                    <Route path='/products' element={<ProductListing />} />
+                    <Route path='/products/:id' element={<ProductDetail />} />
+                </Route>
+            </Route>
 
             {/* 404 Route */}
             <Route path='/404' element={<NotFound />} />

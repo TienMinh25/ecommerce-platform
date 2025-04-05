@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/brianvoe/gofakeit/v7"
 	"log"
@@ -156,6 +157,12 @@ func seedUsers(ctx context.Context, db *pgxpool.Pool, total int) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		_, _ = db.Exec(ctx, `INSERT INTO role_user_permissions (role_id, user_id, permission_detail) VALUES ($1, $2, $3::jsonb)`, 1, userID, string(permBytes))
+
+		var roleID int
+		if db.QueryRow(ctx, `SELECT id FROM roles WHERE role_name = $1`, common.RoleCustomer).Scan(&roleID); err != nil {
+			log.Fatal(err)
+		}
+
+		_, _ = db.Exec(ctx, `INSERT INTO role_user_permissions (role_id, user_id, permission_detail) VALUES ($1, $2, $3::jsonb)`, roleID, userID, string(permBytes))
 	}
 }
