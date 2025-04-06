@@ -10,9 +10,11 @@ const (
 type AddressType string
 
 const (
-	AddressTypeHome   AddressType = "home"
-	AddressTypeWork   AddressType = "work"
-	AddressTypePickup AddressType = "pickup"
+	AddressTypeHome      AddressType = "Home"
+	AddressTypeOffice    AddressType = "Office"
+	AddressTypeWarehouse AddressType = "Warehouse"
+	AddressTypStorefront AddressType = "Storefront"
+	AddressTypeOther     AddressType = "Other"
 )
 
 type RoleName string

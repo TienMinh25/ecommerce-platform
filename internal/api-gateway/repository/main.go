@@ -90,9 +90,11 @@ type IRoleRepository interface {
 }
 
 type IRolePermissionModuleRepository interface {
-	SelectAllRolePermissionModules(ctx context.Context) ([]api_gateway_models.RolePermissionModule, error)
-
 	HasRequiredPermissionOnModule(ctx context.Context, userID, moduleID int, requiredPermisison []int) (bool, error)
+
+	CheckExistsModuleUsed(ctx context.Context, moduleID int) (bool, error)
+
+	CheckExistsPermissionUsed(ctx context.Context, permissionID int) (bool, error)
 }
 
 type IRefreshTokenRepository interface {

@@ -19,13 +19,13 @@ type GetModuleByIDRequest struct {
 }
 
 type CreateModuleRequest struct {
-	Name string `json:"name" binding:"required,min=3,max=50,alpha"`
+	Name string `json:"name" binding:"required,min=3,max=50"`
 }
 type CreateModuleResponse struct {
 }
 
 type UpdateModuleByModuleIDRequest struct {
-	Name string `json:"name" binding:"required,min=3,max=50,alpha"`
+	Name string `json:"name" binding:"required,min=3,max=50"`
 }
 
 type UpdateModuleURIRequest struct {
