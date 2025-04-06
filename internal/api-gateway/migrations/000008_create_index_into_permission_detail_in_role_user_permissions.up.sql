@@ -1,1 +1,0 @@
-CREATE INDEX idx_role_user_permissions_jsonb ON role_user_permissions USING GIN(permission_detail);

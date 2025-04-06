@@ -1,1 +1,0 @@
-DROP INDEX IF EXISTS idx_role_user_permissions_jsonb;
