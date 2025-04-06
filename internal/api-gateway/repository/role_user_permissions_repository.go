@@ -2,8 +2,8 @@ package api_gateway_repository
 
 import (
 	"context"
-	"encoding/json"
-	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
+	"fmt"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
@@ -24,55 +24,48 @@ func NewRolePermissionModuleRepository(db pkg.Database, tracer pkg.Tracer) IRole
 	}
 }
 
-// todo: change
-// todo: deprecated
-func (r *rolePermissionModuleRepository) SelectAllRolePermissionModules(ctx context.Context) ([]api_gateway_models.RolePermissionModule, error) {
-	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "SelectAllRolePermissionModules"))
+func (r *rolePermissionModuleRepository) CheckExistsModuleUsed(ctx context.Context, moduleID int) (bool, error) {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckExistsModuleUsed"))
 	defer span.End()
 
-	sqlStr := `SELECT role_id, permission_detail, created_at, updated_at FROM role_permission_module`
+	sqlStr := fmt.Sprintf(`SELECT 1 FROM role_user_permissions WHERE permission_detail::jsonb @> '[{"module_id": %d}]'::jsonb LIMIT 1`, moduleID)
 
-	rows, err := r.db.Query(ctx, sqlStr)
+	var isExists int
 
-	if err != nil {
-		span.RecordError(err)
+	if err := r.db.QueryRow(ctx, sqlStr).Scan(&isExists); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
+		}
 
-		return nil, utils.TechnicalError{
+		return false, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
+			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
-	defer rows.Close()
+	return true, nil
+}
 
-	var rolePermissions []api_gateway_models.RolePermissionModule
+func (r *rolePermissionModuleRepository) CheckExistsPermissionUsed(ctx context.Context, permissionID int) (bool, error) {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckExistsPermissionUsed"))
+	defer span.End()
 
-	for rows.Next() {
-		var rolePermissionModule api_gateway_models.RolePermissionModule
-		var permissionDetailJSON string
+	sqlStr := fmt.Sprintf(`SELECT 1 FROM role_user_permissions WHERE permission_detail::jsonb @> '[{"permissions": [%d]}]'::jsonb LIMIT 1`, permissionID)
 
-		if err = rows.Scan(&rolePermissionModule.RoleID, &permissionDetailJSON, &rolePermissionModule.CreatedAt, &rolePermissionModule.UpdatedAt); err != nil {
-			span.RecordError(err)
-			return nil, utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}
+	var isExists int
+
+	if err := r.db.QueryRow(ctx, sqlStr).Scan(&isExists); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, nil
 		}
 
-		// convert permission detail to struct
-		if err = json.Unmarshal([]byte(permissionDetailJSON), &rolePermissionModule.PermissionDetail); err != nil {
-			span.RecordError(err)
-
-			return nil, utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}
+		return false, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
 		}
-
-		rolePermissions = append(rolePermissions, rolePermissionModule)
 	}
 
-	return rolePermissions, nil
+	return true, nil
 }
 
 func (r *rolePermissionModuleRepository) HasRequiredPermissionOnModule(ctx context.Context, userID, moduleID int, requiredPermission []int) (bool, error) {

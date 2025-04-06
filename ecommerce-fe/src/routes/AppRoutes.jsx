@@ -19,6 +19,9 @@ import EmailVerificationPage from "../pages/Auth/EmailVerificationPage.jsx";
 import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage.jsx";
 import OAuthCallbackPage from "../pages/Auth/OAuthCallbackPage.jsx";
+import PermissionManagementComponent from "../pages/Module/Dashboard/PermissionManagementComponent.jsx";
+import ModuleManagementComponent from "../pages/Module/Dashboard/ModuleManagementComponent.jsx";
+import AddressTypesManagementComponent from "../pages/Module/Dashboard/AddressTypesManagementComponent.jsx";
 
 const AppRoutes = () => {
     return (
@@ -46,10 +49,12 @@ const AppRoutes = () => {
                     {/* Routes - render when clicks into the sidebar button */}
                     <Route path='users' element={<UserManagementComponent />} />
                     <Route path='roles' element={<RoleManagementComponent />} />
-                    {/* <Route path='permissions' element={<DashboardComponent />} />
-          <Route path='resources' element={<DashboardComponent />} />
-          <Route path='suppliers' element={<DashboardComponent />} />
-          <Route path='deliverers' element={<DashboardComponent />} /> */}
+                    <Route path='permissions' element={<PermissionManagementComponent />} />
+                    <Route path='modules' element={<ModuleManagementComponent />} />
+                    <Route path='address-types' element={<AddressTypesManagementComponent />} />
+                    {/*
+                      <Route path='onboarding/suppliers' element={<DashboardComponent />} />
+                      <Route path='onboarding/deliverers' element={<DashboardComponent />} /> */}
                 </Route>
             </Route>
 

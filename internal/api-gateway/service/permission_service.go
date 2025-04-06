@@ -5,6 +5,7 @@ import (
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"math"
@@ -107,22 +108,17 @@ func (p *permissionService) DeletePermissionByPermissionID(ctx context.Context, 
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "DeletePermissionByPermissionID"))
 	defer span.End()
 
-	res, err := p.rolePermissionModuleRepo.SelectAllRolePermissionModules(ctx)
+	isExists, err := p.rolePermissionModuleRepo.CheckExistsPermissionUsed(ctx, id)
 
 	if err != nil {
 		return err
 	}
 
-	for _, rolePermissionModule := range res {
-		for _, permissionDetail := range rolePermissionModule.PermissionDetail {
-			for _, permission := range permissionDetail.Permissions {
-				if permission == id {
-					return utils.BusinessError{
-						Code:    http.StatusConflict,
-						Message: "Permission ID is already in use, cannot delete the permission",
-					}
-				}
-			}
+	if isExists {
+		return utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "Permission is currently used, cannot be deleted",
+			ErrorCode: errorcode.CANNOT_DELETE,
 		}
 	}
 
