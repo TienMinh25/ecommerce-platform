@@ -35,12 +35,10 @@ import {
     VStack,
 } from '@chakra-ui/react';
 import {
-    FiCheck,
     FiChevronDown,
     FiChevronLeft,
     FiChevronRight,
     FiEdit2,
-    FiFilter,
     FiMail,
     FiPlus,
     FiRefreshCw,
@@ -49,6 +47,7 @@ import {
     FiUser,
     FiX,
 } from 'react-icons/fi';
+import {RiVerifiedBadgeFill} from "react-icons/ri";
 import userService from "../../../services/userService.js";
 import UserFilterDropdown from '../../../components/user-management/UserFilterDropdown.jsx';
 import UserPermissionsModal from "../../../components/user-management/UserPermissionsModal.jsx";
@@ -700,16 +699,14 @@ const UserManagementComponent = () => {
                                                     </Text>
                                                     {user.email_verify ? (
                                                         <Tooltip label="Email verified" hasArrow>
-                                                            <Badge colorScheme="green" variant="outline" fontSize="2xs"
-                                                                   p={0.5}>
-                                                                <FiCheck size={10}/>
-                                                            </Badge>
+                                                            <Box display="inline-block" ml={1} color="blue.400">
+                                                                <RiVerifiedBadgeFill size={17} />
+                                                            </Box>
                                                         </Tooltip>
                                                     ) : (
                                                         <Tooltip label="Email not verified" hasArrow>
-                                                            <Badge colorScheme="red" variant="outline" fontSize="2xs"
-                                                                   p={0.5}>
-                                                                <FiX size={10}/>
+                                                            <Badge colorScheme="red" variant="outline" fontSize="2xs" p={0.5}>
+                                                                <FiX size={13}/>
                                                             </Badge>
                                                         </Tooltip>
                                                     )}
@@ -723,10 +720,9 @@ const UserManagementComponent = () => {
                                                     </Text>
                                                     {user.phone && user.phone_verify && (
                                                         <Tooltip label="Phone verified" hasArrow>
-                                                            <Badge colorScheme="green" variant="outline" fontSize="2xs"
-                                                                   p={0.5}>
-                                                                <FiCheck size={10}/>
-                                                            </Badge>
+                                                            <Box display="inline-block" ml={1} color="blue.400">
+                                                                <RiVerifiedBadgeFill size={15} />
+                                                            </Box>
                                                         </Tooltip>
                                                     )}
                                                 </HStack>
