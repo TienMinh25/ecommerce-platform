@@ -141,6 +141,8 @@ func main() {
 			api_gateway_handler.NewAuthenticationHandler,
 			api_gateway_handler.NewModuleHandler,
 			api_gateway_handler.NewPermissionHanlder,
+			api_gateway_handler.NewUserManagementHandler,
+			api_gateway_handler.NewRoleHandler,
 			// service
 			api_gateway_service.NewAdminAddressTypeService,
 			api_gateway_service.NewAuthenticationService,
@@ -149,6 +151,8 @@ func main() {
 			api_gateway_service.NewOTPCacheService,
 			api_gateway_service.NewJwtService,
 			api_gateway_service.NewOauthCacheService,
+			api_gateway_service.NewUserService,
+			api_gateway_service.NewRoleService,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
 			api_gateway_repository.NewUserRepository,

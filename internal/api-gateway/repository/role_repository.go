@@ -3,11 +3,15 @@ package api_gateway_repository
 import (
 	"context"
 	"fmt"
+	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 	"log"
+	"net/http"
 )
 
 type roleRepository struct {
@@ -76,4 +80,41 @@ func (p *roleRepository) syncDataWithRedis(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *roleRepository) GetRoles(ctx context.Context) ([]api_gateway_models.Role, error) {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "roleRepo.GetRoles"))
+	defer span.End()
+
+	sql := `SELECT id, role_name FROM roles`
+
+	rows, err := r.db.Query(ctx, sql)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	defer rows.Close()
+
+	var roles []api_gateway_models.Role
+
+	for rows.Next() {
+		var role api_gateway_models.Role
+
+		if err = rows.Scan(&role.ID, &role.RoleName); err != nil {
+			span.RecordError(err)
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		roles = append(roles, role)
+	}
+
+	return roles, nil
 }

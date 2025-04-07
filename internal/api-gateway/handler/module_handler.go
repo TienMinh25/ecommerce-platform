@@ -30,7 +30,7 @@ func NewModuleHandler(
 //
 //	@Summary		Get module by ID
 //	@Description	Get module details by module ID
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //
 //	@Security		BearerAuth
@@ -70,7 +70,7 @@ func (m *moduleHandler) GetModuleByModuleID(ctx *gin.Context) {
 //
 //	@Summary		Create a new module
 //	@Description	Create a new module with a given name
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //	@Produce		json
 //
@@ -112,7 +112,7 @@ func (m *moduleHandler) CreateModule(ctx *gin.Context) {
 //
 //	@Summary		Update module by ID
 //	@Description	Update the module name using module ID
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //	@Produce		json
 //
@@ -162,7 +162,7 @@ func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
 //
 //	@Summary		Get module list
 //	@Description	Get a paginated list of modules
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //	@Produce		json
 //
@@ -204,7 +204,7 @@ func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
 //
 //	@Summary		Delete module by ID
 //	@Description	Delete a module using its ID
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //	@Produce		json
 //

@@ -211,6 +211,42 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetUserByAdminResponse:
+    properties:
+      avatar_url:
+        type: string
+      birth_date:
+        type: string
+      email:
+        type: string
+      email_verify:
+        type: boolean
+      fullname:
+        type: string
+      id:
+        type: integer
+      module_permission:
+        items:
+          $ref: '#/definitions/api_gateway_dto.ModulePermissionResponse'
+        type: array
+      phone:
+        type: string
+      phone_verify:
+        type: boolean
+      role_name:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  api_gateway_dto.GetUserByAdminResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetUserByAdminResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.ListAddressTypesResponseDocs:
     properties:
       data:
@@ -272,6 +308,17 @@ definitions:
     properties:
       code:
         type: integer
+    type: object
+  api_gateway_dto.ModulePermissionResponse:
+    properties:
+      module_id:
+        type: integer
+      module_name:
+        type: string
+      permissions:
+        items:
+          $ref: '#/definitions/api_gateway_dto.UserPermissionResponse'
+        type: array
     type: object
   api_gateway_dto.RefreshTokenResponse:
     properties:
@@ -364,6 +411,13 @@ definitions:
       name:
         type: string
     type: object
+  api_gateway_dto.RoleLoginResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.UpdateAddressTypeBodyRequest:
     properties:
       address_type:
@@ -415,6 +469,13 @@ definitions:
     - name
     type: object
   api_gateway_dto.UpdatePermissionByPermissionIDResponse:
+    type: object
+  api_gateway_dto.UserPermissionResponse:
+    properties:
+      permission_id:
+        type: integer
+      permission_name:
+        type: string
     type: object
   api_gateway_dto.VerifyEmailRequest:
     properties:
@@ -1011,7 +1072,7 @@ paths:
       - BearerAuth: []
       summary: Get module list
       tags:
-      - Modules
+      - modules
     post:
       consumes:
       - application/json
@@ -1050,7 +1111,7 @@ paths:
       - BearerAuth: []
       summary: Create a new module
       tags:
-      - Modules
+      - modules
   /modules/{moduleID}:
     delete:
       consumes:
@@ -1085,7 +1146,7 @@ paths:
       - BearerAuth: []
       summary: Delete module by ID
       tags:
-      - Modules
+      - modules
     get:
       consumes:
       - application/json
@@ -1119,7 +1180,7 @@ paths:
       - BearerAuth: []
       summary: Get module by ID
       tags:
-      - Modules
+      - modules
     patch:
       consumes:
       - application/json
@@ -1163,7 +1224,7 @@ paths:
       - BearerAuth: []
       summary: Update module by ID
       tags:
-      - Modules
+      - modules
   /permissions:
     get:
       consumes:
@@ -1348,6 +1409,142 @@ paths:
       summary: Update a permission by ID
       tags:
       - permissions
+  /roles:
+    get:
+      consumes:
+      - application/json
+      description: Get all roles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.RoleLoginResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get all roles
+      tags:
+      - roles
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get list users
+      parameters:
+      - description: Limit number of records returned
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - description: page
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: Provide for search by email, phone or fullname
+        enum:
+        - email
+        - phone
+        - fullname
+        in: query
+        name: searchBy
+        type: string
+      - description: Value for search
+        in: query
+        name: searchValue
+        type: string
+      - description: Sort by some attributes
+        enum:
+        - fullname
+        - email
+        - birthdate
+        - updated_at
+        - phone
+        in: query
+        name: sortBy
+        type: string
+      - description: Sort order asc or desc
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sortOrder
+        type: string
+      - description: Filter by email verify
+        enum:
+        - true
+        - false
+        in: query
+        name: emailVerify
+        type: boolean
+      - description: Filter by phone verify
+        enum:
+        - true
+        - false
+        in: query
+        name: phoneVerify
+        type: boolean
+      - description: Filter by status of user
+        enum:
+        - active
+        - inactive
+        in: query
+        name: status
+        type: string
+      - description: Start time for last update
+        in: query
+        name: updatedAtStartFrom
+        type: string
+      - description: End time for last update
+        in: query
+        name: updatedAtEndFrom
+        type: string
+      - description: Filter by role id
+        enum:
+        - 1
+        - 2
+        - 3
+        - 4
+        in: query
+        name: roleID
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetUserByAdminResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get list users
+      tags:
+      - users
 securityDefinitions:
   BearerAuth:
     in: header

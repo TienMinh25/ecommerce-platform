@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -14,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type userRepository struct {
@@ -470,4 +472,180 @@ func (u *userRepository) CreateUserBasedOauth(ctx context.Context, user *api_gat
 
 		return nil
 	})
+}
+
+func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_dto.GetUserByAdminRequest) ([]api_gateway_models.User, int, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetUserByAdmin"))
+	defer span.End()
+
+	var conditions []string
+
+	// used for query data
+	var params []interface{}
+	paramCount := 1
+
+	// handle search params
+	if data.SearchBy != nil && data.SearchValue != nil {
+		searchTerm := "%" + *data.SearchValue + "%"
+
+		switch *data.SearchBy {
+		case "email":
+			conditions = append(conditions, fmt.Sprintf("u.email LIKE $%d", paramCount))
+		case "phone":
+			conditions = append(conditions, fmt.Sprintf("u.phone LIKE $%d", paramCount))
+		case "fullname":
+			conditions = append(conditions, fmt.Sprintf("u.fullname LIKE $%d", paramCount))
+		}
+
+		params = append(params, searchTerm)
+		paramCount++
+	}
+
+	// handle filter params
+	if data.EmailVerifyStatus != nil {
+		conditions = append(conditions, fmt.Sprintf("u.email_verified = $%d", paramCount))
+		params = append(params, *data.EmailVerifyStatus)
+		paramCount++
+	}
+
+	if data.PhoneVerifyStatus != nil {
+		conditions = append(conditions, fmt.Sprintf("u.phone_verified = $%d", paramCount))
+		params = append(params, *data.PhoneVerifyStatus)
+		paramCount++
+	}
+
+	if data.Status != nil {
+		conditions = append(conditions, fmt.Sprintf("u.status = $%d", paramCount))
+		params = append(params, *data.Status)
+		paramCount++
+	}
+
+	if data.UpdatedAtStartFrom != nil {
+		conditions = append(conditions, fmt.Sprintf("u.updated_at >= $%d", paramCount))
+		params = append(params, *data.UpdatedAtStartFrom)
+		paramCount++
+	}
+
+	if data.UpdatedAtEndFrom != nil {
+		conditions = append(conditions, fmt.Sprintf("u.updated_at <= $%d", paramCount))
+		params = append(params, *data.UpdatedAtEndFrom)
+		paramCount++
+	}
+
+	// build where clause
+	var whereClauseLimit string
+
+	if len(conditions) > 0 {
+		whereClauseLimit = strings.Join(conditions, " AND ")
+	} else {
+		// use if not have filter or search
+		whereClauseLimit = "1 = 1"
+	}
+
+	// build sort order
+	sortClause := "u.id ASC"
+	if data.SortBy != nil && data.SortOrder != nil {
+		sortClause = fmt.Sprintf("u.%s %s", *data.SortBy, *data.SortOrder)
+	}
+
+	// calculate offset
+	offset := (data.Page - 1) * data.Limit
+
+	// create params for total query
+	totalParams := make([]interface{}, len(params))
+	copy(totalParams, params)
+
+	sqlData := fmt.Sprintf(`
+		SELECT u.id, u.fullname, u.email, u.avatar_url, u.birthdate, u.phone, u.email_verified,
+		     u.phone_verified, u.status, u.updated_at, rup.role_id, rup.permission_detail
+		FROM users u 
+		INNER JOIN role_user_permissions rup
+		ON u.id = rup.user_id
+		WHERE u.id IN (
+		    SELECT id FROM users u
+		    WHERE %s
+		    ORDER BY %s
+		    LIMIT $%d OFFSET $%d
+		)
+	`, whereClauseLimit, sortClause, paramCount, paramCount+1)
+	params = append(params, data.Limit, offset)
+
+	var whereSqlCount string
+
+	if len(conditions) > 0 {
+		whereSqlCount = strings.Join(conditions, " AND ")
+	} else {
+		whereSqlCount = "1 = 1"
+	}
+
+	if data.RoleID != nil {
+		sqlData += fmt.Sprintf(" AND rup.role_id = $%d", paramCount+2)
+		whereSqlCount += fmt.Sprintf(" AND rup.role_id = $%d", paramCount)
+		params = append(params, *data.RoleID)
+
+		// used condition for sql select count
+		conditions = append(conditions, fmt.Sprintf("rup.role_id = $%d", paramCount))
+		totalParams = append(totalParams, *data.RoleID)
+	}
+
+	// build sql to count totals
+	sqlTotal := fmt.Sprintf(`
+		SELECT COUNT(*)
+		FROM (
+		    SELECT 1
+		    FROM users u 
+		    JOIN role_user_permissions rup
+		    ON u.id = rup.user_id
+		    WHERE %s
+		) subquery
+	`, whereSqlCount)
+
+	var total int
+
+	// query total count
+	if err := u.db.QueryRow(ctx, sqlTotal, totalParams...).Scan(&total); err != nil {
+		return nil, 0, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	// query data with limit
+	rows, err := u.db.Query(ctx, sqlData, params...)
+
+	if err != nil {
+		return nil, 0, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	defer rows.Close()
+
+	var res []api_gateway_models.User
+
+	for rows.Next() {
+		var user api_gateway_models.User
+		var roleID int
+		var permissionDetail []api_gateway_models.PermissionDetailType
+
+		if err = rows.Scan(&user.ID, &user.FullName, &user.Email, &user.AvatarURL, &user.BirthDate,
+			&user.PhoneNumber, &user.EmailVerified, &user.PhoneVerified, &user.Status, &user.UpdatedAt,
+			&roleID, &permissionDetail); err != nil {
+			return nil, 0, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		user.ModulePermission = api_gateway_models.RolePermissionModule{
+			RoleID:           roleID,
+			UserID:           user.ID,
+			PermissionDetail: permissionDetail,
+		}
+
+		res = append(res, user)
+	}
+
+	return res, total, nil
 }

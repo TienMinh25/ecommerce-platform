@@ -60,3 +60,11 @@ type IOauthCacheService interface {
 	SaveOauthState(ctx context.Context, state string) error
 	GetAndDeleteOauthState(ctx context.Context, state string) (string, error)
 }
+
+type IUserService interface {
+	GetUserManagement(ctx context.Context, data *api_gateway_dto.GetUserByAdminRequest) ([]api_gateway_dto.GetUserByAdminResponse, int, int, bool, bool, error)
+}
+
+type IRoleService interface {
+	GetRoles(ctx context.Context) ([]api_gateway_dto.RoleLoginResponse, error)
+}

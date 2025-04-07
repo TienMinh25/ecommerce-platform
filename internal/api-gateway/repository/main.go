@@ -2,6 +2,7 @@ package api_gateway_repository
 
 import (
 	"context"
+	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/jackc/pgx/v5"
@@ -49,6 +50,8 @@ type IUserRepository interface {
 	GetFullNameByEmail(ctx context.Context, email string) (string, error)
 
 	CreateUserBasedOauth(ctx context.Context, user *api_gateway_models.User) error
+
+	GetUserByAdmin(ctx context.Context, data *api_gateway_dto.GetUserByAdminRequest) ([]api_gateway_models.User, int, error)
 }
 
 type IUserPasswordRepository interface {
@@ -87,6 +90,7 @@ type IPermissionRepository interface {
 }
 
 type IRoleRepository interface {
+	GetRoles(ctx context.Context) ([]api_gateway_models.Role, error)
 }
 
 type IRolePermissionModuleRepository interface {
