@@ -166,15 +166,6 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
-  api_gateway_dto.GetListPermissionResponseDocs:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/api_gateway_dto.GetPermissionResponse'
-        type: array
-      metadata:
-        $ref: '#/definitions/api_gateway_dto.Metadata'
-    type: object
   api_gateway_dto.GetModuleResponse:
     properties:
       created_at:
@@ -1039,16 +1030,18 @@ paths:
       - application/json
       description: Get a paginated list of modules
       parameters:
-      - description: Page number
+      - description: Page number (required if getAll is false)
         in: query
         name: page
-        required: true
         type: integer
-      - description: Page size
+      - description: Page size (required if getAll is false)
         in: query
         name: limit
-        required: true
         type: integer
+      - description: Get all modules without pagination
+        in: query
+        name: getAll
+        type: boolean
       produces:
       - application/json
       responses:
@@ -1229,25 +1222,27 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retrieve a paginated list of permissions
+      description: Retrieve a paginated list of permissions or all permissions
       parameters:
-      - description: Page number
+      - description: Page number (required if getAll is false)
         in: query
         name: page
-        required: true
         type: integer
-      - description: Page size
+      - description: Page size (required if getAll is false)
         in: query
         name: limit
-        required: true
         type: integer
+      - description: Get all permissions without pagination
+        in: query
+        name: getAll
+        type: boolean
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api_gateway_dto.GetListPermissionResponseDocs'
+            $ref: '#/definitions/api_gateway_dto.GetPermissionResponseDocs'
         "400":
           description: Bad Request
           schema:

@@ -2,27 +2,33 @@ package api_gateway_service
 
 import (
 	"context"
+	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/pkg/errors"
 	"math"
 	"net/http"
+	"strconv"
 )
 
 type moduleService struct {
 	repo                     api_gateway_repository.IModuleRepository
 	rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository
 	tracer                   pkg.Tracer
+	redis                    pkg.ICache
 }
 
-func NewModuleService(repo api_gateway_repository.IModuleRepository, tracer pkg.Tracer, rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository) IModuleService {
+func NewModuleService(repo api_gateway_repository.IModuleRepository, redis pkg.ICache, tracer pkg.Tracer, rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository) IModuleService {
 	return &moduleService{
 		repo:                     repo,
 		tracer:                   tracer,
 		rolePermissionModuleRepo: rolePermissionModuleRepo,
+		redis:                    redis,
 	}
 }
 
@@ -127,4 +133,64 @@ func (m *moduleService) DeleteModuleByModuleID(ctx context.Context, id int) erro
 	}
 
 	return m.repo.DeleteModuleByModuleID(ctx, id)
+}
+
+func (m *moduleService) GetAllModules(ctx context.Context) ([]api_gateway_dto.GetModuleResponse, error) {
+	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetAllModules"))
+	defer span.End()
+
+	moduleMap, err := m.getAllModulesFromRedis(ctx)
+
+	if err != nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	var res []api_gateway_dto.GetModuleResponse
+
+	for moduleName, moduleID := range moduleMap {
+		res = append(res, api_gateway_dto.GetModuleResponse{
+			ID:   moduleID,
+			Name: moduleName,
+		})
+	}
+
+	return res, nil
+}
+
+func (m *moduleService) getAllModulesFromRedis(ctx context.Context) (map[string]int, error) {
+	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "getAllModulesFromRedis"))
+	defer span.End()
+
+	moduleName := []common.ModuleName{
+		common.UserManagement,
+		common.RolePermission,
+		common.ProductManagement,
+		common.Cart,
+		common.OrderManagement,
+		common.Payment,
+		common.ShippingManagement,
+		common.ReviewRating,
+		common.StoreManagement,
+		common.Onboarding,
+		common.AddressTypeManagement,
+		common.ModuleManagement,
+	}
+	res := make(map[string]int, len(moduleName))
+
+	for _, module := range moduleName {
+		idStr, err := m.redis.Get(ctx, fmt.Sprintf("module:%v", module))
+
+		if err != nil {
+			return nil, errors.Wrap(err, "u.service.getAllModulesFromRedis.redis.Get")
+		}
+
+		id, _ := strconv.Atoi(idStr)
+
+		res[string(module)] = id
+	}
+
+	return res, nil
 }

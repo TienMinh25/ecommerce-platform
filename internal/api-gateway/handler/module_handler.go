@@ -168,8 +168,9 @@ func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
 //
 //	@Security		BearerAuth
 //
-//	@Param			page	query		int	true	"Page number"
-//	@Param			limit	query		int	true	"Page size"
+//	@Param			page	query		int		false	"Page number (required if getAll is false)"
+//	@Param			limit	query		int		false	"Page size (required if getAll is false)"
+//	@Param			getAll	query		bool	false	"Get all modules without pagination"
 //	@Success		200		{object}	api_gateway_dto.GetListModuleResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
@@ -186,6 +187,17 @@ func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
 	if err := ctx.ShouldBindQuery(&queryReq); err != nil {
 		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if queryReq.GetAll {
+		modules, err := m.service.GetAllModules(ct)
+		if err != nil {
+			utils.HandleErrorResponse(ctx, err)
+			return
+		}
+
+		utils.SuccessResponse[[]api_gateway_dto.GetModuleResponse](ctx, http.StatusOK, modules)
 		return
 	}
 

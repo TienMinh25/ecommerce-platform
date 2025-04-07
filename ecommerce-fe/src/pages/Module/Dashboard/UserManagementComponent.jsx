@@ -7,6 +7,7 @@ import {
     Box,
     Button,
     Container,
+    Collapse,
     Flex,
     HStack,
     IconButton,
@@ -49,8 +50,10 @@ import {
 } from 'react-icons/fi';
 import {RiVerifiedBadgeFill} from "react-icons/ri";
 import userService from "../../../services/userService.js";
+import moduleService from "../../../services/moduleService.js";
+import permissionService from "../../../services/permissionService.js";
 import UserFilterDropdown from '../../../components/user-management/UserFilterDropdown.jsx';
-import UserPermissionsModal from "../../../components/user-management/UserPermissionsModal.jsx";
+import InlineUserPermissionsPanel from '../../../components/user-management/InlineUserPermissionsPanel.jsx';
 
 const UserManagementComponent = () => {
     // State for users and loading
@@ -67,6 +70,7 @@ const UserManagementComponent = () => {
     // State for selected user for permissions
     const [selectedUser, setSelectedUser] = useState(null);
     const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
+    const [expandedUserId, setExpandedUserId] = useState(null);
 
     // State for filters (filtered params that will be sent to the server)
     const [activeFilters, setActiveFilters] = useState({});
@@ -86,9 +90,6 @@ const UserManagementComponent = () => {
     // Search state (quick filter in UI)
     const [searchField, setSearchField] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
-
-    // Modal controls - Must be defined before any conditional logic
-    const permissionsModal = useDisclosure();
 
     // Toast for notifications
     const toast = useToast();
@@ -178,33 +179,54 @@ const UserManagementComponent = () => {
         fetchUsers();
     }, [fetchUsers]);
 
-    // Open permissions modal and load user
-    const handleOpenPermissions = async (user) => {
-        setSelectedUser(user);
-        setIsLoadingPermissions(true);
+    // Open permissions panel for a user
+    const handleOpenPermissions = (user) => {
+        if (expandedUserId === user.id) {
+            // If already expanded, close it
+            setExpandedUserId(null);
+            setSelectedUser(null);
+        } else {
+            // Close any other expanded rows
+            setExpandedUserId(user.id);
+            setSelectedUser(user);
+            setIsLoadingPermissions(true);
 
-        try {
-            permissionsModal.onOpen();
-        } catch (error) {
-            toast({
-                title: 'Error loading permissions',
-                description: error.message || 'An error occurred while loading user permissions',
-                status: 'error',
-                duration: 5000,
-                isClosable: true,
-            });
-        } finally {
-            setIsLoadingPermissions(false);
+            // Simulate loading for a short time (remove in production and use real loading state)
+            setTimeout(() => {
+                setIsLoadingPermissions(false);
+            }, 500);
         }
+    };
+
+    // Close the permissions panel
+    const handleClosePermissions = () => {
+        setExpandedUserId(null);
+        setSelectedUser(null);
     };
 
     // Save user permissions
     const handleSavePermissions = async (userId, permissions) => {
         try {
             await userService.updateUserPermissions(userId, permissions);
+
+            toast({
+                title: 'Permissions Updated',
+                description: 'User permissions have been updated successfully.',
+                status: 'success',
+                duration: 3000,
+                isClosable: true,
+            });
+
             fetchUsers();
             return true;
         } catch (error) {
+            toast({
+                title: 'Error Updating Permissions',
+                description: error.message || 'An error occurred while updating permissions',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
             console.error('Error updating permissions:', error);
             throw error;
         }
@@ -353,6 +375,7 @@ const UserManagementComponent = () => {
             case 'deliverer':
                 return 'green';
             case 'user':
+            case 'customer':
                 return 'gray';
             default:
                 return 'gray';
@@ -655,140 +678,161 @@ const UserManagementComponent = () => {
                                 </Tr>
                             ) : users.length > 0 ? (
                                 users.map((user) => (
-                                    <Tr
-                                        key={user.id}
-                                        _hover={{bg: useColorModeValue('blue.50', 'gray.700')}}
-                                        transition="background-color 0.2s"
-                                        cursor="pointer"
-                                        borderBottomWidth="1px"
-                                        borderColor={borderColor}
-                                        _active={{bg: useColorModeValue('blue.100', 'gray.600')}}
-                                        h="60px"
-                                    >
-                                        <Td>
-                                            <HStack spacing={3}>
-                                                <Avatar size="sm" name={user.fullname}
-                                                        src={user.avatar_url || "/api/placeholder/40/40"}/>
-                                                <Box>
-                                                    <Text
-                                                        fontWeight="medium"
-                                                        fontSize="sm"
-                                                        color={useColorModeValue('gray.800', 'white')}
-                                                    >
-                                                        {user.fullname}
-                                                    </Text>
-                                                    <Text
-                                                        fontSize="xs"
-                                                        color={useColorModeValue('gray.500', 'gray.400')}
-                                                        display={{base: "none", lg: "block"}}
-                                                    >
-                                                        {user.email}
-                                                    </Text>
-                                                </Box>
-                                            </HStack>
-                                        </Td>
-                                        <Td display={{base: "none", md: "table-cell"}}>
-                                            <VStack align="start" spacing={0.5}>
-                                                <HStack spacing={1} align="center">
-                                                    <FiMail size={12}/>
-                                                    <Text
-                                                        fontSize="sm"
-                                                        color={useColorModeValue('gray.600', 'gray.300')}
-                                                    >
-                                                        {user.email}
-                                                    </Text>
-                                                    {user.email_verify ? (
-                                                        <Tooltip label="Email verified" hasArrow>
-                                                            <Box display="inline-block" ml={1} color="blue.400">
-                                                                <RiVerifiedBadgeFill size={17} />
-                                                            </Box>
-                                                        </Tooltip>
-                                                    ) : (
-                                                        <Tooltip label="Email not verified" hasArrow>
-                                                            <Badge colorScheme="red" variant="outline" fontSize="2xs" p={0.5}>
-                                                                <FiX size={13}/>
-                                                            </Badge>
-                                                        </Tooltip>
-                                                    )}
+                                    <React.Fragment key={user.id}>
+                                        <Tr
+                                            _hover={{bg: expandedUserId === user.id ? bgColor : useColorModeValue('blue.50', 'gray.700')}}
+                                            transition="background-color 0.2s"
+                                            cursor="pointer"
+                                            borderBottomWidth={expandedUserId === user.id ? "0" : "1px"}
+                                            borderColor={borderColor}
+                                            _active={{bg: useColorModeValue('blue.100', 'gray.600')}}
+                                            h="60px"
+                                            bg={expandedUserId === user.id ? useColorModeValue('blue.50', 'gray.700') : bgColor}
+                                        >
+                                            <Td>
+                                                <HStack spacing={3}>
+                                                    <Avatar size="sm" name={user.fullname}
+                                                            src={user.avatar_url || "/api/placeholder/40/40"}/>
+                                                    <Box>
+                                                        <Text
+                                                            fontWeight="medium"
+                                                            fontSize="sm"
+                                                            color={useColorModeValue('gray.800', 'white')}
+                                                        >
+                                                            {user.fullname}
+                                                        </Text>
+                                                        <Text
+                                                            fontSize="xs"
+                                                            color={useColorModeValue('gray.500', 'gray.400')}
+                                                            display={{base: "none", lg: "block"}}
+                                                        >
+                                                            {user.email}
+                                                        </Text>
+                                                    </Box>
                                                 </HStack>
-                                                <HStack spacing={1} align="center">
-                                                    <Text
-                                                        fontSize="sm"
-                                                        color={useColorModeValue('gray.500', 'gray.400')}
-                                                    >
-                                                        {user.phone || 'No phone'}
-                                                    </Text>
-                                                    {user.phone && user.phone_verify && (
-                                                        <Tooltip label="Phone verified" hasArrow>
-                                                            <Box display="inline-block" ml={1} color="blue.400">
-                                                                <RiVerifiedBadgeFill size={15} />
-                                                            </Box>
-                                                        </Tooltip>
-                                                    )}
+                                            </Td>
+                                            <Td display={{base: "none", md: "table-cell"}}>
+                                                <VStack align="start" spacing={0.5}>
+                                                    <HStack spacing={1} align="center">
+                                                        <FiMail size={12}/>
+                                                        <Text
+                                                            fontSize="sm"
+                                                            color={useColorModeValue('gray.600', 'gray.300')}
+                                                        >
+                                                            {user.email}
+                                                        </Text>
+                                                        {user.email_verify ? (
+                                                            <Tooltip label="Email verified" hasArrow>
+                                                                <Box display="inline-block" ml={1} color="blue.400">
+                                                                    <RiVerifiedBadgeFill size={17} />
+                                                                </Box>
+                                                            </Tooltip>
+                                                        ) : (
+                                                            <Tooltip label="Email not verified" hasArrow>
+                                                                <Badge colorScheme="red" variant="outline" fontSize="2xs" p={0.5}>
+                                                                    <FiX size={13}/>
+                                                                </Badge>
+                                                            </Tooltip>
+                                                        )}
+                                                    </HStack>
+                                                    <HStack spacing={1} align="center">
+                                                        <Text
+                                                            fontSize="sm"
+                                                            color={useColorModeValue('gray.500', 'gray.400')}
+                                                        >
+                                                            {user.phone || 'No phone'}
+                                                        </Text>
+                                                        {user.phone && user.phone_verify && (
+                                                            <Tooltip label="Phone verified" hasArrow>
+                                                                <Box display="inline-block" ml={1} color="blue.400">
+                                                                    <RiVerifiedBadgeFill size={15} />
+                                                                </Box>
+                                                            </Tooltip>
+                                                        )}
+                                                    </HStack>
+                                                </VStack>
+                                            </Td>
+                                            <Td>
+                                                <Tag
+                                                    size="md"
+                                                    variant="subtle"
+                                                    colorScheme={getRoleColor(user.role_name)}
+                                                    borderRadius="md"
+                                                >
+                                                    <TagLeftIcon as={FiUser} boxSize="12px"/>
+                                                    <TagLabel fontSize="xs" fontWeight="medium">{user.role_name}</TagLabel>
+                                                </Tag>
+                                            </Td>
+                                            <Td>
+                                                <Badge
+                                                    px={2}
+                                                    py={1}
+                                                    borderRadius="full"
+                                                    colorScheme={user.status === 'active' ? 'green' : 'red'}
+                                                    textTransform="capitalize"
+                                                    fontWeight="medium"
+                                                    fontSize="xs"
+                                                >
+                                                    {user.status}
+                                                </Badge>
+                                            </Td>
+                                            <Td>
+                                                <Text
+                                                    fontSize="sm"
+                                                    color={useColorModeValue('gray.500', 'gray.400')}
+                                                >
+                                                    {formatDate(user.updated_at)}
+                                                </Text>
+                                            </Td>
+                                            <Td textAlign="right">
+                                                <HStack spacing={1} justifyContent="flex-end">
+                                                    <Tooltip label="Edit user" hasArrow>
+                                                        <IconButton
+                                                            icon={<FiEdit2 size={15}/>}
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            colorScheme="blue"
+                                                            aria-label="Edit user"
+                                                            borderRadius="md"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        />
+                                                    </Tooltip>
+                                                    <Tooltip label={expandedUserId === user.id ? "Close permissions" : "Edit permissions"} hasArrow>
+                                                        <IconButton
+                                                            icon={<FiShield size={15}/>}
+                                                            size="sm"
+                                                            variant={expandedUserId === user.id ? "solid" : "ghost"}
+                                                            colorScheme="blue"
+                                                            aria-label="Edit permissions"
+                                                            borderRadius="md"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleOpenPermissions(user);
+                                                            }}
+                                                        />
+                                                    </Tooltip>
                                                 </HStack>
-                                            </VStack>
-                                        </Td>
-                                        <Td>
-                                            <Tag
-                                                size="md"
-                                                variant="subtle"
-                                                colorScheme={getRoleColor(user.role_name)}
-                                                borderRadius="md"
-                                            >
-                                                <TagLeftIcon as={FiUser} boxSize="12px"/>
-                                                <TagLabel fontSize="xs" fontWeight="medium">{user.role_name}</TagLabel>
-                                            </Tag>
-                                        </Td>
-                                        <Td>
-                                            <Badge
-                                                px={2}
-                                                py={1}
-                                                borderRadius="full"
-                                                colorScheme={user.status === 'active' ? 'green' : 'red'}
-                                                textTransform="capitalize"
-                                                fontWeight="medium"
-                                                fontSize="xs"
-                                            >
-                                                {user.status}
-                                            </Badge>
-                                        </Td>
-                                        <Td>
-                                            <Text
-                                                fontSize="sm"
-                                                color={useColorModeValue('gray.500', 'gray.400')}
-                                            >
-                                                {formatDate(user.updated_at)}
-                                            </Text>
-                                        </Td>
-                                        <Td textAlign="right">
-                                            <HStack spacing={1} justifyContent="flex-end">
-                                                <Tooltip label="Edit user" hasArrow>
-                                                    <IconButton
-                                                        icon={<FiEdit2 size={15}/>}
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        colorScheme="blue"
-                                                        aria-label="Edit user"
-                                                        borderRadius="md"
-                                                    />
-                                                </Tooltip>
-                                                <Tooltip label="Manage permissions" hasArrow>
-                                                    <IconButton
-                                                        icon={<FiShield size={15}/>}
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        colorScheme="purple"
-                                                        aria-label="Manage permissions"
-                                                        borderRadius="md"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleOpenPermissions(user);
-                                                        }}
-                                                    />
-                                                </Tooltip>
-                                            </HStack>
-                                        </Td>
-                                    </Tr>
+                                            </Td>
+                                        </Tr>
+
+                                        {/* Expandable Permissions Section */}
+                                        {user.id === expandedUserId && (
+                                            <Tr>
+                                                <Td colSpan={6} p={0} bg={useColorModeValue('gray.50', 'gray.800')}>
+                                                    <Collapse in={user.id === expandedUserId} animateOpacity>
+                                                        <Box px={4} pb={4}>
+                                                            <InlineUserPermissionsPanel
+                                                                user={selectedUser}
+                                                                onSave={handleSavePermissions}
+                                                                onClose={handleClosePermissions}
+                                                                isLoading={isLoadingPermissions}
+                                                            />
+                                                        </Box>
+                                                    </Collapse>
+                                                </Td>
+                                            </Tr>
+                                        )}
+                                    </React.Fragment>
                                 ))
                             ) : (
                                 <Tr>
@@ -902,15 +946,6 @@ const UserManagementComponent = () => {
                     </Flex>
                 </Box>
             </Box>
-
-            {/* User Permissions Modal */}
-            <UserPermissionsModal
-                isOpen={permissionsModal.isOpen}
-                onClose={permissionsModal.onClose}
-                user={selectedUser}
-                onSave={handleSavePermissions}
-                isLoading={isLoadingPermissions}
-            />
         </Container>
     );
 };

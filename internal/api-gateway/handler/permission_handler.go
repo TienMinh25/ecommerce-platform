@@ -105,14 +105,15 @@ func (p *permissionHandler) CreatePermission(ctx *gin.Context) {
 // GetPermissionsList godoc
 //
 //	@Summary		Get a list of permissions
-//	@Description	Retrieve a paginated list of permissions
+//	@Description	Retrieve a paginated list of permissions or all permissions
 //	@Tags			permissions
 //	@Accept			json
 //	@Produce		json
 //	@Security		BearerAuth
-//	@Param			page	query		int	true	"Page number"
-//	@Param			limit	query		int	true	"Page size"
-//	@Success		200		{object}	api_gateway_dto.GetListPermissionResponseDocs
+//	@Param			page	query		int		false	"Page number (required if getAll is false)"
+//	@Param			limit	query		int		false	"Page size (required if getAll is false)"
+//	@Param			getAll	query		bool	false	"Get all permissions without pagination"
+//	@Success		200		{object}	api_gateway_dto.GetPermissionResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
@@ -128,6 +129,17 @@ func (p *permissionHandler) GetPermissionsList(ctx *gin.Context) {
 	if err := ctx.ShouldBindQuery(&queryReq); err != nil {
 		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if queryReq.GetAll {
+		permissions, err := p.service.GetAllPermissions(ct)
+		if err != nil {
+			utils.HandleErrorResponse(ctx, err)
+			return
+		}
+
+		utils.SuccessResponse[[]api_gateway_dto.GetPermissionResponse](ctx, http.StatusOK, permissions)
 		return
 	}
 

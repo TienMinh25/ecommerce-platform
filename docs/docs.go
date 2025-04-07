@@ -857,17 +857,21 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number (required if getAll is false)",
                         "name": "page",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size (required if getAll is false)",
                         "name": "limit",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all modules without pagination",
+                        "name": "getAll",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1142,7 +1146,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve a paginated list of permissions",
+                "description": "Retrieve a paginated list of permissions or all permissions",
                 "consumes": [
                     "application/json"
                 ],
@@ -1156,24 +1160,28 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number (required if getAll is false)",
                         "name": "page",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size (required if getAll is false)",
                         "name": "limit",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all permissions without pagination",
+                        "name": "getAll",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api_gateway_dto.GetListPermissionResponseDocs"
+                            "$ref": "#/definitions/api_gateway_dto.GetPermissionResponseDocs"
                         }
                     },
                     "400": {
@@ -1874,20 +1882,6 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/api_gateway_dto.GetModuleResponse"
-                    }
-                },
-                "metadata": {
-                    "$ref": "#/definitions/api_gateway_dto.Metadata"
-                }
-            }
-        },
-        "api_gateway_dto.GetListPermissionResponseDocs": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api_gateway_dto.GetPermissionResponse"
                     }
                 },
                 "metadata": {
