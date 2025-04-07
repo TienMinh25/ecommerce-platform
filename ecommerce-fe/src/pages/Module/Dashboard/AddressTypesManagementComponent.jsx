@@ -50,7 +50,27 @@ import addressTypeService from "../../../services/addressTypeService.js";
 import {formatDateWithTime} from "../../../utils/time.js";
 
 const AddressTypesManagementComponent = () => {
+    // Hook initialization - ensure consistent order
     const toast = useToast();
+
+    // Colors - moved up to maintain Hook order
+    const bgColor = useColorModeValue('white', 'gray.800');
+    const borderColor = useColorModeValue('gray.200', 'gray.700');
+    const scrollTrackBg = useColorModeValue('#f1f1f1', '#2d3748');
+    const scrollThumbBg = useColorModeValue('#c1c1c1', '#4a5568');
+    const scrollThumbHoverBg = useColorModeValue('#a1a1a1', '#718096');
+    const theadBg = useColorModeValue('gray.50', 'gray.900');
+    const typeNameColor = useColorModeValue('gray.600', 'gray.300');
+    const rowHoverBg = useColorModeValue('blue.50', 'gray.700');
+    const rowEvenBg = useColorModeValue('gray.50', 'gray.800');
+    const rowActiveBg = useColorModeValue('blue.100', 'gray.600');
+    const textColor = useColorModeValue('gray.800', 'white');
+    const updatedTextColor = useColorModeValue('gray.600', 'gray.300');
+    const paginationBg = useColorModeValue('gray.50', 'gray.800');
+    const paginationGradient = useColorModeValue(
+        "linear(to-r, white, gray.50, white)",
+        "linear(to-r, gray.800, gray.700, gray.800)"
+    );
 
     // State variables
     const [currentPage, setCurrentPage] = useState(1);
@@ -68,13 +88,6 @@ const AddressTypesManagementComponent = () => {
     const [currentAddressType, setCurrentAddressType] = useState(null);
     const [addressTypeName, setAddressTypeName] = useState('');
     const [formError, setFormError] = useState('');
-
-    // Colors
-    const bgColor = useColorModeValue('white', 'gray.800');
-    const borderColor = useColorModeValue('gray.200', 'gray.700');
-    const scrollTrackBg = useColorModeValue('#f1f1f1', '#2d3748');
-    const scrollThumbBg = useColorModeValue('#c1c1c1', '#4a5568');
-    const scrollThumbHoverBg = useColorModeValue('#a1a1a1', '#718096');
 
     // Load address types on page load and when pagination changes
     useEffect(() => {
@@ -390,13 +403,13 @@ const AddressTypesManagementComponent = () => {
                     borderColor={borderColor}
                 >
                     <Table variant="simple" size="md" colorScheme="gray" style={{ borderCollapse: 'separate', borderSpacing: '0' }}>
-                        <Thead bg={useColorModeValue('gray.50', 'gray.900')} position="sticky" top={0} zIndex={1}>
+                        <Thead bg={theadBg} position="sticky" top={0} zIndex={1}>
                             <Tr>
                                 <Th
                                     py={4}
                                     borderTopLeftRadius="md"
                                     fontSize="xs"
-                                    color={useColorModeValue('gray.600', 'gray.300')}
+                                    color={typeNameColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
@@ -406,7 +419,7 @@ const AddressTypesManagementComponent = () => {
                                 <Th
                                     py={4}
                                     fontSize="xs"
-                                    color={useColorModeValue('gray.600', 'gray.300')}
+                                    color={typeNameColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
@@ -419,7 +432,7 @@ const AddressTypesManagementComponent = () => {
                                     textAlign="right"
                                     borderTopRightRadius="md"
                                     fontSize="xs"
-                                    color={useColorModeValue('gray.600', 'gray.300')}
+                                    color={typeNameColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
@@ -439,13 +452,13 @@ const AddressTypesManagementComponent = () => {
                                 filteredData.map((row, index) => (
                                     <Tr
                                         key={row.id}
-                                        _hover={{ bg: useColorModeValue('blue.50', 'gray.700') }}
-                                        bg={index % 2 === 0 ? bgColor : useColorModeValue('gray.50', 'gray.800')}
+                                        _hover={{ bg: rowHoverBg }}
+                                        bg={index % 2 === 0 ? bgColor : rowEvenBg}
                                         transition="background-color 0.2s"
                                         cursor="pointer"
                                         borderBottomWidth="1px"
                                         borderColor={borderColor}
-                                        _active={{ bg: useColorModeValue('blue.100', 'gray.600') }}
+                                        _active={{ bg: rowActiveBg }}
                                         h="60px"
                                     >
                                         <Td>
@@ -456,7 +469,7 @@ const AddressTypesManagementComponent = () => {
                                                 <Text
                                                     fontWeight="medium"
                                                     fontSize="sm"
-                                                    color={useColorModeValue('gray.800', 'white')}
+                                                    color={textColor}
                                                 >
                                                     {row.name}
                                                 </Text>
@@ -465,7 +478,7 @@ const AddressTypesManagementComponent = () => {
                                         <Td display={{ base: "none", md: "table-cell" }}>
                                             <Text
                                                 fontSize="sm"
-                                                color={useColorModeValue('gray.600', 'gray.300')}
+                                                color={updatedTextColor}
                                             >
                                                 {row.updatedAt}
                                             </Text>
@@ -519,11 +532,8 @@ const AddressTypesManagementComponent = () => {
                 <Box
                     borderTop="1px"
                     borderColor={borderColor}
-                    bg={useColorModeValue('gray.50', 'gray.800')}
-                    bgGradient={useColorModeValue(
-                        "linear(to-r, white, gray.50, white)",
-                        "linear(to-r, gray.800, gray.700, gray.800)"
-                    )}
+                    bg={paginationBg}
+                    bgGradient={paginationGradient}
                     position="sticky"
                     bottom="0"
                     width="100%"
