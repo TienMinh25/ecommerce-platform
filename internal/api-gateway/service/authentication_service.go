@@ -165,16 +165,21 @@ func (a *authenticationService) Login(ctx context.Context, data api_gateway_dto.
 		}
 	}
 
-	var roleResponse api_gateway_dto.RoleLoginResponse
-	roleResponse.ID = userInfo.Role.ID
-	roleResponse.Name = userInfo.Role.RoleName
+	var roleResponse []api_gateway_dto.RoleLoginResponse
+
+	for _, role := range userInfo.Roles {
+		roleResponse = append(roleResponse, api_gateway_dto.RoleLoginResponse{
+			ID:   role.ID,
+			Name: role.RoleName,
+		})
+	}
 
 	// generate access token, save refresh token to database
 	accessToken, refreshToken, err := a.jwtService.GenerateToken(ctx, JwtPayload{
 		UserID:   userInfo.ID,
 		Email:    userInfo.Email,
 		FullName: userInfo.FullName,
-		Role:     roleResponse,
+		Roles:    roleResponse,
 	})
 
 	if err != nil {
@@ -196,7 +201,7 @@ func (a *authenticationService) Login(ctx context.Context, data api_gateway_dto.
 		RefreshToken: refreshToken,
 		FullName:     userInfo.FullName,
 		AvatarURL:    avatarURL,
-		Role:         roleResponse,
+		Roles:        roleResponse,
 	}, nil
 }
 
@@ -306,16 +311,21 @@ func (a *authenticationService) RefreshToken(ctx context.Context, refreshToken s
 		return nil, err
 	}
 
-	var roleResponse api_gateway_dto.RoleLoginResponse
-	roleResponse.ID = userInfo.Role.ID
-	roleResponse.Name = userInfo.Role.RoleName
+	var roleResponse []api_gateway_dto.RoleLoginResponse
+
+	for _, role := range userInfo.Roles {
+		roleResponse = append(roleResponse, api_gateway_dto.RoleLoginResponse{
+			ID:   role.ID,
+			Name: role.RoleName,
+		})
+	}
 
 	// generate access token, save refresh token to database
 	accessToken, refreshToken, err := a.jwtService.GenerateToken(ctx, JwtPayload{
 		UserID:   userInfo.ID,
 		Email:    userInfo.Email,
 		FullName: userInfo.FullName,
-		Role:     roleResponse,
+		Roles:    roleResponse,
 	})
 
 	if err != nil {
@@ -455,9 +465,14 @@ func (a *authenticationService) CheckToken(ctx context.Context, email string) (*
 		return nil, err
 	}
 
-	var roleResponse api_gateway_dto.RoleLoginResponse
-	roleResponse.ID = userInfo.Role.ID
-	roleResponse.Name = userInfo.Role.RoleName
+	var roleResponse []api_gateway_dto.RoleLoginResponse
+
+	for _, role := range userInfo.Roles {
+		roleResponse = append(roleResponse, api_gateway_dto.RoleLoginResponse{
+			ID:   role.ID,
+			Name: role.RoleName,
+		})
+	}
 
 	avatarURL := ""
 
@@ -468,7 +483,7 @@ func (a *authenticationService) CheckToken(ctx context.Context, email string) (*
 	return &api_gateway_dto.CheckTokenResponse{
 		FullName:  userInfo.FullName,
 		AvatarURL: avatarURL,
-		Role:      roleResponse,
+		Roles:     roleResponse,
 	}, nil
 }
 
@@ -737,9 +752,13 @@ func (a *authenticationService) loginOrRegisterOAuthUser(ctx context.Context, us
 		}
 	}
 
-	roleResponse := api_gateway_dto.RoleLoginResponse{
-		ID:   user.Role.ID,
-		Name: user.Role.RoleName,
+	var roleResponse []api_gateway_dto.RoleLoginResponse
+
+	for _, role := range user.Roles {
+		roleResponse = append(roleResponse, api_gateway_dto.RoleLoginResponse{
+			ID:   role.ID,
+			Name: role.RoleName,
+		})
 	}
 
 	// generate access token, save refresh token to database
@@ -747,7 +766,7 @@ func (a *authenticationService) loginOrRegisterOAuthUser(ctx context.Context, us
 		UserID:   user.ID,
 		Email:    user.Email,
 		FullName: user.FullName,
-		Role:     roleResponse,
+		Roles:    roleResponse,
 	})
 
 	if err != nil {
@@ -769,7 +788,7 @@ func (a *authenticationService) loginOrRegisterOAuthUser(ctx context.Context, us
 		RefreshToken: refreshToken,
 		FullName:     user.FullName,
 		AvatarURL:    avatarURL,
-		Role:         roleResponse,
+		Roles:        roleResponse,
 	}, nil
 }
 

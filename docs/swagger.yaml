@@ -29,8 +29,10 @@ definitions:
         type: string
       full_name:
         type: string
-      role:
-        $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
+      roles:
+        items:
+          $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
+        type: array
     type: object
   api_gateway_dto.CheckTokenResponseDocs:
     properties:
@@ -269,8 +271,10 @@ definitions:
         type: string
       refresh_token:
         type: string
-      role:
-        $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
+      roles:
+        items:
+          $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
+        type: array
     type: object
   api_gateway_dto.LoginResponseDocs:
     properties:

@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type userRepository struct {
@@ -223,32 +224,41 @@ func (u *userRepository) GetUserByEmailWithoutPassword(ctx context.Context, emai
 		}
 	}
 
-	// get user roles
+	// get user role
 	getUserRolesQuery := `SELECT r.id, r.role_name
-		FROM (SELECT id FROM users WHERE id = $1) temp_u
-		INNER JOIN role_user_permissions rup
-		ON temp_u.id = rup.user_id
-		INNER JOIN roles r
-		ON r.id = rup.role_id`
+		FROM users u 
+		INNER JOIN users_roles ur 
+		ON u.id = ur.user_id
+		INNER JOIN roles r ON ur.role_id = r.id
+		WHERE u.id = $1`
 
-	var role api_gateway_models.Role
+	var roles []api_gateway_models.Role
 
-	if err := u.db.QueryRow(ctx, getUserRolesQuery, user.ID).Scan(&role.ID, &role.RoleName); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, utils.BusinessError{
-				Code:      http.StatusBadRequest,
-				Message:   "Something went wrong",
-				ErrorCode: errorcode.NOT_FOUND,
-			}
-		}
+	rows, err := u.db.Query(ctx, getUserRolesQuery, user.ID)
 
+	if err != nil {
 		return nil, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
-	user.Role = role
+	defer rows.Close()
+
+	for rows.Next() {
+		var r api_gateway_models.Role
+
+		if err = rows.Scan(&r.ID, &r.RoleName); err != nil {
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		roles = append(roles, r)
+	}
+
+	user.Roles = roles
 
 	return &user, nil
 }
@@ -280,30 +290,39 @@ func (u *userRepository) GetUserByEmail(ctx context.Context, email string) (*api
 
 	// get user role
 	getUserRolesQuery := `SELECT r.id, r.role_name
-		FROM (SELECT id FROM users WHERE id = $1) temp_u
-		INNER JOIN role_user_permissions rup
-		ON temp_u.id = rup.user_id
-		INNER JOIN roles r
-		ON r.id = rup.role_id`
+		FROM users u 
+		INNER JOIN users_roles ur 
+		ON u.id = ur.user_id
+		INNER JOIN roles r ON ur.role_id = r.id
+		WHERE u.id = $1`
 
-	var role api_gateway_models.Role
+	var roles []api_gateway_models.Role
 
-	if err := u.db.QueryRow(ctx, getUserRolesQuery, user.ID).Scan(&role.ID, &role.RoleName); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, utils.BusinessError{
-				Code:      http.StatusBadRequest,
-				Message:   "Something went wrong",
-				ErrorCode: errorcode.NOT_FOUND,
-			}
-		}
+	rows, err := u.db.Query(ctx, getUserRolesQuery, user.ID)
 
+	if err != nil {
 		return nil, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
-	user.Role = role
+	defer rows.Close()
+
+	for rows.Next() {
+		var r api_gateway_models.Role
+
+		if err = rows.Scan(&r.ID, &r.RoleName); err != nil {
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		roles = append(roles, r)
+	}
+
+	user.Roles = roles
 
 	// get user password by id
 	userPassword, err := u.userPasswordRepository.GetPasswordByID(ctx, user.ID)
@@ -555,12 +574,16 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 	totalParams := make([]interface{}, len(params))
 	copy(totalParams, params)
 
+	// Build simplified query with only necessary role fields
 	sqlData := fmt.Sprintf(`
-		SELECT u.id, u.fullname, u.email, u.avatar_url, u.birthdate, u.phone, u.email_verified,
-		     u.phone_verified, u.status, u.updated_at, rup.role_id, rup.permission_detail
+		SELECT u.id, u.fullname, u.email, u.avatar_url, u.birthdate, u.phone, 
+		       u.email_verified, u.phone_verified, u.status, u.created_at, u.updated_at,
+		       r.id as role_id, r.role_name,
+		       rp.permission_detail
 		FROM users u 
-		INNER JOIN role_user_permissions rup
-		ON u.id = rup.user_id
+		JOIN users_roles ur ON u.id = ur.user_id
+		JOIN roles r ON ur.role_id = r.id
+		JOIN role_permissions rp ON r.id = rp.role_id
 		WHERE u.id IN (
 		    SELECT id FROM users u
 		    WHERE %s
@@ -579,25 +602,20 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 	}
 
 	if data.RoleID != nil {
-		sqlData += fmt.Sprintf(" AND rup.role_id = $%d", paramCount+2)
-		whereSqlCount += fmt.Sprintf(" AND rup.role_id = $%d", paramCount)
+		sqlData += fmt.Sprintf(" AND ur.role_id = $%d", paramCount+2)
+		whereSqlCount += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM users_roles ur WHERE ur.user_id = u.id AND ur.role_id = $%d)", paramCount)
 		params = append(params, *data.RoleID)
 
-		// used condition for sql select count
-		conditions = append(conditions, fmt.Sprintf("rup.role_id = $%d", paramCount))
+		// Add to total params for count query
 		totalParams = append(totalParams, *data.RoleID)
 	}
 
 	// build sql to count totals
 	sqlTotal := fmt.Sprintf(`
-		SELECT COUNT(*)
-		FROM (
-		    SELECT 1
-		    FROM users u 
-		    JOIN role_user_permissions rup
-		    ON u.id = rup.user_id
-		    WHERE %s
-		) subquery
+		SELECT COUNT(DISTINCT u.id)
+		FROM users u 
+		JOIN users_roles ur ON u.id = ur.user_id
+		WHERE %s
 	`, whereSqlCount)
 
 	var total int
@@ -622,29 +640,91 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 
 	defer rows.Close()
 
-	var res []api_gateway_models.User
+	// Map to collect users and their roles
+	userMap := make(map[int]*api_gateway_models.User)
 
 	for rows.Next() {
-		var user api_gateway_models.User
-		var roleID int
-		var permissionDetail []api_gateway_models.PermissionDetailType
+		var (
+			userID, roleID               int
+			fullName, email              string
+			avatarURL, phoneNumber       *string
+			birthDate                    *time.Time
+			emailVerified, phoneVerified bool
+			status                       string
+			createdAt, updatedAt         time.Time
+			roleName                     string
+			permissionDetail             []api_gateway_models.PermissionDetailType
+		)
 
-		if err = rows.Scan(&user.ID, &user.FullName, &user.Email, &user.AvatarURL, &user.BirthDate,
-			&user.PhoneNumber, &user.EmailVerified, &user.PhoneVerified, &user.Status, &user.UpdatedAt,
-			&roleID, &permissionDetail); err != nil {
+		if err = rows.Scan(
+			&userID, &fullName, &email, &avatarURL, &birthDate, &phoneNumber,
+			&emailVerified, &phoneVerified, &status, &createdAt, &updatedAt,
+			&roleID, &roleName,
+			&permissionDetail,
+		); err != nil {
 			return nil, 0, utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,
 			}
 		}
 
-		user.ModulePermission = api_gateway_models.RolePermissionModule{
-			RoleID:           roleID,
-			UserID:           user.ID,
-			PermissionDetail: permissionDetail,
+		// Create simplified Role object with only ID and RoleName
+		role := api_gateway_models.Role{
+			ID:       roleID,
+			RoleName: roleName,
 		}
 
-		res = append(res, user)
+		// Check if we already have this user in our map
+		existingUser, exists := userMap[userID]
+		if !exists {
+			// Create a new user
+			newUser := api_gateway_models.User{
+				ID:            userID,
+				FullName:      fullName,
+				Email:         email,
+				AvatarURL:     avatarURL,
+				BirthDate:     birthDate,
+				PhoneNumber:   phoneNumber,
+				EmailVerified: emailVerified,
+				PhoneVerified: phoneVerified,
+				Status:        api_gateway_models.UserStatus(status),
+				CreatedAt:     createdAt,
+				UpdatedAt:     updatedAt,
+				Roles:         []api_gateway_models.Role{role},
+				ModulePermission: api_gateway_models.RolePermissionModule{
+					RoleID:           roleID,
+					UserID:           userID,
+					PermissionDetail: permissionDetail,
+				},
+			}
+			userMap[userID] = &newUser
+		} else {
+			// User exists, add the role if it's not already present
+			roleExists := false
+			for _, existingRole := range existingUser.Roles {
+				if existingRole.ID == roleID {
+					roleExists = true
+					break
+				}
+			}
+
+			if !roleExists {
+				existingUser.Roles = append(existingUser.Roles, role)
+			}
+
+			// Keep the ModulePermission data from the most recent role scanned
+			existingUser.ModulePermission = api_gateway_models.RolePermissionModule{
+				RoleID:           roleID,
+				UserID:           userID,
+				PermissionDetail: permissionDetail,
+			}
+		}
+	}
+
+	// Convert map to slice
+	var res []api_gateway_models.User
+	for _, user := range userMap {
+		res = append(res, *user)
 	}
 
 	return res, total, nil

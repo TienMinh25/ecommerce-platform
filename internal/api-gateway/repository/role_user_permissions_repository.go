@@ -28,7 +28,7 @@ func (r *rolePermissionModuleRepository) CheckExistsModuleUsed(ctx context.Conte
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckExistsModuleUsed"))
 	defer span.End()
 
-	sqlStr := fmt.Sprintf(`SELECT 1 FROM role_user_permissions WHERE permission_detail::jsonb @> '[{"module_id": %d}]'::jsonb LIMIT 1`, moduleID)
+	sqlStr := fmt.Sprintf(`SELECT 1 FROM role_permissions WHERE permission_detail::jsonb @> '[{"module_id": %d}]'::jsonb LIMIT 1`, moduleID)
 
 	var isExists int
 
@@ -50,7 +50,7 @@ func (r *rolePermissionModuleRepository) CheckExistsPermissionUsed(ctx context.C
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckExistsPermissionUsed"))
 	defer span.End()
 
-	sqlStr := fmt.Sprintf(`SELECT 1 FROM role_user_permissions WHERE permission_detail::jsonb @> '[{"permissions": [%d]}]'::jsonb LIMIT 1`, permissionID)
+	sqlStr := fmt.Sprintf(`SELECT 1 FROM role_permissions WHERE permission_detail::jsonb @> '[{"permissions": [%d]}]'::jsonb LIMIT 1`, permissionID)
 
 	var isExists int
 
@@ -72,22 +72,27 @@ func (r *rolePermissionModuleRepository) HasRequiredPermissionOnModule(ctx conte
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "HasRequiredPermissionOnModule"))
 	defer span.End()
 
-	hasRequiredPermissionQuery := `SELECT 1 FROM jsonb_to_recordset(
-        (SELECT permission_detail FROM role_user_permissions where user_id = $1)
-	) AS tmp(module_id INT, permissions INT[])
-	WHERE tmp.module_id = $2 AND tmp.permissions @> $3`
+	hasRequiredPermissionQuery := `WITH user_permissions AS (
+        SELECT rp.permission_detail
+        FROM users u
+        JOIN users_roles ur ON u.id = ur.user_id
+        JOIN role_permissions rp ON ur.role_id = rp.role_id
+        WHERE u.id = $1
+    )
+    SELECT EXISTS (
+        SELECT 1 
+        FROM user_permissions up,
+             jsonb_to_recordset(up.permission_detail) AS tmp(module_id INT, permissions INT[])
+        WHERE tmp.module_id = $2 AND tmp.permissions @> $3
+    ) AS has_permission`
 
-	var isRequired int
-	if err := r.db.QueryRow(ctx, hasRequiredPermissionQuery, userID, moduleID, requiredPermission).Scan(&isRequired); err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return false, nil
-		}
-
+	var hasPermission bool
+	if err := r.db.QueryRow(ctx, hasRequiredPermissionQuery, userID, moduleID, requiredPermission).Scan(&hasPermission); err != nil {
 		return false, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: err.Error(),
 		}
 	}
 
-	return true, nil
+	return hasPermission, nil
 }

@@ -43,7 +43,7 @@ func (p *permissionRepository) syncDataWithRedis(ctx context.Context) error {
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "permissionRepo.syncDataWithRedis"))
 	defer span.End()
 
-	//	get data from database
+	// get data from database
 	query := `SELECT id, name FROM permissions`
 
 	rows, err := p.db.Query(ctx, query)
@@ -180,9 +180,19 @@ func (p *permissionRepository) CreatePermission(ctx context.Context, name string
 		}
 	}
 
-	sqlStr := "INSERT INTO permissions(name) VALUES($1)"
+	sqlStr := "INSERT INTO permissions(name) VALUES($1) RETURNING id"
 
-	if err := p.db.Exec(ctx, sqlStr, name); err != nil {
+	var id int
+	if err := p.db.QueryRow(ctx, sqlStr, name).Scan(&id); err != nil {
+		span.RecordError(err)
+
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	if err := p.redis.Set(ctx, fmt.Sprintf("permission:%s", name), id, redis.KeepTTL); err != nil {
 		span.RecordError(err)
 
 		return utils.TechnicalError{
@@ -197,6 +207,27 @@ func (p *permissionRepository) CreatePermission(ctx context.Context, name string
 func (p *permissionRepository) UpdatePermissionByPermissionId(ctx context.Context, id int, name string) error {
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdatePermissionByPermissionId"))
 	defer span.End()
+
+	sqlGetName := "SELECT name FROM permissions WHERE id = $1"
+
+	var oldName string
+
+	if err := p.db.QueryRow(ctx, sqlGetName, id).Scan(&oldName); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return utils.BusinessError{
+				Message:   "Permission does not exist",
+				Code:      http.StatusNotFound,
+				ErrorCode: errorcode.NOT_FOUND,
+			}
+		}
+
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
 
 	sqlStr := "UPDATE permissions SET name = $1 WHERE id = $2"
 
@@ -240,35 +271,56 @@ func (p *permissionRepository) UpdatePermissionByPermissionId(ctx context.Contex
 		}
 	}
 
+	if err = p.redis.Set(ctx, fmt.Sprintf("permission:%s", name), id, redis.KeepTTL); err != nil {
+		span.RecordError(err)
+
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	if err = p.redis.Delete(ctx, fmt.Sprintf("permission:%s", oldName)); err != nil {
+		span.RecordError(err)
+
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
 	return nil
 }
 
 func (p *permissionRepository) DeletePermissionByPermissionID(ctx context.Context, id int) error {
-	sqlStr := "DELETE FROM permissions WHERE id = $1"
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "DeletePermissionByPermissionID"))
+	defer span.End()
 
-	res, err := p.db.ExecWithResult(ctx, sqlStr, id)
+	sqlStr := "DELETE FROM permissions WHERE id = $1 RETURNING name"
 
-	if err != nil {
+	var oldName string
+	if err := p.db.QueryRow(ctx, sqlStr, id).Scan(&oldName); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return utils.BusinessError{
+				Message:   "The permission does not exist",
+				Code:      http.StatusBadRequest,
+				ErrorCode: errorcode.NOT_FOUND,
+			}
+		}
+
 		return utils.TechnicalError{
 			Message: common.MSG_INTERNAL_ERROR,
 			Code:    http.StatusInternalServerError,
 		}
 	}
 
-	rowAffected, err := res.RowsAffected()
-
-	if err != nil {
+	if err := p.redis.Delete(ctx, fmt.Sprintf("permission:%s", oldName)); err != nil {
+		span.RecordError(err)
 		return utils.TechnicalError{
 			Message: common.MSG_INTERNAL_ERROR,
 			Code:    http.StatusInternalServerError,
-		}
-	}
-
-	if rowAffected == 0 {
-		return utils.BusinessError{
-			Message:   "The permission does not exist",
-			Code:      http.StatusBadRequest,
-			ErrorCode: errorcode.NOT_FOUND,
 		}
 	}
 

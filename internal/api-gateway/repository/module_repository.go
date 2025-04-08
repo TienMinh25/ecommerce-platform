@@ -45,7 +45,7 @@ func (m *moduleRepository) syncDataWithRedis(ctx context.Context) error {
 	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "moduleRepository.syncDataWithRedis"))
 	defer span.End()
 
-	//	get data from database
+	// get data from database
 	query := `SELECT id, name FROM modules`
 
 	rows, err := m.db.Query(ctx, query)
@@ -170,14 +170,24 @@ func (m *moduleRepository) CreateModule(ctx context.Context, name string) error 
 		}
 	}
 
-	sqlStr := "INSERT INTO modules(name) VALUES($1)"
+	sqlStr := "INSERT INTO modules(name) VALUES($1) RETURNING id"
 
-	if err := m.db.Exec(ctx, sqlStr, name); err != nil {
+	var id int
+	if err := m.db.QueryRow(ctx, sqlStr, name).Scan(&id); err != nil {
 		span.RecordError(err)
 
 		return utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	if err := m.redis.Set(ctx, fmt.Sprintf("module:%s", name), id, redis.KeepTTL); err != nil {
+		span.RecordError(err)
+
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
@@ -216,6 +226,27 @@ func (m *moduleRepository) GetModuleByModuleID(ctx context.Context, id int) (*ap
 func (m *moduleRepository) UpdateModuleByModuleID(ctx context.Context, id int, name string) error {
 	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateModuleByModuleID"))
 	defer span.End()
+
+	sqlGetName := "SELECT name FROM modules WHERE id = $1"
+
+	var oldName string
+
+	if err := m.db.QueryRow(ctx, sqlGetName, id).Scan(&oldName); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return utils.BusinessError{
+				Message:   "Module does not exist",
+				Code:      http.StatusNotFound,
+				ErrorCode: errorcode.NOT_FOUND,
+			}
+		}
+
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
 
 	sqlStr := "UPDATE modules SET name = $1 WHERE id = $2"
 
@@ -259,35 +290,56 @@ func (m *moduleRepository) UpdateModuleByModuleID(ctx context.Context, id int, n
 		}
 	}
 
+	if err = m.redis.Set(ctx, fmt.Sprintf("module:%s", name), id, redis.KeepTTL); err != nil {
+		span.RecordError(err)
+
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	if err = m.redis.Delete(ctx, fmt.Sprintf("module:%s", oldName)); err != nil {
+		span.RecordError(err)
+
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
 	return nil
 }
 
 func (m *moduleRepository) DeleteModuleByModuleID(ctx context.Context, id int) error {
-	sqlStr := "DELETE FROM modules WHERE id = $1"
+	ctx, span := m.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "DeleteModuleByModuleID"))
+	defer span.End()
 
-	res, err := m.db.ExecWithResult(ctx, sqlStr, id)
+	sqlStr := "DELETE FROM modules WHERE id = $1 RETURNING name"
 
-	if err != nil {
+	var oldName string
+	if err := m.db.QueryRow(ctx, sqlStr, id).Scan(&oldName); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return utils.BusinessError{
+				Message:   "The module does not exist",
+				Code:      http.StatusBadRequest,
+				ErrorCode: errorcode.NOT_FOUND,
+			}
+		}
+
 		return utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
 		}
 	}
 
-	rowAffected, err := res.RowsAffected()
-
-	if err != nil {
+	if err := m.redis.Delete(ctx, fmt.Sprintf("module:%s", oldName)); err != nil {
+		span.RecordError(err)
 		return utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
-		}
-	}
-
-	if rowAffected == 0 {
-		return utils.BusinessError{
-			Code:      http.StatusBadRequest,
-			Message:   "Not found module to delete",
-			ErrorCode: errorcode.NOT_FOUND,
+			Code:    http.StatusInternalServerError,
 		}
 	}
 

@@ -45,6 +45,6 @@ type GetUserByAdminResponse struct {
 	PhoneVerify    bool                       `json:"phone_verify"`
 	Status         string                     `json:"status"`
 	Phone          string                     `json:"phone"`
-	RoleName       string                     `json:"role_name"`
+	RoleName       []string                   `json:"role_names"`
 	RolePermission []ModulePermissionResponse `json:"module_permission"`
 }

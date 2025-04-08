@@ -6,11 +6,11 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken  string            `json:"access_token"`
-	RefreshToken string            `json:"refresh_token"`
-	FullName     string            `json:"full_name"`
-	AvatarURL    string            `json:"avatar_url"`
-	Role         RoleLoginResponse `json:"role"`
+	AccessToken  string              `json:"access_token"`
+	RefreshToken string              `json:"refresh_token"`
+	FullName     string              `json:"full_name"`
+	AvatarURL    string              `json:"avatar_url"`
+	Roles        []RoleLoginResponse `json:"roles"`
 }
 
 type RegisterRequest struct {
@@ -48,9 +48,9 @@ type RefreshTokenResponse struct {
 type CheckTokenRequest struct{}
 
 type CheckTokenResponse struct {
-	FullName  string            `json:"full_name"`
-	AvatarURL string            `json:"avatar_url"`
-	Role      RoleLoginResponse `json:"role"`
+	FullName  string              `json:"full_name"`
+	AvatarURL string              `json:"avatar_url"`
+	Roles     []RoleLoginResponse `json:"roles"`
 }
 
 type ForgotPasswordRequest struct {
@@ -81,11 +81,11 @@ type ExchangeOauthCodeRequest struct {
 }
 
 type ExchangeOauthCodeResponse struct {
-	AccessToken  string            `json:"access_token"`
-	RefreshToken string            `json:"refresh_token"`
-	FullName     string            `json:"full_name"`
-	AvatarURL    string            `json:"avatar_url"`
-	Role         RoleLoginResponse `json:"role"`
+	AccessToken  string              `json:"access_token"`
+	RefreshToken string              `json:"refresh_token"`
+	FullName     string              `json:"full_name"`
+	AvatarURL    string              `json:"avatar_url"`
+	Roles        []RoleLoginResponse `json:"roles"`
 }
 
 type OAuthProvider string

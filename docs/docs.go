@@ -1676,8 +1676,11 @@ const docTemplate = `{
                 "full_name": {
                     "type": "string"
                 },
-                "role": {
-                    "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                    }
                 }
             }
         },
@@ -2046,8 +2049,11 @@ const docTemplate = `{
                 "refresh_token": {
                     "type": "string"
                 },
-                "role": {
-                    "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                    }
                 }
             }
         },

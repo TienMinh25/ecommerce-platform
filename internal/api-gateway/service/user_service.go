@@ -33,16 +33,6 @@ func (u *userService) GetUserManagement(ctx context.Context, data *api_gateway_d
 	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetUserManagement"))
 	defer span.End()
 
-	// get module and permission
-	roles, err := u.getAllRoleFromRedis(ctx)
-
-	if err != nil {
-		return nil, 0, 0, false, false, utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
-			Message: common.MSG_INTERNAL_ERROR,
-		}
-	}
-
 	permissionArray, err := u.getAllPermissionFromRedis(ctx)
 
 	if err != nil {
@@ -108,6 +98,12 @@ func (u *userService) GetUserManagement(ctx context.Context, data *api_gateway_d
 			})
 		}
 
+		// Extract role names from user.Roles slice
+		var roleNames []string
+		for _, role := range user.Roles {
+			roleNames = append(roleNames, role.RoleName)
+		}
+
 		res = append(res, api_gateway_dto.GetUserByAdminResponse{
 			ID:             user.ID,
 			Fullname:       user.FullName,
@@ -119,7 +115,7 @@ func (u *userService) GetUserManagement(ctx context.Context, data *api_gateway_d
 			PhoneVerify:    user.PhoneVerified,
 			Status:         string(user.Status),
 			Phone:          phoneNumber,
-			RoleName:       roles[user.ModulePermission.RoleID],
+			RoleName:       roleNames,
 			RolePermission: modulePermissionResponse,
 		})
 	}
