@@ -26,6 +26,8 @@ func NewRouter(
 	authenticationHandler api_gateway_handler.IAuthenticationHandler,
 	moduleHandler api_gateway_handler.IModuleHandler,
 	permissionHandler api_gateway_handler.IPermissionsHandler,
+	userManagementHandler api_gateway_handler.IUserManagementHandler,
+	roleHandler api_gateway_handler.IRoleHandler,
 	accessTokenMiddleware *middleware.JwtMiddleware,
 	permissionMiddleware *middleware.PermissionMiddleware,
 ) *Router {
@@ -35,6 +37,8 @@ func NewRouter(
 	registerAuthenticationManagementEndpoint(apiV1Group, accessTokenMiddleware, authenticationHandler)
 	registerModuleEndpoint(apiV1Group, permissionMiddleware, accessTokenMiddleware, moduleHandler)
 	registerPermissionEndPoint(apiV1Group, permissionMiddleware, accessTokenMiddleware, permissionHandler)
+	registerUserManagementEndpoint(apiV1Group, permissionMiddleware, accessTokenMiddleware, userManagementHandler)
+	registerRoleHandler(apiV1Group, permissionMiddleware, accessTokenMiddleware, roleHandler)
 
 	return &Router{
 		Router: router,
@@ -44,31 +48,40 @@ func NewRouter(
 func registerAdminAddressManagementEndpoint(group *gin.RouterGroup, permissionMiddleware *middleware.PermissionMiddleware, accessTokenMiddleware *middleware.JwtMiddleware, handler api_gateway_handler.IAdminAddressTypeHandler) {
 	adminAddressGroup := group.Group("/address-types")
 
-	adminAddressGroup.GET("", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Read), handler.GetAddressTypes)
-	adminAddressGroup.POST("", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Create), handler.CreateAddressType)
-	adminAddressGroup.GET("/:addressTypeID", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Read), handler.GetAddressTypeByID)
-	adminAddressGroup.PATCH("/:addressTypeID", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Update), handler.UpdateAddressType)
-	adminAddressGroup.DELETE("/:addressTypeID", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Delete), handler.DeleteAddressType)
+	adminAddressGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		adminAddressGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Read), handler.GetAddressTypes)
+		adminAddressGroup.POST("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Create), handler.CreateAddressType)
+		adminAddressGroup.GET("/:addressTypeID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Read), handler.GetAddressTypeByID)
+		adminAddressGroup.PATCH("/:addressTypeID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Update), handler.UpdateAddressType)
+		adminAddressGroup.DELETE("/:addressTypeID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Delete), handler.DeleteAddressType)
+	}
 }
 
 func registerModuleEndpoint(group *gin.RouterGroup, permissionMiddleware *middleware.PermissionMiddleware, accessTokenMiddleware *middleware.JwtMiddleware, handler api_gateway_handler.IModuleHandler) {
 	adminModuleGroup := group.Group("/modules")
 
-	adminModuleGroup.GET("/:moduleID", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Read), handler.GetModuleByModuleID)
-	adminModuleGroup.POST("", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Create), handler.CreateModule)
-	adminModuleGroup.PATCH("/:moduleID", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Update), handler.UpdateModule)
-	adminModuleGroup.GET("", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Read), handler.GetModuleList)
-	adminModuleGroup.DELETE("/:moduleID", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Delete), handler.DeleteModuleByModuleID)
+	adminModuleGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		adminModuleGroup.GET("/:moduleID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Read), handler.GetModuleByModuleID)
+		adminModuleGroup.POST("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Create), handler.CreateModule)
+		adminModuleGroup.PATCH("/:moduleID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Update), handler.UpdateModule)
+		adminModuleGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Read), handler.GetModuleList)
+		adminModuleGroup.DELETE("/:moduleID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.ModuleManagement, common.Delete), handler.DeleteModuleByModuleID)
+	}
 }
 
 func registerPermissionEndPoint(group *gin.RouterGroup, permissionMiddleware *middleware.PermissionMiddleware, accessTokenMiddleware *middleware.JwtMiddleware, handler api_gateway_handler.IPermissionsHandler) {
 	adminPermissionGroup := group.Group("/permissions")
 
-	adminPermissionGroup.GET("/:permissionID", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Read), handler.GetPermissionByPermissionID)
-	adminPermissionGroup.POST("", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Create), handler.CreatePermission)
-	adminPermissionGroup.PATCH("/:permissionID", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Update), handler.UpdatePermissionByPermissionID)
-	adminPermissionGroup.GET("", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Read), handler.GetPermissionsList)
-	adminPermissionGroup.DELETE("/:permissionID", accessTokenMiddleware.JwtAccessTokenMiddleware(), permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Delete), handler.DeletePermissionByPermissionID)
+	adminPermissionGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		adminPermissionGroup.GET("/:permissionID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Read), handler.GetPermissionByPermissionID)
+		adminPermissionGroup.POST("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Create), handler.CreatePermission)
+		adminPermissionGroup.PATCH("/:permissionID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Update), handler.UpdatePermissionByPermissionID)
+		adminPermissionGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Read), handler.GetPermissionsList)
+		adminPermissionGroup.DELETE("/:permissionID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Delete), handler.DeletePermissionByPermissionID)
+	}
 }
 
 func registerAuthenticationManagementEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, handler api_gateway_handler.IAuthenticationHandler) {
@@ -95,5 +108,22 @@ func registerAuthenticationManagementEndpoint(group *gin.RouterGroup, accessToke
 			authenticated.GET("/check-token", handler.CheckToken)
 			authenticated.POST("/change-password", handler.ChangePassword)
 		}
+	}
+}
+
+func registerUserManagementEndpoint(group *gin.RouterGroup, permissionMiddleware *middleware.PermissionMiddleware, accessTokenMiddleware *middleware.JwtMiddleware, handler api_gateway_handler.IUserManagementHandler) {
+	authenticationGroup := group.Group("users")
+	authenticationGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+
+	{
+		authenticationGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.UserManagement, common.Read), handler.GetUserManagement)
+	}
+}
+
+func registerRoleHandler(group *gin.RouterGroup, permissionMiddleware *middleware.PermissionMiddleware, accessTokenMiddleware *middleware.JwtMiddleware, roleHandler api_gateway_handler.IRoleHandler) {
+	roleGroup := group.Group("roles")
+	roleGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		roleGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Read), roleHandler.GetRoles)
 	}
 }

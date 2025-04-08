@@ -2,10 +2,10 @@ import api from './api.js'; // Import the axios instance
 
 const moduleService = {
     // Get list of modules with pagination
-    getModules: async (page = 1, limit = 10) => {
+    getModules: async (page = 1, limit = 10, getAll = false) => {
         try {
             const response = await api.get('/modules', {
-                params: { page, limit }
+                params: { page, limit, getAll }
             });
             return response.data;
         } catch (error) {

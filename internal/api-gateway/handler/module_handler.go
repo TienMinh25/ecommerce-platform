@@ -30,7 +30,7 @@ func NewModuleHandler(
 //
 //	@Summary		Get module by ID
 //	@Description	Get module details by module ID
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //
 //	@Security		BearerAuth
@@ -70,7 +70,7 @@ func (m *moduleHandler) GetModuleByModuleID(ctx *gin.Context) {
 //
 //	@Summary		Create a new module
 //	@Description	Create a new module with a given name
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //	@Produce		json
 //
@@ -112,7 +112,7 @@ func (m *moduleHandler) CreateModule(ctx *gin.Context) {
 //
 //	@Summary		Update module by ID
 //	@Description	Update the module name using module ID
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //	@Produce		json
 //
@@ -162,14 +162,15 @@ func (m *moduleHandler) UpdateModule(ctx *gin.Context) {
 //
 //	@Summary		Get module list
 //	@Description	Get a paginated list of modules
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //	@Produce		json
 //
 //	@Security		BearerAuth
 //
-//	@Param			page	query		int	true	"Page number"
-//	@Param			limit	query		int	true	"Page size"
+//	@Param			page	query		int		false	"Page number (required if getAll is false)"
+//	@Param			limit	query		int		false	"Page size (required if getAll is false)"
+//	@Param			getAll	query		bool	false	"Get all modules without pagination"
 //	@Success		200		{object}	api_gateway_dto.GetListModuleResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
@@ -189,6 +190,17 @@ func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
 		return
 	}
 
+	if queryReq.GetAll {
+		modules, err := m.service.GetAllModules(ct)
+		if err != nil {
+			utils.HandleErrorResponse(ctx, err)
+			return
+		}
+
+		utils.SuccessResponse[[]api_gateway_dto.GetModuleResponse](ctx, http.StatusOK, modules)
+		return
+	}
+
 	// chi nen tra ra BusinessError hoac TechnicalError
 	res, totalItems, totalPages, hasNext, hasPrevious, errRes := m.service.GetModuleList(ct, queryReq)
 
@@ -204,7 +216,7 @@ func (m *moduleHandler) GetModuleList(ctx *gin.Context) {
 //
 //	@Summary		Delete module by ID
 //	@Description	Delete a module using its ID
-//	@Tags			Modules
+//	@Tags			modules
 //	@Accept			json
 //	@Produce		json
 //

@@ -3,15 +3,16 @@ package api_gateway_dto
 import "time"
 
 type GetModuleRequest struct {
-	Limit int `form:"limit" binding:"required,gte=1"`
-	Page  int `form:"page" binding:"required,gte=1"`
+	Limit  int  `form:"limit" binding:"omitempty,gte=1"`
+	Page   int  `form:"page" binding:"omitempty,gte=1"`
+	GetAll bool `form:"getAll"`
 }
 
 type GetModuleResponse struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
 
 type GetModuleByIDRequest struct {

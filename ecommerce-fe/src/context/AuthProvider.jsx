@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
 
             if (data) {
               // Tạo đối tượng user từ data nhận được
-              let user = new User(data["full_name"], data["avatar_url"], data["role"]);
+              let user = new User(data["full_name"], data["avatar_url"], data["roles"]);
               localStorage.setItem("user", JSON.stringify(user));
               setUser(user);
             }
@@ -65,7 +65,12 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('access_token', data["access_token"]);
       localStorage.setItem("refresh_token", data["refresh_token"]);
 
-      let user = new User(data["full_name"], data["avatar_url"], data["role"])
+      // Điều chỉnh để hỗ trợ nhiều roles
+      let user = new User(
+          data["full_name"],
+          data["avatar_url"],
+          data["roles"]  // Thay đổi từ role sang roles
+      );
 
       localStorage.setItem("user", JSON.stringify(user));
       // Set user state

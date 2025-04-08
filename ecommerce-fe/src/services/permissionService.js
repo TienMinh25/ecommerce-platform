@@ -2,10 +2,10 @@ import api from './api.js'; // Import the axios instance
 
 const permissionService = {
     // Get list of permissions with pagination
-    getPermissions: async (page = 1, limit = 10) => {
+    getPermissions: async (page = 1, limit = 10, getAll = false) => {
         try {
             const response = await api.get('/permissions', {
-                params: { page, limit }
+                params: { page, limit, getAll }
             });
             return response.data;
         } catch (error) {

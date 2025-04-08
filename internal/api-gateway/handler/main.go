@@ -41,3 +41,11 @@ type IPermissionsHandler interface {
 	UpdatePermissionByPermissionID(ctx *gin.Context)
 	DeletePermissionByPermissionID(ctx *gin.Context)
 }
+
+type IUserManagementHandler interface {
+	GetUserManagement(ctx *gin.Context)
+}
+
+type IRoleHandler interface {
+	GetRoles(ctx *gin.Context)
+}

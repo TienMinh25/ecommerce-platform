@@ -31,14 +31,14 @@ type JwtPayload struct {
 	UserID   int
 	Email    string
 	FullName string
-	Role     api_gateway_dto.RoleLoginResponse
+	Roles    []api_gateway_dto.RoleLoginResponse
 }
 
 type UserClaims struct {
-	UserID   int                               `json:"user_id"`
-	Email    string                            `json:"email"`
-	FullName string                            `json:"full_name"`
-	Role     api_gateway_dto.RoleLoginResponse `json:"role"`
+	UserID   int                                 `json:"user_id"`
+	Email    string                              `json:"email"`
+	FullName string                              `json:"full_name"`
+	Roles    []api_gateway_dto.RoleLoginResponse `json:"roles"`
 	jwt.RegisteredClaims
 }
 
@@ -72,7 +72,7 @@ func NewJwtService(env *env.EnvManager, tracer pkg.Tracer) (IJwtService, error) 
 	return &JwtKeyManager{privateKey: privateKey, publicKey: publicKey, env: env, tracer: tracer}, nil
 }
 
-func (km *JwtKeyManager) newUserClaims(userID int, email, fullname string, role api_gateway_dto.RoleLoginResponse, duration time.Duration) (*UserClaims, error) {
+func (km *JwtKeyManager) newUserClaims(userID int, email, fullname string, roles []api_gateway_dto.RoleLoginResponse, duration time.Duration) (*UserClaims, error) {
 	tokenID, err := uuid.NewRandom()
 
 	if err != nil {
@@ -86,7 +86,7 @@ func (km *JwtKeyManager) newUserClaims(userID int, email, fullname string, role 
 		UserID:   userID,
 		Email:    email,
 		FullName: fullname,
-		Role:     role,
+		Roles:    roles,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        tokenID.String(),
 			Subject:   email,
@@ -100,7 +100,7 @@ func (km *JwtKeyManager) GenerateToken(ctx context.Context, payload JwtPayload) 
 	ctx, span := km.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GenerateToken"))
 	defer span.End()
 
-	claimsAccessToken, errClaims := km.newUserClaims(payload.UserID, payload.Email, payload.FullName, payload.Role, time.Duration(km.env.ExpireAccessToken)*time.Minute)
+	claimsAccessToken, errClaims := km.newUserClaims(payload.UserID, payload.Email, payload.FullName, payload.Roles, time.Duration(km.env.ExpireAccessToken)*time.Minute)
 
 	if errClaims != nil {
 		return "", "", errClaims

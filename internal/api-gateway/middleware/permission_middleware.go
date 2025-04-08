@@ -43,9 +43,14 @@ func (middleware *PermissionMiddleware) HasPermission(requiredRole []common.Role
 
 		flag := false
 
-		for _, role := range requiredRole {
-			if userClaims.Role.Name == string(role) {
-				flag = true
+		for _, userRole := range userClaims.Roles {
+			for _, requiredRoleName := range requiredRole {
+				if userRole.Name == string(requiredRoleName) {
+					flag = true
+					break
+				}
+			}
+			if flag {
 				break
 			}
 		}

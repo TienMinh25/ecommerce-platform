@@ -851,23 +851,27 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Modules"
+                    "modules"
                 ],
                 "summary": "Get module list",
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number (required if getAll is false)",
                         "name": "page",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size (required if getAll is false)",
                         "name": "limit",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all modules without pagination",
+                        "name": "getAll",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -911,7 +915,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Modules"
+                    "modules"
                 ],
                 "summary": "Create a new module",
                 "parameters": [
@@ -974,7 +978,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Modules"
+                    "modules"
                 ],
                 "summary": "Get module by ID",
                 "parameters": [
@@ -1027,7 +1031,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Modules"
+                    "modules"
                 ],
                 "summary": "Delete module by ID",
                 "parameters": [
@@ -1080,7 +1084,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Modules"
+                    "modules"
                 ],
                 "summary": "Update module by ID",
                 "parameters": [
@@ -1142,7 +1146,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Retrieve a paginated list of permissions",
+                "description": "Retrieve a paginated list of permissions or all permissions",
                 "consumes": [
                     "application/json"
                 ],
@@ -1156,24 +1160,28 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Page number",
+                        "description": "Page number (required if getAll is false)",
                         "name": "page",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page size",
+                        "description": "Page size (required if getAll is false)",
                         "name": "limit",
-                        "in": "query",
-                        "required": true
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Get all permissions without pagination",
+                        "name": "getAll",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api_gateway_dto.GetListPermissionResponseDocs"
+                            "$ref": "#/definitions/api_gateway_dto.GetPermissionResponseDocs"
                         }
                     },
                     "400": {
@@ -1421,6 +1429,208 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/roles": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get all roles",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Get all roles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.RoleLoginResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get list users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Get list users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit number of records returned",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "email",
+                            "phone",
+                            "fullname"
+                        ],
+                        "type": "string",
+                        "description": "Provide for search by email, phone or fullname",
+                        "name": "searchBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Value for search",
+                        "name": "searchValue",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "fullname",
+                            "email",
+                            "birthdate",
+                            "updated_at",
+                            "phone"
+                        ],
+                        "type": "string",
+                        "description": "Sort by some attributes",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "description": "Sort order asc or desc",
+                        "name": "sortOrder",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            true,
+                            false
+                        ],
+                        "type": "boolean",
+                        "description": "Filter by email verify",
+                        "name": "emailVerify",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            true,
+                            false
+                        ],
+                        "type": "boolean",
+                        "description": "Filter by phone verify",
+                        "name": "phoneVerify",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "active",
+                            "inactive"
+                        ],
+                        "type": "string",
+                        "description": "Filter by status of user",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Start time for last update",
+                        "name": "updatedAtStartFrom",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "End time for last update",
+                        "name": "updatedAtEndFrom",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            1,
+                            2,
+                            3,
+                            4
+                        ],
+                        "type": "integer",
+                        "description": "Filter by role id",
+                        "name": "roleID",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetUserByAdminResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -1466,8 +1676,11 @@ const docTemplate = `{
                 "full_name": {
                     "type": "string"
                 },
-                "role": {
-                    "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                    }
                 }
             }
         },
@@ -1679,20 +1892,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api_gateway_dto.GetListPermissionResponseDocs": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api_gateway_dto.GetPermissionResponse"
-                    }
-                },
-                "metadata": {
-                    "$ref": "#/definitions/api_gateway_dto.Metadata"
-                }
-            }
-        },
         "api_gateway_dto.GetModuleResponse": {
             "type": "object",
             "properties": {
@@ -1749,6 +1948,61 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.GetUserByAdminResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "email_verify": {
+                    "type": "boolean"
+                },
+                "fullname": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "module_permission": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.ModulePermissionResponse"
+                    }
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "phone_verify": {
+                    "type": "boolean"
+                },
+                "role_name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetUserByAdminResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetUserByAdminResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.ListAddressTypesResponseDocs": {
             "type": "object",
             "properties": {
@@ -1795,8 +2049,11 @@ const docTemplate = `{
                 "refresh_token": {
                     "type": "string"
                 },
-                "role": {
-                    "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                    }
                 }
             }
         },
@@ -1841,6 +2098,23 @@ const docTemplate = `{
             "properties": {
                 "code": {
                     "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.ModulePermissionResponse": {
+            "type": "object",
+            "properties": {
+                "module_id": {
+                    "type": "integer"
+                },
+                "module_name": {
+                    "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.UserPermissionResponse"
+                    }
                 }
             }
         },
@@ -1981,6 +2255,17 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.RoleLoginResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.UpdateAddressTypeBodyRequest": {
             "type": "object",
             "required": [
@@ -2059,6 +2344,17 @@ const docTemplate = `{
         },
         "api_gateway_dto.UpdatePermissionByPermissionIDResponse": {
             "type": "object"
+        },
+        "api_gateway_dto.UserPermissionResponse": {
+            "type": "object",
+            "properties": {
+                "permission_id": {
+                    "type": "integer"
+                },
+                "permission_name": {
+                    "type": "string"
+                }
+            }
         },
         "api_gateway_dto.VerifyEmailRequest": {
             "type": "object",

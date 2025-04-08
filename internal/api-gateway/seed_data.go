@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/brianvoe/gofakeit/v7"
@@ -38,6 +37,7 @@ func main() {
 	seedModules(ctx, pool)
 	seedPermissions(ctx, pool)
 	seedAddressTypes(ctx, pool)
+	seedRolePermissions(ctx, pool)
 	seedAdmin(ctx, pool)
 	seedUsers(ctx, pool, 1000000, 2000) // Số lượng user có thể thay đổi ở đây
 
@@ -83,28 +83,129 @@ func seedAddressTypes(ctx context.Context, db *pgxpool.Pool) {
 	}
 }
 
-func seedAdmin(ctx context.Context, db *pgxpool.Pool) {
-	_, _ = db.Exec(ctx, `INSERT INTO users (fullname, email, avatar_url, email_verified, status, phone_verified) 
-		VALUES ('Admin User', 'admin@admin.com', 'https://ui-avatars.com/api/?name=Admin User', TRUE, 'active', TRUE) ON CONFLICT DO NOTHING`)
-
-	var userID int64
-	db.QueryRow(ctx, `SELECT id FROM users WHERE email='admin@admin.com'`).Scan(&userID)
-
-	hash, _ := utils.HashPassword("admin123")
-	_, _ = db.Exec(ctx, `INSERT INTO user_password (id, password) VALUES ($1, $2) ON CONFLICT DO NOTHING`, userID, hash)
-
-	var roleID int64
-	db.QueryRow(ctx, `SELECT id FROM roles WHERE role_name='admin'`).Scan(&roleID)
-
-	permissions := []PermissionDetail{}
-	for i := 1; i <= 12; i++ {
-		permissions = append(permissions, PermissionDetail{
-			ModuleID:    i,
-			Permissions: []int{1, 2, 3, 4, 5, 6},
-		})
+func seedRolePermissions(ctx context.Context, db *pgxpool.Pool) {
+	// Lấy roleIDs
+	roles := make(map[string]int64)
+	rows, err := db.Query(ctx, `SELECT id, role_name FROM roles`)
+	if err != nil {
+		log.Fatal("get roles:", err)
 	}
-	bytes, _ := json.Marshal(permissions)
-	_, _ = db.Exec(ctx, `INSERT INTO role_user_permissions (role_id, user_id, permission_detail) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`, roleID, userID, bytes)
+	defer rows.Close()
+
+	for rows.Next() {
+		var id int64
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
+			log.Fatal("scan role:", err)
+		}
+		roles[name] = id
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal("row error:", err)
+	}
+
+	// Define permissions for each role
+	rolePermissions := map[string][]PermissionDetail{
+		"admin": {
+			{ModuleID: 1, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 2, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 3, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 4, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 5, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 6, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 7, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 8, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 9, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 10, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 11, Permissions: []int{1, 2, 3, 4, 5, 6}},
+			{ModuleID: 12, Permissions: []int{1, 2, 3, 4, 5, 6}},
+		},
+		"customer": {
+			{ModuleID: 1, Permissions: []int{4, 2}},
+			{ModuleID: 4, Permissions: []int{1, 2, 3, 4}},
+			{ModuleID: 5, Permissions: []int{1, 4}},
+			{ModuleID: 6, Permissions: []int{1, 4, 3}},
+			{ModuleID: 7, Permissions: []int{4}},
+			{ModuleID: 8, Permissions: []int{1, 4, 3}},
+		},
+		"supplier": {
+			{ModuleID: 3, Permissions: []int{1, 2, 3, 4}},
+			{ModuleID: 9, Permissions: []int{1, 2, 3, 4}},
+		},
+		"deliverer": {
+			{ModuleID: 5, Permissions: []int{2, 4}},
+			{ModuleID: 7, Permissions: []int{2, 4}},
+		},
+	}
+
+	// Insert permissions for each role
+	for roleName, permissions := range rolePermissions {
+		roleID, exists := roles[roleName]
+		if !exists {
+			log.Fatalf("Role not found: %s", roleName)
+		}
+
+		bytes, _ := json.Marshal(permissions)
+		_, err := db.Exec(ctx, `
+			INSERT INTO role_permissions (role_id, permission_detail) 
+			VALUES ($1, $2) 
+			ON CONFLICT (role_id) DO UPDATE 
+			SET permission_detail = $2, updated_at = CURRENT_TIMESTAMP
+		`, roleID, bytes)
+
+		if err != nil {
+			log.Fatalf("Insert role permissions for %s: %v", roleName, err)
+		}
+	}
+}
+
+func seedAdmin(ctx context.Context, db *pgxpool.Pool) {
+	// Insert admin user
+	var userID int64
+	err := db.QueryRow(ctx, `
+		INSERT INTO users (fullname, email, avatar_url, email_verified, status, phone_verified) 
+		VALUES ('Admin User', 'admin@admin.com', 'https://ui-avatars.com/api/?name=Admin+User', TRUE, 'active', TRUE) 
+		ON CONFLICT (email) DO UPDATE 
+		SET fullname = 'Admin User', 
+		    avatar_url = 'https://ui-avatars.com/api/?name=Admin+User', 
+		    updated_at = CURRENT_TIMESTAMP 
+		RETURNING id
+	`).Scan(&userID)
+
+	if err != nil {
+		log.Fatal("insert admin user:", err)
+	}
+
+	// Insert admin password
+	hash, _ := utils.HashPassword("admin123")
+	_, err = db.Exec(ctx, `
+		INSERT INTO user_password (id, password) 
+		VALUES ($1, $2) 
+		ON CONFLICT (id) DO UPDATE 
+		SET password = $2
+	`, userID, hash)
+
+	if err != nil {
+		log.Fatal("insert admin password:", err)
+	}
+
+	// Get admin role ID
+	var roleID int64
+	err = db.QueryRow(ctx, `SELECT id FROM roles WHERE role_name='admin'`).Scan(&roleID)
+	if err != nil {
+		log.Fatal("get admin role:", err)
+	}
+
+	// Connect user to role
+	_, err = db.Exec(ctx, `
+		INSERT INTO users_roles (user_id, role_id) 
+		VALUES ($1, $2) 
+		ON CONFLICT (role_id, user_id) DO NOTHING
+	`, userID, roleID)
+
+	if err != nil {
+		log.Fatal("assign admin role:", err)
+	}
 }
 
 func seedUsers(ctx context.Context, db *pgxpool.Pool, total int, batchSize int) {
@@ -125,22 +226,11 @@ func seedUsers(ctx context.Context, db *pgxpool.Pool, total int, batchSize int) 
 		passwordHash string
 	}
 
-	// Lấy roleID trước
-	var roleID int
-	if err := db.QueryRow(ctx, `SELECT id FROM roles WHERE role_name = $1`, common.RoleCustomer).Scan(&roleID); err != nil {
-		log.Fatal("get role_id:", err)
+	// Lấy roleID của customer
+	var customerRoleID int
+	if err := db.QueryRow(ctx, `SELECT id FROM roles WHERE role_name = $1`, common.RoleCustomer).Scan(&customerRoleID); err != nil {
+		log.Fatal("get customer role_id:", err)
 	}
-
-	// Chuẩn bị permission
-	permDetail := []api_gateway_models.PermissionDetailType{
-		{ModuleID: 1, Permissions: []int{4, 2}},
-		{ModuleID: 4, Permissions: []int{1, 2, 3, 4}},
-		{ModuleID: 5, Permissions: []int{1, 4}},
-		{ModuleID: 6, Permissions: []int{1, 4, 3}},
-		{ModuleID: 7, Permissions: []int{4}},
-		{ModuleID: 8, Permissions: []int{1, 4, 3}},
-	}
-	permBytes, _ := json.Marshal(permDetail)
 
 	// Số lượng goroutine
 	numGoroutines := 15
@@ -256,17 +346,17 @@ func seedUsers(ctx context.Context, db *pgxpool.Pool, total int, batchSize int) 
 					log.Fatal("insert user_password:", err)
 				}
 
-				// Insert role_user_permissions
-				var permArgs []interface{}
-				permValues := make([]string, len(userIDs))
+				// Insert users_roles - Kết nối user với customer role
+				var roleArgs []interface{}
+				roleValues := make([]string, len(userIDs))
 				for i, id := range userIDs {
-					idx := i * 3
-					permValues[i] = fmt.Sprintf("($%d, $%d, $%d::jsonb)", idx+1, idx+2, idx+3)
-					permArgs = append(permArgs, roleID, id, string(permBytes))
+					idx := i * 2
+					roleValues[i] = fmt.Sprintf("($%d, $%d)", idx+1, idx+2)
+					roleArgs = append(roleArgs, id, customerRoleID)
 				}
-				permQuery := `INSERT INTO role_user_permissions (role_id, user_id, permission_detail) VALUES ` + strings.Join(permValues, ",")
-				if _, err := db.Exec(ctx, permQuery, permArgs...); err != nil {
-					log.Fatal("insert role_user_permissions:", err)
+				roleQuery := `INSERT INTO users_roles (user_id, role_id) VALUES ` + strings.Join(roleValues, ",")
+				if _, err := db.Exec(ctx, roleQuery, roleArgs...); err != nil {
+					log.Fatal("insert users_roles:", err)
 				}
 
 				seeded += toSeed

@@ -2,24 +2,29 @@ package api_gateway_service
 
 import (
 	"context"
+	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/pkg/errors"
 	"math"
 	"net/http"
+	"strconv"
 )
 
 type permissionService struct {
 	repo                     api_gateway_repository.IPermissionRepository
+	redis                    pkg.ICache
 	tracer                   pkg.Tracer
 	rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository
 }
 
-func NewPermissionService(repo api_gateway_repository.IPermissionRepository, tracer pkg.Tracer, rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository) IPermissionService {
-	return &permissionService{repo: repo, tracer: tracer, rolePermissionModuleRepo: rolePermissionModuleRepo}
+func NewPermissionService(repo api_gateway_repository.IPermissionRepository, redis pkg.ICache, tracer pkg.Tracer, rolePermissionModuleRepo api_gateway_repository.IRolePermissionModuleRepository) IPermissionService {
+	return &permissionService{repo: repo, tracer: tracer, rolePermissionModuleRepo: rolePermissionModuleRepo, redis: redis}
 }
 
 func (p *permissionService) GetPermissionList(ctx context.Context, queryReq api_gateway_dto.GetPermissionRequest) ([]api_gateway_dto.GetPermissionResponse, int, int, bool, bool, error) {
@@ -123,4 +128,58 @@ func (p *permissionService) DeletePermissionByPermissionID(ctx context.Context, 
 	}
 
 	return p.repo.DeletePermissionByPermissionID(ctx, id)
+}
+
+func (p *permissionService) GetAllPermissions(ctx context.Context) ([]api_gateway_dto.GetPermissionResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetAllPermissions"))
+	defer span.End()
+
+	permissionMap, err := p.getAllPermissionFromRedis(ctx)
+
+	if err != nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	var res []api_gateway_dto.GetPermissionResponse
+
+	for permissionName, permissionID := range permissionMap {
+		res = append(res, api_gateway_dto.GetPermissionResponse{
+			ID:   permissionID,
+			Name: permissionName,
+		})
+	}
+
+	return res, nil
+}
+
+func (p *permissionService) getAllPermissionFromRedis(ctx context.Context) (map[string]int, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "getAllPermissionFromRedis"))
+	defer span.End()
+
+	permissionName := []common.PermissionName{
+		common.Create,
+		common.Update,
+		common.Delete,
+		common.Read,
+		common.Approve,
+		common.Reject,
+	}
+	res := make(map[string]int, len(permissionName))
+
+	for _, permission := range permissionName {
+		idStr, err := p.redis.Get(ctx, fmt.Sprintf("permission:%v", permission))
+
+		if err != nil {
+			return nil, errors.Wrap(err, "u.service.getAllPermissionFromRedis.redis.Get")
+		}
+
+		id, _ := strconv.Atoi(idStr)
+
+		res[string(permission)] = id
+	}
+
+	return res, nil
 }

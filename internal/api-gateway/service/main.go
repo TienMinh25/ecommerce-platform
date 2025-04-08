@@ -35,6 +35,7 @@ type IModuleService interface {
 	GetModuleByModuleID(ctx context.Context, id int) (*api_gateway_dto.GetModuleResponse, error)
 	UpdateModuleByModuleID(ctx context.Context, id int, name string) (*api_gateway_dto.UpdateModuleByModuleIDResponse, error)
 	DeleteModuleByModuleID(ctx context.Context, id int) error
+	GetAllModules(ctx context.Context) ([]api_gateway_dto.GetModuleResponse, error)
 }
 
 type IPermissionService interface {
@@ -43,6 +44,7 @@ type IPermissionService interface {
 	GetPermissionByPermissionID(ctx context.Context, id int) (*api_gateway_dto.GetPermissionResponse, error)
 	UpdatePermissionByPermissionID(ctx context.Context, id int, action string) (*api_gateway_dto.UpdatePermissionByPermissionIDResponse, error)
 	DeletePermissionByPermissionID(ctx context.Context, id int) error
+	GetAllPermissions(ctx context.Context) ([]api_gateway_dto.GetPermissionResponse, error)
 }
 
 type IOtpCacheService interface {
@@ -59,4 +61,12 @@ type IJwtService interface {
 type IOauthCacheService interface {
 	SaveOauthState(ctx context.Context, state string) error
 	GetAndDeleteOauthState(ctx context.Context, state string) (string, error)
+}
+
+type IUserService interface {
+	GetUserManagement(ctx context.Context, data *api_gateway_dto.GetUserByAdminRequest) ([]api_gateway_dto.GetUserByAdminResponse, int, int, bool, bool, error)
+}
+
+type IRoleService interface {
+	GetRoles(ctx context.Context) ([]api_gateway_dto.RoleLoginResponse, error)
 }

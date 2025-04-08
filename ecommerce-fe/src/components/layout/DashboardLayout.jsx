@@ -29,7 +29,7 @@ const DashboardLayout = () => {
   const { user } = useAuth(); // Get user from auth context
 
   // Check if user has admin role
-  const isAdmin = user?.role?.name === 'admin';
+  const isAdmin = user.hasRole('admin');
 
   // If user is not admin, redirect to home page
   if (!isAdmin) {
