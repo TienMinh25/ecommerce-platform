@@ -14,6 +14,7 @@ import {
     Input,
     InputGroup,
     InputLeftElement,
+    InputRightElement,
     Modal,
     ModalBody,
     ModalCloseButton,
@@ -30,12 +31,11 @@ import {
     useToast,
     VStack,
 } from '@chakra-ui/react';
-import {FiCalendar, FiCheck, FiMail, FiPhone, FiPlus, FiSave, FiUser} from 'react-icons/fi';
-import roleService from '../../services/roleService.js';
-import userService from '../../services/userService.js';
+import { FiCalendar, FiCheck, FiEye, FiEyeOff, FiLock, FiMail, FiPhone, FiPlus, FiUser } from 'react-icons/fi';
+import roleService from '../../../../services/roleService.js';
+import userService from '../../../../services/userService.js';
 
-const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
-    // Theme colors
+const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
     const borderColor = useColorModeValue('gray.400', 'gray.500');
     const inputBg = useColorModeValue('white', 'gray.900');
     const tagBg = useColorModeValue('blue.100', 'blue.700');
@@ -47,86 +47,65 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
     const labelColor = useColorModeValue('gray.800', 'gray.100');
     const iconColor = useColorModeValue('blue.700', 'blue.200');
 
-    // Form state
+    // Form state - Thêm avatar_url với giá trị mặc định là null
     const [formData, setFormData] = useState({
         fullname: '',
         email: '',
         phone: '',
         birthdate: '',
+        password: '',
+        confirmPassword: '',
         status: true,
         roles: [],
+        avatar_url: null,
     });
 
-    // Form validation state
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    // Roles state
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [availableRoles, setAvailableRoles] = useState([]);
     const [isLoadingRoles, setIsLoadingRoles] = useState(false);
     const [roleError, setRoleError] = useState(null);
     const [showRoleMenu, setShowRoleMenu] = useState(false);
     const roleInputRef = useRef(null);
     const roleMenuRef = useRef(null);
-
-    // Toast for notifications
     const toast = useToast();
 
-    // Load user data when modal opens
     useEffect(() => {
-        if (isOpen && user) {
-            setFormData({
-                fullname: user.fullname || '',
-                email: user.email || '',
-                phone: user.phone || '',
-                birthdate: user.birth_date ? user.birth_date.split('T')[0] : '',
-                status: user.status === 'active',
-                roles: user.roles.map(role => ({
-                    id: role.id,
-                    name: role.name,
-                })),
-            });
+        if (isOpen) {
             fetchRoles();
         }
-    }, [isOpen, user]);
+    }, [isOpen]);
 
-    // Reset form when modal closes
     useEffect(() => {
         if (!isOpen) {
             resetForm();
         }
     }, [isOpen]);
 
-    // Close role menu on outside click
     useEffect(() => {
         const handleClickOutside = (event) => {
-            if (
-                roleInputRef.current &&
-                !roleInputRef.current.contains(event.target) &&
-                roleMenuRef.current &&
-                !roleMenuRef.current.contains(event.target)
-            ) {
+            if (roleInputRef.current && !roleInputRef.current.contains(event.target) &&
+                roleMenuRef.current && !roleMenuRef.current.contains(event.target)) {
                 setShowRoleMenu(false);
             }
         };
-
         document.addEventListener('mousedown', handleClickOutside);
         return () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
 
-    // Fetch roles from API
     const fetchRoles = async () => {
         setIsLoadingRoles(true);
         setRoleError(null);
-
         try {
             const roles = await roleService.getRoles();
             if (roles && Array.isArray(roles)) {
                 const formattedRoles = roles.map(role => ({
                     id: role.id,
-                    name: role.name,
+                    name: role.name
                 }));
                 setAvailableRoles(formattedRoles);
             } else {
@@ -138,7 +117,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                 ]);
             }
         } catch (error) {
-            console.error('Error fetching roles:', error);
+            console.error("Error fetching roles:", error);
             setRoleError(error.message);
             setAvailableRoles([
                 { id: '1', name: 'admin' },
@@ -151,42 +130,78 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
         }
     };
 
-    // Handle status toggle
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData({
+            ...formData,
+            [name]: value
+        });
+        if (errors[name]) {
+            setErrors({
+                ...errors,
+                [name]: null
+            });
+        }
+    };
+
     const handleStatusToggle = () => {
         setFormData({
             ...formData,
-            status: !formData.status,
+            status: !formData.status
         });
     };
 
-    // Add role handler
     const handleAddRole = (role) => {
         if (!formData.roles.some(r => r.id === role.id)) {
             setFormData({
                 ...formData,
-                roles: [...formData.roles, role],
+                roles: [...formData.roles, role]
             });
         }
         if (errors.roles) {
             setErrors({
                 ...errors,
-                roles: null,
+                roles: null
             });
         }
         setShowRoleMenu(false);
     };
 
-    // Remove role handler
     const handleRemoveRole = (roleId) => {
         setFormData({
             ...formData,
-            roles: formData.roles.filter(role => role.id !== roleId),
+            roles: formData.roles.filter(role => role.id !== roleId)
         });
     };
 
-    // Form validation (chỉ validate roles)
     const validateForm = () => {
         const newErrors = {};
+        if (!formData.fullname.trim()) {
+            newErrors.fullname = 'Full name is required';
+        }
+        if (!formData.email.trim()) {
+            newErrors.email = 'Email is required';
+        } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+            newErrors.email = 'Email is invalid';
+        }
+        if (formData.phone && !/^\+?[0-9]{10,15}$/.test(formData.phone.replace(/[- ]/g, ''))) {
+            newErrors.phone = 'Phone number is invalid';
+        }
+        if (formData.birthdate) {
+            const birthDate = new Date(formData.birthdate);
+            const today = new Date();
+            if (birthDate > today) {
+                newErrors.birthdate = 'Birth date cannot be in the future';
+            }
+        }
+        if (!formData.password) {
+            newErrors.password = 'Password is required';
+        } else if (formData.password.length < 6) {
+            newErrors.password = 'Password must be at least 6 characters';
+        }
+        if (formData.password !== formData.confirmPassword) {
+            newErrors.confirmPassword = 'Passwords do not match';
+        }
         if (formData.roles.length === 0) {
             newErrors.roles = 'At least one role is required';
         }
@@ -194,33 +209,43 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
         return Object.keys(newErrors).length === 0;
     };
 
-    // Handle form submission
     const handleSubmit = async () => {
         if (validateForm()) {
             setIsSubmitting(true);
             try {
-                const updatedUserData = {
+                // Tạo avatar_url từ ui-avatars.com dựa trên fullname
+                const avatarUrl = formData.fullname
+                    ? `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.fullname)}&size=128`
+                    : 'https://ui-avatars.com/api/?name=New+User&size=128';
+
+                const newUserData = {
+                    email: formData.email,
+                    password: formData.password,
+                    fullname: formData.fullname,
+                    phone: formData.phone,
+                    birthdate: formData.birthdate,
                     status: formData.status ? 'active' : 'inactive',
                     roles: formData.roles.map(role => parseInt(role.id)),
+                    avatar_url: avatarUrl, // Sử dụng URL từ ui-avatars.com
                 };
 
-                await userService.updateUser(user.id, updatedUserData);
+                await userService.createUser(newUserData);
                 toast({
-                    title: 'User updated successfully',
+                    title: 'User created successfully',
                     status: 'success',
                     duration: 3000,
                     isClosable: true,
                 });
 
-                if (onUserUpdated) {
-                    onUserUpdated();
+                if (onUserCreated) {
+                    onUserCreated();
                 }
 
                 onClose();
             } catch (error) {
-                console.error('Error updating user:', error);
+                console.error('Error creating user:', error);
                 toast({
-                    title: 'Failed to update user',
+                    title: 'Failed to create user',
                     description: error.response?.data?.error?.message || 'An unexpected error occurred',
                     status: 'error',
                     duration: 5000,
@@ -232,19 +257,24 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
         }
     };
 
-    // Reset form to initial state
     const resetForm = () => {
         setFormData({
             fullname: '',
             email: '',
             phone: '',
             birthdate: '',
+            password: '',
+            confirmPassword: '',
             status: true,
             roles: [],
+            avatar_url: null,
         });
         setErrors({});
+        setShowPassword(false);
+        setShowConfirmPassword(false);
     };
 
+    // Phần return giữ nguyên, không thay đổi giao diện
     return (
         <Modal
             isOpen={isOpen}
@@ -253,8 +283,15 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
             motionPreset="slideInBottom"
             scrollBehavior="inside"
         >
-            <ModalOverlay backdropFilter="blur(3px)" bg="blackAlpha.400" />
-            <ModalContent borderRadius="xl" shadow="2xl" bg={useColorModeValue('white', 'gray.800')}>
+            <ModalOverlay
+                backdropFilter="blur(3px)"
+                bg="blackAlpha.400"
+            />
+            <ModalContent
+                borderRadius="xl"
+                shadow="2xl"
+                bg={useColorModeValue('white', 'gray.800')}
+            >
                 <ModalHeader
                     py={6}
                     borderBottom="1px solid"
@@ -267,9 +304,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                     <Box color={iconColor} mr={3}>
                         <FiUser size={24} />
                     </Box>
-                    <Text fontSize="xl" fontWeight="bold" color={textColor}>
-                        Edit User
-                    </Text>
+                    <Text fontSize="xl" fontWeight="bold" color={textColor}>Create New User</Text>
                 </ModalHeader>
                 <ModalCloseButton
                     size="lg"
@@ -283,32 +318,26 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
 
                 <ModalBody py={6}>
                     <VStack spacing={6} align="stretch">
-                        {/* Account Settings Section */}
                         <Box>
-                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>
-                                Account Settings
-                            </Text>
-
-                            {/* Role Selection */}
+                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>Account Settings</Text>
                             <FormControl isRequired isInvalid={!!errors.roles} mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    User Roles
-                                </FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>User Roles</FormLabel>
                                 <Box position="relative">
                                     <Box
                                         onClick={() => setShowRoleMenu(true)}
                                         borderWidth="1.5px"
                                         borderRadius="md"
-                                        borderColor={errors.roles ? 'red.500' : borderColor}
+                                        borderColor={errors.roles ? "red.500" : borderColor}
                                         p={2}
                                         minH="40px"
                                         bg={inputBg}
                                         cursor="pointer"
+                                        position="relative"
                                         ref={roleInputRef}
                                         _hover={{ borderColor: useColorModeValue('blue.400', 'blue.300') }}
                                     >
                                         <Flex flexWrap="wrap" gap={2}>
-                                            {formData.roles.map(role => (
+                                            {formData.roles.map((role) => (
                                                 <Tag
                                                     key={role.id}
                                                     size="md"
@@ -318,22 +347,17 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                                     color={tagColor}
                                                 >
                                                     <TagLabel>{role.name}</TagLabel>
-                                                    <TagCloseButton
-                                                        onClick={e => {
-                                                            e.stopPropagation();
-                                                            handleRemoveRole(role.id);
-                                                        }}
-                                                    />
+                                                    <TagCloseButton onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleRemoveRole(role.id);
+                                                    }} />
                                                 </Tag>
                                             ))}
                                             {formData.roles.length === 0 && (
-                                                <Text color="gray.500" fontSize="sm">
-                                                    Select user roles
-                                                </Text>
+                                                <Text color="gray.500" fontSize="sm">Select user roles</Text>
                                             )}
                                         </Flex>
                                     </Box>
-
                                     {showRoleMenu && (
                                         <Box
                                             ref={roleMenuRef}
@@ -348,27 +372,38 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                             shadow="lg"
                                             maxH="200px"
                                             overflowY="auto"
+                                            css={{
+                                                '&::-webkit-scrollbar': {
+                                                    width: '8px',
+                                                },
+                                                '&::-webkit-scrollbar-track': {
+                                                    background: useColorModeValue('gray.100', 'gray.700'),
+                                                    borderRadius: '4px',
+                                                },
+                                                '&::-webkit-scrollbar-thumb': {
+                                                    background: useColorModeValue('blue.400', 'blue.600'),
+                                                    borderRadius: '4px',
+                                                },
+                                                '&::-webkit-scrollbar-thumb:hover': {
+                                                    background: useColorModeValue('blue.500', 'blue.500'),
+                                                },
+                                                scrollBehavior: 'smooth',
+                                            }}
                                         >
                                             {isLoadingRoles ? (
                                                 <Flex justify="center" align="center" py={3}>
-                                                    <Text fontSize="sm" color="gray.500">
-                                                        Loading roles...
-                                                    </Text>
+                                                    <Text fontSize="sm" color="gray.500">Loading roles...</Text>
                                                 </Flex>
                                             ) : roleError ? (
                                                 <Flex justify="center" align="center" py={3} bg="red.50">
-                                                    <Text fontSize="sm" color="red.500">
-                                                        {roleError}
-                                                    </Text>
+                                                    <Text fontSize="sm" color="red.500">{roleError}</Text>
                                                 </Flex>
                                             ) : availableRoles.length === 0 ? (
                                                 <Flex justify="center" align="center" py={3}>
-                                                    <Text fontSize="sm" color="gray.500">
-                                                        No roles available
-                                                    </Text>
+                                                    <Text fontSize="sm" color="gray.500">No roles available</Text>
                                                 </Flex>
                                             ) : (
-                                                availableRoles.map(role => (
+                                                availableRoles.map((role) => (
                                                     <Flex
                                                         key={role.id}
                                                         px={3}
@@ -378,15 +413,14 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                                         cursor="pointer"
                                                         _hover={{ bg: menuHoverBg }}
                                                         onClick={() => handleAddRole(role)}
-                                                        opacity={
-                                                            formData.roles.some(r => r.id === role.id)
-                                                                ? 0.5
-                                                                : 1
-                                                        }
+                                                        opacity={formData.roles.some(r => r.id === role.id) ? 0.5 : 1}
                                                     >
-                                                        <Text fontSize="sm" fontWeight="medium" color={textColor}>
-                                                            {role.name}
-                                                        </Text>
+                                                        <Box>
+                                                            <Text fontSize="sm" fontWeight="medium" color={textColor}>{role.name}</Text>
+                                                            {role.description && (
+                                                                <Text fontSize="xs" color="gray.500">{role.description}</Text>
+                                                            )}
+                                                        </Box>
                                                         {formData.roles.some(r => r.id === role.id) && (
                                                             <Box color="green.500">
                                                                 <FiCheck />
@@ -398,36 +432,31 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         </Box>
                                     )}
                                 </Box>
-                                {errors.roles && (
-                                    <FormErrorMessage fontWeight="medium">{errors.roles}</FormErrorMessage>
-                                )}
+                                {errors.roles && <FormErrorMessage fontWeight="medium">{errors.roles}</FormErrorMessage>}
                             </FormControl>
-
-                            {/* Status Toggle */}
                             <FormControl mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    User Status
-                                </FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>User Status</FormLabel>
                                 <Flex
                                     align="center"
                                     justify="space-between"
-                                    bg={formData.status ? 'green.50' : 'red.50'}
+                                    bg={formData.status ? "green.50" : "red.50"}
                                     borderRadius="lg"
                                     p={3}
                                     px={4}
                                     borderWidth="2px"
-                                    borderColor={formData.status ? 'green.400' : 'red.400'}
+                                    borderColor={formData.status ? "green.400" : "red.400"}
+                                    transition="all 0.2s"
                                     cursor="pointer"
                                     onClick={handleStatusToggle}
                                     _hover={{
-                                        borderColor: formData.status ? 'green.500' : 'red.500',
-                                        shadow: 'sm',
+                                        borderColor: formData.status ? "green.500" : "red.500",
+                                        shadow: "sm"
                                     }}
                                 >
                                     <Box>
                                         <Text
                                             fontWeight="bold"
-                                            color={formData.status ? 'green.700' : 'red.700'}
+                                            color={formData.status ? "green.700" : "red.700"}
                                             mb={0.5}
                                         >
                                             {formData.status ? 'Active' : 'Inactive'}
@@ -435,28 +464,21 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         <Text fontSize="xs" color={useColorModeValue('gray.700', 'gray.300')}>
                                             {formData.status
                                                 ? 'User will have immediate access to the system'
-                                                : 'User account will be suspended'}
+                                                : 'User account will be created but suspended'}
                                         </Text>
                                     </Box>
                                     <Switch
                                         isChecked={formData.status}
                                         size="lg"
-                                        colorScheme={formData.status ? 'green' : 'red'}
+                                        colorScheme={formData.status ? "green" : "red"}
                                         onChange={handleStatusToggle}
                                     />
                                 </Flex>
                             </FormControl>
                         </Box>
-
                         <Divider />
-
-                        {/* User Information Section */}
                         <Box>
-                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>
-                                User Information
-                            </Text>
-
-                            {/* User Preview */}
+                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>User Information</Text>
                             <Flex
                                 align="center"
                                 p={4}
@@ -465,24 +487,21 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                 mb={4}
                                 borderWidth="2px"
                                 borderColor={useColorModeValue('blue.200', 'blue.700')}
+                                boxShadow="sm"
                             >
                                 <Avatar
                                     size="md"
-                                    name={formData.fullname || 'User'}
-                                    src={
-                                        formData.fullname
-                                            ? `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                                                formData.fullname
-                                            )}&background=random&color=fff&size=128`
-                                            : '/api/placeholder/100/100'
-                                    }
+                                    name={formData.fullname || 'New User'}
+                                    src={formData.fullname
+                                        ? `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.fullname)}&background=random&color=fff&size=128`
+                                        : "/api/placeholder/100/100"}
                                     mr={4}
                                     bg={useColorModeValue('blue.500', 'blue.400')}
                                     color="white"
                                 />
                                 <Box>
                                     <Text fontWeight="bold" color={textColor} fontSize="md">
-                                        {formData.fullname || 'User'}
+                                        {formData.fullname || 'New User'}
                                     </Text>
                                     <Text fontSize="sm" color={useColorModeValue('gray.700', 'gray.300')}>
                                         {formData.email || 'email@example.com'}
@@ -513,12 +532,8 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                     </HStack>
                                 </Box>
                             </Flex>
-
-                            {/* Full Name Input (Disabled) */}
-                            <FormControl mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    Full Name
-                                </FormLabel>
+                            <FormControl isRequired isInvalid={!!errors.fullname} mb={4}>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Full Name</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -528,19 +543,19 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                     <Input
                                         name="fullname"
                                         value={formData.fullname}
-                                        isDisabled
+                                        onChange={handleChange}
+                                        placeholder="Enter full name"
                                         bg={inputBg}
                                         color={textColor}
                                         borderWidth="1.5px"
+                                        _hover={{ borderColor: 'blue.400' }}
+                                        _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px var(--chakra-colors-blue-500)' }}
                                     />
                                 </InputGroup>
+                                {errors.fullname && <FormErrorMessage fontWeight="medium">{errors.fullname}</FormErrorMessage>}
                             </FormControl>
-
-                            {/* Email Input (Disabled) */}
-                            <FormControl mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    Email Address
-                                </FormLabel>
+                            <FormControl isRequired isInvalid={!!errors.email} mb={4}>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Email Address</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -551,19 +566,19 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         name="email"
                                         type="email"
                                         value={formData.email}
-                                        isDisabled
+                                        onChange={handleChange}
+                                        placeholder="Enter email address"
                                         bg={inputBg}
                                         color={textColor}
                                         borderWidth="1.5px"
+                                        _hover={{ borderColor: 'blue.400' }}
+                                        _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px var(--chakra-colors-blue-500)' }}
                                     />
                                 </InputGroup>
+                                {errors.email && <FormErrorMessage fontWeight="medium">{errors.email}</FormErrorMessage>}
                             </FormControl>
-
-                            {/* Phone Input (Disabled) */}
-                            <FormControl mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    Phone Number
-                                </FormLabel>
+                            <FormControl isInvalid={!!errors.phone} mb={4}>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Phone Number (Optional)</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -573,19 +588,19 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                     <Input
                                         name="phone"
                                         value={formData.phone}
-                                        isDisabled
+                                        onChange={handleChange}
+                                        placeholder="Enter phone number"
                                         bg={inputBg}
                                         color={textColor}
                                         borderWidth="1.5px"
+                                        _hover={{ borderColor: 'blue.400' }}
+                                        _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px var(--chakra-colors-blue-500)' }}
                                     />
                                 </InputGroup>
+                                {errors.phone && <FormErrorMessage fontWeight="medium">{errors.phone}</FormErrorMessage>}
                             </FormControl>
-
-                            {/* Birth Date Input (Disabled) */}
-                            <FormControl mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    Birth Date
-                                </FormLabel>
+                            <FormControl isInvalid={!!errors.birthdate} mb={4}>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Birth Date (Optional)</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -596,17 +611,92 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         name="birthdate"
                                         type="date"
                                         value={formData.birthdate}
-                                        isDisabled
+                                        onChange={handleChange}
+                                        max={new Date().toISOString().split('T')[0]}
                                         bg={inputBg}
                                         color={textColor}
                                         borderWidth="1.5px"
+                                        _hover={{ borderColor: 'blue.400' }}
+                                        _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px var(--chakra-colors-blue-500)' }}
                                     />
                                 </InputGroup>
+                                {errors.birthdate && <FormErrorMessage fontWeight="medium">{errors.birthdate}</FormErrorMessage>}
+                            </FormControl>
+                        </Box>
+                        <Divider />
+                        <Box>
+                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>Password</Text>
+                            <FormControl isRequired isInvalid={!!errors.password} mb={4}>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Password</FormLabel>
+                                <InputGroup>
+                                    <InputLeftElement pointerEvents="none">
+                                        <Box color={iconColor}>
+                                            <FiLock />
+                                        </Box>
+                                    </InputLeftElement>
+                                    <Input
+                                        name="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        placeholder="Enter password"
+                                        bg={inputBg}
+                                        color={textColor}
+                                        borderWidth="1.5px"
+                                        _hover={{ borderColor: 'blue.400' }}
+                                        _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px var(--chakra-colors-blue-500)' }}
+                                    />
+                                    <InputRightElement>
+                                        <IconButton
+                                            icon={showPassword ? <FiEyeOff /> : <FiEye />}
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
+                                            color={iconColor}
+                                            _hover={{ color: 'blue.500', bg: 'transparent' }}
+                                        />
+                                    </InputRightElement>
+                                </InputGroup>
+                                {errors.password && <FormErrorMessage fontWeight="medium">{errors.password}</FormErrorMessage>}
+                            </FormControl>
+                            <FormControl isRequired isInvalid={!!errors.confirmPassword} mb={4}>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Confirm Password</FormLabel>
+                                <InputGroup>
+                                    <InputLeftElement pointerEvents="none">
+                                        <Box color={iconColor}>
+                                            <FiLock />
+                                        </Box>
+                                    </InputLeftElement>
+                                    <Input
+                                        name="confirmPassword"
+                                        type={showConfirmPassword ? 'text' : 'password'}
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        placeholder="Confirm password"
+                                        bg={inputBg}
+                                        color={textColor}
+                                        borderWidth="1.5px"
+                                        _hover={{ borderColor: 'blue.400' }}
+                                        _focus={{ borderColor: 'blue.500', boxShadow: '0 0 0 1px var(--chakra-colors-blue-500)' }}
+                                    />
+                                    <InputRightElement>
+                                        <IconButton
+                                            icon={showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                            color={iconColor}
+                                            _hover={{ color: 'blue.500', bg: 'transparent' }}
+                                        />
+                                    </InputRightElement>
+                                </InputGroup>
+                                {errors.confirmPassword && <FormErrorMessage fontWeight="medium">{errors.confirmPassword}</FormErrorMessage>}
                             </FormControl>
                         </Box>
                     </VStack>
                 </ModalBody>
-
                 <ModalFooter
                     borderTop="1px solid"
                     borderColor={borderColor}
@@ -626,7 +716,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                         Cancel
                     </Button>
                     <Button
-                        leftIcon={<FiSave />}  // Icon đã thay đổi
+                        leftIcon={<FiPlus />}
                         colorScheme="blue"
                         onClick={handleSubmit}
                         isLoading={isSubmitting}
@@ -634,18 +724,18 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                         shadow="md"
                         bgGradient="linear(to-r, blue.500, blue.600)"
                         _hover={{
-                            bgGradient: 'linear(to-r, blue.600, blue.700)',
+                            bgGradient: "linear(to-r, blue.600, blue.700)",
                             shadow: 'lg',
-                            transform: 'translateY(-1px)',
+                            transform: 'translateY(-1px)'
                         }}
                         _active={{
-                            bgGradient: 'linear(to-r, blue.700, blue.800)',
+                            bgGradient: "linear(to-r, blue.700, blue.800)",
                             transform: 'translateY(0)',
-                            shadow: 'md',
+                            shadow: 'md'
                         }}
                         fontWeight="bold"
                     >
-                        Update User
+                        Create User
                     </Button>
                 </ModalFooter>
             </ModalContent>
@@ -653,4 +743,4 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
     );
 };
 
-export default EditUserModal;
+export default CreateUserModal;

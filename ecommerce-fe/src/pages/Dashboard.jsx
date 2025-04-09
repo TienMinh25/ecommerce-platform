@@ -1,9 +1,8 @@
 import React from 'react';
-import { Box, useColorModeValue } from '@chakra-ui/react';
-import { motion } from 'framer-motion';
+import {Box, useColorModeValue} from '@chakra-ui/react';
+import {motion} from 'framer-motion';
 import useAuth from "../hooks/useAuth.js";
-import DashboardGreeting from "./Module/Dashboard/DashboardGreeting.jsx";
-import UserManagementComponent from "./Module/Dashboard/UserManagementComponent.jsx";
+import DashboardGreeting from "../components/dashboard/admin/DashboardGreeting.jsx";
 
 // Create a motion-enabled version of Box
 const MotionBox = motion(Box);

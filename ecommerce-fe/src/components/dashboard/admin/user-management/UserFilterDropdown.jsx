@@ -22,7 +22,7 @@ import {
     Switch,
 } from '@chakra-ui/react';
 import {FiCalendar, FiChevronDown, FiFilter, FiX} from 'react-icons/fi';
-import roleService from "../../services/roleService.js";
+import roleService from "../../../../services/roleService.js";
 
 // Modern Switch Toggle Component
 const ModernToggleSwitch = ({ isChecked, onChange, label, name, value }) => {

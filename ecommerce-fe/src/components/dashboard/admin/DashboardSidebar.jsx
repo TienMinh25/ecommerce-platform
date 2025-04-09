@@ -24,7 +24,7 @@ import {
   FiMapPin,
 } from 'react-icons/fi';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useSidebar } from '../../components/layout/DashboardLayout'; // Update with the correct path
+import { useSidebar } from '../../layout/DashboardLayout.jsx'; // Update with the correct path
 
 const DashboardSidebar = ({ onStateChange }) => {
   const { updateSidebarState } = useSidebar();

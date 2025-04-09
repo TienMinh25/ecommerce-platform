@@ -44,11 +44,11 @@ import {
     FiX,
 } from 'react-icons/fi';
 import { RiVerifiedBadgeFill } from "react-icons/ri";
-import userService from "../../../services/userService.js";
-import UserFilterDropdown from '../../../components/user-management/UserFilterDropdown.jsx';
-import CreateUserModal from "../../../components/user-management/CreateUserModal.jsx";
-import UserSearchComponent from '../../../components/user-management/UserSearchComponent.jsx';
-import EditUserModal from "../../../components/user-management/EditUserModal.jsx";
+import userService from "../../../../services/userService.js";
+import UserFilterDropdown from './UserFilterDropdown.jsx';
+import CreateUserModal from "./CreateUserModal.jsx";
+import UserSearchComponent from './UserSearchComponent.jsx';
+import EditUserModal from "./EditUserModal.jsx";
 
 const UserManagementComponent = () => {
     // Toast for notifications
