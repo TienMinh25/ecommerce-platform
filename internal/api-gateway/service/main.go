@@ -65,6 +65,9 @@ type IOauthCacheService interface {
 
 type IUserService interface {
 	GetUserManagement(ctx context.Context, data *api_gateway_dto.GetUserByAdminRequest) ([]api_gateway_dto.GetUserByAdminResponse, int, int, bool, bool, error)
+	CreateUserByAdmin(ctx context.Context, data *api_gateway_dto.CreateUserByAdminRequest) error
+	UpdateUserByAdmin(ctx context.Context, data *api_gateway_dto.UpdateUserByAdminRequest, userID int) error
+	DeleteUserByAdmin(ctx context.Context, userID int) error
 }
 
 type IRoleService interface {

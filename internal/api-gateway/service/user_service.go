@@ -2,54 +2,31 @@ package api_gateway_service
 
 import (
 	"context"
-	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
-	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
-	"github.com/pkg/errors"
 	"math"
 	"net/http"
-	"strconv"
 )
 
 type userService struct {
 	tracer   pkg.Tracer
 	userRepo api_gateway_repository.IUserRepository
-	redis    pkg.ICache
 }
 
-func NewUserService(tracer pkg.Tracer, userRepo api_gateway_repository.IUserRepository, cache pkg.ICache) IUserService {
+func NewUserService(tracer pkg.Tracer, userRepo api_gateway_repository.IUserRepository) IUserService {
 	return &userService{
 		tracer:   tracer,
 		userRepo: userRepo,
-		redis:    cache,
 	}
 }
 
 func (u *userService) GetUserManagement(ctx context.Context, data *api_gateway_dto.GetUserByAdminRequest) ([]api_gateway_dto.GetUserByAdminResponse, int, int, bool, bool, error) {
 	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetUserManagement"))
 	defer span.End()
-
-	permissionArray, err := u.getAllPermissionFromRedis(ctx)
-
-	if err != nil {
-		return nil, 0, 0, false, false, utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
-			Message: common.MSG_INTERNAL_ERROR,
-		}
-	}
-
-	modules, err := u.getAllModuleFromRedis(ctx)
-
-	if err != nil {
-		return nil, 0, 0, false, false, utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
-			Message: common.MSG_INTERNAL_ERROR,
-		}
-	}
 
 	users, totalItems, err := u.userRepo.GetUserByAdmin(ctx, data)
 
@@ -76,135 +53,70 @@ func (u *userService) GetUserManagement(ctx context.Context, data *api_gateway_d
 			phoneNumber = *user.PhoneNumber
 		}
 
-		var modulePermissionResponse []api_gateway_dto.ModulePermissionResponse
-
-		for _, permissions := range user.ModulePermission.PermissionDetail {
-			moduleID := permissions.ModuleID
-			moduleName := modules[moduleID]
-
-			var permissionResponse []api_gateway_dto.UserPermissionResponse
-
-			for _, permissionID := range permissions.Permissions {
-				permissionResponse = append(permissionResponse, api_gateway_dto.UserPermissionResponse{
-					PermissionID:   permissionID,
-					PermissionName: permissionArray[permissionID],
-				})
-			}
-
-			modulePermissionResponse = append(modulePermissionResponse, api_gateway_dto.ModulePermissionResponse{
-				ModuleID:    moduleID,
-				ModuleName:  moduleName,
-				Permissions: permissionResponse,
+		// Extract role names from user.Roles slice
+		var roles []api_gateway_dto.RoleLoginResponse
+		for _, role := range user.Roles {
+			roles = append(roles, api_gateway_dto.RoleLoginResponse{
+				ID:   role.ID,
+				Name: role.RoleName,
 			})
 		}
 
-		// Extract role names from user.Roles slice
-		var roleNames []string
-		for _, role := range user.Roles {
-			roleNames = append(roleNames, role.RoleName)
-		}
-
 		res = append(res, api_gateway_dto.GetUserByAdminResponse{
-			ID:             user.ID,
-			Fullname:       user.FullName,
-			Email:          user.Email,
-			AvatarURL:      avatarURL,
-			BirthDate:      user.BirthDate,
-			UpdatedAt:      user.UpdatedAt,
-			EmailVerify:    user.EmailVerified,
-			PhoneVerify:    user.PhoneVerified,
-			Status:         string(user.Status),
-			Phone:          phoneNumber,
-			RoleName:       roleNames,
-			RolePermission: modulePermissionResponse,
+			ID:          user.ID,
+			Fullname:    user.FullName,
+			Email:       user.Email,
+			AvatarURL:   avatarURL,
+			BirthDate:   user.BirthDate,
+			UpdatedAt:   user.UpdatedAt,
+			EmailVerify: user.EmailVerified,
+			PhoneVerify: user.PhoneVerified,
+			Status:      string(user.Status),
+			Phone:       phoneNumber,
+			Roles:       roles,
 		})
 	}
 
 	return res, totalItems, totalPages, hasNext, hasPrevious, nil
 }
 
-func (u *userService) getAllRoleFromRedis(ctx context.Context) ([]string, error) {
-	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "getAllRoleFromRedis"))
+func (u *userService) CreateUserByAdmin(ctx context.Context, data *api_gateway_dto.CreateUserByAdminRequest) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CreateUserByAdmin"))
 	defer span.End()
 
-	roleName := []common.RoleName{common.RoleCustomer, common.RoleAdmin, common.RoleDeliverer, common.RoleSupplier}
-	res := make([]string, len(roleName)+1)
-
-	for _, role := range roleName {
-		idStr, err := u.redis.Get(ctx, fmt.Sprintf("role:%v", role))
-
-		if err != nil {
-			return nil, errors.Wrap(err, "u.service.getAllRoleFromRedis.redis.Get")
-		}
-
-		id, _ := strconv.Atoi(idStr)
-
-		res[id] = string(role)
+	if err := u.userRepo.CreateUserByAdmin(ctx, data); err != nil {
+		return err
 	}
 
-	return res, nil
+	return nil
 }
 
-func (u *userService) getAllModuleFromRedis(ctx context.Context) ([]string, error) {
-	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "getAllModuleFromRedis"))
+func (u *userService) UpdateUserByAdmin(ctx context.Context, data *api_gateway_dto.UpdateUserByAdminRequest, userID int) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateUserByAdmin"))
 	defer span.End()
 
-	moduleName := []common.ModuleName{
-		common.UserManagement,
-		common.RolePermission,
-		common.ProductManagement,
-		common.Cart,
-		common.OrderManagement,
-		common.Payment,
-		common.ShippingManagement,
-		common.ReviewRating,
-		common.StoreManagement,
-		common.Onboarding,
-		common.AddressTypeManagement,
-		common.ModuleManagement,
+	// check exists user
+	isExists, err := u.userRepo.CheckUserExistsByID(ctx, userID)
+
+	if err != nil {
+		return err
 	}
-	res := make([]string, len(moduleName)+1)
 
-	for _, module := range moduleName {
-		idStr, err := u.redis.Get(ctx, fmt.Sprintf("module:%v", module))
-
-		if err != nil {
-			return nil, errors.Wrap(err, "u.service.getAllModuleFromRedis.redis.Get")
+	if !isExists {
+		return utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "User is not found",
+			ErrorCode: errorcode.NOT_FOUND,
 		}
-
-		id, _ := strconv.Atoi(idStr)
-
-		res[id] = string(module)
 	}
 
-	return res, nil
+	// update user
+	return u.userRepo.UpdateUserByAdmin(ctx, data, userID)
 }
 
-func (u *userService) getAllPermissionFromRedis(ctx context.Context) ([]string, error) {
-	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "getAllPermissionFromRedis"))
+func (u *userService) DeleteUserByAdmin(ctx context.Context, userID int) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "DeleteUserByAdmin"))
 	defer span.End()
 
-	permissionName := []common.PermissionName{
-		common.Create,
-		common.Update,
-		common.Delete,
-		common.Read,
-		common.Approve,
-		common.Reject,
-	}
-	res := make([]string, len(permissionName)+1)
-
-	for _, permission := range permissionName {
-		idStr, err := u.redis.Get(ctx, fmt.Sprintf("permission:%v", permission))
-
-		if err != nil {
-			return nil, errors.Wrap(err, "u.service.getAllPermissionFromRedis.redis.Get")
-		}
-
-		id, _ := strconv.Atoi(idStr)
-
-		res[id] = string(permission)
-	}
-
-	return res, nil
+	return u.userRepo.DeleteUserByID(ctx, userID)
 }

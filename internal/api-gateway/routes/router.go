@@ -117,6 +117,9 @@ func registerUserManagementEndpoint(group *gin.RouterGroup, permissionMiddleware
 
 	{
 		authenticationGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.UserManagement, common.Read), handler.GetUserManagement)
+		authenticationGroup.POST("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.UserManagement, common.Create), handler.CreateUser)
+		authenticationGroup.PATCH("/:userID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.UserManagement, common.Update), handler.UpdateUser)
+		authenticationGroup.DELETE("/:userID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.UserManagement, common.Delete), handler.DeleteUserByID)
 	}
 }
 

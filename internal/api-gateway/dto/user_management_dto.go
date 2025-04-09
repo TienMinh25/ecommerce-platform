@@ -1,6 +1,9 @@
 package api_gateway_dto
 
-import "time"
+import (
+	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
+	"time"
+)
 
 type GetUserByAdminRequest struct {
 	Limit int `form:"limit" binding:"required,gte=1"`
@@ -23,28 +26,47 @@ type GetUserByAdminRequest struct {
 	RoleID             *int       `form:"roleID" binding:"omitempty,gte=1"`
 }
 
-type UserPermissionResponse struct {
-	PermissionID   int    `json:"permission_id"`
-	PermissionName string `json:"permission_name"`
-}
-
-type ModulePermissionResponse struct {
-	ModuleID    int                      `json:"module_id"`
-	ModuleName  string                   `json:"module_name"`
-	Permissions []UserPermissionResponse `json:"permissions"`
-}
-
 type GetUserByAdminResponse struct {
-	ID             int                        `json:"id"`
-	Fullname       string                     `json:"fullname"`
-	Email          string                     `json:"email"`
-	AvatarURL      string                     `json:"avatar_url"`
-	BirthDate      *time.Time                 `json:"birth_date"`
-	UpdatedAt      time.Time                  `json:"updated_at"`
-	EmailVerify    bool                       `json:"email_verify"`
-	PhoneVerify    bool                       `json:"phone_verify"`
-	Status         string                     `json:"status"`
-	Phone          string                     `json:"phone"`
-	RoleName       []string                   `json:"role_names"`
-	RolePermission []ModulePermissionResponse `json:"module_permission"`
+	ID          int                 `json:"id"`
+	Fullname    string              `json:"fullname"`
+	Email       string              `json:"email"`
+	AvatarURL   string              `json:"avatar_url"`
+	BirthDate   *time.Time          `json:"birth_date"`
+	UpdatedAt   time.Time           `json:"updated_at"`
+	EmailVerify bool                `json:"email_verify"`
+	PhoneVerify bool                `json:"phone_verify"`
+	Status      string              `json:"status"`
+	Phone       string              `json:"phone"`
+	Roles       []RoleLoginResponse `json:"roles"`
+}
+
+type CreateUserByAdminRequest struct {
+	Fullname  string                        `json:"fullname" binding:"required"`
+	Email     string                        `json:"email" binding:"required,email"`
+	Phone     *string                       `json:"phone" binding:"omitempty"`
+	Roles     []int                         `json:"roles" binding:"required"`
+	BirthDate *time.Time                    `json:"birth_date" binding:"omitempty"`
+	Password  string                        `json:"password" binding:"required,min=6,max=32"`
+	Status    api_gateway_models.UserStatus `json:"status" binding:"omitempty,oneof=active inactive" example:"active"`
+	AvatarURL string                        `json:"avatar_url" binding:"required,uri"`
+}
+
+type CreateUserByAdminResponse struct{}
+
+type UpdateUserByAdminRequest struct {
+	Roles  []int                         `json:"roles" binding:"required"`
+	Status api_gateway_models.UserStatus `json:"status" binding:"omitempty,oneof=active inactive" example:"active"`
+}
+
+type UpdateUserByAdminRequestURI struct {
+	UserID int `uri:"userID" binding:"required,gte=1"`
+}
+
+type UpdateUserByAdminResponse struct{}
+
+type DeleteUserByAdminRequest struct {
+	UserID int `uri:"userID" binding:"required,gte=1"`
+}
+
+type DeleteUserByAdminResponse struct {
 }

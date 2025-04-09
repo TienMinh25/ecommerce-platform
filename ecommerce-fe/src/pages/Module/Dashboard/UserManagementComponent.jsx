@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
     Alert,
     AlertIcon,
@@ -10,14 +10,10 @@ import {
     Flex,
     HStack,
     IconButton,
-    Input,
-    InputGroup,
-    InputLeftElement,
     Menu,
     MenuButton,
     MenuItem,
     MenuList,
-    Select,
     Table,
     Tag,
     TagLabel,
@@ -30,6 +26,7 @@ import {
     Tooltip,
     Tr,
     useColorModeValue,
+    useDisclosure,
     useToast,
     VStack,
 } from '@chakra-ui/react';
@@ -38,19 +35,25 @@ import {
     FiChevronLeft,
     FiChevronRight,
     FiEdit2,
-    FiEye,
     FiMail,
     FiPlus,
     FiRefreshCw,
     FiSearch,
+    FiTrash2,
     FiUser,
     FiX,
 } from 'react-icons/fi';
-import {RiVerifiedBadgeFill} from "react-icons/ri";
+import { RiVerifiedBadgeFill } from "react-icons/ri";
 import userService from "../../../services/userService.js";
 import UserFilterDropdown from '../../../components/user-management/UserFilterDropdown.jsx';
+import CreateUserModal from "../../../components/user-management/CreateUserModal.jsx";
+import UserSearchComponent from '../../../components/user-management/UserSearchComponent.jsx';
+import EditUserModal from "../../../components/user-management/EditUserModal.jsx";
 
 const UserManagementComponent = () => {
+    // Toast for notifications
+    const toast = useToast();
+
     // State for users and loading
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -61,12 +64,14 @@ const UserManagementComponent = () => {
     const [totalCount, setTotalCount] = useState(0);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
 
-    // State for filters (filtered params that will be sent to the server)
-    const [activeFilters, setActiveFilters] = useState({});
+    const { isOpen: isCreateModalOpen, onOpen: onOpenCreateModal, onClose: onCloseCreateModal } = useDisclosure();
+    const { isOpen: isEditModalOpen, onOpen: onOpenEditModal, onClose: onCloseEditModal } = useDisclosure();
+    const [selectedUser, setSelectedUser] = useState(null);
 
-    // State for UI filter tracking
-    const [uiFilters, setUiFilters] = useState({
+    // Unified filter state
+    const [filters, setFilters] = useState({
         sortBy: '',
         sortOrder: 'asc',
         emailVerify: '',
@@ -77,38 +82,42 @@ const UserManagementComponent = () => {
         roleID: '',
     });
 
-    // Search state (quick filter in UI)
-    const [searchField, setSearchField] = useState('');
-    const [searchQuery, setSearchQuery] = useState('');
+    // State for active filter parameters that will be sent to the API
+    const [activeFilterParams, setActiveFilterParams] = useState({});
 
-    // Toast for notifications
-    const toast = useToast();
+    // Search state (will be managed by UserSearchComponent)
+    const [searchParams, setSearchParams] = useState({
+        searchBy: '',
+        searchValue: ''
+    });
 
     // Theme colors
     const bgColor = useColorModeValue('white', 'gray.800');
     const borderColor = useColorModeValue('gray.200', 'gray.700');
-    const hoverBgColor = useColorModeValue('blue.50', 'gray.700');
     const scrollTrackBg = useColorModeValue('#f1f1f1', '#2d3748');
     const scrollThumbBg = useColorModeValue('#c1c1c1', '#4a5568');
     const scrollThumbHoverBg = useColorModeValue('#a1a1a1', '#718096');
 
-    // Create params object with only needed parameters - All useCallback functions must be defined in the same order
+    // Create params object with only needed parameters
     const createRequestParams = useCallback(() => {
         const params = {
             page: currentPage,
             limit: rowsPerPage,
         };
 
-        if (Object.keys(activeFilters).length > 0) {
-            Object.entries(activeFilters).forEach(([key, value]) => {
-                if (value !== '') {
-                    params[key] = value;
-                }
-            });
+        Object.entries(activeFilterParams).forEach(([key, value]) => {
+            if (value !== '') {
+                params[key] = value;
+            }
+        });
+
+        if (searchParams.searchBy && searchParams.searchValue && searchParams.searchValue.trim() !== '') {
+            params.searchBy = searchParams.searchBy;
+            params.searchValue = searchParams.searchValue;
         }
 
         return params;
-    }, [currentPage, rowsPerPage, activeFilters]);
+    }, [currentPage, rowsPerPage, activeFilterParams, searchParams]);
 
     // Fetch users from API
     const fetchUsers = useCallback(async () => {
@@ -122,9 +131,7 @@ const UserManagementComponent = () => {
             if (response && response.data) {
                 setUsers(response.data || []);
 
-                // Handle pagination metadata from API
                 if (response.metadata) {
-                    // Set total count
                     if (response.metadata.pagination && response.metadata.pagination.total_items) {
                         setTotalCount(response.metadata.pagination.total_items);
                     } else if (response.metadata.total_count) {
@@ -133,17 +140,20 @@ const UserManagementComponent = () => {
                         setTotalCount(response.data.length);
                     }
 
-                    // Update pagination
                     if (response.metadata.pagination) {
                         const pagination = response.metadata.pagination;
                         setTotalPages(pagination.total_pages || 1);
+                    } else {
+                        setTotalPages(Math.max(1, Math.ceil((response.data.length || 0) / rowsPerPage)));
                     }
                 } else {
                     setTotalCount(response.data.length);
+                    setTotalPages(Math.max(1, Math.ceil((response.data.length || 0) / rowsPerPage)));
                 }
             } else {
                 setUsers([]);
                 setTotalCount(0);
+                setTotalPages(1);
             }
         } catch (error) {
             setIsError(true);
@@ -159,121 +169,85 @@ const UserManagementComponent = () => {
 
             setUsers([]);
             setTotalCount(0);
+            setTotalPages(1);
         } finally {
             setIsLoading(false);
         }
-    }, [createRequestParams, toast]);
+    }, [createRequestParams, rowsPerPage, toast]);
+
+    // Handle search from UserSearchComponent
+    const handleSearch = (searchField, searchValue) => {
+        setSearchParams({
+            searchBy: searchField,
+            searchValue: searchValue
+        });
+    };
+
+    // Handle filter changes (used by UserFilterDropdown)
+    const handleFiltersChange = (updatedFilters) => {
+        setFilters(updatedFilters);
+    };
+
+    // Apply filters from modal
+    const handleApplyFilters = (filteredParams) => {
+        setActiveFilterParams(filteredParams);
+        setCurrentPage(1);
+    };
 
     // Load users when component mounts or when dependencies change
     useEffect(() => {
+        if (searchParams.searchBy || searchParams.searchValue) {
+            setCurrentPage(1);
+        }
         fetchUsers();
-    }, [fetchUsers]);
+    }, [fetchUsers, searchParams]);
 
-    // Apply filters from modal
-    const handleApplyFilters = (newFilters) => {
-        setUiFilters(newFilters);
+    // Handle user created and reload current page
+    const handleUserCreated = async () => {
+        await fetchUsers(); // Reload dữ liệu đúng trang hiện tại
+    };
 
-        const filteredParams = {};
-        Object.entries(newFilters).forEach(([key, value]) => {
-            if (value !== '') {
-                filteredParams[key] = value;
+    // Handle user updated and reload current page
+    const handleUserUpdated = async () => {
+        await fetchUsers(); // Reload dữ liệu đúng trang hiện tại
+    };
+
+    // Handle user deleted and reload current page
+    const handleDeleteUser = async (userId) => {
+        if (window.confirm('Are you sure you want to delete this user?')) {
+            try {
+                await userService.deleteUser(userId);
+                toast({
+                    title: "User deleted successfully",
+                    status: "success",
+                    duration: 3000,
+                    isClosable: true,
+                });
+                await fetchUsers(); // Reload dữ liệu đúng trang hiện tại
+            } catch (error) {
+                toast({
+                    title: "Failed to delete user",
+                    description: error.response?.data?.error?.message || 'An unexpected error occurred',
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                });
             }
-        });
-
-        setActiveFilters(prevFilters => ({
-            ...prevFilters,
-            ...filteredParams
-        }));
-
-        setCurrentPage(1);
-    };
-
-    // Handle search
-    const handleSearch = () => {
-        if (searchQuery && searchField) {
-            setActiveFilters(prevFilters => ({
-                ...prevFilters,
-                searchBy: searchField,
-                searchValue: searchQuery
-            }));
-        } else {
-            const { searchBy, searchValue, ...restFilters } = activeFilters;
-            setActiveFilters(restFilters);
-        }
-
-        setCurrentPage(1);
-    };
-
-    // Handle search input change
-    const handleSearchChange = (e) => {
-        setSearchQuery(e.target.value);
-    };
-
-    // Handle search field change
-    const handleSearchFieldChange = (e) => {
-        setSearchField(e.target.value);
-    };
-
-    // Handle key press in search input
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-            handleSearch();
         }
     };
 
-    // Clear all filters
-    const clearFilters = () => {
-        setUiFilters({
-            sortBy: '',
-            sortOrder: 'asc',
-            emailVerify: '',
-            phoneVerify: '',
-            status: '',
-            updatedAtStartFrom: '',
-            updatedAtEndFrom: '',
-            roleID: '',
-        });
-
-        const {searchBy, searchValue, ...rest} = activeFilters;
-
-        const newFilters = {};
-        Object.entries(rest).forEach(([key, value]) => {
-            if (!['sortBy', 'sortOrder', 'emailVerify', 'phoneVerify', 'status',
-                'updatedAtStartFrom', 'updatedAtEndFrom', 'roleID'].includes(key)) {
-                newFilters[key] = value;
-            }
-        });
-
-        setActiveFilters(newFilters);
-        setSearchQuery('');
-        setSearchField('');
+    // Handle opening Edit Modal
+    const handleOpenEditModal = (user) => {
+        setSelectedUser(user);
+        onOpenEditModal();
     };
-
-    // Clear search
-    const clearSearch = () => {
-        setSearchQuery('');
-        const {searchBy, searchValue, ...restFilters} = activeFilters;
-        setActiveFilters(restFilters);
-    };
-
-    // Pagination logic - Use metadata from API when available
-    const [totalPages, setTotalPages] = useState(1);
-
-    // Update totalPages when API response includes pagination metadata
-    useEffect(() => {
-        // Only calculate if we don't have API-provided totalPages
-        if (!activeFilters.apiTotalPages) {
-            // Fallback to calculated value
-            setTotalPages(Math.max(1, Math.ceil(totalCount / rowsPerPage)));
-        }
-    }, [totalCount, rowsPerPage, activeFilters.apiTotalPages]);
 
     // Generate pagination range
     const generatePaginationRange = (current, total) => {
         current = Math.max(1, Math.min(current, total));
 
         if (total <= 5) {
-            return Array.from({length: total}, (_, i) => i + 1);
+            return Array.from({ length: total }, (_, i) => i + 1);
         }
 
         if (current <= 3) {
@@ -321,112 +295,35 @@ const UserManagementComponent = () => {
         }
     };
 
-    // Check if there are any active UI filters
-    const hasActiveUiFilters = Object.values(uiFilters).some(value => value !== '');
+    // Check if there are any active filters
+    const hasActiveFilters = Object.values(filters).some(value => value !== '');
 
     // Check if search is active
-    const hasActiveSearch = searchQuery && searchField;
+    const hasActiveSearch = searchParams.searchBy && searchParams.searchValue;
 
     return (
         <Container maxW="container.xl" py={6}>
-            {/* Search and Filter Bar */}
             <Flex
                 justifyContent="space-between"
                 alignItems="center"
                 p={4}
                 mb={4}
-                flexDir={{base: 'column', md: 'row'}}
-                gap={{base: 4, md: 0}}
+                flexDir={{ base: 'column', md: 'row' }}
+                gap={{ base: 4, md: 0 }}
             >
                 <Flex
-                    flex={{md: 1}}
-                    direction={{base: "column", sm: "row"}}
+                    flex={{ md: 1 }}
+                    direction={{ base: "column", sm: "row" }}
                     gap={3}
-                    align={{base: "stretch", sm: "center"}}
+                    align={{ base: "stretch", sm: "center" }}
                 >
-                    {/* Enhanced Search Input */}
-                    <Flex
-                        borderWidth="1px"
-                        borderRadius="lg"
-                        overflow="hidden"
-                        align="center"
-                        bg={bgColor}
-                        shadow="sm"
-                        flex="1"
-                        maxW={{base: "full", lg: "450px"}}
-                    >
-                        {/* Search Field Dropdown */}
-                        <Select
-                            value={searchField}
-                            onChange={handleSearchFieldChange}
-                            variant="unstyled"
-                            size="md"
-                            w="120px"
-                            pl={3}
-                            pr={0}
-                            py={2.5}
-                            borderRight="1px"
-                            borderColor={borderColor}
-                            borderRadius="0"
-                            _focus={{boxShadow: "none"}}
-                            fontSize="sm"
-                        >
-                            <option value="">Select field</option>
-                            <option value="fullname">Name</option>
-                            <option value="email">Email</option>
-                            <option value="phone">Phone</option>
-                        </Select>
-
-                        <InputGroup size="md" variant="unstyled">
-                            <InputLeftElement pointerEvents="none" h="full" pl={3}>
-                                <FiSearch color="gray.400"/>
-                            </InputLeftElement>
-                            <Input
-                                placeholder={searchField ? `Search by ${searchField.toLowerCase()}...` : "Select a field first"}
-                                pl={10}
-                                pr={2}
-                                py={2.5}
-                                value={searchQuery}
-                                onChange={handleSearchChange}
-                                onKeyPress={handleKeyPress}
-                                _placeholder={{color: "gray.400"}}
-                                isDisabled={!searchField}
-                            />
-                        </InputGroup>
-
-                        {/* Search actions */}
-                        <HStack>
-                            {hasActiveSearch && (
-                                <Tooltip label="Clear search" hasArrow>
-                                    <IconButton
-                                        icon={<FiX size={16}/>}
-                                        onClick={clearSearch}
-                                        aria-label="Clear search"
-                                        variant="ghost"
-                                        colorScheme="red"
-                                        size="sm"
-                                    />
-                                </Tooltip>
-                            )}
-                            <Tooltip label="Search" hasArrow>
-                                <IconButton
-                                    icon={<FiSearch size={16}/>}
-                                    onClick={handleSearch}
-                                    aria-label="Search"
-                                    variant="ghost"
-                                    colorScheme="blue"
-                                    size="sm"
-                                    mr={2}
-                                    isDisabled={!searchField || !searchQuery}
-                                />
-                            </Tooltip>
-                        </HStack>
-                    </Flex>
-
-                    {/* Refresh Button */}
+                    <UserSearchComponent
+                        onSearch={handleSearch}
+                        isLoading={isLoading}
+                    />
                     <Tooltip label="Refresh data" hasArrow>
                         <IconButton
-                            icon={<FiRefreshCw/>}
+                            icon={<FiRefreshCw />}
                             onClick={fetchUsers}
                             aria-label="Refresh data"
                             variant="ghost"
@@ -437,23 +334,21 @@ const UserManagementComponent = () => {
                     </Tooltip>
                 </Flex>
 
-                {/* Actions */}
                 <HStack spacing={2}>
-                    {/* Filter Button */}
                     <UserFilterDropdown
+                        filters={filters}
+                        onFiltersChange={handleFiltersChange}
                         onApplyFilters={handleApplyFilters}
-                        currentFilters={uiFilters}
                     />
-
-                    {/* Create Button */}
                     <Button
-                        leftIcon={<FiPlus/>}
+                        leftIcon={<FiPlus />}
                         colorScheme="blue"
                         size="sm"
                         borderRadius="md"
                         fontWeight="normal"
                         px={4}
                         shadow="md"
+                        onClick={onOpenCreateModal}
                         bgGradient="linear(to-r, blue.400, blue.500)"
                         color="white"
                         _hover={{
@@ -473,15 +368,13 @@ const UserManagementComponent = () => {
                 </HStack>
             </Flex>
 
-            {/* Error Alert */}
             {isError && (
                 <Alert status="error" variant="left-accent" mb={4} borderRadius="md">
-                    <AlertIcon/>
+                    <AlertIcon />
                     <Text>{errorMessage || 'An error occurred while fetching users'}</Text>
                 </Alert>
             )}
 
-            {/* Table Container */}
             <Box
                 width="100%"
                 borderRadius="xl"
@@ -493,7 +386,6 @@ const UserManagementComponent = () => {
                 borderWidth="1px"
                 borderColor={borderColor}
             >
-                {/* Data Table Container with Fixed Height */}
                 <Box
                     overflow="auto"
                     sx={{
@@ -515,12 +407,11 @@ const UserManagementComponent = () => {
                     }}
                     flex="1"
                     minH="300px"
-                    maxH={{base: "60vh", lg: "calc(100vh - 250px)"}}
+                    maxH={{ base: "60vh", lg: "calc(100vh - 250px)" }}
                     borderBottomWidth="1px"
                     borderColor={borderColor}
                 >
-                    <Table variant="simple" size="md" colorScheme="gray"
-                           style={{borderCollapse: 'separate', borderSpacing: '0'}}>
+                    <Table variant="simple" size="md" colorScheme="gray" style={{ borderCollapse: 'separate', borderSpacing: '0' }}>
                         <Thead bg={useColorModeValue('gray.50', 'gray.900')} position="sticky" top={0} zIndex={1}>
                             <Tr>
                                 <Th
@@ -536,7 +427,7 @@ const UserManagementComponent = () => {
                                 </Th>
                                 <Th
                                     py={4}
-                                    display={{base: "none", md: "table-cell"}}
+                                    display={{ base: "none", md: "table-cell" }}
                                     fontSize="xs"
                                     color={useColorModeValue('gray.600', 'gray.300')}
                                     letterSpacing="0.5px"
@@ -619,18 +510,17 @@ const UserManagementComponent = () => {
                                 users.map((user) => (
                                     <Tr
                                         key={user.id}
-                                        _hover={{bg: useColorModeValue('blue.50', 'gray.700')}}
+                                        _hover={{ bg: useColorModeValue('blue.50', 'gray.700') }}
                                         transition="background-color 0.2s"
                                         borderBottomWidth="1px"
                                         borderColor={borderColor}
-                                        _active={{bg: useColorModeValue('blue.100', 'gray.600')}}
+                                        _active={{ bg: useColorModeValue('blue.100', 'gray.600') }}
                                         h="60px"
                                         bg={bgColor}
                                     >
                                         <Td>
                                             <HStack spacing={3}>
-                                                <Avatar size="sm" name={user.fullname}
-                                                        src={user.avatar_url || "/api/placeholder/40/40"}/>
+                                                <Avatar size="sm" name={user.fullname} src={user.avatar_url || "/api/placeholder/40/40"} />
                                                 <Box>
                                                     <Text
                                                         fontWeight="medium"
@@ -642,17 +532,17 @@ const UserManagementComponent = () => {
                                                     <Text
                                                         fontSize="xs"
                                                         color={useColorModeValue('gray.500', 'gray.400')}
-                                                        display={{base: "none", lg: "block"}}
+                                                        display={{ base: "none", lg: "block" }}
                                                     >
                                                         {user.email}
                                                     </Text>
                                                 </Box>
                                             </HStack>
                                         </Td>
-                                        <Td display={{base: "none", md: "table-cell"}}>
+                                        <Td display={{ base: "none", md: "table-cell" }}>
                                             <VStack align="start" spacing={0.5}>
                                                 <HStack spacing={1} align="center">
-                                                    <FiMail size={12}/>
+                                                    <FiMail size={12} />
                                                     <Text
                                                         fontSize="sm"
                                                         color={useColorModeValue('gray.600', 'gray.300')}
@@ -668,7 +558,7 @@ const UserManagementComponent = () => {
                                                     ) : (
                                                         <Tooltip label="Email not verified" hasArrow>
                                                             <Badge colorScheme="red" variant="outline" fontSize="2xs" p={0.5}>
-                                                                <FiX size={13}/>
+                                                                <FiX size={13} />
                                                             </Badge>
                                                         </Tooltip>
                                                     )}
@@ -692,18 +582,18 @@ const UserManagementComponent = () => {
                                         </Td>
                                         <Td>
                                             <HStack spacing={1} flexWrap="wrap">
-                                                {user.role_names && user.role_names.length > 0 ? (
-                                                    user.role_names.map((roleName, index) => (
+                                                {user.roles && user.roles.length > 0 ? (
+                                                    user.roles.map((role, index) => (
                                                         <Tag
                                                             key={`${user.id}-role-${index}`}
                                                             size="md"
                                                             variant="subtle"
-                                                            colorScheme={getRoleColor(roleName)}
+                                                            colorScheme={getRoleColor(role.name)}
                                                             borderRadius="md"
                                                             mb={1}
                                                         >
-                                                            <TagLeftIcon as={FiUser} boxSize="12px"/>
-                                                            <TagLabel fontSize="xs" fontWeight="medium">{roleName}</TagLabel>
+                                                            <TagLeftIcon as={FiUser} boxSize="12px" />
+                                                            <TagLabel fontSize="xs" fontWeight="medium">{role.name}</TagLabel>
                                                         </Tag>
                                                     ))
                                                 ) : (
@@ -713,7 +603,7 @@ const UserManagementComponent = () => {
                                                         colorScheme="gray"
                                                         borderRadius="md"
                                                     >
-                                                        <TagLeftIcon as={FiUser} boxSize="12px"/>
+                                                        <TagLeftIcon as={FiUser} boxSize="12px" />
                                                         <TagLabel fontSize="xs" fontWeight="medium">No Role</TagLabel>
                                                     </Tag>
                                                 )}
@@ -742,26 +632,32 @@ const UserManagementComponent = () => {
                                         </Td>
                                         <Td textAlign="right">
                                             <HStack spacing={1} justifyContent="flex-end">
-                                                <Tooltip label="View details" hasArrow>
-                                                    <IconButton
-                                                        icon={<FiEye size={15}/>}
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        colorScheme="teal"
-                                                        aria-label="View user details"
-                                                        borderRadius="md"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    />
-                                                </Tooltip>
                                                 <Tooltip label="Edit user" hasArrow>
                                                     <IconButton
-                                                        icon={<FiEdit2 size={15}/>}
+                                                        icon={<FiEdit2 size={15} />}
                                                         size="sm"
                                                         variant="ghost"
                                                         colorScheme="blue"
                                                         aria-label="Edit user"
                                                         borderRadius="md"
-                                                        onClick={(e) => e.stopPropagation()}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleOpenEditModal(user);
+                                                        }}
+                                                    />
+                                                </Tooltip>
+                                                <Tooltip label="Delete user" hasArrow>
+                                                    <IconButton
+                                                        icon={<FiTrash2 size={15} />}
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        colorScheme="red"
+                                                        aria-label="Delete user"
+                                                        borderRadius="md"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleDeleteUser(user.id); // Gọi hàm xoá
+                                                        }}
                                                     />
                                                 </Tooltip>
                                             </HStack>
@@ -773,12 +669,10 @@ const UserManagementComponent = () => {
                                     <Td colSpan={6} textAlign="center" py={12}>
                                         <Flex direction="column" align="center" justify="center" py={8}>
                                             <Box color="gray.400" mb={3}>
-                                                <FiSearch size={36}/>
+                                                <FiSearch size={36} />
                                             </Box>
-                                            <Text fontWeight="normal" color="gray.500" fontSize="md">No users
-                                                found</Text>
-                                            <Text color="gray.400" fontSize="sm" mt={1}>Try a different search term or
-                                                filter</Text>
+                                            <Text fontWeight="normal" color="gray.500" fontSize="md">No users found</Text>
+                                            <Text color="gray.400" fontSize="sm" mt={1}>Try a different search term or filter</Text>
                                         </Flex>
                                     </Td>
                                 </Tr>
@@ -787,7 +681,6 @@ const UserManagementComponent = () => {
                     </Table>
                 </Box>
 
-                {/* Fixed Pagination Section */}
                 <Box
                     borderTop="1px"
                     borderColor={borderColor}
@@ -807,7 +700,7 @@ const UserManagementComponent = () => {
                         alignItems="center"
                         py={4}
                         px={6}
-                        flexWrap={{base: "wrap", md: "nowrap"}}
+                        flexWrap={{ base: "wrap", md: "nowrap" }}
                         gap={4}
                     >
                         <HStack spacing={1} flexShrink={0}>
@@ -819,7 +712,7 @@ const UserManagementComponent = () => {
                                     as={Button}
                                     size="xs"
                                     variant="ghost"
-                                    rightIcon={<FiChevronDown/>}
+                                    rightIcon={<FiChevronDown />}
                                     ml={2}
                                     fontWeight="normal"
                                     color="gray.600"
@@ -836,9 +729,9 @@ const UserManagementComponent = () => {
                         </HStack>
 
                         {totalCount > 0 && (
-                            <HStack spacing={1} justify="center" width={{base: "100%", md: "auto"}}>
+                            <HStack spacing={1} justify="center" width={{ base: "100%", md: "auto" }}>
                                 <IconButton
-                                    icon={<FiChevronLeft/>}
+                                    icon={<FiChevronLeft />}
                                     size="sm"
                                     variant="ghost"
                                     isDisabled={currentPage === 1 || isLoading}
@@ -867,7 +760,7 @@ const UserManagementComponent = () => {
                                 ))}
 
                                 <IconButton
-                                    icon={<FiChevronRight/>}
+                                    icon={<FiChevronRight />}
                                     size="sm"
                                     variant="ghost"
                                     isDisabled={currentPage === totalPages || isLoading}
@@ -880,6 +773,21 @@ const UserManagementComponent = () => {
                     </Flex>
                 </Box>
             </Box>
+
+            <CreateUserModal
+                isOpen={isCreateModalOpen}
+                onClose={onCloseCreateModal}
+                onUserCreated={handleUserCreated}
+            />
+
+            {selectedUser && (
+                <EditUserModal
+                    isOpen={isEditModalOpen}
+                    onClose={onCloseEditModal}
+                    user={selectedUser}
+                    onUserUpdated={handleUserUpdated}
+                />
+            )}
         </Container>
     );
 };

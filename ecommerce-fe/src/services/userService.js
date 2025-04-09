@@ -13,38 +13,36 @@ const userService = {
         }
     },
 
-    // Get single user by id
-    getUserById: async (userId) => {
+    // Create new user
+    createUser: async (userData) => {
         try {
-            const response = await api.get(`/users/${userId}`);
+            const response = await api.post('/users', userData);
             return response.data;
         } catch (error) {
-            console.error(`Error fetching user with id ${userId}:`, error);
+            console.error('Error creating user:', error);
             throw error;
         }
     },
 
-    // Get user permissions (assuming an endpoint like this exists)
-    getUserPermissions: async (userId) => {
+    // Update user by admin
+    updateUser: async (userId, updateData) => {
         try {
-            const response = await api.get(`/users/${userId}/permissions`);
-            return response.data;
+            await api.patch(`/users/${userId}`, updateData);
         } catch (error) {
-            console.error(`Error fetching permissions for user ${userId}:`, error);
+            console.error(`Error updating user with id ${userId}:`, error);
             throw error;
         }
     },
 
-    // Update user permissions (placeholder for future implementation)
-    updateUserPermissions: async (userId, permissions) => {
+    // Delete user by admin
+    deleteUser: async (userId) => {
         try {
-            const response = await api.patch(`/users/${userId}/permissions`, { permissions });
-            return response.data;
+            await api.delete(`/users/${userId}`);
         } catch (error) {
-            console.error(`Error updating permissions for user ${userId}:`, error);
+            console.error(`Error deleting user with id ${userId}:`, error);
             throw error;
         }
-    }
+    },
 };
 
 export default userService;

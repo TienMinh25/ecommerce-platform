@@ -44,8 +44,14 @@ type IPermissionsHandler interface {
 
 type IUserManagementHandler interface {
 	GetUserManagement(ctx *gin.Context)
+	CreateUser(ctx *gin.Context)
+	UpdateUser(ctx *gin.Context)
+	DeleteUserByID(ctx *gin.Context)
 }
 
 type IRoleHandler interface {
 	GetRoles(ctx *gin.Context)
+	CreateRole(ctx *gin.Context)
+	UpdateRole(ctx *gin.Context)
+	DeleteRole(ctx *gin.Context)
 }

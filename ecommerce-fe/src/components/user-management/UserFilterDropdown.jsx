@@ -164,19 +164,7 @@ const CustomDropdown = ({options, value, onChange, name, placeholder}) => {
     );
 };
 
-const UserFilterDropdown = ({onApplyFilters, currentFilters}) => {
-    // State for filters with improved initial state management
-    const [filters, setFilters] = useState({
-        sortBy: currentFilters?.sortBy || '',
-        sortOrder: currentFilters?.sortOrder || 'asc',
-        emailVerify: currentFilters?.emailVerify || '',
-        phoneVerify: currentFilters?.phoneVerify || '',
-        status: currentFilters?.status || '',
-        updatedAtStartFrom: currentFilters?.updatedAtStartFrom || '',
-        updatedAtEndFrom: currentFilters?.updatedAtEndFrom || '',
-        roleID: currentFilters?.roleID || '',
-    });
-
+const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
     // State for role options
     const [roleOptions, setRoleOptions] = useState([
         {label: 'Admin', value: '1'},
@@ -201,17 +189,17 @@ const UserFilterDropdown = ({onApplyFilters, currentFilters}) => {
     // Input change handlers
     const handleChange = (e) => {
         const {name, value} = e.target;
-        setFilters(prev => ({
-            ...prev,
+        onFiltersChange({
+            ...filters,
             [name]: value
-        }));
+        });
     };
 
     const handleToggleChange = (name, value) => {
-        setFilters(prev => ({
-            ...prev,
+        onFiltersChange({
+            ...filters,
             [name]: value
-        }));
+        });
     };
 
     // Apply and reset filters
@@ -253,7 +241,7 @@ const UserFilterDropdown = ({onApplyFilters, currentFilters}) => {
     };
 
     const handleResetFilters = () => {
-        setFilters({
+        onFiltersChange({
             sortBy: '',
             sortOrder: 'asc',
             emailVerify: '',

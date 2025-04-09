@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -36,7 +37,7 @@ func NewUserRepository(db pkg.Database, tracer pkg.Tracer, userPasswordRepositor
 }
 
 func (u *userRepository) CheckUserExistsByEmail(ctx context.Context, email string) (bool, error) {
-	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "CheckUserExistsByEmail"))
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckUserExistsByEmail"))
 	defer span.End()
 
 	sqlStr := `SELECT EXISTS (SELECT 1 FROM users WHERE email = $1)`
@@ -52,8 +53,25 @@ func (u *userRepository) CheckUserExistsByEmail(ctx context.Context, email strin
 	return isExists, nil
 }
 
+func (u *userRepository) CheckUserExistsByID(ctx context.Context, userID int) (bool, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckUserExistsByID"))
+	defer span.End()
+
+	sqlStr := `SELECT EXISTS (SELECT 1 FROM users WHERE id = $1)`
+
+	var isExists bool
+	if err := u.db.QueryRow(ctx, sqlStr, userID).Scan(&isExists); err != nil {
+		return false, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return isExists, nil
+}
+
 func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, fullname, password string) error {
-	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.DBLayer, "CreateUserWithPassword"))
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateUserWithPassword"))
 	defer span.End()
 
 	return u.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
@@ -406,7 +424,7 @@ func (u *userRepository) CreateUserBasedOauth(ctx context.Context, user *api_gat
 	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateUserBasedOauth"))
 	defer span.End()
 
-	return u.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pkg.Tx) error {
+	return u.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
 		// create user
 		userInsertQuery := `INSERT INTO users (email, fullname, avatar_url, email_verified) VALUES ($1, $2, $3, $4) RETURNING id`
 
@@ -509,11 +527,11 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 
 		switch *data.SearchBy {
 		case "email":
-			conditions = append(conditions, fmt.Sprintf("u.email LIKE $%d", paramCount))
+			conditions = append(conditions, fmt.Sprintf("u.email ILIKE $%d", paramCount))
 		case "phone":
-			conditions = append(conditions, fmt.Sprintf("u.phone LIKE $%d", paramCount))
+			conditions = append(conditions, fmt.Sprintf("u.phone ILIKE $%d", paramCount))
 		case "fullname":
-			conditions = append(conditions, fmt.Sprintf("u.fullname LIKE $%d", paramCount))
+			conditions = append(conditions, fmt.Sprintf("u.fullname ILIKE $%d", paramCount))
 		}
 
 		params = append(params, searchTerm)
@@ -574,53 +592,46 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 	totalParams := make([]interface{}, len(params))
 	copy(totalParams, params)
 
-	// Build simplified query with only necessary role fields
+	// Build query with all conditions in the main WHERE clause
 	sqlData := fmt.Sprintf(`
-		SELECT u.id, u.fullname, u.email, u.avatar_url, u.birthdate, u.phone, 
-		       u.email_verified, u.phone_verified, u.status, u.created_at, u.updated_at,
-		       r.id as role_id, r.role_name,
-		       rp.permission_detail
-		FROM users u 
-		JOIN users_roles ur ON u.id = ur.user_id
-		JOIN roles r ON ur.role_id = r.id
-		JOIN role_permissions rp ON r.id = rp.role_id
-		WHERE u.id IN (
-		    SELECT id FROM users u
-		    WHERE %s
-		    ORDER BY %s
-		    LIMIT $%d OFFSET $%d
-		)
-	`, whereClauseLimit, sortClause, paramCount, paramCount+1)
-	params = append(params, data.Limit, offset)
+        SELECT u.id, u.fullname, u.email, u.avatar_url, u.birthdate, u.phone, 
+               u.email_verified, u.phone_verified, u.status, u.created_at, u.updated_at,
+               r.id as role_id, r.role_name
+        FROM users u 
+        JOIN users_roles ur ON u.id = ur.user_id
+        JOIN roles r ON ur.role_id = r.id
+        WHERE %s
+    `, whereClauseLimit)
 
-	var whereSqlCount string
+	// Prepare the WHERE clause for the count query
+	whereSqlCount := whereClauseLimit
 
-	if len(conditions) > 0 {
-		whereSqlCount = strings.Join(conditions, " AND ")
-	} else {
-		whereSqlCount = "1 = 1"
-	}
-
+	// Add role filter if provided
 	if data.RoleID != nil {
-		sqlData += fmt.Sprintf(" AND ur.role_id = $%d", paramCount+2)
-		whereSqlCount += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM users_roles ur WHERE ur.user_id = u.id AND ur.role_id = $%d)", paramCount)
+		sqlData += fmt.Sprintf(" AND ur.role_id = $%d", paramCount)
 		params = append(params, *data.RoleID)
+		paramCount++
 
-		// Add to total params for count query
+		// Add equivalent condition to count query
+		whereSqlCount += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM users_roles ur WHERE ur.user_id = u.id AND ur.role_id = $%d)", len(totalParams)+1)
 		totalParams = append(totalParams, *data.RoleID)
 	}
 
-	// build sql to count totals
+	// Add ORDER BY, LIMIT and OFFSET
+	sqlData += fmt.Sprintf(" ORDER BY %s LIMIT $%d OFFSET $%d",
+		sortClause, paramCount, paramCount+1)
+	params = append(params, data.Limit, offset)
+
+	// Build SQL to count totals
 	sqlTotal := fmt.Sprintf(`
-		SELECT COUNT(DISTINCT u.id)
-		FROM users u 
-		JOIN users_roles ur ON u.id = ur.user_id
-		WHERE %s
-	`, whereSqlCount)
+        SELECT COUNT(DISTINCT u.id)
+        FROM users u 
+        WHERE %s
+    `, whereSqlCount)
 
 	var total int
 
-	// query total count
+	// Query total count
 	if err := u.db.QueryRow(ctx, sqlTotal, totalParams...).Scan(&total); err != nil {
 		return nil, 0, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
@@ -628,7 +639,7 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 		}
 	}
 
-	// query data with limit
+	// Query data with limit
 	rows, err := u.db.Query(ctx, sqlData, params...)
 
 	if err != nil {
@@ -640,8 +651,11 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 
 	defer rows.Close()
 
-	// Map to collect users and their roles
-	userMap := make(map[int]*api_gateway_models.User)
+	// Slice để duy trì thứ tự người dùng theo truy vấn
+	var res []api_gateway_models.User
+
+	// Map để theo dõi index của user trong slice
+	userIndexMap := make(map[int]int)
 
 	for rows.Next() {
 		var (
@@ -653,14 +667,12 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 			status                       string
 			createdAt, updatedAt         time.Time
 			roleName                     string
-			permissionDetail             []api_gateway_models.PermissionDetailType
 		)
 
 		if err = rows.Scan(
 			&userID, &fullName, &email, &avatarURL, &birthDate, &phoneNumber,
 			&emailVerified, &phoneVerified, &status, &createdAt, &updatedAt,
 			&roleID, &roleName,
-			&permissionDetail,
 		); err != nil {
 			return nil, 0, utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
@@ -668,16 +680,28 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 			}
 		}
 
-		// Create simplified Role object with only ID and RoleName
+		// Tạo Role object đơn giản với ID và RoleName
 		role := api_gateway_models.Role{
 			ID:       roleID,
 			RoleName: roleName,
 		}
 
-		// Check if we already have this user in our map
-		existingUser, exists := userMap[userID]
-		if !exists {
-			// Create a new user
+		// Kiểm tra xem user đã tồn tại trong slice chưa
+		if index, exists := userIndexMap[userID]; exists {
+			// User đã tồn tại, thêm role mới nếu chưa có
+			user := &res[index]
+			roleExists := false
+			for _, existingRole := range user.Roles {
+				if existingRole.ID == roleID {
+					roleExists = true
+					break
+				}
+			}
+			if !roleExists {
+				user.Roles = append(user.Roles, role)
+			}
+		} else {
+			// Tạo user mới và thêm vào slice
 			newUser := api_gateway_models.User{
 				ID:            userID,
 				FullName:      fullName,
@@ -691,41 +715,198 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 				CreatedAt:     createdAt,
 				UpdatedAt:     updatedAt,
 				Roles:         []api_gateway_models.Role{role},
-				ModulePermission: api_gateway_models.RolePermissionModule{
-					RoleID:           roleID,
-					UserID:           userID,
-					PermissionDetail: permissionDetail,
-				},
 			}
-			userMap[userID] = &newUser
-		} else {
-			// User exists, add the role if it's not already present
-			roleExists := false
-			for _, existingRole := range existingUser.Roles {
-				if existingRole.ID == roleID {
-					roleExists = true
-					break
-				}
-			}
-
-			if !roleExists {
-				existingUser.Roles = append(existingUser.Roles, role)
-			}
-
-			// Keep the ModulePermission data from the most recent role scanned
-			existingUser.ModulePermission = api_gateway_models.RolePermissionModule{
-				RoleID:           roleID,
-				UserID:           userID,
-				PermissionDetail: permissionDetail,
-			}
+			res = append(res, newUser)
+			userIndexMap[userID] = len(res) - 1
 		}
 	}
 
-	// Convert map to slice
-	var res []api_gateway_models.User
-	for _, user := range userMap {
-		res = append(res, *user)
+	return res, total, nil
+}
+
+func (u *userRepository) CreateUserByAdmin(ctx context.Context, data *api_gateway_dto.CreateUserByAdminRequest) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateUserByAdmin"))
+	defer span.End()
+
+	return u.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
+		isExists := 0
+		sqlCheck := `SELECT 1 FROM users WHERE email = $1`
+
+		if err := u.db.QueryRow(ctx, sqlCheck, data.Email).Scan(&isExists); err != nil {
+			if !errors.Is(err, pgx.ErrNoRows) {
+				return utils.TechnicalError{
+					Code:    http.StatusInternalServerError,
+					Message: common.MSG_INTERNAL_ERROR,
+				}
+			}
+		}
+
+		if isExists == 1 {
+			return utils.BusinessError{
+				Message:   "User already exists",
+				ErrorCode: errorcode.ALREADY_EXISTS,
+				Code:      http.StatusBadRequest,
+			}
+		}
+
+		var birthDateOnly any = nil
+
+		if data.BirthDate != nil {
+			year, month, day := data.BirthDate.Date()
+			birthDateOnly = time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+		}
+		// insert into user
+		sqlInsertUser := `INSERT INTO users (fullname, email, avatar_url, birthdate, email_verified,
+                   	phone, phone_verified, status)
+                   	VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`
+
+		var userID int
+		if err := u.db.QueryRow(ctx, sqlInsertUser, data.Fullname, data.Email, data.AvatarURL, birthDateOnly, true,
+			data.Phone, false, data.Status).Scan(&userID); err != nil {
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		// use go routine to insert both user password and users_roles
+		var err error
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+
+		// insert into user password
+		go func() {
+			defer wg.Done()
+
+			sqlInsertUserPassword := `INSERT INTO user_password (id, password) VALUES ($1, $2)`
+			var hashedPassword string
+
+			hashedPassword, err = utils.HashPassword(data.Password)
+
+			if err != nil {
+				return
+			}
+
+			err = u.db.Exec(ctx, sqlInsertUserPassword, userID, hashedPassword)
+
+			if err != nil {
+				return
+			}
+		}()
+
+		// insert into users_roles
+		go func() {
+			defer wg.Done()
+			var values []string
+
+			for _, roleID := range data.Roles {
+				values = append(values, fmt.Sprintf("(%d, %d)", userID, roleID))
+			}
+
+			insertBase := `INSERT INTO users_roles (user_id, role_id) VALUES`
+			sqlInsertUserRoles := fmt.Sprintf("%s %s", insertBase, strings.Join(values, ", "))
+
+			err = u.db.Exec(ctx, sqlInsertUserRoles)
+
+			if err != nil {
+				return
+			}
+		}()
+
+		wg.Wait()
+
+		if err != nil {
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		return nil
+	})
+}
+
+func (u *userRepository) UpdateUserByAdmin(ctx context.Context, data *api_gateway_dto.UpdateUserByAdminRequest, userID int) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateUserByAdmin"))
+	defer span.End()
+
+	return u.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
+		var err error
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+
+		go func() {
+			defer wg.Done()
+
+			sqlUpdateUser := `UPDATE users SET status = $1 WHERE id = $2`
+
+			err = u.db.Exec(ctx, sqlUpdateUser, data.Status, userID)
+
+			if err != nil {
+				return
+			}
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			// select roles and check matching roles or not -> delete role cu va tao role moi cho nhanh
+			sqlDelete := `DELETE FROM users_roles WHERE user_id = $1`
+			sqlInsert := `INSERT INTO users_roles (user_id, role_id) VALUES`
+			insertValues := make([]string, 0)
+
+			for _, roleID := range data.Roles {
+				insertValues = append(insertValues, fmt.Sprintf("(%d, %d)", userID, roleID))
+			}
+
+			sqlInsertUserRoles := fmt.Sprintf("%s %s", sqlInsert, strings.Join(insertValues, ", "))
+
+			if errDelete := u.db.Exec(ctx, sqlDelete, userID); errDelete != nil {
+				err = errDelete
+				return
+			}
+
+			if errInsert := u.db.Exec(ctx, sqlInsertUserRoles); errInsert != nil {
+				err = errInsert
+				return
+			}
+		}()
+
+		wg.Wait()
+
+		if err != nil {
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		return nil
+	})
+}
+
+func (u *userRepository) DeleteUserByID(ctx context.Context, userID int) error {
+	sqlDelete := `DELETE FROM users WHERE id = $1`
+
+	res, err := u.db.ExecWithResult(ctx, sqlDelete, userID)
+
+	if err != nil {
+		return utils.TechnicalError{Code: http.StatusInternalServerError, Message: common.MSG_INTERNAL_ERROR}
 	}
 
-	return res, total, nil
+	rowAffected, err := res.RowsAffected()
+
+	if err != nil {
+		return utils.TechnicalError{Code: http.StatusInternalServerError, Message: common.MSG_INTERNAL_ERROR}
+	}
+
+	if rowAffected == 0 {
+		return utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "User is not found to delete",
+			ErrorCode: errorcode.NOT_FOUND,
+		}
+	}
+
+	return nil
 }
