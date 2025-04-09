@@ -252,7 +252,9 @@ definitions:
   api_gateway_dto.GetPermissionResponseDocs:
     properties:
       data:
-        $ref: '#/definitions/api_gateway_dto.GetPermissionResponse'
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetPermissionResponse'
+        type: array
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -264,6 +266,10 @@ definitions:
         type: integer
       name:
         type: string
+      permissions:
+        items:
+          $ref: '#/definitions/api_gateway_models.PermissionDetailType'
+        type: array
       updated_at:
         type: string
     type: object
@@ -560,6 +566,15 @@ definitions:
         $ref: '#/definitions/api_gateway_dto.VerifyEmailResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_models.PermissionDetailType:
+    properties:
+      module_id:
+        type: integer
+      permissions:
+        items:
+          type: integer
+        type: array
     type: object
   api_gateway_models.UserStatus:
     enum:
@@ -1491,6 +1506,40 @@ paths:
       consumes:
       - application/json
       description: Get list roles pagination with some filter and sorting
+      parameters:
+      - description: Limit number of records returned
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - description: page
+        in: query
+        name: page
+        required: true
+        type: integer
+      - description: Provide for search by name
+        enum:
+        - name
+        in: query
+        name: searchBy
+        type: string
+      - description: Value for search
+        in: query
+        name: searchValue
+        type: string
+      - description: Sort by some attributes
+        enum:
+        - name
+        in: query
+        name: sortBy
+        type: string
+      - description: Sort order asc or desc
+        enum:
+        - asc
+        - desc
+        in: query
+        name: sortOrder
+        type: string
       produces:
       - application/json
       responses:

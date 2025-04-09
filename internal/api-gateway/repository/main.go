@@ -98,7 +98,7 @@ type IPermissionRepository interface {
 }
 
 type IRoleRepository interface {
-	GetRoles(ctx context.Context) ([]api_gateway_models.Role, error)
+	GetRoles(ctx context.Context, data *api_gateway_dto.GetRoleRequest) ([]api_gateway_models.Role, int, error)
 }
 
 type IRolePermissionModuleRepository interface {

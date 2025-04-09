@@ -4,21 +4,18 @@ import api from './api'; // Assuming api.js is in the same directory
  * Service to handle role-related API calls
  */
 const roleService = {
-    /**
-     * Fetch all roles from the API
-     * @returns {Promise} Promise that resolves to an array of role objects
-     */
-    getRoles: async () => {
+    getRoles: async (params = {}) => {
         try {
-            const response = await api.get('/roles');
-
-            // Return the data property from the response
-            return response.data.data;
+            const response = await api.get('/roles', { params });
+            return response.data;
         } catch (error) {
             console.error('Error fetching roles:', error);
             throw error;
         }
-    }
+    },
+    updateRolePermissions: async (roleId, formattedPermissions) => {
+
+    },
 };
 
 export default roleService;

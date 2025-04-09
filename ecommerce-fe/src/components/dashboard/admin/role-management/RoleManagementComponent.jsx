@@ -1,762 +1,686 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
+  AlertIcon,
+  Badge,
   Box,
-  Flex,
-  Input,
-  InputGroup,
-  InputLeftElement,
   Button,
+  Container,
+  Flex,
   HStack,
+  IconButton,
   Menu,
   MenuButton,
-  MenuList,
   MenuItem,
+  MenuList,
+  Spinner,
   Table,
-  Thead,
   Tbody,
-  Tr,
-  Th,
   Td,
   Text,
-  IconButton,
-  useColorModeValue,
+  Th,
+  Thead,
   Tooltip,
-  Container,
-  Collapse,
-  Badge,
-  Divider,
+  Tr,
+  useColorModeValue,
+  useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
 import {
-  FiSearch,
   FiChevronDown,
   FiChevronLeft,
   FiChevronRight,
+  FiEdit2,
   FiPlus,
-  FiSettings,
   FiRefreshCw,
-  FiChevronUp,
-  FiCheck,
-  FiMinus,
-  FiLock,
+  FiSearch,
+  FiSettings,
+  FiShield,
+  FiTrash2,
 } from 'react-icons/fi';
-import RoleConfigurationComponent from './RoleConfigurationComponent.jsx'; // Make sure path is correct
+import roleService from '../../../../services/roleService.js';
+import moduleService from '../../../../services/moduleService.js';
+import permissionService from '../../../../services/permissionService.js';
+import RoleSearchFilter from './RoleSearchFilter.jsx';
+import CreateRoleModal from './CreateRoleModal.jsx';
+import EditRoleModal from './EditRoleModal.jsx';
+import RolePermissionPanel from './RolePermissionPanel.jsx';
 
 const RoleManagementComponent = () => {
-  // State for pagination
+  const [roles, setRoles] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [expandedRoleId, setExpandedRoleId] = useState(null);
+  const [selectedRole, setSelectedRole] = useState(null);
+
+  const [modulesList, setModulesList] = useState([]);
+  const [permissionsList, setPermissionsList] = useState([]);
+  const [isLoadingModules, setIsLoadingModules] = useState(false);
+
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [totalPages, setTotalPages] = useState(1);
 
-  // State for configuration modal
-  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
-  const [selectedRoleId, setSelectedRoleId] = useState(null);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [filters, setFilters] = useState({
+    sortBy: 'name',
+    sortOrder: 'asc',
+    searchBy: 'name',
+    searchValue: '',
+  });
+  const [activeFilterParams, setActiveFilterParams] = useState({
+    sortBy: 'name',
+    sortOrder: 'asc',
+  });
 
-  // State for expanded rows
-  const [expandedRows, setExpandedRows] = useState({});
+  const { isOpen: isCreateModalOpen, onOpen: onOpenCreateModal, onClose: onCloseCreateModal } = useDisclosure();
+  const { isOpen: isEditModalOpen, onOpen: onOpenEditModal, onClose: onCloseEditModal } = useDisclosure();
 
-  // Mock data for the table with permissions
-  const [data, setData] = useState([
-    {
-      id: 1,
-      role: 'Admin',
-      permissions: [
-        { id: 1, name: 'Dashboard', read: true, create: false, update: false, delete: false, approve: false },
-        { id: 2, name: 'User Management', read: true, create: true, update: true, delete: true, approve: true },
-        { id: 3, name: 'Reports', read: true, create: true, update: true, delete: true, approve: true },
-      ]
-    },
-    {
-      id: 2,
-      role: 'Manager',
-      permissions: [
-        { id: 1, name: 'Dashboard', read: true, create: false, update: false, delete: false, approve: false },
-        { id: 2, name: 'User Management', read: true, create: true, update: true, delete: false, approve: true },
-        { id: 3, name: 'Reports', read: true, create: true, update: false, delete: false, approve: false },
-      ]
-    },
-    {
-      id: 3,
-      role: 'Developer',
-      permissions: [
-        { id: 1, name: 'Dashboard', read: true, create: false, update: false, delete: false, approve: false },
-        { id: 2, name: 'User Management', read: true, create: false, update: false, delete: false, approve: false },
-        { id: 3, name: 'Reports', read: true, create: false, update: false, delete: false, approve: false },
-      ]
-    },
-    {
-      id: 4,
-      role: 'Designer',
-      permissions: [
-        { id: 1, name: 'Dashboard', read: true, create: false, update: false, delete: false, approve: false },
-        { id: 2, name: 'User Management', read: false, create: false, update: false, delete: false, approve: false },
-        { id: 3, name: 'Reports', read: true, create: false, update: false, delete: false, approve: false },
-      ]
-    },
-    {
-      id: 5,
-      role: 'User',
-      permissions: [
-        { id: 1, name: 'Dashboard', read: true, create: false, update: false, delete: false, approve: false },
-        { id: 2, name: 'User Management', read: false, create: false, update: false, delete: false, approve: false },
-        { id: 3, name: 'Reports', read: false, create: false, update: false, delete: false, approve: false },
-      ]
-    },
-    {
-      id: 6,
-      role: 'Guest',
-      permissions: [
-        { id: 1, name: 'Dashboard', read: true, create: false, update: false, delete: false, approve: false },
-        { id: 2, name: 'User Management', read: false, create: false, update: false, delete: false, approve: false },
-        { id: 3, name: 'Reports', read: false, create: false, update: false, delete: false, approve: false },
-      ]
-    },
-    // Additional roles can be added here
-  ]);
+  const [showInlinePermissionPanel, setShowInlinePermissionPanel] = useState(false);
+  const [selectedPermissionRole, setSelectedPermissionRole] = useState(null);
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
 
-  // Function to toggle expanded row
-  const toggleRow = (id) => {
-    setExpandedRows(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
-
-  // Function to refresh data
-  const refreshData = () => {
-    // In a real app, this would fetch new data from an API
-    setData([...data].sort(() => Math.random() - 0.5));
-  };
-
-  // Filter data based on search query
-  const filteredData = searchQuery
-    ? data.filter(item => item.role.toLowerCase().includes(searchQuery.toLowerCase()))
-    : data;
-
-  // Colors
+  const toast = useToast();
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const hoverBgColor = useColorModeValue('gray.50', 'gray.700');
-  const boxShadow = useColorModeValue('sm', 'dark-lg');
-  const scrollTrackBg = useColorModeValue('#f1f1f1', '#2d3748');
-  const scrollThumbBg = useColorModeValue('#c1c1c1', '#4a5568');
-  const scrollThumbHoverBg = useColorModeValue('#a1a1a1', '#718096');
-  const expandedBgColor = useColorModeValue('gray.50', 'gray.800');
+  const hoverBgColor = useColorModeValue('blue.50', 'gray.700');
   const tableBorderColor = useColorModeValue('gray.100', 'gray.800');
-  const activePermissionColor = useColorModeValue('green.500', 'green.400');
-  const inactivePermissionColor = useColorModeValue('gray.400', 'gray.600');
+  const headerBgColor = useColorModeValue('gray.50', 'gray.900');
 
-  // Pagination logic - safe calculation to prevent division by zero
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
-
-  // Make sure currentPage is within valid range
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(Math.max(1, totalPages));
-    }
-  }, [currentPage, totalPages]);
+    const loadBasicData = async () => {
+      setIsLoadingModules(true);
+      try {
+        const [modulesResponse, permissionsResponse] = await Promise.all([
+          moduleService.getModules({ getAll: true }),
+          permissionService.getPermissions({ getAll: true }),
+        ]);
+        setModulesList(modulesResponse.data || []);
+        setPermissionsList(permissionsResponse.data || []);
+      } catch (error) {
+        console.error('Error loading modules and permissions:', error);
+        toast({
+          title: 'Error loading data',
+          description: 'Failed to load modules and permissions.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setIsLoadingModules(false);
+      }
+    };
+    loadBasicData();
+  }, [toast]);
 
-  // Function to generate pagination range
+  const createRequestParams = useCallback(() => {
+    return {
+      limit: rowsPerPage,
+      page: currentPage,
+      sortBy: activeFilterParams.sortBy,
+      sortOrder: activeFilterParams.sortOrder,
+      searchBy: filters.searchValue ? filters.searchBy : undefined, // Chỉ gửi searchBy nếu có searchValue
+      searchValue: filters.searchValue || undefined,
+    };
+  }, [currentPage, rowsPerPage, activeFilterParams, filters]);
+
+  const mapRolePermissionsForDisplay = (role) => {
+    if (!role || !role.permissions || !modulesList.length) return [];
+    return modulesList.map((module) => {
+      const modulePermissions = role.permissions?.find((p) => p.module_id === module.id);
+      return {
+        id: module.id,
+        name: module.name,
+        read: modulePermissions?.permissions?.includes(1) || false,
+        create: modulePermissions?.permissions?.includes(2) || false,
+        update: modulePermissions?.permissions?.includes(3) || false,
+        delete: modulePermissions?.permissions?.includes(4) || false,
+        approve: modulePermissions?.permissions?.includes(5) || false,
+        reject: modulePermissions?.permissions?.includes(6) || false,
+      };
+    });
+  };
+
+  const PermissionIndicator = ({ isEnabled }) => (
+      <Box
+          w="16px"
+          h="16px"
+          borderRadius="sm"
+          bg={isEnabled ? 'blue.500' : 'transparent'}
+          borderWidth="1px"
+          borderColor={isEnabled ? 'blue.500' : 'gray.300'}
+          display="inline-flex"
+          alignItems="center"
+          justifyContent="center"
+      >
+        {isEnabled && <Box as="span" fontSize="xs" color="white" fontWeight="bold">✓</Box>}
+      </Box>
+  );
+
+  const fetchRoles = useCallback(async () => {
+    setIsLoading(true);
+    setIsError(false);
+
+    try {
+      const params = createRequestParams();
+      const response = await roleService.getRoles(params);
+
+      // Kiểm tra response từ API
+      if (response && Array.isArray(response.data)) {
+        setRoles(response.data);
+
+        // Xử lý metadata phân trang
+        const metadata = response.metadata || {};
+        const pagination = metadata.pagination || {};
+        const totalItems = pagination.total_items || metadata.total_count || response.data.length;
+        const totalPagesCalc = pagination.total_pages || Math.max(1, Math.ceil(totalItems / rowsPerPage));
+
+        setTotalCount(totalItems);
+        setTotalPages(totalPagesCalc);
+      } else {
+        throw new Error('Invalid response format from API');
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      setIsError(true);
+      setErrorMessage(error.response?.data?.error?.message || 'Failed to fetch roles');
+      toast({
+        title: 'Error loading roles',
+        description: error.response?.data?.error?.message || 'An error occurred while loading roles',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      setRoles([]);
+      setTotalCount(0);
+      setTotalPages(1);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [createRequestParams, rowsPerPage, toast]);
+
+  useEffect(() => {
+    if (modulesList.length > 0 && permissionsList.length > 0) {
+      fetchRoles();
+    }
+  }, [modulesList, permissionsList, fetchRoles, currentPage, rowsPerPage, activeFilterParams]);
+
+  const toggleRoleExpand = (roleId) => {
+    setExpandedRoleId(expandedRoleId === roleId ? null : roleId);
+  };
+
+  const handleEditRole = (role, e) => {
+    if (e) e.stopPropagation();
+    setSelectedRole(role);
+    onOpenEditModal();
+  };
+
+  const handleCreateRole = () => {
+    onOpenCreateModal();
+  };
+
+  const handleDeleteRole = async (roleId, e) => {
+    if (e) e.stopPropagation();
+    if (window.confirm('Are you sure you want to delete this role?')) {
+      try {
+        await roleService.deleteRole(roleId);
+        toast({
+          title: 'Role deleted successfully',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+        fetchRoles();
+      } catch (error) {
+        console.error('Error deleting role:', error);
+        toast({
+          title: 'Failed to delete role',
+          description: error.response?.data?.error?.message || 'An unexpected error occurred',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    }
+  };
+
+  const handleOpenPermissionsPanel = (role, e) => {
+    if (e) e.stopPropagation();
+    setSelectedPermissionRole(role);
+    setShowInlinePermissionPanel(true);
+  };
+
+  const handleClosePermissionsPanel = () => {
+    setShowInlinePermissionPanel(false);
+    setSelectedPermissionRole(null);
+  };
+
+  const handleRoleCreated = () => {
+    fetchRoles();
+  };
+
+  const handleRoleUpdated = () => {
+    fetchRoles();
+  };
+
+  const handleFiltersChange = (updatedFilters) => {
+    setFilters(updatedFilters);
+  };
+
+  const handleApplyFilters = (filteredParams) => {
+    setActiveFilterParams(filteredParams);
+    setCurrentPage(1);
+  };
+
+  const handleReload = () => {
+    fetchRoles();
+  };
+
+  const handleSavePermissions = async (roleId, permissions) => {
+    setIsLoadingPermissions(true);
+    try {
+      await roleService.updateRolePermissions(roleId, permissions);
+      toast({
+        title: 'Permissions updated successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      fetchRoles();
+      handleClosePermissionsPanel();
+    } catch (error) {
+      console.error('Error updating permissions:', error);
+      toast({
+        title: 'Failed to update permissions',
+        description: error.response?.data?.error?.message || 'An unexpected error occurred',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      throw error;
+    } finally {
+      setIsLoadingPermissions(false);
+    }
+  };
+
   const generatePaginationRange = (current, total) => {
-    // Ensure safe values
     current = Math.max(1, Math.min(current, total));
-
-    if (total <= 5) {
-      return Array.from({ length: total }, (_, i) => i + 1);
-    }
-
-    if (current <= 3) {
-      return [1, 2, 3, 4, 5, '...', total];
-    }
-
-    if (current >= total - 2) {
-      return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
-    }
-
+    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+    if (current <= 3) return [1, 2, 3, 4, 5, '...', total];
+    if (current >= total - 2) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
     return [1, '...', current - 1, current, current + 1, '...', total];
   };
 
-  // Get pagination range
   const paginationRange = generatePaginationRange(currentPage, totalPages);
 
-  // Get current page data
-  const indexOfLastItem = currentPage * rowsPerPage;
-  const indexOfFirstItem = indexOfLastItem - rowsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Reset to first page when search changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, rowsPerPage]);
-
-  // Function to handle opening configuration modal for existing role
-  const handleEditPermissions = (roleId, e) => {
-    // Prevent row expansion when clicking the edit button
-    e && e.stopPropagation();
-    setSelectedRoleId(roleId);
-    setIsEditMode(true);
-    setIsConfigModalOpen(true);
-  };
-
-  // Function to handle opening configuration modal for new role
-  const handleCreateRole = () => {
-    setSelectedRoleId(null);
-    setIsEditMode(false);
-    setIsConfigModalOpen(true);
-  };
-
-  // Function to close modal and reset state
-  const handleCloseModal = () => {
-    setIsConfigModalOpen(false);
-    setTimeout(() => {
-      setIsEditMode(false);
-      setSelectedRoleId(null);
-    }, 300);
-  };
-
-  // Function to handle saving role data
-  const handleSaveRole = (roleData) => {
-    console.log('Role data saved:', roleData);
-
-    // Create permissions array from the roleData
-    const permissions = roleData.permissions.map(p => ({
-      id: p.moduleId,
-      name: p.moduleName,
-      read: p.read,
-      create: p.create,
-      update: p.update,
-      delete: p.delete,
-      approve: p.approve
-    }));
-
-    // If editing existing role, update it in our data
-    if (selectedRoleId) {
-      setData(data.map(item =>
-        item.id === selectedRoleId
-          ? { ...item, role: roleData.name, permissions }
-          : item
-      ));
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (error) {
+      return dateString;
     }
-    // If creating new role, add it to our data
-    else {
-      const newId = Math.max(0, ...data.map(item => item.id)) + 1;
-      setData([...data, { id: newId, role: roleData.name, permissions }]);
-    }
-  };
-
-  // Permission icon component
-  const PermissionIcon = ({ isActive }) => {
-    return isActive ? (
-      <Box
-        color={activePermissionColor}
-        borderRadius="full"
-        bg={useColorModeValue('green.50', 'green.900')}
-        p={1}
-        display="inline-flex"
-        alignItems="center"
-        justifyContent="center"
-        boxSize="24px"
-      >
-        <FiCheck />
-      </Box>
-    ) : (
-      <Box
-        color={inactivePermissionColor}
-        borderRadius="full"
-        bg={useColorModeValue('gray.50', 'gray.800')}
-        p={1}
-        display="inline-flex"
-        alignItems="center"
-        justifyContent="center"
-        boxSize="24px"
-      >
-        <FiMinus />
-      </Box>
-    );
-  };
-
-  // Function to render module name without tooltip
-  const renderModuleName = (moduleName) => {
-    return <Text>{moduleName}</Text>;
   };
 
   return (
-    <Container maxW="container.xl" py={6}>
-      {/* Role Configuration Modal */}
-      <RoleConfigurationComponent
-        isOpen={isConfigModalOpen}
-        onClose={handleCloseModal}
-        roleId={selectedRoleId}
-        onSave={handleSaveRole}
-        modalSize="5xl"
-        disableRoleNameEdit={isEditMode}
-      />
-
-      {/* Search and Create Button - Moved outside of the table's border */}
-      <Flex
-        justifyContent="space-between"
-        alignItems="center"
-        p={4}
-        mb={4}
-        flexDir={{ base: 'column', md: 'row' }}
-        gap={{ base: 4, md: 0 }}
-      >
-        <Flex
-          flex={{ md: 1 }}
-          direction={{ base: "column", sm: "row" }}
-          gap={3}
-          align={{ base: "stretch", sm: "center" }}
-        >
-          {/* Search Input */}
-          <Flex
-            borderWidth="1px"
-            borderRadius="lg"
-            overflow="hidden"
-            align="center"
-            bg={bgColor}
-            shadow="sm"
-            flex="1"
-            maxW={{ base: "full", lg: "450px" }}
-          >
-            <InputGroup size="md" variant="unstyled">
-              <InputLeftElement pointerEvents="none" h="full" pl={3}>
-                <FiSearch color="gray.400" />
-              </InputLeftElement>
-              <Input
-                placeholder="Search roles..."
-                pl={10}
-                pr={2}
-                py={2.5}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                _placeholder={{ color: "gray.400" }}
-              />
-            </InputGroup>
-
-            {/* Refresh Button */}
+      <Container maxW="container.xl" py={6}>
+        <Flex justifyContent="space-between" alignItems="center" p={4} mb={4} flexDir={{ base: 'column', md: 'row' }} gap={{ base: 4, md: 0 }}>
+          <Flex flex={{ md: 1 }} direction={{ base: 'column', sm: 'row' }} gap={3} align={{ base: 'stretch', sm: 'center' }}>
+            <RoleSearchFilter filters={filters} onFiltersChange={handleFiltersChange} onApplyFilters={handleApplyFilters} />
             <Tooltip label="Refresh data" hasArrow>
               <IconButton
-                icon={<FiRefreshCw size={16} />}
-                onClick={refreshData}
-                aria-label="Refresh data"
-                variant="ghost"
-                colorScheme="blue"
-                size="sm"
-                mr={2}
+                  icon={<FiRefreshCw />}
+                  onClick={handleReload}
+                  aria-label="Refresh data"
+                  variant="ghost"
+                  colorScheme="blue"
+                  size="sm"
+                  isLoading={isLoading}
               />
             </Tooltip>
           </Flex>
+          <HStack spacing={2}>
+            <Button
+                leftIcon={<FiPlus />}
+                colorScheme="blue"
+                size="sm"
+                borderRadius="md"
+                fontWeight="normal"
+                px={4}
+                shadow="md"
+                onClick={handleCreateRole}
+                bgGradient="linear(to-r, blue.400, blue.500)"
+                color="white"
+                _hover={{ bgGradient: 'linear(to-r, blue.500, blue.600)', shadow: 'lg', transform: 'translateY(-1px)' }}
+            >
+              Create Role
+            </Button>
+          </HStack>
         </Flex>
 
-        {/* Create Button */}
-        <Button
-          leftIcon={<FiPlus />}
-          colorScheme="blue"
-          size="sm"
-          borderRadius="md"
-          fontWeight="normal"
-          px={4}
-          shadow="md"
-          bgGradient="linear(to-r, blue.400, blue.500)"
-          color="white"
-          _hover={{
-            bgGradient: "linear(to-r, blue.500, blue.600)",
-            shadow: 'lg',
-            transform: 'translateY(-1px)'
-          }}
-          _active={{
-            bgGradient: "linear(to-r, blue.600, blue.700)",
-            transform: 'translateY(0)',
-            shadow: 'md'
-          }}
-          transition="all 0.2s"
-          onClick={handleCreateRole}
-        >
-          Create
-        </Button>
-      </Flex>
+        {isError && (
+            <Alert status="error" variant="left-accent" mb={4} borderRadius="md">
+              <AlertIcon />
+              <Text>{errorMessage || 'An error occurred while fetching roles'}</Text>
+            </Alert>
+        )}
 
-      {/* Table Container */}
-      <Box
-        width="100%"
-        borderRadius="xl"
-        overflow="hidden"
-        boxShadow="lg"
-        bg={bgColor}
-        display="flex"
-        flexDirection="column"
-        borderWidth="1px"
-        borderColor={borderColor}
-      >
-        {/* Data Table Container with Fixed Height */}
-        <Box
-          overflow="auto"
-          sx={{
-            '&::-webkit-scrollbar': {
-              width: '8px',
-              height: '8px',
-            },
-            '&::-webkit-scrollbar-track': {
-              background: scrollTrackBg,
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb': {
-              background: scrollThumbBg,
-              borderRadius: '4px',
-            },
-            '&::-webkit-scrollbar-thumb:hover': {
-              background: scrollThumbHoverBg,
-            },
-          }}
-          flex="1"
-          minH="300px"
-          maxH={{ base: "60vh", lg: "calc(100vh - 250px)" }}
-          borderBottomWidth="1px"
-          borderColor={borderColor}
-        >
-          <Table variant="simple" size="md" colorScheme="gray" style={{ borderCollapse: 'separate', borderSpacing: '0' }}>
-            <Tbody>
-              {currentItems.length > 0 ? (
-                currentItems.map((row, index) => (
-                  <React.Fragment key={row.id}>
-                    <Tr
-                      onClick={() => toggleRow(row.id)}
-                      _hover={{ bg: useColorModeValue('blue.50', 'gray.700') }}
-                      bg={expandedRows[row.id] ? expandedBgColor : (index % 2 === 0 ? bgColor : useColorModeValue('gray.50', 'gray.800'))}
-                      transition="background-color 0.2s"
-                      cursor="pointer"
-                      borderBottomWidth={expandedRows[row.id] ? 0 : "1px"}
-                      borderColor={borderColor}
-                      _active={{ bg: useColorModeValue('blue.100', 'gray.600') }}
-                      h="60px"
-                    >
-                      <Td
-                        width="80px"
-                        fontWeight="normal"
-                        fontSize="sm"
-                        py={4}
-                        color={useColorModeValue('gray.700', 'gray.300')}
-                      >
-                        {indexOfFirstItem + index + 1}
-                      </Td>
-                      <Td py={4}>
-                        <Text
-                          fontWeight="normal"
-                          fontSize="sm"
-                          color={useColorModeValue('gray.800', 'white')}
-                        >
-                          {row.role}
-                        </Text>
-                      </Td>
-                      <Td textAlign="right">
-                        <Tooltip label="Edit permissions" hasArrow>
-                          <Button
-                            leftIcon={<FiSettings size={14} />}
-                            size="sm"
-                            colorScheme="blue"
-                            variant="outline"
-                            onClick={(e) => handleEditPermissions(row.id, e)}
-                            borderRadius="md"
-                            fontWeight="normal"
-                            px={3}
-                            py={1}
-                            _hover={{
-                              bg: 'blue.50',
-                              borderColor: 'blue.400'
-                            }}
-                          >
-                            Edit Permissions
-                          </Button>
-                        </Tooltip>
-                      </Td>
-                    </Tr>
+        {showInlinePermissionPanel && selectedPermissionRole && (
+            <RolePermissionPanel
+                role={selectedPermissionRole}
+                onSave={handleSavePermissions}
+                onClose={handleClosePermissionsPanel}
+                isLoading={isLoadingPermissions}
+                modulesList={modulesList}
+                permissionsList={permissionsList}
+            />
+        )}
 
-                    {/* Expanded Content Row */}
-                    <Tr
-                      display={expandedRows[row.id] ? "table-row" : "none"}
-                      bg={expandedBgColor}
-                    >
-                      <Td colSpan={3} py={0} px={0}>
-                        <Collapse in={expandedRows[row.id]} animateOpacity>
-                          <Box
-                            py={3}
-                            px={4}
-                            bg={useColorModeValue('blue.50', 'gray.700')}
-                            borderBottomWidth="1px"
-                            borderColor={borderColor}
-                            width="100%"  // Ensuring full width
-                          >
-                            <Box
-                              borderRadius="lg"
-                              overflow="hidden"
-                              shadow="md"
-                              fontSize="sm"
-                              bg={bgColor}
-                              transition="all 0.3s"
-                              transform="translateY(0)"
-                              width="100%"  // Set to 100% width instead of maxW
-                              mx="0"        // Remove auto margin
-                            >
-                              {/* Gradient header bar */}
-                              <Box
-                                h="4px"
-                                bgGradient="linear(to-r, blue.400, purple.500)"
-                              />
-
-                              <Box px={3} py={3} bg={useColorModeValue('blue.50', 'blue.900')} borderBottom="1px" borderColor={borderColor}>
-                                <Flex justify="space-between" align="center">
-                                  <Text fontWeight="normal" fontSize="sm" color={useColorModeValue('blue.600', 'blue.200')}>
-                                    Permission Details
-                                  </Text>
-                                </Flex>
-                              </Box>
-
-                              <Table variant="simple" size="sm" colorScheme="blue" style={{ borderCollapse: 'separate', borderSpacing: '0', width: '100%' }}>
-                                <Thead bg={useColorModeValue('gray.100', 'gray.700')}>
-                                  <Tr>
-                                    <Th
-                                      fontSize="xs"
-                                      py={3}
-                                      pl={4}
-                                      borderTopLeftRadius="md"
-                                      color={useColorModeValue('gray.600', 'gray.300')}
-                                      letterSpacing="0.5px"
-                                      textTransform="uppercase"
-                                      fontWeight="normal"
-                                      width="auto"  // Let this column take remaining space
-                                    >
-                                      Module
-                                    </Th>
-                                    <Th
-                                      width="80px"
-                                      textAlign="center"
-                                      fontSize="xs"
-                                      py={3}
-                                      color={useColorModeValue('gray.600', 'gray.300')}
-                                      letterSpacing="0.5px"
-                                      textTransform="uppercase"
-                                      fontWeight="bold"
-                                    >
-                                      Read
-                                    </Th>
-                                    <Th
-                                      width="80px"
-                                      textAlign="center"
-                                      fontSize="xs"
-                                      py={3}
-                                      color={useColorModeValue('gray.600', 'gray.300')}
-                                      letterSpacing="0.5px"
-                                      textTransform="uppercase"
-                                      fontWeight="bold"
-                                    >
-                                      Create
-                                    </Th>
-                                    <Th
-                                      width="80px"
-                                      textAlign="center"
-                                      fontSize="xs"
-                                      py={3}
-                                      color={useColorModeValue('gray.600', 'gray.300')}
-                                      letterSpacing="0.5px"
-                                      textTransform="uppercase"
-                                      fontWeight="bold"
-                                    >
-                                      Update
-                                    </Th>
-                                    <Th
-                                      width="80px"
-                                      textAlign="center"
-                                      fontSize="xs"
-                                      py={3}
-                                      color={useColorModeValue('gray.600', 'gray.300')}
-                                      letterSpacing="0.5px"
-                                      textTransform="uppercase"
-                                      fontWeight="bold"
-                                    >
-                                      Delete
-                                    </Th>
-                                    <Th
-                                      width="90px"
-                                      textAlign="center"
-                                      fontSize="xs"
-                                      py={3}
-                                      borderTopRightRadius="md"
-                                      color={useColorModeValue('gray.600', 'gray.300')}
-                                      letterSpacing="0.5px"
-                                      textTransform="uppercase"
-                                      fontWeight="bold"
-                                    >
-                                      Approve
-                                    </Th>
-                                  </Tr>
-                                </Thead>
-                                <Tbody>
-                                  {row.permissions.map((permission, idx) => (
-                                    <Tr
-                                      key={`${row.id}-${permission.id}`}
-                                      _hover={{ bg: useColorModeValue('blue.50', 'blue.900') }}
-                                      bg={idx % 2 === 0 ? bgColor : useColorModeValue('gray.50', 'gray.700')}
-                                      transition="all 0.2s"
-                                    >
-                                      <Td
-                                        fontWeight="medium"
-                                        fontSize="sm"
-                                        py={3}
-                                        pl={4}
-                                        borderLeftWidth="2px"
-                                        borderLeftColor="transparent"
-                                        _hover={{
-                                          borderLeftColor: useColorModeValue('blue.400', 'blue.300')
-                                        }}
-                                        width="auto"  // Let this column take remaining space
-                                      >
-                                        {renderModuleName(permission.name)}
-                                      </Td>
-                                      <Td textAlign="center" py={3} width="80px">
-                                        <Box transform="scale(1.1)" transition="all 0.2s">
-                                          <PermissionIcon isActive={permission.read} />
-                                        </Box>
-                                      </Td>
-                                      <Td textAlign="center" py={3} width="80px">
-                                        <Box transform="scale(1.1)" transition="all 0.2s">
-                                          <PermissionIcon isActive={permission.create} />
-                                        </Box>
-                                      </Td>
-                                      <Td textAlign="center" py={3} width="80px">
-                                        <Box transform="scale(1.1)" transition="all 0.2s">
-                                          <PermissionIcon isActive={permission.update} />
-                                        </Box>
-                                      </Td>
-                                      <Td textAlign="center" py={3} width="80px">
-                                        <Box transform="scale(1.1)" transition="all 0.2s">
-                                          <PermissionIcon isActive={permission.delete} />
-                                        </Box>
-                                      </Td>
-                                      <Td textAlign="center" py={3} width="90px">
-                                        <Box transform="scale(1.1)" transition="all 0.2s">
-                                          <PermissionIcon isActive={permission.approve} />
-                                        </Box>
-                                      </Td>
-                                    </Tr>
-                                  ))}
-                                </Tbody>
-                              </Table>
-                            </Box>
-                          </Box>
-                        </Collapse>
-                      </Td>
-                    </Tr>
-                  </React.Fragment>
-                ))
-              ) : (
-                <Tr>
-                  <Td colSpan={3} textAlign="center" py={12}>
-                    <Flex direction="column" align="center" justify="center" py={8}>
-                      <Box color="gray.400" mb={3}>
-                        <FiSearch size={36} />
-                      </Box>
-                      <Text fontWeight="normal" color="gray.500" fontSize="md">No roles found</Text>
-                      <Text color="gray.400" fontSize="sm" mt={1}>Try a different search term</Text>
-                    </Flex>
-                  </Td>
-                </Tr>
-              )}
-            </Tbody>
-          </Table>
-        </Box>
-
-        {/* Fixed Pagination Section */}
-        <Box
-          borderTop="1px"
-          borderColor={borderColor}
-          bg={useColorModeValue('gray.50', 'gray.800')}
-          bgGradient={useColorModeValue(
-            "linear(to-r, white, gray.50, white)",
-            "linear(to-r, gray.800, gray.700, gray.800)"
-          )}
-          position="sticky"
-          bottom="0"
-          width="100%"
-          zIndex="1"
-          boxShadow="0 -2px 6px rgba(0,0,0,0.05)"
-        >
-          <Flex
-            justifyContent="space-between"
-            alignItems="center"
-            py={4}
-            px={6}
-            flexWrap={{ base: "wrap", md: "nowrap" }}
-            gap={4}
+        <Box width="100%" borderRadius="xl" overflow="hidden" boxShadow="lg" bg={bgColor} display="flex" flexDirection="column" borderWidth="1px" borderColor={borderColor}>
+          <Box
+              overflow="auto"
+              sx={{
+                '&::-webkit-scrollbar': { width: '8px', height: '8px' },
+                '&::-webkit-scrollbar-track': { background: useColorModeValue('#f1f1f1', '#2d3748'), borderRadius: '4px' },
+                '&::-webkit-scrollbar-thumb': { background: useColorModeValue('#c1c1c1', '#4a5568'), borderRadius: '4px' },
+                '&::-webkit-scrollbar-thumb:hover': { background: useColorModeValue('#a1a1a1', '#718096') },
+              }}
+              flex="1"
+              minH="300px"
+              maxH={{ base: '60vh', lg: 'calc(100vh - 250px)' }}
+              borderBottomWidth="1px"
+              borderColor={borderColor}
           >
-            <HStack spacing={1} flexShrink={0}>
-              <Text fontSize="sm" color="gray.600" fontWeight="normal">
-                Showing {filteredData.length > 0 ? indexOfFirstItem + 1 : 0}-{Math.min(indexOfLastItem, filteredData.length)} of {filteredData.length} roles
-              </Text>
-              <Menu>
-                <MenuButton
-                  as={Button}
-                  size="xs"
-                  variant="ghost"
-                  rightIcon={<FiChevronDown />}
-                  ml={2}
-                  fontWeight="normal"
-                  color="gray.600"
-                >
-                  {rowsPerPage} per page
-                </MenuButton>
-                <MenuList minW="120px" shadow="lg" borderRadius="md">
-                  <MenuItem onClick={() => setRowsPerPage(10)}>10 per page</MenuItem>
-                  <MenuItem onClick={() => setRowsPerPage(15)}>15 per page</MenuItem>
-                  <MenuItem onClick={() => setRowsPerPage(20)}>20 per page</MenuItem>
-                </MenuList>
-              </Menu>
-            </HStack>
+            <Table variant="simple" size="md" colorScheme="gray">
+              <Thead bg={headerBgColor} position="sticky" top={0} zIndex={1}>
+                <Tr>
+                  <Th py={4} fontWeight="bold" borderTopLeftRadius="md" fontSize="xs" color={useColorModeValue('gray.600', 'gray.300')} width="40%">
+                    Role
+                  </Th>
+                  <Th py={4} fontWeight="bold" fontSize="xs" color={useColorModeValue('gray.600', 'gray.300')} width="40%">
+                    Description
+                  </Th>
+                  <Th py={4} fontWeight="bold" fontSize="xs" color={useColorModeValue('gray.600', 'gray.300')} width="15%">
+                    Updated
+                  </Th>
+                  <Th py={4} textAlign="right" borderTopRightRadius="md" fontSize="xs" color={useColorModeValue('gray.600', 'gray.300')} width="5%">
+                    Actions
+                  </Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {isLoading ? (
+                    <Tr>
+                      <Td colSpan={4} textAlign="center" py={12}>
+                        <Flex justify="center" align="center" direction="column">
+                          <Box
+                              h="40px"
+                              w="40px"
+                              borderWidth="3px"
+                              borderStyle="solid"
+                              borderColor="blue.500"
+                              borderTopColor="transparent"
+                              borderRadius="50%"
+                              animation="spin 1s linear infinite"
+                              mb={3}
+                              sx={{ '@keyframes spin': { '0%': { transform: 'rotate(0deg)' }, '100%': { transform: 'rotate(360deg)' } } }}
+                          />
+                          <Text color="gray.500" fontSize="sm">Loading roles...</Text>
+                        </Flex>
+                      </Td>
+                    </Tr>
+                ) : roles.length > 0 ? (
+                    roles.map((role) => (
+                        <React.Fragment key={role.id}>
+                          <Tr
+                              onClick={() => toggleRoleExpand(role.id)}
+                              _hover={{ bg: hoverBgColor }}
+                              transition="background-color 0.2s"
+                              borderBottomWidth="1px"
+                              borderColor={borderColor}
+                              cursor="pointer"
+                              h="60px"
+                              bg={expandedRoleId === role.id ? hoverBgColor : bgColor}
+                          >
+                            <Td fontWeight="medium">
+                              <HStack>
+                                <FiShield size={18} color={useColorModeValue('#3182CE', '#63B3ED')} />
+                                <Text fontWeight="medium">{role.name}</Text>
+                                {(role.name === 'admin' || role.name === 'Admin') && <Badge colorScheme="red" ml={2}>System</Badge>}
+                              </HStack>
+                            </Td>
+                            <Td color={useColorModeValue('gray.600', 'gray.300')} fontSize="sm">{role.description || 'No description'}</Td>
+                            <Td fontSize="sm" color={useColorModeValue('gray.500', 'gray.400')}>
+                              {role.updated_at ? formatDate(role.updated_at) : 'N/A'}
+                            </Td>
+                            <Td textAlign="right">
+                              <HStack spacing={1} justifyContent="flex-end">
+                                <Tooltip label="Edit role" hasArrow>
+                                  <IconButton
+                                      icon={<FiEdit2 size={15} />}
+                                      size="sm"
+                                      variant="ghost"
+                                      colorScheme="blue"
+                                      aria-label="Edit role"
+                                      onClick={(e) => handleEditRole(role, e)}
+                                  />
+                                </Tooltip>
+                                {(role.name !== 'admin' && role.name !== 'Admin') && (
+                                    <Tooltip label="Delete role" hasArrow>
+                                      <IconButton
+                                          icon={<FiTrash2 size={15} />}
+                                          size="sm"
+                                          variant="ghost"
+                                          colorScheme="red"
+                                          aria-label="Delete role"
+                                          onClick={(e) => handleDeleteRole(role.id, e)}
+                                      />
+                                    </Tooltip>
+                                )}
+                              </HStack>
+                            </Td>
+                          </Tr>
+                          {expandedRoleId === role.id && (
+                              <Tr>
+                                <Td colSpan={4} bg={useColorModeValue('gray.50', 'gray.700')} p={4}>
+                                  <Box>
+                                    {isLoadingModules ? (
+                                        <Flex justify="center" align="center" py={4}>
+                                          <Spinner size="md" color="blue.500" mr={3} />
+                                          <Text color="gray.500">Loading permissions data...</Text>
+                                        </Flex>
+                                    ) : (
+                                        <Box borderWidth="1px" borderRadius="md" borderColor={borderColor} overflow="auto">
+                                          <Table variant="simple" size="sm">
+                                            <Thead bg={headerBgColor} position="sticky" top={0} zIndex={1}>
+                                              <Tr>
+                                                <Th fontSize="xs" py={3} width="40%">
+                                                  Module
+                                                </Th>
+                                                <Th textAlign="center" fontSize="xs" py={3}>
+                                                  Read
+                                                </Th>
+                                                <Th textAlign="center" fontSize="xs" py={3}>
+                                                  Create
+                                                </Th>
+                                                <Th textAlign="center" fontSize="xs" py={3}>
+                                                  Update
+                                                </Th>
+                                                <Th textAlign="center" fontSize="xs" py={3}>
+                                                  Delete
+                                                </Th>
+                                                <Th textAlign="center" fontSize="xs" py={3}>
+                                                  Approve
+                                                </Th>
+                                              </Tr>
+                                            </Thead>
+                                            <Tbody>
+                                              {modulesList.length > 0 ? (
+                                                  mapRolePermissionsForDisplay(role).map((module, index) => (
+                                                      <Tr
+                                                          key={`permission-${role.id}-${module.id}`}
+                                                          _hover={{ bg: hoverBgColor }}
+                                                          bg={index % 2 === 0 ? bgColor : useColorModeValue('gray.50', 'gray.800')}
+                                                      >
+                                                        <Td py={2} fontWeight="medium" fontSize="sm">
+                                                          {module.name}
+                                                        </Td>
+                                                        <Td textAlign="center" py={2}>
+                                                          <PermissionIndicator isEnabled={module.read} />
+                                                        </Td>
+                                                        <Td textAlign="center" py={2}>
+                                                          <PermissionIndicator isEnabled={module.create} />
+                                                        </Td>
+                                                        <Td textAlign="center" py={2}>
+                                                          <PermissionIndicator isEnabled={module.update} />
+                                                        </Td>
+                                                        <Td textAlign="center" py={2}>
+                                                          <PermissionIndicator isEnabled={module.delete} />
+                                                        </Td>
+                                                        <Td textAlign="center" py={2}>
+                                                          <PermissionIndicator isEnabled={module.approve} />
+                                                        </Td>
+                                                      </Tr>
+                                                  ))
+                                              ) : (
+                                                  <Tr>
+                                                    <Td colSpan={6} textAlign="center" py={4}>
+                                                      <Text color="gray.500">No permissions configured</Text>
+                                                    </Td>
+                                                  </Tr>
+                                              )}
+                                            </Tbody>
+                                          </Table>
+                                        </Box>
+                                    )}
+                                    <Flex justifyContent="flex-end" mt={3}>
+                                      <Button
+                                          size="sm"
+                                          colorScheme="blue"
+                                          leftIcon={<FiSettings />}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenPermissionsPanel(role, e);
+                                          }}
+                                      >
+                                        Manage Permissions
+                                      </Button>
+                                    </Flex>
+                                  </Box>
+                                </Td>
+                              </Tr>
+                          )}
+                        </React.Fragment>
+                    ))
+                ) : (
+                    <Tr>
+                      <Td colSpan={4} textAlign="center" py={12}>
+                        <Flex direction="column" align="center" justify="center" py={8}>
+                          <Box color="gray.400" mb={3}>
+                            <FiSearch size={36} />
+                          </Box>
+                          <Text fontWeight="normal" color="gray.500" fontSize="md">
+                            No roles found
+                          </Text>
+                          <Text color="gray.400" fontSize="sm" mt={1}>
+                            Try a different search term or filter
+                          </Text>
+                        </Flex>
+                      </Td>
+                    </Tr>
+                )}
+              </Tbody>
+            </Table>
+          </Box>
 
-            {filteredData.length > 0 && (
-              <HStack spacing={1} justify="center" width={{ base: "100%", md: "auto" }}>
-                <IconButton
-                  icon={<FiChevronLeft />}
-                  size="sm"
-                  variant="ghost"
-                  isDisabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  aria-label="Previous page"
-                  borderRadius="md"
-                />
-
-                {paginationRange.map((page, index) => (
-                  page === '...' ? (
-                    <Text key={`ellipsis-${index}`} mx={1} color="gray.500">...</Text>
-                  ) : (
-                    <Button
-                      key={`page-${page}`}
-                      size="sm"
-                      variant={currentPage === page ? "solid" : "ghost"}
-                      colorScheme={currentPage === page ? "blue" : "gray"}
-                      onClick={() => typeof page === 'number' && setCurrentPage(page)}
-                      borderRadius="md"
-                      minW="32px"
-                    >
-                      {page}
-                    </Button>
-                  )
-                ))}
-
-                <IconButton
-                  icon={<FiChevronRight />}
-                  size="sm"
-                  variant="ghost"
-                  isDisabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  aria-label="Next page"
-                  borderRadius="md"
-                />
+          <Box
+              borderTop="1px"
+              borderColor={borderColor}
+              bg={useColorModeValue('gray.50', 'gray.800')}
+              position="sticky"
+              bottom="0"
+              width="100%"
+              zIndex="1"
+              boxShadow="0 -2px 6px rgba(0,0,0,0.05)"
+          >
+            <Flex justifyContent="space-between" alignItems="center" py={4} px={6} flexWrap={{ base: 'wrap', md: 'nowrap' }} gap={4}>
+              <HStack spacing={1} flexShrink={0}>
+                <Text fontSize="sm" color="gray.600" fontWeight="normal">
+                  Showing {totalCount > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}-{Math.min(currentPage * rowsPerPage, totalCount)} of {totalCount} roles
+                </Text>
+                <Menu>
+                  <MenuButton as={Button} size="xs" variant="ghost" rightIcon={<FiChevronDown />} ml={2} fontWeight="normal" color="gray.600">
+                    {rowsPerPage} per page
+                  </MenuButton>
+                  <MenuList minW="120px" shadow="lg" borderRadius="md">
+                    <MenuItem onClick={() => setRowsPerPage(10)}>10 per page</MenuItem>
+                    <MenuItem onClick={() => setRowsPerPage(15)}>15 per page</MenuItem>
+                    <MenuItem onClick={() => setRowsPerPage(20)}>20 per page</MenuItem>
+                    <MenuItem onClick={() => setRowsPerPage(50)}>50 per page</MenuItem>
+                  </MenuList>
+                </Menu>
               </HStack>
-            )}
-          </Flex>
+
+              {totalCount > 0 && (
+                  <HStack spacing={1} justify="center" width={{ base: '100%', md: 'auto' }}>
+                    <IconButton
+                        icon={<FiChevronLeft />}
+                        size="sm"
+                        variant="ghost"
+                        isDisabled={currentPage === 1 || isLoading}
+                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        aria-label="Previous page"
+                        borderRadius="md"
+                    />
+                    {paginationRange.map((page, index) =>
+                        page === '...' ? (
+                            <Text key={`ellipsis-${index}`} mx={1} color="gray.500">
+                              ...
+                            </Text>
+                        ) : (
+                            <Button
+                                key={`page-${page}`}
+                                size="sm"
+                                variant={currentPage === page ? 'solid' : 'ghost'}
+                                colorScheme={currentPage === page ? 'blue' : 'gray'}
+                                onClick={() => typeof page === 'number' && setCurrentPage(page)}
+                                borderRadius="md"
+                                minW="32px"
+                                isDisabled={isLoading}
+                            >
+                              {page}
+                            </Button>
+                        )
+                    )}
+                    <IconButton
+                        icon={<FiChevronRight />}
+                        size="sm"
+                        variant="ghost"
+                        isDisabled={currentPage === totalPages || isLoading}
+                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                        aria-label="Next page"
+                        borderRadius="md"
+                    />
+                  </HStack>
+              )}
+            </Flex>
+          </Box>
         </Box>
-      </Box>
-    </Container>
+
+        <CreateRoleModal isOpen={isCreateModalOpen} onClose={onCloseCreateModal} onRoleCreated={handleRoleCreated} modulesList={modulesList} permissionsList={permissionsList} />
+        {selectedRole && (
+            <EditRoleModal
+                isOpen={isEditModalOpen}
+                onClose={onCloseEditModal}
+                role={selectedRole}
+                onRoleUpdated={handleRoleUpdated}
+                modulesList={modulesList}
+                permissionsList={permissionsList}
+            />
+        )}
+      </Container>
   );
 };
 

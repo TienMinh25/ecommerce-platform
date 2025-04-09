@@ -6,6 +6,7 @@ import (
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"math"
 )
 
 type roleService struct {
@@ -20,24 +21,38 @@ func NewRoleService(tracer pkg.Tracer, roleRepo api_gateway_repository.IRoleRepo
 	}
 }
 
-func (r *roleService) GetRoles(ctx context.Context) ([]api_gateway_dto.RoleLoginResponse, error) {
+func (r *roleService) GetRoles(ctx context.Context, data *api_gateway_dto.GetRoleRequest) ([]api_gateway_dto.GetRoleResponse, int, int, bool, bool, error) {
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetRoles"))
 	defer span.End()
 
-	res, err := r.roleRepo.GetRoles(ctx)
+	res, totalItems, err := r.roleRepo.GetRoles(ctx, data)
 
 	if err != nil {
-		return nil, err
+		return nil, 0, 0, false, false, err
 	}
 
-	var response []api_gateway_dto.RoleLoginResponse
+	totalPages := int(math.Ceil(float64(totalItems) / float64(data.Limit)))
+
+	hasNext := data.Page < totalPages
+	hasPrevious := data.Page > 1
+
+	var response []api_gateway_dto.GetRoleResponse
 
 	for _, role := range res {
-		response = append(response, api_gateway_dto.RoleLoginResponse{
-			ID:   role.ID,
-			Name: role.RoleName,
+		description := ""
+
+		if role.Description != nil {
+			description = *role.Description
+		}
+
+		response = append(response, api_gateway_dto.GetRoleResponse{
+			ID:          role.ID,
+			Name:        role.RoleName,
+			Description: description,
+			UpdatedAt:   role.UpdatedAt,
+			Permissions: role.ModulePermissions,
 		})
 	}
 
-	return response, nil
+	return response, totalItems, totalPages, hasNext, hasPrevious, nil
 }

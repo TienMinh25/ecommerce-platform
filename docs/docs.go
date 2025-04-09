@@ -1448,6 +1448,56 @@ const docTemplate = `{
                     "roles"
                 ],
                 "summary": "Get list roles pagination with some filter and sorting",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit number of records returned",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "name"
+                        ],
+                        "type": "string",
+                        "description": "Provide for search by name",
+                        "name": "searchBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Value for search",
+                        "name": "searchValue",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "name"
+                        ],
+                        "type": "string",
+                        "description": "Sort by some attributes",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "description": "Sort order asc or desc",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -2191,7 +2241,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/api_gateway_dto.GetPermissionResponse"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetPermissionResponse"
+                    }
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
@@ -2209,6 +2262,12 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_models.PermissionDetailType"
+                    }
                 },
                 "updated_at": {
                     "type": "string"
@@ -2661,6 +2720,20 @@ const docTemplate = `{
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_models.PermissionDetailType": {
+            "type": "object",
+            "properties": {
+                "module_id": {
+                    "type": "integer"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },

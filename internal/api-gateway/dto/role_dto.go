@@ -1,6 +1,9 @@
 package api_gateway_dto
 
-import "time"
+import (
+	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
+	"time"
+)
 
 type GetRoleRequest struct {
 	Limit int `form:"limit" binding:"omitempty,gte=1"`
@@ -16,10 +19,11 @@ type GetRoleRequest struct {
 }
 
 type GetRoleResponse struct {
-	ID          int       `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID          int                                       `json:"id"`
+	Name        string                                    `json:"name"`
+	Description string                                    `json:"description"`
+	UpdatedAt   time.Time                                 `json:"updated_at"`
+	Permissions []api_gateway_models.PermissionDetailType `json:"permissions"`
 }
 
 type RoleLoginResponse struct {

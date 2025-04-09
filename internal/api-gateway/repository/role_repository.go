@@ -3,6 +3,7 @@ package api_gateway_repository
 import (
 	"context"
 	"fmt"
+	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -12,6 +13,8 @@ import (
 	"github.com/redis/go-redis/v9"
 	"log"
 	"net/http"
+	"strings"
+	"sync"
 )
 
 type roleRepository struct {
@@ -82,39 +85,113 @@ func (p *roleRepository) syncDataWithRedis(ctx context.Context) error {
 	return nil
 }
 
-func (r *roleRepository) GetRoles(ctx context.Context) ([]api_gateway_models.Role, error) {
+func (r *roleRepository) GetRoles(ctx context.Context, data *api_gateway_dto.GetRoleRequest) ([]api_gateway_models.Role, int, error) {
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "roleRepo.GetRoles"))
 	defer span.End()
 
-	sql := `SELECT id, role_name FROM roles`
+	var conditions []string
 
-	rows, err := r.db.Query(ctx, sql)
+	// used for select list
+	var params []interface{}
+	paramCount := 1
 
-	if err != nil {
-		span.RecordError(err)
-		return nil, utils.TechnicalError{
-			Code:    http.StatusInternalServerError,
-			Message: common.MSG_INTERNAL_ERROR,
+	if data.SearchBy != nil && data.SearchValue != nil {
+		searchTerm := "%" + *data.SearchValue + "%"
+
+		switch *data.SearchBy {
+		case "name":
+			conditions = append(conditions, fmt.Sprintf("role_name ILIKE $%d", paramCount))
 		}
+
+		params = append(params, searchTerm)
+		paramCount++
 	}
 
-	defer rows.Close()
+	sortClause := "r.id ASC"
+	if data.SortBy != nil && data.SortOrder != nil {
+		sortClause = fmt.Sprintf("r.%s %s", *data.SortBy, *data.SortOrder)
+	}
 
-	var roles []api_gateway_models.Role
+	var whereClause string
 
-	for rows.Next() {
-		var role api_gateway_models.Role
+	if len(conditions) > 0 {
+		whereClause = strings.Join(conditions, " AND ")
+	} else {
+		whereClause = "1 = 1"
+	}
 
-		if err = rows.Scan(&role.ID, &role.RoleName); err != nil {
-			span.RecordError(err)
-			return nil, utils.TechnicalError{
+	sqlCount := fmt.Sprintf(`SELECT COUNT(*) FROM roles WHERE %s`, whereClause)
+
+	sql := fmt.Sprintf(`SELECT r.id, r.role_name, r.description, r.updated_at, rp.permission_detail 
+			FROM roles r
+			INNER JOIN role_permissions rp ON r.id = rp.role_id
+			WHERE %s`, whereClause)
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+	var err error
+	var total int
+
+	go func() {
+		defer wg.Done()
+
+		if totalErr := r.db.QueryRow(ctx, sqlCount, params...).Scan(&total); totalErr != nil {
+			span.RecordError(totalErr)
+			err = utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,
 			}
+			return
+		}
+	}()
+
+	var roles []api_gateway_models.Role
+
+	go func() {
+		defer wg.Done()
+		sqlGet := fmt.Sprintf("%s ORDER BY %s LIMIT $%d OFFSET $%d", sql, sortClause, paramCount, paramCount+1)
+		selectParam := make([]interface{}, len(params))
+		copy(selectParam, params)
+
+		selectParam = append(selectParam, data.Limit)
+		selectParam = append(selectParam, data.Limit*(data.Page-1))
+
+		rows, selectErr := r.db.Query(ctx, sqlGet, selectParam...)
+
+		if selectErr != nil {
+			span.RecordError(selectErr)
+			err = utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+			return
 		}
 
-		roles = append(roles, role)
+		defer rows.Close()
+
+		for rows.Next() {
+			var role api_gateway_models.Role
+			var permissionDetails []api_gateway_models.PermissionDetailType
+
+			if errScan := rows.Scan(&role.ID, &role.RoleName, &role.Description, &role.UpdatedAt, &permissionDetails); errScan != nil {
+				span.RecordError(errScan)
+				err = utils.TechnicalError{
+					Code:    http.StatusInternalServerError,
+					Message: common.MSG_INTERNAL_ERROR,
+				}
+				return
+			}
+
+			role.ModulePermissions = permissionDetails
+			roles = append(roles, role)
+		}
+	}()
+
+	wg.Wait()
+
+	if err != nil {
+		return nil, 0, err
 	}
 
-	return roles, nil
+	return roles, total, nil
 }
