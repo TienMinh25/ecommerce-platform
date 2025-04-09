@@ -13,9 +13,9 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 
-import LogoCompact from '../../components/ui/LogoCompact';
+import LogoCompact from '../../ui/LogoCompact.jsx';
 import { useNavigate } from "react-router-dom";
-import useAuth from "../../hooks/useAuth.js";
+import useAuth from "../../../hooks/useAuth.js";
 
 const DashboardHeader = () => {
   const bgColor = useColorModeValue('white', 'gray.800');

@@ -22,8 +22,8 @@ import {
     Divider
 } from '@chakra-ui/react';
 import { FiLock, FiInfo, FiX } from 'react-icons/fi';
-import moduleService from "../../services/moduleService.js";
-import permissionService from "../../services/permissionService.js";
+import moduleService from "../../../../services/moduleService.js";
+import permissionService from "../../../../services/permissionService.js";
 
 const InlineUserPermissionsPanel = ({ user, onSave, onClose, isLoading = false }) => {
     const [modules, setModules] = useState([]);

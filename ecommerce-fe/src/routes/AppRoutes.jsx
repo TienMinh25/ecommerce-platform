@@ -13,15 +13,15 @@ import MainLayout from '../components/layout/MainLayout';
 import DashboardLayout from '../components/layout/DashboardLayout';
 
 import Dashboard from '../pages/Dashboard';
-import UserManagementComponent from '../pages/Module/Dashboard/UserManagementComponent';
-import RoleManagementComponent from '../pages/Module/Dashboard/RoleManagementComponent';
+import UserManagementComponent from '../components/dashboard/admin/user-management/UserManagementComponent.jsx';
+import RoleManagementComponent from '../components/dashboard/admin/role-management/RoleManagementComponent.jsx';
 import EmailVerificationPage from "../pages/Auth/EmailVerificationPage.jsx";
 import ForgotPasswordPage from "../pages/Auth/ForgotPasswordPage.jsx";
 import ResetPasswordPage from "../pages/Auth/ResetPasswordPage.jsx";
 import OAuthCallbackPage from "../pages/Auth/OAuthCallbackPage.jsx";
-import PermissionManagementComponent from "../pages/Module/Dashboard/PermissionManagementComponent.jsx";
-import ModuleManagementComponent from "../pages/Module/Dashboard/ModuleManagementComponent.jsx";
-import AddressTypesManagementComponent from "../pages/Module/Dashboard/AddressTypesManagementComponent.jsx";
+import PermissionManagementComponent from "../components/dashboard/admin/permission-management/PermissionManagementComponent.jsx";
+import ModuleManagementComponent from "../components/dashboard/admin/module-management/ModuleManagementComponent.jsx";
+import AddressTypesManagementComponent from "../components/dashboard/admin/address-types-management/AddressTypesManagementComponent.jsx";
 
 const AppRoutes = () => {
     return (

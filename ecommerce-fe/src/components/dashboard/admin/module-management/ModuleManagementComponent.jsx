@@ -46,8 +46,8 @@ import {
     FiSearch,
     FiTrash2,
 } from 'react-icons/fi';
-import moduleService from "../../../services/moduleService.js";
-import {formatDateWithTime} from "../../../utils/time.js";
+import moduleService from "../../../../services/moduleService.js";
+import {formatDateWithTime} from "../../../../utils/time.js";
 
 const ModuleManagementComponent = () => {
     // Hook initialization - ensure consistent order

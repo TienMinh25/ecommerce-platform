@@ -39,7 +39,7 @@ import {
   FiMinus,
   FiLock,
 } from 'react-icons/fi';
-import RoleConfigurationComponent from './RoleConfigurationComponent'; // Make sure path is correct
+import RoleConfigurationComponent from './RoleConfigurationComponent.jsx'; // Make sure path is correct
 
 const RoleManagementComponent = () => {
   // State for pagination

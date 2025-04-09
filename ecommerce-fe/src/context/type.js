@@ -1,7 +1,7 @@
 // User.js
 class User {
     constructor(fullName, avatarUrl, roles) {
-        this.fullName = fullName;
+        this.fullname = fullName;
         this.avatarUrl = avatarUrl || '';
         this.roles = roles; // Thay đổi từ role sang roles (array)
     }

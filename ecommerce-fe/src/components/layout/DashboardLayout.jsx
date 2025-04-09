@@ -1,8 +1,8 @@
 import React, {createContext, useContext, useEffect, useMemo, useState} from 'react';
 import {Box, Flex, useMediaQuery} from '@chakra-ui/react';
 import {Navigate, Outlet, useLocation} from 'react-router-dom';
-import DashboardHeader from '../../pages/Module/DashboardHeader';
-import DashboardSidebar from '../../pages/Module/DashboardSidebar';
+import DashboardHeader from '../dashboard/admin/DashboardHeader.jsx';
+import DashboardSidebar from '../dashboard/admin/DashboardSidebar.jsx';
 import useAuth from "../../hooks/useAuth.js";
 
 // Define the header height and spacing

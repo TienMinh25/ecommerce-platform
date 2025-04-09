@@ -40,16 +40,16 @@ import {
     FiChevronLeft,
     FiChevronRight,
     FiEdit2,
-    FiKey,
+    FiMapPin,
     FiPlus,
     FiRefreshCw,
     FiSearch,
     FiTrash2,
 } from 'react-icons/fi';
-import permissionService from "../../../services/permissionService.js";
-import {formatDateWithTime} from "../../../utils/time.js";
+import addressTypeService from "../../../../services/addressTypeService.js";
+import {formatDateWithTime} from "../../../../utils/time.js";
 
-const PermissionManagementComponent = () => {
+const AddressTypesManagementComponent = () => {
     // Hook initialization - ensure consistent order
     const toast = useToast();
 
@@ -60,7 +60,7 @@ const PermissionManagementComponent = () => {
     const scrollThumbBg = useColorModeValue('#c1c1c1', '#4a5568');
     const scrollThumbHoverBg = useColorModeValue('#a1a1a1', '#718096');
     const theadBg = useColorModeValue('gray.50', 'gray.900');
-    const thColor = useColorModeValue('gray.600', 'gray.300');
+    const typeNameColor = useColorModeValue('gray.600', 'gray.300');
     const rowHoverBg = useColorModeValue('blue.50', 'gray.700');
     const rowEvenBg = useColorModeValue('gray.50', 'gray.800');
     const rowActiveBg = useColorModeValue('blue.100', 'gray.600');
@@ -79,36 +79,36 @@ const PermissionManagementComponent = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [permissions, setPermissions] = useState([]);
+    const [addressTypes, setAddressTypes] = useState([]);
 
     // Modal states
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [currentPermission, setCurrentPermission] = useState(null);
-    const [permissionName, setPermissionName] = useState('');
+    const [currentAddressType, setCurrentAddressType] = useState(null);
+    const [addressTypeName, setAddressTypeName] = useState('');
     const [formError, setFormError] = useState('');
 
-    // Load permissions on page load and when pagination changes
+    // Load address types on page load and when pagination changes
     useEffect(() => {
-        fetchPermissions();
+        fetchAddressTypes();
     }, [currentPage, rowsPerPage]);
 
-    // Fetch permissions from API
-    const fetchPermissions = async () => {
+    // Fetch address types from API
+    const fetchAddressTypes = async () => {
         setIsLoading(true);
         try {
-            const response = await permissionService.getPermissions(currentPage, rowsPerPage);
+            const response = await addressTypeService.getAddressTypes(currentPage, rowsPerPage);
 
             if (response && response.data) {
                 const formattedData = response.data.map(item => ({
                     id: item.id,
-                    name: item.name,
+                    name: item.address_type,
                     createdAt: new Date(item.created_at).toLocaleDateString(),
                     updatedAt: formatDateWithTime(item.updated_at),
                 }));
 
-                setPermissions(formattedData);
+                setAddressTypes(formattedData);
 
                 // Set pagination data from API response
                 if (response.metadata && response.metadata.pagination) {
@@ -120,10 +120,10 @@ const PermissionManagementComponent = () => {
                 }
             }
         } catch (error) {
-            console.error('Error fetching permissions:', error);
+            console.error('Error fetching address types:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to load permissions',
+                description: 'Failed to load address types',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -133,31 +133,31 @@ const PermissionManagementComponent = () => {
         }
     };
 
-    // Handle create permission
-    const handleCreatePermission = async () => {
-        if (!permissionName.trim()) {
-            setFormError('Permission name is required');
+    // Handle create address type
+    const handleCreateAddressType = async () => {
+        if (!addressTypeName.trim()) {
+            setFormError('Address type name is required');
             return;
         }
 
         setIsLoading(true);
         try {
-            await permissionService.createPermission({ name: permissionName });
+            await addressTypeService.createAddressType({ address_type: addressTypeName });
             toast({
                 title: 'Success',
-                description: 'Permission created successfully',
+                description: 'Address type created successfully',
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
             });
             setIsCreateModalOpen(false);
-            setPermissionName('');
-            fetchPermissions();
+            setAddressTypeName('');
+            fetchAddressTypes();
         } catch (error) {
-            console.error('Error creating permission:', error);
+            console.error('Error creating address type:', error);
             toast({
                 title: 'Error',
-                description: error.response?.data?.error?.message || 'Failed to create permission',
+                description: error.response?.data?.error?.message || 'Failed to create address type',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -167,31 +167,31 @@ const PermissionManagementComponent = () => {
         }
     };
 
-    // Handle update permission
-    const handleUpdatePermission = async () => {
-        if (!permissionName.trim()) {
-            setFormError('Permission name is required');
+    // Handle update address type
+    const handleUpdateAddressType = async () => {
+        if (!addressTypeName.trim()) {
+            setFormError('Address type name is required');
             return;
         }
 
         setIsLoading(true);
         try {
-            await permissionService.updatePermission(currentPermission.id, { name: permissionName });
+            await addressTypeService.updateAddressType(currentAddressType.id, { address_type: addressTypeName });
             toast({
                 title: 'Success',
-                description: 'Permission updated successfully',
+                description: 'Address type updated successfully',
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
             });
             setIsEditModalOpen(false);
-            setPermissionName('');
-            fetchPermissions();
+            setAddressTypeName('');
+            fetchAddressTypes();
         } catch (error) {
-            console.error('Error updating permission:', error);
+            console.error('Error updating address type:', error);
             toast({
                 title: 'Error',
-                description: error.response?.data?.error?.message || 'Failed to update permission',
+                description: error.response?.data?.error?.message || 'Failed to update address type',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -201,25 +201,25 @@ const PermissionManagementComponent = () => {
         }
     };
 
-    // Handle delete permission
-    const handleDeletePermission = async () => {
+    // Handle delete address type
+    const handleDeleteAddressType = async () => {
         setIsLoading(true);
         try {
-            await permissionService.deletePermission(currentPermission.id);
+            await addressTypeService.deleteAddressType(currentAddressType.id);
             toast({
                 title: 'Success',
-                description: 'Permission deleted successfully',
+                description: 'Address type deleted successfully',
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
             });
             setIsDeleteModalOpen(false);
-            fetchPermissions();
+            fetchAddressTypes();
         } catch (error) {
-            console.error('Error deleting permission:', error);
+            console.error('Error deleting address type:', error);
             toast({
                 title: 'Error',
-                description: error.response?.data?.error?.message || 'Failed to delete permission',
+                description: error.response?.data?.error?.message || 'Failed to delete address type',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -230,16 +230,16 @@ const PermissionManagementComponent = () => {
     };
 
     // Open edit modal
-    const openEditModal = (permission) => {
-        setCurrentPermission(permission);
-        setPermissionName(permission.name);
+    const openEditModal = (addressType) => {
+        setCurrentAddressType(addressType);
+        setAddressTypeName(addressType.name);
         setFormError('');
         setIsEditModalOpen(true);
     };
 
     // Open delete modal
-    const openDeleteModal = (permission) => {
-        setCurrentPermission(permission);
+    const openDeleteModal = (addressType) => {
+        setCurrentAddressType(addressType);
         setIsDeleteModalOpen(true);
     };
 
@@ -266,10 +266,8 @@ const PermissionManagementComponent = () => {
     const paginationRange = generatePaginationRange(currentPage, totalPages);
 
     // Filtered data based on search
-    const filteredData = permissions.filter(item =>
-        searchQuery ?
-            item.name.toLowerCase().includes(searchQuery.toLowerCase()) :
-            true
+    const filteredData = addressTypes.filter(item =>
+        searchQuery ? item.name.toLowerCase().includes(searchQuery.toLowerCase()) : true
     );
 
     return (
@@ -305,7 +303,7 @@ const PermissionManagementComponent = () => {
                                 <FiSearch color="gray.400" />
                             </InputLeftElement>
                             <Input
-                                placeholder="Search permissions..."
+                                placeholder="Search by name..."
                                 pl={10}
                                 pr={2}
                                 py={2.5}
@@ -319,7 +317,7 @@ const PermissionManagementComponent = () => {
                         <Tooltip label="Refresh data" hasArrow>
                             <IconButton
                                 icon={<FiRefreshCw size={16} />}
-                                onClick={fetchPermissions}
+                                onClick={fetchAddressTypes}
                                 aria-label="Refresh data"
                                 variant="ghost"
                                 colorScheme="blue"
@@ -356,7 +354,7 @@ const PermissionManagementComponent = () => {
                         }}
                         transition="all 0.2s"
                         onClick={() => {
-                            setPermissionName('');
+                            setAddressTypeName('');
                             setFormError('');
                             setIsCreateModalOpen(true);
                         }}
@@ -411,17 +409,17 @@ const PermissionManagementComponent = () => {
                                     py={4}
                                     borderTopLeftRadius="md"
                                     fontSize="xs"
-                                    color={thColor}
+                                    color={typeNameColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Permission Name
+                                    Type Name
                                 </Th>
                                 <Th
                                     py={4}
                                     fontSize="xs"
-                                    color={thColor}
+                                    color={typeNameColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
@@ -434,7 +432,7 @@ const PermissionManagementComponent = () => {
                                     textAlign="right"
                                     borderTopRightRadius="md"
                                     fontSize="xs"
-                                    color={thColor}
+                                    color={typeNameColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
@@ -465,8 +463,8 @@ const PermissionManagementComponent = () => {
                                     >
                                         <Td>
                                             <HStack spacing={3}>
-                                                <Box p={1.5} bg="purple.50" borderRadius="md">
-                                                    <FiKey color="purple" size={16} />
+                                                <Box p={1.5} bg="cyan.50" borderRadius="md">
+                                                    <FiMapPin color="teal" size={16} />
                                                 </Box>
                                                 <Text
                                                     fontWeight="medium"
@@ -487,24 +485,24 @@ const PermissionManagementComponent = () => {
                                         </Td>
                                         <Td textAlign="right">
                                             <HStack spacing={1} justifyContent="flex-end">
-                                                <Tooltip label="Edit permission" hasArrow>
+                                                <Tooltip label="Edit address type" hasArrow>
                                                     <IconButton
                                                         icon={<FiEdit2 size={15} />}
                                                         size="sm"
                                                         variant="ghost"
                                                         colorScheme="blue"
-                                                        aria-label="Edit permission"
+                                                        aria-label="Edit address type"
                                                         borderRadius="md"
                                                         onClick={() => openEditModal(row)}
                                                     />
                                                 </Tooltip>
-                                                <Tooltip label="Delete permission" hasArrow>
+                                                <Tooltip label="Delete address type" hasArrow>
                                                     <IconButton
                                                         icon={<FiTrash2 size={15} />}
                                                         size="sm"
                                                         variant="ghost"
                                                         colorScheme="red"
-                                                        aria-label="Delete permission"
+                                                        aria-label="Delete address type"
                                                         borderRadius="md"
                                                         onClick={() => openDeleteModal(row)}
                                                     />
@@ -520,7 +518,7 @@ const PermissionManagementComponent = () => {
                                             <Box color="gray.400" mb={3}>
                                                 <FiSearch size={36} />
                                             </Box>
-                                            <Text fontWeight="normal" color="gray.500" fontSize="md">No permissions found</Text>
+                                            <Text fontWeight="normal" color="gray.500" fontSize="md">No address types found</Text>
                                             <Text color="gray.400" fontSize="sm" mt={1}>Try a different search term</Text>
                                         </Flex>
                                     </Td>
@@ -553,7 +551,7 @@ const PermissionManagementComponent = () => {
                         <HStack spacing={1} flexShrink={0}>
                             <Text fontSize="sm" color="gray.600" fontWeight="normal">
                                 Showing {filteredData.length > 0 ? ((currentPage - 1) * rowsPerPage) + 1 : 0}-
-                                {Math.min(currentPage * rowsPerPage, totalItems)} of {totalItems} permissions
+                                {Math.min(currentPage * rowsPerPage, totalItems)} of {totalItems} types
                             </Text>
                             <Menu>
                                 <MenuButton
@@ -624,18 +622,18 @@ const PermissionManagementComponent = () => {
             <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Create Permission</ModalHeader>
+                    <ModalHeader>Create Address Type</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <FormControl isInvalid={!!formError}>
-                            <FormLabel>Permission Name</FormLabel>
+                            <FormLabel>Address Type Name</FormLabel>
                             <Input
-                                value={permissionName}
+                                value={addressTypeName}
                                 onChange={(e) => {
-                                    setPermissionName(e.target.value);
+                                    setAddressTypeName(e.target.value);
                                     setFormError('');
                                 }}
-                                placeholder="Enter permission name"
+                                placeholder="Enter address type name"
                             />
                             {formError && <FormErrorMessage>{formError}</FormErrorMessage>}
                         </FormControl>
@@ -644,7 +642,7 @@ const PermissionManagementComponent = () => {
                         <Button mr={3} onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
                         <Button
                             colorScheme="blue"
-                            onClick={handleCreatePermission}
+                            onClick={handleCreateAddressType}
                             isLoading={isLoading}
                         >
                             Create
@@ -657,18 +655,18 @@ const PermissionManagementComponent = () => {
             <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Edit Permission</ModalHeader>
+                    <ModalHeader>Edit Address Type</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <FormControl isInvalid={!!formError}>
-                            <FormLabel>Permission Name</FormLabel>
+                            <FormLabel>Address Type Name</FormLabel>
                             <Input
-                                value={permissionName}
+                                value={addressTypeName}
                                 onChange={(e) => {
-                                    setPermissionName(e.target.value);
+                                    setAddressTypeName(e.target.value);
                                     setFormError('');
                                 }}
-                                placeholder="Enter permission name"
+                                placeholder="Enter address type name"
                             />
                             {formError && <FormErrorMessage>{formError}</FormErrorMessage>}
                         </FormControl>
@@ -677,7 +675,7 @@ const PermissionManagementComponent = () => {
                         <Button mr={3} onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
                         <Button
                             colorScheme="blue"
-                            onClick={handleUpdatePermission}
+                            onClick={handleUpdateAddressType}
                             isLoading={isLoading}
                         >
                             Update
@@ -698,7 +696,7 @@ const PermissionManagementComponent = () => {
                                 <FiAlertCircle size={24} />
                             </Box>
                             <Text>
-                                Are you sure you want to delete the permission <b>{currentPermission?.name}</b>? This action cannot be undone.
+                                Are you sure you want to delete the address type <b>{currentAddressType?.name}</b>? This action cannot be undone.
                             </Text>
                         </Flex>
                     </ModalBody>
@@ -706,7 +704,7 @@ const PermissionManagementComponent = () => {
                         <Button mr={3} onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
                         <Button
                             colorScheme="red"
-                            onClick={handleDeletePermission}
+                            onClick={handleDeleteAddressType}
                             isLoading={isLoading}
                         >
                             Delete
@@ -718,4 +716,4 @@ const PermissionManagementComponent = () => {
     );
 };
 
-export default PermissionManagementComponent;
+export default AddressTypesManagementComponent;
