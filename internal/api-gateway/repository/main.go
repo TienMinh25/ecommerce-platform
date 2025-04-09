@@ -37,6 +37,8 @@ type IAddressTypeRepository interface {
 type IUserRepository interface {
 	CheckUserExistsByEmail(ctx context.Context, email string) (bool, error)
 
+	CheckUserExistsByID(ctx context.Context, userID int) (bool, error)
+
 	CreateUserWithPassword(ctx context.Context, email, fullname, password string) error
 
 	GetUserByEmail(ctx context.Context, email string) (*api_gateway_models.User, error)
@@ -52,6 +54,12 @@ type IUserRepository interface {
 	CreateUserBasedOauth(ctx context.Context, user *api_gateway_models.User) error
 
 	GetUserByAdmin(ctx context.Context, data *api_gateway_dto.GetUserByAdminRequest) ([]api_gateway_models.User, int, error)
+
+	CreateUserByAdmin(ctx context.Context, data *api_gateway_dto.CreateUserByAdminRequest) error
+
+	UpdateUserByAdmin(ctx context.Context, data *api_gateway_dto.UpdateUserByAdminRequest, userID int) error
+
+	DeleteUserByID(ctx context.Context, userID int) error
 }
 
 type IUserPasswordRepository interface {

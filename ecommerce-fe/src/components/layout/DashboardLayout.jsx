@@ -1,9 +1,8 @@
-import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
-import { Box, Flex, useMediaQuery } from '@chakra-ui/react';
+import React, {createContext, useContext, useEffect, useMemo, useState} from 'react';
+import {Box, Flex, useMediaQuery} from '@chakra-ui/react';
 import {Navigate, Outlet, useLocation} from 'react-router-dom';
 import DashboardHeader from '../../pages/Module/DashboardHeader';
 import DashboardSidebar from '../../pages/Module/DashboardSidebar';
-import DashboardFooter from '../../pages/Module/DashboardFooter';
 import useAuth from "../../hooks/useAuth.js";
 
 // Define the header height and spacing
@@ -175,21 +174,6 @@ const DashboardLayout = () => {
             >
               <Outlet />
             </Box>
-          </Box>
-
-          {/* Footer - Full width within content area */}
-          <Box
-            position="fixed"
-            bottom="0"
-            left={isMobile ? "0" : formattedSidebarWidth}
-            right="0"
-            height={footerHeight}
-            zIndex="20"
-            bg="white"
-            transition="left 0.25s ease"
-            boxShadow="0 -2px 10px rgba(0,0,0,0.05)"
-          >
-            <DashboardFooter />
           </Box>
         </Flex>
       </Box>

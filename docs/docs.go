@@ -1437,7 +1437,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get all roles",
+                "description": "Get list roles pagination with some filter and sorting",
                 "consumes": [
                     "application/json"
                 ],
@@ -1447,12 +1447,12 @@ const docTemplate = `{
                 "tags": [
                     "roles"
                 ],
-                "summary": "Get all roles",
+                "summary": "Get list roles pagination with some filter and sorting",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api_gateway_dto.RoleLoginResponseDocs"
+                            "$ref": "#/definitions/api_gateway_dto.GetRoleResponseDocs"
                         }
                     },
                     "400": {
@@ -1630,6 +1630,178 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "create new user by admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "create new user by admin",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.CreateUserByAdminRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.CreateUserByAdminResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/:userID": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "delete user by admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "delete user by admin",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id on path",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.DeleteUserByAdminResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update user by admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "update user by admin",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "user id on path",
+                        "name": "userID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateUserByAdminRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateUserByAdminResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
             }
         }
     },
@@ -1761,6 +1933,70 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.CreateUserByAdminRequest": {
+            "type": "object",
+            "required": [
+                "avatar_url",
+                "email",
+                "fullname",
+                "password",
+                "roles"
+            ],
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "fullname": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "maxLength": 32,
+                    "minLength": 6
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "status": {
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api_gateway_models.UserStatus"
+                        }
+                    ],
+                    "example": "active"
+                }
+            }
+        },
+        "api_gateway_dto.CreateUserByAdminResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.CreateUserByAdminResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.CreateUserByAdminResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.DeleteAddressTypeByAdminResponse": {
             "type": "object"
         },
@@ -1783,6 +2019,20 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.DeletePermissionByPermissionIDURIResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.DeleteUserByAdminResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.DeleteUserByAdminResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.DeleteUserByAdminResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
@@ -1948,6 +2198,37 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.GetRoleResponse": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetRoleResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetRoleResponse"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.GetUserByAdminResponse": {
             "type": "object",
             "properties": {
@@ -1969,20 +2250,17 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "module_permission": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api_gateway_dto.ModulePermissionResponse"
-                    }
-                },
                 "phone": {
                     "type": "string"
                 },
                 "phone_verify": {
                     "type": "boolean"
                 },
-                "role_name": {
-                    "type": "string"
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
+                    }
                 },
                 "status": {
                     "type": "string"
@@ -2098,23 +2376,6 @@ const docTemplate = `{
             "properties": {
                 "code": {
                     "type": "integer"
-                }
-            }
-        },
-        "api_gateway_dto.ModulePermissionResponse": {
-            "type": "object",
-            "properties": {
-                "module_id": {
-                    "type": "integer"
-                },
-                "module_name": {
-                    "type": "string"
-                },
-                "permissions": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/api_gateway_dto.UserPermissionResponse"
-                    }
                 }
             }
         },
@@ -2255,17 +2516,6 @@ const docTemplate = `{
                 }
             }
         },
-        "api_gateway_dto.RoleLoginResponseDocs": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/api_gateway_dto.RoleLoginResponse"
-                },
-                "metadata": {
-                    "$ref": "#/definitions/api_gateway_dto.Metadata"
-                }
-            }
-        },
         "api_gateway_dto.UpdateAddressTypeBodyRequest": {
             "type": "object",
             "required": [
@@ -2345,14 +2595,43 @@ const docTemplate = `{
         "api_gateway_dto.UpdatePermissionByPermissionIDResponse": {
             "type": "object"
         },
-        "api_gateway_dto.UserPermissionResponse": {
+        "api_gateway_dto.UpdateUserByAdminRequest": {
+            "type": "object",
+            "required": [
+                "roles"
+            ],
+            "properties": {
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "status": {
+                    "enum": [
+                        "active",
+                        "inactive"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/api_gateway_models.UserStatus"
+                        }
+                    ],
+                    "example": "active"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateUserByAdminResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.UpdateUserByAdminResponseDocs": {
             "type": "object",
             "properties": {
-                "permission_id": {
-                    "type": "integer"
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateUserByAdminResponse"
                 },
-                "permission_name": {
-                    "type": "string"
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
                 }
             }
         },
@@ -2384,6 +2663,17 @@ const docTemplate = `{
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
                 }
             }
+        },
+        "api_gateway_models.UserStatus": {
+            "type": "string",
+            "enum": [
+                "active",
+                "inactive"
+            ],
+            "x-enum-varnames": [
+                "UserStatusActive",
+                "UserStatusInactive"
+            ]
         }
     },
     "securityDefinitions": {

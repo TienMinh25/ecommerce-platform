@@ -84,6 +84,49 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.CreateUserByAdminRequest:
+    properties:
+      avatar_url:
+        type: string
+      birth_date:
+        type: string
+      email:
+        type: string
+      fullname:
+        type: string
+      password:
+        maxLength: 32
+        minLength: 6
+        type: string
+      phone:
+        type: string
+      roles:
+        items:
+          type: integer
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/api_gateway_models.UserStatus'
+        enum:
+        - active
+        - inactive
+        example: active
+    required:
+    - avatar_url
+    - email
+    - fullname
+    - password
+    - roles
+    type: object
+  api_gateway_dto.CreateUserByAdminResponse:
+    type: object
+  api_gateway_dto.CreateUserByAdminResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.CreateUserByAdminResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.DeleteAddressTypeByAdminResponse:
     type: object
   api_gateway_dto.DeleteAddressTypeResponseDocs:
@@ -99,6 +142,15 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.DeletePermissionByPermissionIDURIResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.DeleteUserByAdminResponse:
+    type: object
+  api_gateway_dto.DeleteUserByAdminResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.DeleteUserByAdminResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -204,6 +256,26 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetRoleResponse:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  api_gateway_dto.GetRoleResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetRoleResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.GetUserByAdminResponse:
     properties:
       avatar_url:
@@ -218,16 +290,14 @@ definitions:
         type: string
       id:
         type: integer
-      module_permission:
-        items:
-          $ref: '#/definitions/api_gateway_dto.ModulePermissionResponse'
-        type: array
       phone:
         type: string
       phone_verify:
         type: boolean
-      role_name:
-        type: string
+      roles:
+        items:
+          $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
+        type: array
       status:
         type: string
       updated_at:
@@ -303,17 +373,6 @@ definitions:
     properties:
       code:
         type: integer
-    type: object
-  api_gateway_dto.ModulePermissionResponse:
-    properties:
-      module_id:
-        type: integer
-      module_name:
-        type: string
-      permissions:
-        items:
-          $ref: '#/definitions/api_gateway_dto.UserPermissionResponse'
-        type: array
     type: object
   api_gateway_dto.RefreshTokenResponse:
     properties:
@@ -406,13 +465,6 @@ definitions:
       name:
         type: string
     type: object
-  api_gateway_dto.RoleLoginResponseDocs:
-    properties:
-      data:
-        $ref: '#/definitions/api_gateway_dto.RoleLoginResponse'
-      metadata:
-        $ref: '#/definitions/api_gateway_dto.Metadata'
-    type: object
   api_gateway_dto.UpdateAddressTypeBodyRequest:
     properties:
       address_type:
@@ -465,12 +517,30 @@ definitions:
     type: object
   api_gateway_dto.UpdatePermissionByPermissionIDResponse:
     type: object
-  api_gateway_dto.UserPermissionResponse:
+  api_gateway_dto.UpdateUserByAdminRequest:
     properties:
-      permission_id:
-        type: integer
-      permission_name:
-        type: string
+      roles:
+        items:
+          type: integer
+        type: array
+      status:
+        allOf:
+        - $ref: '#/definitions/api_gateway_models.UserStatus'
+        enum:
+        - active
+        - inactive
+        example: active
+    required:
+    - roles
+    type: object
+  api_gateway_dto.UpdateUserByAdminResponse:
+    type: object
+  api_gateway_dto.UpdateUserByAdminResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateUserByAdminResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
   api_gateway_dto.VerifyEmailRequest:
     properties:
@@ -491,6 +561,14 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_models.UserStatus:
+    enum:
+    - active
+    - inactive
+    type: string
+    x-enum-varnames:
+    - UserStatusActive
+    - UserStatusInactive
 host: server.local:3000
 info:
   contact: {}
@@ -1412,14 +1490,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all roles
+      description: Get list roles pagination with some filter and sorting
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api_gateway_dto.RoleLoginResponseDocs'
+            $ref: '#/definitions/api_gateway_dto.GetRoleResponseDocs'
         "400":
           description: Bad Request
           schema:
@@ -1434,7 +1512,7 @@ paths:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
       security:
       - BearerAuth: []
-      summary: Get all roles
+      summary: Get list roles pagination with some filter and sorting
       tags:
       - roles
   /users:
@@ -1542,6 +1620,116 @@ paths:
       security:
       - BearerAuth: []
       summary: Get list users
+      tags:
+      - users
+    post:
+      consumes:
+      - application/json
+      description: create new user by admin
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.CreateUserByAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.CreateUserByAdminResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: create new user by admin
+      tags:
+      - users
+  /users/:userID:
+    delete:
+      consumes:
+      - application/json
+      description: delete user by admin
+      parameters:
+      - description: user id on path
+        in: path
+        name: userID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.DeleteUserByAdminResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: delete user by admin
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      description: update user by admin
+      parameters:
+      - description: user id on path
+        in: path
+        name: userID
+        required: true
+        type: integer
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateUserByAdminRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateUserByAdminResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: update user by admin
       tags:
       - users
 securityDefinitions:
