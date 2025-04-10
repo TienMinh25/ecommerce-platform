@@ -30,3 +30,34 @@ type RoleLoginResponse struct {
 	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
+
+type ModulesPermissionsRequest struct {
+	ModuleID    int   `json:"module_id" binding:"required,gte=1"`
+	Permissions []int `json:"permissions" binding:"required"`
+}
+
+type CreateRoleRequest struct {
+	RoleName           string                      `json:"role_name" binding:"required,min=3"`
+	Description        string                      `json:"description"`
+	ModulesPermissions []ModulesPermissionsRequest `json:"modules_permissions" binding:"required"`
+}
+
+type CreateRoleResponse struct{}
+
+type UpdateRoleRequest struct {
+	RoleName           string                      `json:"role_name" binding:"required,min=3"`
+	Description        string                      `json:"description"`
+	ModulesPermissions []ModulesPermissionsRequest `json:"modules_permissions" binding:"required"`
+}
+
+type UpdateRoleUriRequest struct {
+	RoleID int `uri:"roleID" binding:"required,gte=1"`
+}
+
+type UpdateRoleResponse struct{}
+
+type DeleteRoleUriRequest struct {
+	RoleID int `uri:"roleID" binding:"required,gte=1"`
+}
+
+type DeleteRoleResponse struct{}

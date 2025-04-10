@@ -3,6 +3,7 @@ package api_gateway_service
 import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
+	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
@@ -55,4 +56,76 @@ func (r *roleService) GetRoles(ctx context.Context, data *api_gateway_dto.GetRol
 	}
 
 	return response, totalItems, totalPages, hasNext, hasPrevious, nil
+}
+
+func (r *roleService) CreateRole(ctx context.Context, data *api_gateway_dto.CreateRoleRequest) error {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CreateRole"))
+	defer span.End()
+
+	// check exists or not
+	if err := r.roleRepo.CheckExistsRoleByName(ctx, data.RoleName); err != nil {
+		return err
+	}
+
+	var permissionDetails []api_gateway_models.PermissionDetailType
+
+	for _, permission := range data.ModulesPermissions {
+		permissionDetails = append(permissionDetails, api_gateway_models.PermissionDetailType{
+			ModuleID:    permission.ModuleID,
+			Permissions: permission.Permissions,
+		})
+	}
+
+	if err := r.roleRepo.CreateRole(ctx, data.RoleName, data.Description, permissionDetails); err != nil {
+		span.RecordError(err)
+		return err
+	}
+
+	return nil
+}
+
+func (r *roleService) UpdateRole(ctx context.Context, data *api_gateway_dto.UpdateRoleRequest, roleID int) error {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateRole"))
+	defer span.End()
+
+	// check exists or not
+	if err := r.roleRepo.CheckExistsRoleByName(ctx, data.RoleName); err != nil {
+		return err
+	}
+
+	var permissionDetails []api_gateway_models.PermissionDetailType
+
+	for _, permission := range data.ModulesPermissions {
+		permissionDetails = append(permissionDetails, api_gateway_models.PermissionDetailType{
+			ModuleID:    permission.ModuleID,
+			Permissions: permission.Permissions,
+		})
+	}
+
+	if err := r.roleRepo.UpdateRole(ctx, roleID, data.RoleName, data.Description, permissionDetails); err != nil {
+		span.RecordError(err)
+		return err
+	}
+
+	return nil
+}
+
+func (r *roleService) DeleteRoleByID(ctx context.Context, roleID int) error {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateRole"))
+	defer span.End()
+
+	err := r.roleRepo.CheckRoleHasUsed(ctx, roleID)
+
+	if err != nil {
+		return err
+	}
+
+	err = r.roleRepo.DeleteRoleByID(ctx, roleID)
+
+	if err != nil {
+		span.RecordError(err)
+		return err
+	}
+
+	return nil
 }

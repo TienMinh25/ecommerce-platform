@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     Flex,
     HStack,
@@ -11,7 +11,7 @@ import {
     Button,
     Select,
 } from '@chakra-ui/react';
-import { FiSearch, FiX, FiFilter } from 'react-icons/fi';
+import {FiSearch, FiX, FiFilter} from 'react-icons/fi';
 import RoleFilterDropdown from './RoleFilterDropdown.jsx';
 
 const RoleSearchFilter = ({ filters, onFiltersChange, onApplyFilters, showOnlyFilter = false }) => {

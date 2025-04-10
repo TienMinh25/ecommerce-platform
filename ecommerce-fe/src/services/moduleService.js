@@ -1,14 +1,13 @@
 import api from './api.js'; // Import the axios instance
 
 const moduleService = {
-    // Get list of modules with pagination
-    getModules: async (page = 1, limit = 10, getAll = false) => {
+    // Get list of modules with pagination or getAll
+    getModules: async (params = {}) => {
         try {
-            const response = await api.get('/modules', {
-                params: { page, limit, getAll }
-            });
+            const response = await api.get('/modules', { params });
             return response.data;
         } catch (error) {
+            console.error('Error fetching modules:', error);
             throw error;
         }
     },
@@ -19,6 +18,7 @@ const moduleService = {
             const response = await api.get(`/modules/${id}`);
             return response.data;
         } catch (error) {
+            console.error(`Error fetching module with id ${id}:`, error);
             throw error;
         }
     },
@@ -29,6 +29,7 @@ const moduleService = {
             const response = await api.post('/modules', moduleData);
             return response.data;
         } catch (error) {
+            console.error('Error creating module:', error);
             throw error;
         }
     },
@@ -39,6 +40,7 @@ const moduleService = {
             const response = await api.patch(`/modules/${id}`, moduleData);
             return response.data;
         } catch (error) {
+            console.error(`Error updating module with id ${id}:`, error);
             throw error;
         }
     },
@@ -49,6 +51,7 @@ const moduleService = {
             const response = await api.delete(`/modules/${id}`);
             return response.data;
         } catch (error) {
+            console.error(`Error deleting module with id ${id}:`, error);
             throw error;
         }
     }

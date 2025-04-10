@@ -120,7 +120,7 @@ const RoleManagementComponent = () => {
       page: currentPage,
       sortBy: activeFilterParams.sortBy,
       sortOrder: activeFilterParams.sortOrder,
-      searchBy: filters.searchValue ? filters.searchBy : undefined, // Chỉ gửi searchBy nếu có searchValue
+      searchBy: filters.searchValue ? filters.searchBy : undefined,
       searchValue: filters.searchValue || undefined,
     };
   }, [currentPage, rowsPerPage, activeFilterParams, filters]);
@@ -166,11 +166,11 @@ const RoleManagementComponent = () => {
       const params = createRequestParams();
       const response = await roleService.getRoles(params);
 
-      // Kiểm tra response từ API
+      // Check API response
       if (response && Array.isArray(response.data)) {
         setRoles(response.data);
 
-        // Xử lý metadata phân trang
+        // Handle pagination metadata
         const metadata = response.metadata || {};
         const pagination = metadata.pagination || {};
         const totalItems = pagination.total_items || metadata.total_count || response.data.length;
@@ -280,7 +280,21 @@ const RoleManagementComponent = () => {
   const handleSavePermissions = async (roleId, permissions) => {
     setIsLoadingPermissions(true);
     try {
-      await roleService.updateRolePermissions(roleId, permissions);
+      // Format the data to match the API's expected structure if needed
+      // Based on Swagger, needs to have role_name, modules_permissions, and optional description
+      const selectedRole = roles.find(r => r.id === roleId);
+      if (!selectedRole) {
+        throw new Error('Role not found');
+      }
+
+      // Ensure proper format according to API schema
+      const payload = {
+        role_name: selectedRole.name,
+        description: selectedRole.description || "",
+        modules_permissions: permissions.modules_permissions || permissions.modules || []
+      };
+
+      await roleService.updateRolePermissions(roleId, payload);
       toast({
         title: 'Permissions updated successfully',
         status: 'success',
@@ -327,7 +341,7 @@ const RoleManagementComponent = () => {
   return (
       <Container maxW="container.xl" py={6}>
         <Flex justifyContent="space-between" alignItems="center" p={4} mb={4} flexDir={{ base: 'column', md: 'row' }} gap={{ base: 4, md: 0 }}>
-          <Flex flex={{ md: 1 }} direction={{ base: 'column', sm: 'row' }} gap={3} align={{ base: 'stretch', sm: 'center' }}>
+          <Flex flex={{ md: 1 }} direction={{ base: "column", sm: "row" }} gap={3} align={{ base: "stretch", sm: "center" }}>
             <RoleSearchFilter filters={filters} onFiltersChange={handleFiltersChange} onApplyFilters={handleApplyFilters} />
             <Tooltip label="Refresh data" hasArrow>
               <IconButton
@@ -389,7 +403,7 @@ const RoleManagementComponent = () => {
               }}
               flex="1"
               minH="300px"
-              maxH={{ base: '60vh', lg: 'calc(100vh - 250px)' }}
+              maxH={{ base: "60vh", lg: "calc(100vh - 250px)" }}
               borderBottomWidth="1px"
               borderColor={borderColor}
           >
@@ -605,7 +619,7 @@ const RoleManagementComponent = () => {
               zIndex="1"
               boxShadow="0 -2px 6px rgba(0,0,0,0.05)"
           >
-            <Flex justifyContent="space-between" alignItems="center" py={4} px={6} flexWrap={{ base: 'wrap', md: 'nowrap' }} gap={4}>
+            <Flex justifyContent="space-between" alignItems="center" py={4} px={6} flexWrap={{ base: "wrap", md: "nowrap" }} gap={4}>
               <HStack spacing={1} flexShrink={0}>
                 <Text fontSize="sm" color="gray.600" fontWeight="normal">
                   Showing {totalCount > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}-{Math.min(currentPage * rowsPerPage, totalCount)} of {totalCount} roles
@@ -624,7 +638,7 @@ const RoleManagementComponent = () => {
               </HStack>
 
               {totalCount > 0 && (
-                  <HStack spacing={1} justify="center" width={{ base: '100%', md: 'auto' }}>
+                  <HStack spacing={1} justify="center" width={{ base: "100%", md: "auto" }}>
                     <IconButton
                         icon={<FiChevronLeft />}
                         size="sm"
@@ -643,8 +657,8 @@ const RoleManagementComponent = () => {
                             <Button
                                 key={`page-${page}`}
                                 size="sm"
-                                variant={currentPage === page ? 'solid' : 'ghost'}
-                                colorScheme={currentPage === page ? 'blue' : 'gray'}
+                                variant={currentPage === page ? "solid" : "ghost"}
+                                colorScheme={currentPage === page ? "blue" : "gray"}
                                 onClick={() => typeof page === 'number' && setCurrentPage(page)}
                                 borderRadius="md"
                                 minW="32px"

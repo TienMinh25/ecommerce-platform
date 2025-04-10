@@ -1,26 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-    Box,
-    Text,
-    Table,
-    Thead,
-    Tbody,
-    Tr,
-    Th,
-    Td,
-    Switch,
     Badge,
+    Box,
     Button,
     Flex,
-    Tooltip,
     HStack,
-    Spinner,
-    useColorModeValue,
-    useToast,
     IconButton,
-    Divider
+    Spinner,
+    Switch,
+    Table,
+    Tbody,
+    Td,
+    Text,
+    Th,
+    Thead,
+    Tooltip,
+    Tr,
+    useColorModeValue,
+    useToast
 } from '@chakra-ui/react';
-import { FiLock, FiInfo, FiX, FiSave } from 'react-icons/fi';
+import {FiInfo, FiLock, FiSave, FiX} from 'react-icons/fi';
 import moduleService from "../../../../services/moduleService.js";
 import permissionService from "../../../../services/permissionService.js";
 
@@ -139,7 +138,6 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
 
                 // If this role has permissions for this module, mark them as true
                 if (modulePermissions) {
-                    // Handle case where permissions could be an array of permission IDs
                     const permList = modulePermissions.permissions || [];
 
                     // Handle numeric permission IDs
@@ -185,14 +183,14 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
 
         setSavingChanges(true);
         try {
-            // Format for API with correct structure with MODULE IDs
-            const modulePermissions = modules
+            // Format the modules with permissions according to the API schema
+            const modulesWithPermissions = modules
                 .filter(module =>
                     module.read || module.create || module.update ||
                     module.delete || module.approve || module.reject
                 )
                 .map(module => {
-                    // Convert permission flags to array of permission IDs
+                    // Map permissions to their numeric IDs
                     const permissionIds = [];
                     if (module.read) permissionIds.push(1);
                     if (module.create) permissionIds.push(2);
@@ -207,9 +205,11 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                     };
                 });
 
-            // Format payload according to API requirements for EDIT
+            // Format payload for the API - based on the Swagger documentation
             const permissionsPayload = {
-                modules: modulePermissions
+                role_name: role.name, // Include role_name as required by API
+                modules_permissions: modulesWithPermissions, // Using the correct field name from API docs
+                description: role.description // Preserve existing description
             };
 
             // Call the save callback with the updated permissions

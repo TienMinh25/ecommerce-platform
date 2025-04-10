@@ -128,5 +128,8 @@ func registerRoleHandler(group *gin.RouterGroup, permissionMiddleware *middlewar
 	roleGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
 		roleGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Read), roleHandler.GetRoles)
+		roleGroup.POST("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Create), roleHandler.CreateRole)
+		roleGroup.PATCH("/:roleID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Update), roleHandler.UpdateRole)
+		roleGroup.DELETE("/:roleID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Delete), roleHandler.DeleteRole)
 	}
 }

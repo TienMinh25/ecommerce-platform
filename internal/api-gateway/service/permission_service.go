@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"math"
 	"net/http"
+	"slices"
 	"strconv"
 )
 
@@ -151,6 +152,10 @@ func (p *permissionService) GetAllPermissions(ctx context.Context) ([]api_gatewa
 			Name: permissionName,
 		})
 	}
+
+	slices.SortFunc(res, func(a, b api_gateway_dto.GetPermissionResponse) int {
+		return a.ID - b.ID
+	})
 
 	return res, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 type roleHandler struct {
@@ -68,17 +69,137 @@ func (r *roleHandler) GetRoles(ctx *gin.Context) {
 	utils.PaginatedResponse(ctx, res, data.Page, data.Limit, totalPages, totalItems, hasNext, hasPrevious)
 }
 
+// CreateRole implements IRoleHandler.
+// CreateRole godoc
+//
+//	@Summary		Create new role based on modules and permissions
+//	@Tags			roles
+//	@Description	Create new role based on modules and permissions
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			request	body	api_gateway_dto.CreateRoleRequest	true	"Request body"
+//
+//	@Security		BearerAuth
+//	@Success		201	{object}	api_gateway_dto.CreateRoleResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/roles [post]
 func (r *roleHandler) CreateRole(ctx *gin.Context) {
-	//TODO implement me
-	panic("implement me")
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := r.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "CreateRole"))
+	defer span.End()
+
+	var data api_gateway_dto.CreateRoleRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	err := r.service.CreateRole(ct, &data)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusCreated, api_gateway_dto.CreateRoleResponse{})
 }
 
+// UpdateRole implements IRoleHandler.
+// UpdateRole godoc
+//
+//	@Summary		Update permissions on modules for role
+//	@Tags			roles
+//	@Description	Update permissions on modules for role
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			request	body	api_gateway_dto.UpdateRoleRequest	true	"Request body"
+//
+//	@Param			roleID	path	int									true	"Role id to update"
+//
+//	@Security		BearerAuth
+//	@Success		200	{object}	api_gateway_dto.UpdateRolesResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/roles/{roleID} [patch]
 func (r *roleHandler) UpdateRole(ctx *gin.Context) {
-	//TODO implement me
-	panic("implement me")
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := r.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateRole"))
+	defer span.End()
+
+	var data api_gateway_dto.UpdateRoleRequest
+	var uri api_gateway_dto.UpdateRoleUriRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	err := r.service.UpdateRole(ct, &data, uri.RoleID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.UpdateRoleResponse{})
 }
 
+// DeleteRole implements IRoleHandler.
+// DeleteRole godoc
+//
+//	@Summary		Delete role by id
+//	@Tags			roles
+//	@Description	Delete role by id
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			roleID	path	int	true	"Role id for delete"
+//
+//	@Security		BearerAuth
+//	@Success		200	{object}	api_gateway_dto.DeleteRolesResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/roles/{roleID} [delete]
 func (r *roleHandler) DeleteRole(ctx *gin.Context) {
-	//TODO implement me
-	panic("implement me")
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := r.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "DeleteRole"))
+	defer span.End()
+
+	var uri api_gateway_dto.DeleteRoleUriRequest
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	err := r.service.DeleteRoleByID(ct, uri.RoleID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.DeleteRoleResponse{})
 }

@@ -2,13 +2,16 @@ package api_gateway_repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/jackc/pgx/v5"
 	"github.com/pkg/errors"
 	"github.com/redis/go-redis/v9"
 	"log"
@@ -109,7 +112,10 @@ func (r *roleRepository) GetRoles(ctx context.Context, data *api_gateway_dto.Get
 
 	sortClause := "r.id ASC"
 	if data.SortBy != nil && data.SortOrder != nil {
-		sortClause = fmt.Sprintf("r.%s %s", *data.SortBy, *data.SortOrder)
+		switch *data.SortBy {
+		case "name":
+			sortClause = fmt.Sprintf("r.%s %s", "role_name", *data.SortOrder)
+		}
 	}
 
 	var whereClause string
@@ -194,4 +200,173 @@ func (r *roleRepository) GetRoles(ctx context.Context, data *api_gateway_dto.Get
 	}
 
 	return roles, total, nil
+}
+
+func (r *roleRepository) CreateRole(ctx context.Context, roleName string, roleDescription string, permissionsDetail []api_gateway_models.PermissionDetailType) error {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateRole"))
+	defer span.End()
+
+	return r.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
+		// insert into new role
+		sqlInsertNewRole := `INSERT INTO roles(role_name, description) VALUES ($1, $2) RETURNING id`
+
+		var newRoleID int
+		if err := r.db.QueryRow(ctx, sqlInsertNewRole, roleName, roleDescription).Scan(&newRoleID); err != nil {
+			span.RecordError(err)
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		// insert into role_permissions
+		sqlInsertPermission := `INSERT INTO role_permissions(role_id, permission_detail) VALUES ($1, $2)`
+
+		bytes, err := json.Marshal(permissionsDetail)
+
+		if err != nil {
+			span.RecordError(err)
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		if err = r.db.Exec(ctx, sqlInsertPermission, newRoleID, bytes); err != nil {
+			span.RecordError(err)
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *roleRepository) CheckExistsRoleByName(ctx context.Context, name string) error {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckExistsRoleByName"))
+	defer span.End()
+
+	sqlCheck := `SELECT EXISTS (SELECT 1 FROM roles WHERE role_name = $1)`
+
+	var isExists bool
+	if err := r.db.QueryRow(ctx, sqlCheck, name).Scan(&isExists); err != nil {
+		span.RecordError(err)
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	if !isExists {
+		return utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "Role is not exists",
+			ErrorCode: errorcode.NOT_FOUND,
+		}
+	}
+
+	return nil
+}
+
+func (r *roleRepository) UpdateRole(ctx context.Context, roleID int, roleName string, roleDesc string, permissionsDetail []api_gateway_models.PermissionDetailType) error {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateRole"))
+	defer span.End()
+
+	return r.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
+		var err error
+
+		wg := sync.WaitGroup{}
+
+		wg.Add(2)
+
+		go func() {
+			defer wg.Done()
+
+			// update into roles
+			sqlUpdateRole := `UPDATE roles SET role_name = $1, description = $2 WHERE id = $3`
+			if updateErr := r.db.Exec(ctx, sqlUpdateRole, roleName, roleDesc, roleID); updateErr != nil {
+				span.RecordError(updateErr)
+				err = updateErr
+				return
+			}
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			// update into role_permissions
+			sqlUpdatePermission := `UPDATE role_permissions SET permission_detail = $1 WHERE role_id = $2`
+
+			bytes, marshalErr := json.Marshal(permissionsDetail)
+
+			if marshalErr != nil {
+				span.RecordError(marshalErr)
+				err = marshalErr
+				return
+			}
+
+			if updateErr := r.db.Exec(ctx, sqlUpdatePermission, bytes, roleID); updateErr != nil {
+				span.RecordError(updateErr)
+				err = updateErr
+				return
+			}
+		}()
+
+		wg.Wait()
+
+		if err != nil {
+			span.RecordError(err)
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		return nil
+	})
+}
+
+func (r *roleRepository) CheckRoleHasUsed(ctx context.Context, roleID int) error {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckRoleHasUsed"))
+	defer span.End()
+
+	sqlCheck := `SELECT EXISTS (SELECT 1 FROM users_roles WHERE role_id = $1)`
+
+	var isExists bool
+	if err := r.db.QueryRow(ctx, sqlCheck, roleID).Scan(&isExists); err != nil {
+		span.RecordError(err)
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	if isExists {
+		return utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "Role is already used, so it cannot be deleted",
+			ErrorCode: errorcode.CANNOT_DELETE,
+		}
+	}
+
+	return nil
+}
+
+func (r *roleRepository) DeleteRoleByID(ctx context.Context, roleID int) error {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "DeleteRoleByID"))
+	defer span.End()
+
+	sqlDelete := `DELETE FROM roles WHERE id = $1`
+
+	if err := r.db.Exec(ctx, sqlDelete, roleID); err != nil {
+		span.RecordError(err)
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return nil
 }

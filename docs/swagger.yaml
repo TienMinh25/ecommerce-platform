@@ -84,6 +84,30 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.CreateRoleRequest:
+    properties:
+      description:
+        type: string
+      modules_permissions:
+        items:
+          $ref: '#/definitions/api_gateway_dto.ModulesPermissionsRequest'
+        type: array
+      role_name:
+        minLength: 3
+        type: string
+    required:
+    - modules_permissions
+    - role_name
+    type: object
+  api_gateway_dto.CreateRoleResponse:
+    type: object
+  api_gateway_dto.CreateRoleResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.CreateRoleResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.CreateUserByAdminRequest:
     properties:
       avatar_url:
@@ -142,6 +166,15 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.DeletePermissionByPermissionIDURIResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.DeleteRoleResponse:
+    type: object
+  api_gateway_dto.DeleteRolesResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.DeleteRoleResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -380,6 +413,19 @@ definitions:
       code:
         type: integer
     type: object
+  api_gateway_dto.ModulesPermissionsRequest:
+    properties:
+      module_id:
+        minimum: 1
+        type: integer
+      permissions:
+        items:
+          type: integer
+        type: array
+    required:
+    - module_id
+    - permissions
+    type: object
   api_gateway_dto.RefreshTokenResponse:
     properties:
       access_token:
@@ -522,6 +568,30 @@ definitions:
     - name
     type: object
   api_gateway_dto.UpdatePermissionByPermissionIDResponse:
+    type: object
+  api_gateway_dto.UpdateRoleRequest:
+    properties:
+      description:
+        type: string
+      modules_permissions:
+        items:
+          $ref: '#/definitions/api_gateway_dto.ModulesPermissionsRequest'
+        type: array
+      role_name:
+        minLength: 3
+        type: string
+    required:
+    - modules_permissions
+    - role_name
+    type: object
+  api_gateway_dto.UpdateRoleResponse:
+    type: object
+  api_gateway_dto.UpdateRolesResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateRoleResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
   api_gateway_dto.UpdateUserByAdminRequest:
     properties:
@@ -1564,6 +1634,116 @@ paths:
       summary: Get list roles pagination with some filter and sorting
       tags:
       - roles
+    post:
+      consumes:
+      - application/json
+      description: Create new role based on modules and permissions
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.CreateRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api_gateway_dto.CreateRoleResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Create new role based on modules and permissions
+      tags:
+      - roles
+  /roles/{roleID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete role by id
+      parameters:
+      - description: Role id for delete
+        in: path
+        name: roleID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.DeleteRolesResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Delete role by id
+      tags:
+      - roles
+    patch:
+      consumes:
+      - application/json
+      description: Update permissions on modules for role
+      parameters:
+      - description: Request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateRoleRequest'
+      - description: Role id to update
+        in: path
+        name: roleID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateRolesResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Update permissions on modules for role
+      tags:
+      - roles
   /users:
     get:
       consumes:
@@ -1706,7 +1886,7 @@ paths:
       summary: create new user by admin
       tags:
       - users
-  /users/:userID:
+  /users/{userID}:
     delete:
       consumes:
       - application/json

@@ -98,7 +98,7 @@ const PermissionManagementComponent = () => {
     const fetchPermissions = async () => {
         setIsLoading(true);
         try {
-            const response = await permissionService.getPermissions(currentPage, rowsPerPage);
+            const response = await permissionService.getPermissions({page: currentPage, limit: rowsPerPage});
 
             if (response && response.data) {
                 const formattedData = response.data.map(item => ({

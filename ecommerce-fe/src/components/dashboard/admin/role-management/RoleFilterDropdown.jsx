@@ -26,9 +26,10 @@ const RoleFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
 
     const handleApply = () => {
         onFiltersChange(localFilters);
-        onApplyFilters(localFilters); // Gửi filter đã áp dụng
+        onApplyFilters(localFilters); // Send applied filters
     };
 
+    // Check if there are any active filters
     const hasActiveFilters = Object.values(localFilters).some((value) => value !== '');
 
     return (

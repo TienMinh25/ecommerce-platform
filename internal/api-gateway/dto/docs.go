@@ -64,3 +64,6 @@ type CreateUserByAdminResponseDocs = ResponseSuccessDocs[CreateUserByAdminRespon
 type UpdateUserByAdminResponseDocs = ResponseSuccessDocs[UpdateUserByAdminResponse]
 type DeleteUserByAdminResponseDocs = ResponseSuccessDocs[DeleteUserByAdminResponse]
 type GetRoleResponseDocs = ResponseSuccessDocs[[]GetRoleResponse]
+type CreateRoleResponseDocs = ResponseSuccessDocs[CreateRoleResponse]
+type UpdateRolesResponseDocs = ResponseSuccessDocs[UpdateRoleResponse]
+type DeleteRolesResponseDocs = ResponseSuccessDocs[DeleteRoleResponse]
