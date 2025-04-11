@@ -15,6 +15,7 @@ import {
     ModalFooter,
     ModalHeader,
     ModalOverlay,
+    Spinner,
     Table,
     Tbody,
     Td,
@@ -22,27 +23,27 @@ import {
     Textarea,
     Th,
     Thead,
-    Tooltip,
     Tr,
     useColorModeValue,
     useToast,
     VStack,
 } from '@chakra-ui/react';
-import {FiPlus, FiShield} from 'react-icons/fi';
+import {FiInfo, FiPlus, FiShield} from 'react-icons/fi';
 import roleService from '../../../../services/roleService.js';
 import moduleService from "../../../../services/moduleService.js";
 import permissionService from "../../../../services/permissionService.js";
+import PermissionSwitch from './PermissionSwitch'; // Import the reusable component
 
 const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], permissionsList = [] }) => {
     // Theme colors
-    const borderColor = useColorModeValue('gray.400', 'gray.500');
+    const borderColor = useColorModeValue('gray.200', 'gray.700');
     const inputBg = useColorModeValue('white', 'gray.900');
-    const headerBg = useColorModeValue('blue.50', 'gray.900');
+    const headerBg = useColorModeValue('gray.50', 'gray.900');
     const textColor = useColorModeValue('gray.900', 'white');
     const labelColor = useColorModeValue('gray.800', 'gray.100');
     const iconColor = useColorModeValue('blue.700', 'blue.200');
-    const tableBorderColor = useColorModeValue('gray.100', 'gray.800');
     const hoverBgColor = useColorModeValue('blue.50', 'gray.700');
+    const bgColor = useColorModeValue('white', 'gray.800');
 
     // Form state
     const [formData, setFormData] = useState({
@@ -53,6 +54,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
     // Modules and permissions state
     const [modules, setModules] = useState([]);
     const [loadingModules, setLoadingModules] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
 
     // Validation and submission state
     const [errors, setErrors] = useState({});
@@ -67,12 +69,15 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
             ...formData,
             [name]: value
         });
+
         if (errors[name]) {
             setErrors({
                 ...errors,
                 [name]: null
             });
         }
+
+        setHasChanges(true);
     };
 
     // Form validation
@@ -87,12 +92,101 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
         return Object.keys(newErrors).length === 0;
     };
 
+    // Load modules and permissions when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setHasChanges(false);
+
+            // Use provided modules and permissions or fetch them
+            if (modulesList && modulesList.length > 0) {
+                prepareModules(modulesList);
+            } else {
+                fetchModulesAndPermissions();
+            }
+        }
+    }, [isOpen, modulesList]);
+
+    // Prepare modules from props
+    const prepareModules = (modules) => {
+        // Create module objects with all permissions set to false
+        const formattedModules = modules.map(module => ({
+            id: module.id,
+            name: module.name,
+            read: false,
+            create: false,
+            update: false,
+            delete: false,
+            approve: false,
+            reject: false
+        }));
+
+        setModules(formattedModules);
+    };
+
+    // Fetch modules and permissions data from API
+    const fetchModulesAndPermissions = async () => {
+        setLoadingModules(true);
+
+        try {
+            // Get all modules and permissions in parallel
+            const [modulesResponse, permissionsResponse] = await Promise.all([
+                moduleService.getModules({ getAll: true }),
+                permissionService.getPermissions({ getAll: true })
+            ]);
+
+            const allModules = modulesResponse.data || [];
+
+            console.log('Fetched modules:', allModules);
+            console.log('Fetched permissions:', permissionsResponse.data || []);
+
+            // Prepare modules
+            prepareModules(allModules);
+        } catch (error) {
+            console.error('Error loading modules and permissions:', error);
+            toast({
+                title: 'Error loading permissions',
+                description: 'Failed to load module permissions.',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        } finally {
+            setLoadingModules(false);
+        }
+    };
+
+    // Handle permission toggle
+    const handleTogglePermission = (moduleId, permission) => {
+        setModules(modules.map(module =>
+            module.id === moduleId
+                ? { ...module, [permission]: !module[permission] }
+                : module
+        ));
+        setHasChanges(true);
+    };
+
+    // Reset form when modal closes
+    const resetForm = () => {
+        setFormData({
+            name: '',
+            description: '',
+        });
+        setErrors({});
+        setHasChanges(false);
+    };
+
+    useEffect(() => {
+        if (!isOpen) {
+            resetForm();
+        }
+    }, [isOpen]);
+
     // Handle form submission
     const handleSubmit = async () => {
         if (validateForm()) {
             setIsSubmitting(true);
             try {
-                // Identify modules with permissions
+                // Format modules with permissions for API
                 const modules_permissions = modules
                     .filter(module =>
                         module.read || module.create || module.update ||
@@ -114,15 +208,17 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                         };
                     });
 
-                // Create the role data according to the API schema from Swagger
+                // Create the role data according to the API schema
                 const roleData = {
                     role_name: formData.name.trim(),
                     description: formData.description.trim(),
                     modules_permissions: modules_permissions
                 };
 
+                console.log('Submitting role data:', roleData);
+
                 // Create the role with all data in one request
-                const createdRole = await roleService.createRole(roleData);
+                await roleService.createRole(roleData);
 
                 toast({
                     title: 'Role created successfully',
@@ -151,143 +247,6 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
         }
     };
 
-    // Reset form when modal closes
-    const resetForm = () => {
-        setFormData({
-            name: '',
-            description: '',
-        });
-        setErrors({});
-    };
-
-    // Load modules and permissions when modal opens
-    useEffect(() => {
-        if (isOpen) {
-            // If external modules are provided, use them
-            if (modulesList && modulesList.length > 0) {
-                // Create the module permission structure with all permissions set to false initially
-                const formattedModules = modulesList.map(module => {
-                    return {
-                        id: module.id,
-                        name: module.name,
-                        read: false,
-                        create: false,
-                        update: false,
-                        delete: false,
-                        approve: false,
-                        reject: false
-                    };
-                });
-
-                setModules(formattedModules);
-            } else {
-                // Otherwise fetch them
-                fetchModulesAndPermissions();
-            }
-        }
-    }, [isOpen, modulesList]);
-
-    // Reset form when modal closes
-    useEffect(() => {
-        if (!isOpen) {
-            resetForm();
-        }
-    }, [isOpen]);
-
-    // Fetch modules and permissions data
-    const fetchModulesAndPermissions = async () => {
-        setLoadingModules(true);
-        try {
-            // Get all modules and permissions in parallel to reduce API calls
-            const [modulesResponse, permissionsResponse] = await Promise.all([
-                moduleService.getModules({ getAll: true }),
-                permissionService.getPermissions({ getAll: true })
-            ]);
-
-            const allModules = modulesResponse.data || [];
-
-            // Create the module permission structure with all permissions set to false initially
-            const formattedModules = allModules.map(module => {
-                return {
-                    id: module.id,
-                    name: module.name,
-                    read: false,
-                    create: false,
-                    update: false,
-                    delete: false,
-                    approve: false,
-                    reject: false
-                };
-            });
-
-            setModules(formattedModules);
-        } catch (error) {
-            console.error('Error loading modules and permissions:', error);
-            toast({
-                title: 'Error loading permissions',
-                description: 'Failed to load module permissions.',
-                status: 'error',
-                duration: 5000,
-                isClosable: true,
-            });
-        } finally {
-            setLoadingModules(false);
-        }
-    };
-
-    // Handle permission toggle
-    const handleTogglePermission = (moduleId, permission) => {
-        setModules(modules.map(module =>
-            module.id === moduleId
-                ? { ...module, [permission]: !module[permission] }
-                : module
-        ));
-    };
-
-    // Permission Switch component with tooltip
-    const PermissionSwitch = ({ isChecked, onChange, permission }) => {
-        return (
-            <Tooltip
-                label={isChecked ? "Enabled" : "Disabled"}
-                hasArrow
-                placement="top"
-                openDelay={500}
-            >
-                <Box
-                    position="relative"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    cursor="pointer"
-                    onClick={onChange}
-                >
-                    <Box
-                        w="36px"
-                        h="20px"
-                        bg={isChecked ? "blue.500" : "gray.300"}
-                        borderRadius="full"
-                        transition="all 0.3s"
-                        _hover={{
-                            bg: isChecked ? "blue.600" : "gray.400"
-                        }}
-                    >
-                        <Box
-                            position="absolute"
-                            top="2px"
-                            left={isChecked ? "18px" : "2px"}
-                            w="16px"
-                            h="16px"
-                            bg="white"
-                            borderRadius="full"
-                            transition="all 0.3s"
-                            boxShadow="md"
-                        />
-                    </Box>
-                </Box>
-            </Tooltip>
-        );
-    };
-
     // Render module name with special indicator for system modules
     const renderModuleName = (moduleName) => {
         const systemModules = ['User Management', 'Role & Permission', 'Module Management'];
@@ -308,7 +267,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
         <Modal
             isOpen={isOpen}
             onClose={onClose}
-            size="xl"
+            size="5xl" // Wide modal
             motionPreset="slideInBottom"
             scrollBehavior="inside"
             isCentered
@@ -318,6 +277,8 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                 borderRadius="xl"
                 shadow="2xl"
                 bg={useColorModeValue('white', 'gray.800')}
+                maxHeight="90vh"
+                overflowY="auto"
             >
                 <ModalHeader
                     py={6}
@@ -398,8 +359,8 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                                     borderWidth="1px"
                                     borderRadius="xl"
                                     borderColor={borderColor}
-                                    overflow="hidden"
-                                    maxH="300px"
+                                    overflow="auto"
+                                    maxH="400px"
                                     mb={2}
                                     boxShadow="sm"
                                 >
@@ -409,70 +370,99 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                                                 <Th fontSize="xs" fontWeight="bold" py={4} pl={6} width="30%" borderBottomWidth="2px" borderColor={borderColor}>
                                                     MODULE
                                                 </Th>
-                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="14%" borderBottomWidth="2px" borderColor={borderColor}>
+                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
                                                     READ
                                                 </Th>
-                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="14%" borderBottomWidth="2px" borderColor={borderColor}>
+                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
                                                     CREATE
                                                 </Th>
-                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="14%" borderBottomWidth="2px" borderColor={borderColor}>
+                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
                                                     UPDATE
                                                 </Th>
-                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="14%" borderBottomWidth="2px" borderColor={borderColor}>
+                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
                                                     DELETE
                                                 </Th>
-                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="14%" borderBottomWidth="2px" borderColor={borderColor}>
+                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
                                                     APPROVE
+                                                </Th>
+                                                <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
+                                                    REJECT
                                                 </Th>
                                             </Tr>
                                         </Thead>
                                         <Tbody>
-                                            {modules.map((module, index) => (
-                                                <Tr
-                                                    key={`module-${module.id}`}
-                                                    _hover={{ bg: hoverBgColor }}
-                                                    bg={index % 2 === 0 ? 'transparent' : useColorModeValue('gray.50', 'gray.800')}
-                                                    borderBottomWidth={index === modules.length - 1 ? "0" : "1px"}
-                                                    borderColor={borderColor}
-                                                >
-                                                    <Td py={3} pl={6}>{renderModuleName(module.name)}</Td>
-                                                    <Td textAlign="center" py={3}>
-                                                        <PermissionSwitch
-                                                            isChecked={module.read}
-                                                            onChange={() => handleTogglePermission(module.id, 'read')}
-                                                        />
-                                                    </Td>
-                                                    <Td textAlign="center" py={3}>
-                                                        <PermissionSwitch
-                                                            isChecked={module.create}
-                                                            onChange={() => handleTogglePermission(module.id, 'create')}
-                                                        />
-                                                    </Td>
-                                                    <Td textAlign="center" py={3}>
-                                                        <PermissionSwitch
-                                                            isChecked={module.update}
-                                                            onChange={() => handleTogglePermission(module.id, 'update')}
-                                                        />
-                                                    </Td>
-                                                    <Td textAlign="center" py={3}>
-                                                        <PermissionSwitch
-                                                            isChecked={module.delete}
-                                                            onChange={() => handleTogglePermission(module.id, 'delete')}
-                                                        />
-                                                    </Td>
-                                                    <Td textAlign="center" py={3}>
-                                                        <PermissionSwitch
-                                                            isChecked={module.approve}
-                                                            onChange={() => handleTogglePermission(module.id, 'approve')}
-                                                        />
+                                            {modules.length > 0 ? (
+                                                modules.map((module, index) => (
+                                                    <Tr
+                                                        key={`module-${module.id}`}
+                                                        _hover={{ bg: hoverBgColor }}
+                                                        bg={index % 2 === 0 ? bgColor : useColorModeValue('gray.50', 'gray.800')}
+                                                        borderBottomWidth={index === modules.length - 1 ? "0" : "1px"}
+                                                        borderColor={borderColor}
+                                                    >
+                                                        <Td py={3} pl={6}>{renderModuleName(module.name)}</Td>
+                                                        <Td textAlign="center" py={3}>
+                                                            <PermissionSwitch
+                                                                isChecked={module.read}
+                                                                onChange={() => handleTogglePermission(module.id, 'read')}
+                                                                permission="read"
+                                                            />
+                                                        </Td>
+                                                        <Td textAlign="center" py={3}>
+                                                            <PermissionSwitch
+                                                                isChecked={module.create}
+                                                                onChange={() => handleTogglePermission(module.id, 'create')}
+                                                                permission="create"
+                                                            />
+                                                        </Td>
+                                                        <Td textAlign="center" py={3}>
+                                                            <PermissionSwitch
+                                                                isChecked={module.update}
+                                                                onChange={() => handleTogglePermission(module.id, 'update')}
+                                                                permission="update"
+                                                            />
+                                                        </Td>
+                                                        <Td textAlign="center" py={3}>
+                                                            <PermissionSwitch
+                                                                isChecked={module.delete}
+                                                                onChange={() => handleTogglePermission(module.id, 'delete')}
+                                                                permission="delete"
+                                                            />
+                                                        </Td>
+                                                        <Td textAlign="center" py={3}>
+                                                            <PermissionSwitch
+                                                                isChecked={module.approve}
+                                                                onChange={() => handleTogglePermission(module.id, 'approve')}
+                                                                permission="approve"
+                                                            />
+                                                        </Td>
+                                                        <Td textAlign="center" py={3}>
+                                                            <PermissionSwitch
+                                                                isChecked={module.reject}
+                                                                onChange={() => handleTogglePermission(module.id, 'reject')}
+                                                                permission="reject"
+                                                            />
+                                                        </Td>
+                                                    </Tr>
+                                                ))
+                                            ) : (
+                                                <Tr>
+                                                    <Td colSpan={7} textAlign="center" py={4}>
+                                                        <Flex direction="column" align="center" justify="center" py={4}>
+                                                            <Box color="gray.400" mb={2}>
+                                                                <FiInfo size={24} />
+                                                            </Box>
+                                                            <Text color="gray.500">No modules available. Please add modules first.</Text>
+                                                        </Flex>
                                                     </Td>
                                                 </Tr>
-                                            ))}
+                                            )}
                                         </Tbody>
                                     </Table>
                                 </Box>
                             )}
                             <Text fontSize="xs" color="gray.500" mt={2}>
+                                <FiInfo size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
                                 Set permissions for this role. Permissions determine what actions users with this role can perform.
                             </Text>
                         </Box>
@@ -504,6 +494,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                         colorScheme="blue"
                         onClick={handleSubmit}
                         isLoading={isSubmitting}
+                        loadingText="Creating..."
                         px={8}
                         shadow="md"
                         height="40px"
@@ -513,6 +504,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                             shadow: 'lg'
                         }}
                         fontWeight="bold"
+                        isDisabled={loadingModules || !hasChanges}
                     >
                         Create Role
                     </Button>

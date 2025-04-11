@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import {
   Alert,
   AlertIcon,
@@ -31,6 +31,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiEdit2,
+  FiFilter,
   FiPlus,
   FiRefreshCw,
   FiSearch,
@@ -41,28 +42,54 @@ import {
 import roleService from '../../../../services/roleService.js';
 import moduleService from '../../../../services/moduleService.js';
 import permissionService from '../../../../services/permissionService.js';
-import RoleSearchFilter from './RoleSearchFilter.jsx';
-import CreateRoleModal from './CreateRoleModal.jsx';
-import EditRoleModal from './EditRoleModal.jsx';
-import RolePermissionPanel from './RolePermissionPanel.jsx';
+import RoleSearchFilter from "./RoleSearchFilter.jsx";
+import RolePermissionPanel from "./RolePermissionPanel.jsx";
+import CreateRoleModal from "./CreateRoleModal.jsx";
+import EditRoleModal from "./EditRoleModal.jsx";
+import DeleteConfirmationModal from "../DeleteConfirmationComponent.jsx";
+import RoleFilterDropdown from './RoleFilterDropdown.jsx';
 
 const RoleManagementComponent = () => {
+  // Toast for notifications
+  const toast = useToast();
+
+  // Modal disclosures (must be at the top, before any conditional logic)
+  const { isOpen: isCreateModalOpen, onOpen: onOpenCreateModal, onClose: onCloseCreateModal } = useDisclosure();
+  const { isOpen: isEditModalOpen, onOpen: onOpenEditModal, onClose: onCloseEditModal } = useDisclosure();
+  const { isOpen: isDeleteModalOpen, onOpen: onOpenDeleteModal, onClose: onCloseDeleteModal } = useDisclosure();
+
+  // UI colors (define all color values at the top)
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const hoverBgColor = useColorModeValue('blue.50', 'gray.700');
+  const tableBorderColor = useColorModeValue('gray.100', 'gray.800');
+  const headerBgColor = useColorModeValue('gray.50', 'gray.900');
+  const textColor = useColorModeValue('gray.600', 'gray.300');
+  const secondaryTextColor = useColorModeValue('gray.500', 'gray.400');
+  const searchIconColor = useColorModeValue('#3182CE', '#63B3ED');
+
+  // State variables
   const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [expandedRoleId, setExpandedRoleId] = useState(null);
   const [selectedRole, setSelectedRole] = useState(null);
+  const [roleToDelete, setRoleToDelete] = useState(null);
+  const [isDeletingRole, setIsDeletingRole] = useState(false);
 
+  // Module and permissions state
   const [modulesList, setModulesList] = useState([]);
   const [permissionsList, setPermissionsList] = useState([]);
   const [isLoadingModules, setIsLoadingModules] = useState(false);
 
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Filter state
   const [filters, setFilters] = useState({
     sortBy: 'name',
     sortOrder: 'asc',
@@ -74,90 +101,57 @@ const RoleManagementComponent = () => {
     sortOrder: 'asc',
   });
 
-  const { isOpen: isCreateModalOpen, onOpen: onOpenCreateModal, onClose: onCloseCreateModal } = useDisclosure();
-  const { isOpen: isEditModalOpen, onOpen: onOpenEditModal, onClose: onCloseEditModal } = useDisclosure();
-
+  // Permission panel state
   const [showInlinePermissionPanel, setShowInlinePermissionPanel] = useState(false);
   const [selectedPermissionRole, setSelectedPermissionRole] = useState(null);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(false);
 
-  const toast = useToast();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const hoverBgColor = useColorModeValue('blue.50', 'gray.700');
-  const tableBorderColor = useColorModeValue('gray.100', 'gray.800');
-  const headerBgColor = useColorModeValue('gray.50', 'gray.900');
-
-  useEffect(() => {
-    const loadBasicData = async () => {
-      setIsLoadingModules(true);
-      try {
-        const [modulesResponse, permissionsResponse] = await Promise.all([
-          moduleService.getModules({ getAll: true }),
-          permissionService.getPermissions({ getAll: true }),
-        ]);
-        setModulesList(modulesResponse.data || []);
-        setPermissionsList(permissionsResponse.data || []);
-      } catch (error) {
-        console.error('Error loading modules and permissions:', error);
-        toast({
-          title: 'Error loading data',
-          description: 'Failed to load modules and permissions.',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      } finally {
-        setIsLoadingModules(false);
-      }
-    };
-    loadBasicData();
-  }, [toast]);
-
+  // Create request parameters for API calls (must be before any conditional use)
   const createRequestParams = useCallback(() => {
     return {
       limit: rowsPerPage,
       page: currentPage,
-      sortBy: activeFilterParams.sortBy,
-      sortOrder: activeFilterParams.sortOrder,
+      sortBy: activeFilterParams.sortBy || undefined,
+      sortOrder: activeFilterParams.sortOrder || undefined,
       searchBy: filters.searchValue ? filters.searchBy : undefined,
       searchValue: filters.searchValue || undefined,
     };
   }, [currentPage, rowsPerPage, activeFilterParams, filters]);
 
-  const mapRolePermissionsForDisplay = (role) => {
-    if (!role || !role.permissions || !modulesList.length) return [];
-    return modulesList.map((module) => {
-      const modulePermissions = role.permissions?.find((p) => p.module_id === module.id);
-      return {
-        id: module.id,
-        name: module.name,
-        read: modulePermissions?.permissions?.includes(1) || false,
-        create: modulePermissions?.permissions?.includes(2) || false,
-        update: modulePermissions?.permissions?.includes(3) || false,
-        delete: modulePermissions?.permissions?.includes(4) || false,
-        approve: modulePermissions?.permissions?.includes(5) || false,
-        reject: modulePermissions?.permissions?.includes(6) || false,
-      };
-    });
-  };
+  // Permission indicator component for visual representation
+  const PermissionIndicator = useMemo(() => {
+    return ({ isEnabled }) => (
+        <Box
+            w="16px"
+            h="16px"
+            borderRadius="sm"
+            bg={isEnabled ? 'blue.500' : 'transparent'}
+            borderWidth="1px"
+            borderColor={isEnabled ? 'blue.500' : 'gray.300'}
+            display="inline-flex"
+            alignItems="center"
+            justifyContent="center"
+        >
+          {isEnabled && <Box as="span" fontSize="xs" color="white" fontWeight="bold">✓</Box>}
+        </Box>
+    );
+  }, []);
 
-  const PermissionIndicator = ({ isEnabled }) => (
-      <Box
-          w="16px"
-          h="16px"
-          borderRadius="sm"
-          bg={isEnabled ? 'blue.500' : 'transparent'}
-          borderWidth="1px"
-          borderColor={isEnabled ? 'blue.500' : 'gray.300'}
-          display="inline-flex"
-          alignItems="center"
-          justifyContent="center"
-      >
-        {isEnabled && <Box as="span" fontSize="xs" color="white" fontWeight="bold">✓</Box>}
-      </Box>
+  // Generate pagination range for display (define as a useMemo hook)
+  const generatePaginationRange = useCallback((current, total) => {
+    current = Math.max(1, Math.min(current, total));
+    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+    if (current <= 3) return [1, 2, 3, 4, 5, '...', total];
+    if (current >= total - 2) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
+    return [1, '...', current - 1, current, current + 1, '...', total];
+  }, []);
+
+  const paginationRange = useMemo(() =>
+          generatePaginationRange(currentPage, totalPages),
+      [currentPage, totalPages, generatePaginationRange]
   );
 
+  // Fetch roles from API
   const fetchRoles = useCallback(async () => {
     setIsLoading(true);
     setIsError(false);
@@ -200,88 +194,167 @@ const RoleManagementComponent = () => {
     }
   }, [createRequestParams, rowsPerPage, toast]);
 
+  // Map role permissions for display in the UI
+  const mapRolePermissionsForDisplay = useCallback((role) => {
+    if (!role || !role.permissions || !modulesList.length) return [];
+    return modulesList.map((module) => {
+      const modulePermissions = role.permissions?.find((p) => p.module_id === module.id);
+      return {
+        id: module.id,
+        name: module.name,
+        read: modulePermissions?.permissions?.includes(1) || false,
+        create: modulePermissions?.permissions?.includes(2) || false,
+        update: modulePermissions?.permissions?.includes(3) || false,
+        delete: modulePermissions?.permissions?.includes(4) || false,
+        approve: modulePermissions?.permissions?.includes(5) || false,
+        reject: modulePermissions?.permissions?.includes(6) || false,
+      };
+    });
+  }, [modulesList]);
+
+  // Load modules and permissions on mount
+  useEffect(() => {
+    const loadBasicData = async () => {
+      setIsLoadingModules(true);
+      try {
+        const [modulesResponse, permissionsResponse] = await Promise.all([
+          moduleService.getModules({ getAll: true }),
+          permissionService.getPermissions({ getAll: true }),
+        ]);
+        setModulesList(modulesResponse.data || []);
+        setPermissionsList(permissionsResponse.data || []);
+      } catch (error) {
+        console.error('Error loading modules and permissions:', error);
+        toast({
+          title: 'Error loading data',
+          description: 'Failed to load modules and permissions.',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
+      } finally {
+        setIsLoadingModules(false);
+      }
+    };
+    loadBasicData();
+  }, [toast]);
+
+  // Fetch roles when dependencies change
   useEffect(() => {
     if (modulesList.length > 0 && permissionsList.length > 0) {
       fetchRoles();
     }
   }, [modulesList, permissionsList, fetchRoles, currentPage, rowsPerPage, activeFilterParams]);
 
-  const toggleRoleExpand = (roleId) => {
-    setExpandedRoleId(expandedRoleId === roleId ? null : roleId);
-  };
+  // Format date for display
+  const formatDate = useCallback((dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (error) {
+      return dateString;
+    }
+  }, []);
 
-  const handleEditRole = (role, e) => {
+  // Handle expanding/collapsing role details
+  const toggleRoleExpand = useCallback((roleId) => {
+    setExpandedRoleId(expandedRoleId === roleId ? null : roleId);
+  }, [expandedRoleId]);
+
+  // Handle editing a role
+  const handleEditRole = useCallback((role, e) => {
     if (e) e.stopPropagation();
     setSelectedRole(role);
     onOpenEditModal();
-  };
+  }, [onOpenEditModal]);
 
-  const handleCreateRole = () => {
+  // Handle creating a new role
+  const handleCreateRole = useCallback(() => {
     onOpenCreateModal();
-  };
+  }, [onOpenCreateModal]);
 
-  const handleDeleteRole = async (roleId, e) => {
+  // Open delete confirmation modal
+  const handleOpenDeleteModal = useCallback((role, e) => {
     if (e) e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this role?')) {
-      try {
-        await roleService.deleteRole(roleId);
-        toast({
-          title: 'Role deleted successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
-        fetchRoles();
-      } catch (error) {
-        console.error('Error deleting role:', error);
-        toast({
-          title: 'Failed to delete role',
-          description: error.response?.data?.error?.message || 'An unexpected error occurred',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-        });
-      }
-    }
-  };
+    setRoleToDelete(role);
+    onOpenDeleteModal();
+  }, [onOpenDeleteModal]);
 
-  const handleOpenPermissionsPanel = (role, e) => {
+  // Confirm and process role deletion
+  const handleConfirmDelete = useCallback(async () => {
+    if (!roleToDelete) return;
+
+    setIsDeletingRole(true);
+    try {
+      await roleService.deleteRole(roleToDelete.id);
+      toast({
+        title: 'Role deleted successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      setRoleToDelete(null);
+      onCloseDeleteModal();
+      fetchRoles();
+    } catch (error) {
+      console.error('Error deleting role:', error);
+      toast({
+        title: 'Failed to delete role',
+        description: error.response?.data?.error?.message || 'An unexpected error occurred',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsDeletingRole(false);
+    }
+  }, [roleToDelete, toast, onCloseDeleteModal, fetchRoles]);
+
+  // Open permissions panel for a role
+  const handleOpenPermissionsPanel = useCallback((role, e) => {
     if (e) e.stopPropagation();
     setSelectedPermissionRole(role);
     setShowInlinePermissionPanel(true);
-  };
+  }, []);
 
-  const handleClosePermissionsPanel = () => {
+  // Close permissions panel
+  const handleClosePermissionsPanel = useCallback(() => {
     setShowInlinePermissionPanel(false);
     setSelectedPermissionRole(null);
-  };
+  }, []);
 
-  const handleRoleCreated = () => {
+  // Handle role creation callback
+  const handleRoleCreated = useCallback(() => {
     fetchRoles();
-  };
+  }, [fetchRoles]);
 
-  const handleRoleUpdated = () => {
+  // Handle role update callback
+  const handleRoleUpdated = useCallback(() => {
     fetchRoles();
-  };
+  }, [fetchRoles]);
 
-  const handleFiltersChange = (updatedFilters) => {
+  // Handle filter changes from the search component
+  const handleFiltersChange = useCallback((updatedFilters) => {
     setFilters(updatedFilters);
-  };
+  }, []);
 
-  const handleApplyFilters = (filteredParams) => {
+  // Apply filters and reset to page 1
+  const handleApplyFilters = useCallback((filteredParams) => {
     setActiveFilterParams(filteredParams);
     setCurrentPage(1);
-  };
+  }, []);
 
-  const handleReload = () => {
+  // Manually reload roles data
+  const handleReload = useCallback(() => {
     fetchRoles();
-  };
+  }, [fetchRoles]);
 
-  const handleSavePermissions = async (roleId, permissions) => {
+  // Save permissions for a role
+  const handleSavePermissions = useCallback(async (roleId, permissions) => {
     setIsLoadingPermissions(true);
     try {
-      // Format the data to match the API's expected structure if needed
-      // Based on Swagger, needs to have role_name, modules_permissions, and optional description
+      // Get the role data
       const selectedRole = roles.find(r => r.id === roleId);
       if (!selectedRole) {
         throw new Error('Role not found');
@@ -312,50 +385,28 @@ const RoleManagementComponent = () => {
         duration: 5000,
         isClosable: true,
       });
-      throw error;
     } finally {
       setIsLoadingPermissions(false);
     }
-  };
-
-  const generatePaginationRange = (current, total) => {
-    current = Math.max(1, Math.min(current, total));
-    if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
-    if (current <= 3) return [1, 2, 3, 4, 5, '...', total];
-    if (current >= total - 2) return [1, '...', total - 4, total - 3, total - 2, total - 1, total];
-    return [1, '...', current - 1, current, current + 1, '...', total];
-  };
-
-  const paginationRange = generatePaginationRange(currentPage, totalPages);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (error) {
-      return dateString;
-    }
-  };
+  }, [roles, toast, fetchRoles, handleClosePermissionsPanel]);
 
   return (
       <Container maxW="container.xl" py={6}>
+        {/* Header with search, filter, and action buttons */}
         <Flex justifyContent="space-between" alignItems="center" p={4} mb={4} flexDir={{ base: 'column', md: 'row' }} gap={{ base: 4, md: 0 }}>
-          <Flex flex={{ md: 1 }} direction={{ base: "column", sm: "row" }} gap={3} align={{ base: "stretch", sm: "center" }}>
-            <RoleSearchFilter filters={filters} onFiltersChange={handleFiltersChange} onApplyFilters={handleApplyFilters} />
-            <Tooltip label="Refresh data" hasArrow>
-              <IconButton
-                  icon={<FiRefreshCw />}
-                  onClick={handleReload}
-                  aria-label="Refresh data"
-                  variant="ghost"
-                  colorScheme="blue"
-                  size="sm"
-                  isLoading={isLoading}
-              />
-            </Tooltip>
-          </Flex>
-          <HStack spacing={2}>
+          <RoleSearchFilter
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              onApplyFilters={handleApplyFilters}
+              onRefresh={handleReload}
+              isLoading={isLoading}
+          />
+          <HStack spacing={3}>
+            <RoleFilterDropdown
+                filters={filters}
+                onFiltersChange={handleFiltersChange}
+                onApplyFilters={handleApplyFilters}
+            />
             <Button
                 leftIcon={<FiPlus />}
                 colorScheme="blue"
@@ -374,6 +425,7 @@ const RoleManagementComponent = () => {
           </HStack>
         </Flex>
 
+        {/* Error alert if needed */}
         {isError && (
             <Alert status="error" variant="left-accent" mb={4} borderRadius="md">
               <AlertIcon />
@@ -381,6 +433,7 @@ const RoleManagementComponent = () => {
             </Alert>
         )}
 
+        {/* Inline permission panel */}
         {showInlinePermissionPanel && selectedPermissionRole && (
             <RolePermissionPanel
                 role={selectedPermissionRole}
@@ -392,7 +445,9 @@ const RoleManagementComponent = () => {
             />
         )}
 
+        {/* Main table container */}
         <Box width="100%" borderRadius="xl" overflow="hidden" boxShadow="lg" bg={bgColor} display="flex" flexDirection="column" borderWidth="1px" borderColor={borderColor}>
+          {/* Table with scrolling */}
           <Box
               overflow="auto"
               sx={{
@@ -410,16 +465,16 @@ const RoleManagementComponent = () => {
             <Table variant="simple" size="md" colorScheme="gray">
               <Thead bg={headerBgColor} position="sticky" top={0} zIndex={1}>
                 <Tr>
-                  <Th py={4} fontWeight="bold" borderTopLeftRadius="md" fontSize="xs" color={useColorModeValue('gray.600', 'gray.300')} width="40%">
+                  <Th py={4} fontWeight="bold" borderTopLeftRadius="md" fontSize="xs" color={textColor} width="40%">
                     Role
                   </Th>
-                  <Th py={4} fontWeight="bold" fontSize="xs" color={useColorModeValue('gray.600', 'gray.300')} width="40%">
+                  <Th py={4} fontWeight="bold" fontSize="xs" color={textColor} width="40%">
                     Description
                   </Th>
-                  <Th py={4} fontWeight="bold" fontSize="xs" color={useColorModeValue('gray.600', 'gray.300')} width="15%">
+                  <Th py={4} fontWeight="bold" fontSize="xs" color={textColor} width="15%">
                     Updated
                   </Th>
-                  <Th py={4} textAlign="right" borderTopRightRadius="md" fontSize="xs" color={useColorModeValue('gray.600', 'gray.300')} width="5%">
+                  <Th py={4} textAlign="right" borderTopRightRadius="md" fontSize="xs" color={textColor} width="5%">
                     Actions
                   </Th>
                 </Tr>
@@ -460,13 +515,13 @@ const RoleManagementComponent = () => {
                           >
                             <Td fontWeight="medium">
                               <HStack>
-                                <FiShield size={18} color={useColorModeValue('#3182CE', '#63B3ED')} />
+                                <FiShield size={18} color={searchIconColor} />
                                 <Text fontWeight="medium">{role.name}</Text>
                                 {(role.name === 'admin' || role.name === 'Admin') && <Badge colorScheme="red" ml={2}>System</Badge>}
                               </HStack>
                             </Td>
-                            <Td color={useColorModeValue('gray.600', 'gray.300')} fontSize="sm">{role.description || 'No description'}</Td>
-                            <Td fontSize="sm" color={useColorModeValue('gray.500', 'gray.400')}>
+                            <Td color={textColor} fontSize="sm">{role.description || 'No description'}</Td>
+                            <Td fontSize="sm" color={secondaryTextColor}>
                               {role.updated_at ? formatDate(role.updated_at) : 'N/A'}
                             </Td>
                             <Td textAlign="right">
@@ -489,7 +544,7 @@ const RoleManagementComponent = () => {
                                           variant="ghost"
                                           colorScheme="red"
                                           aria-label="Delete role"
-                                          onClick={(e) => handleDeleteRole(role.id, e)}
+                                          onClick={(e) => handleOpenDeleteModal(role, e)}
                                       />
                                     </Tooltip>
                                 )}
@@ -609,6 +664,7 @@ const RoleManagementComponent = () => {
             </Table>
           </Box>
 
+          {/* Pagination footer */}
           <Box
               borderTop="1px"
               borderColor={borderColor}
@@ -683,7 +739,15 @@ const RoleManagementComponent = () => {
           </Box>
         </Box>
 
-        <CreateRoleModal isOpen={isCreateModalOpen} onClose={onCloseCreateModal} onRoleCreated={handleRoleCreated} modulesList={modulesList} permissionsList={permissionsList} />
+        {/* Modals */}
+        <CreateRoleModal
+            isOpen={isCreateModalOpen}
+            onClose={onCloseCreateModal}
+            onRoleCreated={handleRoleCreated}
+            modulesList={modulesList}
+            permissionsList={permissionsList}
+        />
+
         {selectedRole && (
             <EditRoleModal
                 isOpen={isEditModalOpen}
@@ -694,6 +758,17 @@ const RoleManagementComponent = () => {
                 permissionsList={permissionsList}
             />
         )}
+
+        {/* Delete confirmation modal */}
+        <DeleteConfirmationModal
+            isOpen={isDeleteModalOpen}
+            onClose={onCloseDeleteModal}
+            onConfirm={handleConfirmDelete}
+            title="Delete Role"
+            message="Are you sure you want to delete this role? This action cannot be undone."
+            itemName={roleToDelete?.name}
+            isLoading={isDeletingRole}
+        />
       </Container>
   );
 };

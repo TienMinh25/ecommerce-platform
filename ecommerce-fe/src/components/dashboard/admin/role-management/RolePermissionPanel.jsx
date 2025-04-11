@@ -22,6 +22,7 @@ import {
 import {FiInfo, FiLock, FiSave, FiX} from 'react-icons/fi';
 import moduleService from "../../../../services/moduleService.js";
 import permissionService from "../../../../services/permissionService.js";
+import PermissionSwitch from "./PermissionSwitch.jsx";
 
 const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modulesList = [], permissionsList = [] }) => {
     const [modules, setModules] = useState([]);
@@ -237,45 +238,6 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
         } finally {
             setSavingChanges(false);
         }
-    };
-
-    // Permission Switch component with tooltip
-    const PermissionSwitch = ({ isChecked, onChange, permission, isDisabled = false }) => {
-        // Get tooltip text based on permission type
-        const getTooltipText = () => {
-            switch(permission) {
-                case 'read': return 'View permission';
-                case 'create': return 'Create permission';
-                case 'update': return 'Edit/Update permission';
-                case 'delete': return 'Delete permission';
-                case 'approve': return 'Approve permission';
-                case 'reject': return 'Reject permission';
-                default: return 'Toggle permission';
-            }
-        };
-
-        return (
-            <Tooltip label={getTooltipText()} hasArrow placement="top">
-                <Box
-                    position="relative"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    cursor={isDisabled ? "not-allowed" : "pointer"}
-                    onClick={isDisabled ? undefined : onChange}
-                    borderRadius="md"
-                    p={0.5}
-                    opacity={isDisabled ? 0.6 : 1}
-                >
-                    <Switch
-                        colorScheme="blue"
-                        size="sm"
-                        isChecked={isChecked}
-                        isDisabled={isDisabled}
-                    />
-                </Box>
-            </Tooltip>
-        );
     };
 
     // Render module name with lock icon for system modules

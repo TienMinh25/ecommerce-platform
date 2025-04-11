@@ -24,10 +24,12 @@ import {
   FiMapPin,
 } from 'react-icons/fi';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useSidebar } from '../../layout/DashboardLayout.jsx'; // Update with the correct path
+import { useSidebar } from '../../layout/DashboardLayout.jsx';
+import useAuth from "../../../hooks/useAuth.js"; // Update with the correct path
 
 const DashboardSidebar = ({ onStateChange }) => {
   const { updateSidebarState } = useSidebar();
+  const {logout} = useAuth()
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [width, setWidth] = useState(256); // Default width (64 in Chakra units = 256px)
@@ -45,6 +47,15 @@ const DashboardSidebar = ({ onStateChange }) => {
   // Responsive behavior
   const isMobile = useBreakpointValue({ base: true, md: false });
   const defaultCollapsed = useBreakpointValue({ base: true, md: false });
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login', {replace: true});
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   // Initialize collapse state based on screen size
   useEffect(() => {
@@ -84,7 +95,7 @@ const DashboardSidebar = ({ onStateChange }) => {
   ];
 
   // Logout item separate (for positioning at bottom)
-  const logoutItem = { icon: FiLogOut, label: 'Logout', path: '/logout' };
+  const logoutItem = { icon: FiLogOut, label: 'Logout', path: '/logout', logout: handleLogout};
 
   // Theme colors
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -190,7 +201,7 @@ const DashboardSidebar = ({ onStateChange }) => {
       }
     };
 
-    return (
+    return isLogoutItem == false ? (
         <Tooltip
             label={isCollapsed ? item.label : ""}
             placement="right"
@@ -246,6 +257,142 @@ const DashboardSidebar = ({ onStateChange }) => {
                 width="100%"
                 cursor="pointer"
                 onClick={handleClick}
+                role="group"
+            >
+              {/* Icon container */}
+              <Box
+                  position="relative"
+                  zIndex="2"
+              >
+                <Icon
+                    as={item.icon}
+                    boxSize={5}
+                    flexShrink={0}
+                    color={isActive ? activeIconColor : iconColor}
+                    _groupHover={{
+                      color: "white",
+                      transform: isCollapsed ? "scale(1.3)" : "scale(1.2)",
+                      filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.2))"
+                    }}
+                    transition="all 0.3s ease"
+                    transform={isCollapsed ? "scale(1.2)" : "scale(1)"}
+                />
+              </Box>
+
+              {/* Menu item text */}
+              {!isCollapsed && (
+                  <Box
+                      position="relative"
+                      zIndex="2"
+                      ml={4}
+                      width="calc(100% - 28px)"
+                      overflow="hidden"
+                  >
+                    <Text
+                        className="menu-item-text"
+                        fontSize="sm"
+                        fontWeight={isActive ? "medium" : "normal"}
+                        color={textColor}
+                        transition="all 0.25s ease"
+                        opacity={isCollapsed ? 0 : 1}
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                        whiteSpace={width < 220 ? "normal" : "nowrap"}
+                        wordBreak={width < 220 ? "break-word" : "normal"}
+                        lineHeight="1.2"
+                        maxHeight={width < 220 ? "36px" : "none"}
+                        _groupHover={{
+                          color: "white",
+                          fontWeight: "bold",
+                          letterSpacing: "0.02em",
+                          transform: "scale(1.05)",
+                          textShadow: "0 1px 2px rgba(0,0,0,0.2)",
+                        }}
+                        style={{
+                          transformOrigin: "left center",
+                        }}
+                    >
+                      {item.label}
+                    </Text>
+                  </Box>
+              )}
+
+              {/* Right arrow indicator with animation */}
+              {!isCollapsed && (
+                  <Box
+                      position="absolute"
+                      right="12px"
+                      color="white"
+                      opacity={isHovered ? 1 : 0}
+                      transform={isHovered ? "translateX(0)" : "translateX(-10px)"}
+                      fontWeight="bold"
+                      fontSize="md"
+                      zIndex="2"
+                      transition="all 0.3s ease"
+                      textShadow="0 1px 2px rgba(0,0,0,0.2)"
+                  >
+                    →
+                  </Box>
+              )}
+            </Flex>
+          </Box>
+        </Tooltip>
+    ) : (
+        <Tooltip
+            label={isCollapsed ? item.label : ""}
+            placement="right"
+            hasArrow
+            bg="cyan.500"
+            color="white"
+            fontWeight="medium"
+            px={3}
+            py={2}
+            borderRadius="md"
+            isDisabled={!isCollapsed}
+            openDelay={200}
+            gutter={12}
+        >
+          <Box
+              position="relative"
+              width="100%"
+              mb={2}
+              className="menu-item-container"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+          >
+            {/* Regular background fill - changes color on hover */}
+            <Box
+                position="absolute"
+                top="0"
+                left="0"
+                right="0"
+                bottom="0"
+                borderRadius="md"
+                borderLeft="3px solid"
+                borderLeftColor={isActive ? activeItemBorder : 'transparent'}
+                bg={isActive ? activeItemBg : 'transparent'}
+                transition="all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                zIndex="1"
+                className="menu-item-bg"
+                _groupHover={{
+                  bg: hoverBg,
+                  borderLeftColor: isActive ? activeItemBorder : hoverBg,
+                  boxShadow: "lg",
+                  transform: "translateY(-4px) scale(1.03)",
+                }}
+            />
+
+            {/* Content container */}
+            <Flex
+                py={3}
+                px={4}
+                position="relative"
+                zIndex="2"
+                alignItems="center"
+                justifyContent={isCollapsed ? "center" : "flex-start"}
+                width="100%"
+                cursor="pointer"
+                onClick={item?.logout}
                 role="group"
             >
               {/* Icon container */}

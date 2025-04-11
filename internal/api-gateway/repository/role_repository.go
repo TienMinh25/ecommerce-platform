@@ -244,7 +244,7 @@ func (r *roleRepository) CreateRole(ctx context.Context, roleName string, roleDe
 	})
 }
 
-func (r *roleRepository) CheckExistsRoleByName(ctx context.Context, name string) error {
+func (r *roleRepository) CheckExistsRoleByName(ctx context.Context, name string) (bool, error) {
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckExistsRoleByName"))
 	defer span.End()
 
@@ -253,21 +253,13 @@ func (r *roleRepository) CheckExistsRoleByName(ctx context.Context, name string)
 	var isExists bool
 	if err := r.db.QueryRow(ctx, sqlCheck, name).Scan(&isExists); err != nil {
 		span.RecordError(err)
-		return utils.TechnicalError{
+		return false, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
-	if !isExists {
-		return utils.BusinessError{
-			Code:      http.StatusBadRequest,
-			Message:   "Role is not exists",
-			ErrorCode: errorcode.NOT_FOUND,
-		}
-	}
-
-	return nil
+	return isExists, nil
 }
 
 func (r *roleRepository) UpdateRole(ctx context.Context, roleID int, roleName string, roleDesc string, permissionsDetail []api_gateway_models.PermissionDetailType) error {

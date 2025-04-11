@@ -22,10 +22,19 @@ const DashboardHeader = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'gray.100');
   const navigate = useNavigate();
-  const {user} = useAuth()
+  const {user, logout} = useAuth()
 
   // Use the useDisclosure hook for controlling the menu
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login', {replace: true});
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const handleLogoClick = () => {
     navigate('/');
@@ -92,7 +101,13 @@ const DashboardHeader = () => {
             >
               <MenuItem>Profile</MenuItem>
               <MenuItem>Settings</MenuItem>
-              <MenuItem>Logout</MenuItem>
+              <MenuItem
+                  onClick={handleLogout}
+                  color="red.500"
+                  py={3}
+                  _hover={{ bg: 'red.50' }}
+                  w="full"
+              >Logout</MenuItem>
             </MenuList>
           </Menu>
         </Flex>

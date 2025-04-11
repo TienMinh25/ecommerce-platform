@@ -57,7 +57,7 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate('/login', {replace: true});
     } catch (error) {
       console.error('Logout failed:', error);
     }

@@ -58,6 +58,19 @@ func (r *roleHandler) GetRoles(ctx *gin.Context) {
 		return
 	}
 
+	if data.GetAll {
+		roles, err := r.service.GetAllRoles(ct)
+
+		if err != nil {
+			span.RecordError(err)
+			utils.HandleErrorResponse(ctx, err)
+			return
+		}
+
+		utils.SuccessResponse(ctx, http.StatusOK, roles)
+		return
+	}
+
 	res, totalItems, totalPages, hasNext, hasPrevious, err := r.service.GetRoles(ct, &data)
 
 	if err != nil {

@@ -2,23 +2,33 @@ package api_gateway_service
 
 import (
 	"context"
+	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/pkg/errors"
 	"math"
+	"net/http"
+	"slices"
+	"strconv"
 )
 
 type roleService struct {
 	tracer   pkg.Tracer
 	roleRepo api_gateway_repository.IRoleRepository
+	redis    pkg.ICache
 }
 
-func NewRoleService(tracer pkg.Tracer, roleRepo api_gateway_repository.IRoleRepository) IRoleService {
+func NewRoleService(tracer pkg.Tracer, roleRepo api_gateway_repository.IRoleRepository, redis pkg.ICache) IRoleService {
 	return &roleService{
 		tracer:   tracer,
 		roleRepo: roleRepo,
+		redis:    redis,
 	}
 }
 
@@ -63,8 +73,18 @@ func (r *roleService) CreateRole(ctx context.Context, data *api_gateway_dto.Crea
 	defer span.End()
 
 	// check exists or not
-	if err := r.roleRepo.CheckExistsRoleByName(ctx, data.RoleName); err != nil {
+	isExists, err := r.roleRepo.CheckExistsRoleByName(ctx, data.RoleName)
+
+	if err != nil {
 		return err
+	}
+
+	if isExists {
+		return utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "Role is already exists",
+			ErrorCode: errorcode.ALREADY_EXISTS,
+		}
 	}
 
 	var permissionDetails []api_gateway_models.PermissionDetailType
@@ -89,8 +109,17 @@ func (r *roleService) UpdateRole(ctx context.Context, data *api_gateway_dto.Upda
 	defer span.End()
 
 	// check exists or not
-	if err := r.roleRepo.CheckExistsRoleByName(ctx, data.RoleName); err != nil {
+	isExists, err := r.roleRepo.CheckExistsRoleByName(ctx, data.RoleName)
+	if err != nil {
 		return err
+	}
+
+	if !isExists {
+		return utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "Role is not exists",
+			ErrorCode: errorcode.NOT_FOUND,
+		}
 	}
 
 	var permissionDetails []api_gateway_models.PermissionDetailType
@@ -128,4 +157,61 @@ func (r *roleService) DeleteRoleByID(ctx context.Context, roleID int) error {
 	}
 
 	return nil
+}
+
+func (r *roleService) GetAllRoles(ctx context.Context) ([]api_gateway_dto.GetRoleResponse, error) {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetAllRoles"))
+	defer span.End()
+
+	roleMap, err := r.GetAllRolesFromRedis(ctx)
+
+	if err != nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	var res []api_gateway_dto.GetRoleResponse
+
+	for roleName, roleID := range roleMap {
+		res = append(res, api_gateway_dto.GetRoleResponse{
+			ID:   roleID,
+			Name: roleName,
+		})
+	}
+
+	slices.SortFunc(res, func(a, b api_gateway_dto.GetRoleResponse) int {
+		return a.ID - b.ID
+	})
+
+	return res, nil
+}
+
+func (r *roleService) GetAllRolesFromRedis(ctx context.Context) (map[string]int, error) {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetAllRolesFromRedis"))
+	defer span.End()
+
+	roleName := []common.RoleName{
+		common.RoleCustomer,
+		common.RoleSupplier,
+		common.RoleAdmin,
+		common.RoleDeliverer,
+	}
+
+	res := make(map[string]int, len(roleName))
+
+	for _, role := range roleName {
+		idStr, err := r.redis.Get(ctx, fmt.Sprintf("role:%v", role))
+
+		if err != nil {
+			return nil, errors.Wrap(err, "r.service.GetAllRolesFromRedis.redis.Get")
+		}
+
+		id, _ := strconv.Atoi(idStr)
+
+		res[string(role)] = id
+	}
+
+	return res, nil
 }

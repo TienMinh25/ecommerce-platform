@@ -6,8 +6,9 @@ import (
 )
 
 type GetRoleRequest struct {
-	Limit int `form:"limit" binding:"omitempty,gte=1"`
-	Page  int `form:"page" binding:"omitempty,gte=1"`
+	Limit  int  `form:"limit" binding:"omitempty,gte=1"`
+	Page   int  `form:"page" binding:"omitempty,gte=1"`
+	GetAll bool `form:"getAll"`
 
 	// search
 	SearchBy    *string `form:"searchBy" binding:"omitempty,oneof=name"`
