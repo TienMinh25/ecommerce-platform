@@ -101,7 +101,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
         setIsLoadingRoles(true);
         setRoleError(null);
         try {
-            const roles = await roleService.getRoles();
+            const roles = await roleService.getRoles({getAll: true});
             if (roles && Array.isArray(roles)) {
                 const formattedRoles = roles.map(role => ({
                     id: role.id,

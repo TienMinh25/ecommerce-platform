@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"math"
 	"net/http"
+	"slices"
 	"strconv"
 )
 
@@ -156,6 +157,10 @@ func (m *moduleService) GetAllModules(ctx context.Context) ([]api_gateway_dto.Ge
 			Name: moduleName,
 		})
 	}
+
+	slices.SortFunc(res, func(a, b api_gateway_dto.GetModuleResponse) int {
+		return a.ID - b.ID
+	})
 
 	return res, nil
 }

@@ -98,7 +98,7 @@ const ModuleManagementComponent = () => {
     const fetchModules = async () => {
         setIsLoading(true);
         try {
-            const response = await moduleService.getModules(currentPage, rowsPerPage);
+            const response = await moduleService.getModules({page: currentPage, limit: rowsPerPage});
 
             if (response && response.data) {
                 const formattedData = response.data.map(item => ({

@@ -71,5 +71,9 @@ type IUserService interface {
 }
 
 type IRoleService interface {
-	GetRoles(ctx context.Context) ([]api_gateway_dto.RoleLoginResponse, error)
+	GetRoles(ctx context.Context, data *api_gateway_dto.GetRoleRequest) ([]api_gateway_dto.GetRoleResponse, int, int, bool, bool, error)
+	CreateRole(ctx context.Context, data *api_gateway_dto.CreateRoleRequest) error
+	UpdateRole(ctx context.Context, data *api_gateway_dto.UpdateRoleRequest, roleID int) error
+	DeleteRoleByID(ctx context.Context, roleID int) error
+	GetAllRoles(ctx context.Context) ([]api_gateway_dto.GetRoleResponse, error)
 }

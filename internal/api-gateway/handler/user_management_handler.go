@@ -130,7 +130,7 @@ func (h *userManagementHandler) CreateUser(ctx *gin.Context) {
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
-//	@Router			/users/:userID [patch]
+//	@Router			/users/{userID} [patch]
 func (h *userManagementHandler) UpdateUser(ctx *gin.Context) {
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)
@@ -176,7 +176,7 @@ func (h *userManagementHandler) UpdateUser(ctx *gin.Context) {
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
-//	@Router			/users/:userID [delete]
+//	@Router			/users/{userID} [delete]
 func (h *userManagementHandler) DeleteUserByID(ctx *gin.Context) {
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)

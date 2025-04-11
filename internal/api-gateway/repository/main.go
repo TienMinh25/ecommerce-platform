@@ -98,7 +98,12 @@ type IPermissionRepository interface {
 }
 
 type IRoleRepository interface {
-	GetRoles(ctx context.Context) ([]api_gateway_models.Role, error)
+	GetRoles(ctx context.Context, data *api_gateway_dto.GetRoleRequest) ([]api_gateway_models.Role, int, error)
+	CreateRole(ctx context.Context, roleName string, roleDescription string, permissionsDetail []api_gateway_models.PermissionDetailType) error
+	CheckExistsRoleByName(ctx context.Context, name string) (bool, error)
+	UpdateRole(ctx context.Context, roleID int, roleName string, roleDesc string, permissionsDetail []api_gateway_models.PermissionDetailType) error
+	CheckRoleHasUsed(ctx context.Context, roleID int) error
+	DeleteRoleByID(ctx context.Context, roleID int) error
 }
 
 type IRolePermissionModuleRepository interface {

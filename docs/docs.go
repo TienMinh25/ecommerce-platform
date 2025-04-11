@@ -1448,11 +1448,233 @@ const docTemplate = `{
                     "roles"
                 ],
                 "summary": "Get list roles pagination with some filter and sorting",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit number of records returned",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "enum": [
+                            "name"
+                        ],
+                        "type": "string",
+                        "description": "Provide for search by name",
+                        "name": "searchBy",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Value for search",
+                        "name": "searchValue",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "name"
+                        ],
+                        "type": "string",
+                        "description": "Sort by some attributes",
+                        "name": "sortBy",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "asc",
+                            "desc"
+                        ],
+                        "type": "string",
+                        "description": "Sort order asc or desc",
+                        "name": "sortOrder",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api_gateway_dto.GetRoleResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create new role based on modules and permissions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Create new role based on modules and permissions",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.CreateRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.CreateRoleResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/roles/{roleID}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Delete role by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Delete role by id",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Role id for delete",
+                        "name": "roleID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.DeleteRolesResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Update permissions on modules for role",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "roles"
+                ],
+                "summary": "Update permissions on modules for role",
+                "parameters": [
+                    {
+                        "description": "Request body",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateRoleRequest"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Role id to update",
+                        "name": "roleID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateRolesResponseDocs"
                         }
                     },
                     "400": {
@@ -1687,7 +1909,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/:userID": {
+        "/users/{userID}": {
             "delete": {
                 "security": [
                     {
@@ -1933,6 +2155,42 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.CreateRoleRequest": {
+            "type": "object",
+            "required": [
+                "modules_permissions",
+                "role_name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "modules_permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.ModulesPermissionsRequest"
+                    }
+                },
+                "role_name": {
+                    "type": "string",
+                    "minLength": 3
+                }
+            }
+        },
+        "api_gateway_dto.CreateRoleResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.CreateRoleResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.CreateRoleResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.CreateUserByAdminRequest": {
             "type": "object",
             "required": [
@@ -2019,6 +2277,20 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.DeletePermissionByPermissionIDURIResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.DeleteRoleResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.DeleteRolesResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.DeleteRoleResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
@@ -2191,7 +2463,10 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/api_gateway_dto.GetPermissionResponse"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetPermissionResponse"
+                    }
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
@@ -2209,6 +2484,12 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_models.PermissionDetailType"
+                    }
                 },
                 "updated_at": {
                     "type": "string"
@@ -2376,6 +2657,25 @@ const docTemplate = `{
             "properties": {
                 "code": {
                     "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.ModulesPermissionsRequest": {
+            "type": "object",
+            "required": [
+                "module_id",
+                "permissions"
+            ],
+            "properties": {
+                "module_id": {
+                    "type": "integer",
+                    "minimum": 1
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },
@@ -2595,6 +2895,42 @@ const docTemplate = `{
         "api_gateway_dto.UpdatePermissionByPermissionIDResponse": {
             "type": "object"
         },
+        "api_gateway_dto.UpdateRoleRequest": {
+            "type": "object",
+            "required": [
+                "modules_permissions",
+                "role_name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "modules_permissions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.ModulesPermissionsRequest"
+                    }
+                },
+                "role_name": {
+                    "type": "string",
+                    "minLength": 3
+                }
+            }
+        },
+        "api_gateway_dto.UpdateRoleResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.UpdateRolesResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateRoleResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.UpdateUserByAdminRequest": {
             "type": "object",
             "required": [
@@ -2661,6 +2997,20 @@ const docTemplate = `{
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_models.PermissionDetailType": {
+            "type": "object",
+            "properties": {
+                "module_id": {
+                    "type": "integer"
+                },
+                "permissions": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
                 }
             }
         },

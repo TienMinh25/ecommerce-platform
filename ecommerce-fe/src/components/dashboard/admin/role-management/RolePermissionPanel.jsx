@@ -1,36 +1,39 @@
-import React, { useState, useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-    Box,
-    Text,
-    Heading,
-    Table,
-    Thead,
-    Tbody,
-    Tr,
-    Th,
-    Td,
-    Switch,
     Badge,
+    Box,
     Button,
     Flex,
-    Tooltip,
     HStack,
-    Spinner,
-    useColorModeValue,
-    Collapse,
     IconButton,
-    Divider
+    Spinner,
+    Switch,
+    Table,
+    Tbody,
+    Td,
+    Text,
+    Th,
+    Thead,
+    Tooltip,
+    Tr,
+    useColorModeValue,
+    useToast
 } from '@chakra-ui/react';
-import { FiLock, FiInfo, FiX } from 'react-icons/fi';
+import {FiInfo, FiLock, FiSave, FiX} from 'react-icons/fi';
 import moduleService from "../../../../services/moduleService.js";
 import permissionService from "../../../../services/permissionService.js";
+import PermissionSwitch from "./PermissionSwitch.jsx";
 
-const InlineUserPermissionsPanel = ({ user, onSave, onClose, isLoading = false }) => {
+const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modulesList = [], permissionsList = [] }) => {
     const [modules, setModules] = useState([]);
     const [loadingModules, setLoadingModules] = useState(false);
     const [savingChanges, setSavingChanges] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
 
-    // Màu sắc
+    // Toast for notifications
+    const toast = useToast();
+
+    // Theme colors
     const headerBgColor = useColorModeValue('gray.50', 'gray.900');
     const borderColor = useColorModeValue('gray.200', 'gray.700');
     const hoverBgColor = useColorModeValue('blue.50', 'gray.700');
@@ -38,144 +41,206 @@ const InlineUserPermissionsPanel = ({ user, onSave, onClose, isLoading = false }
     const bgColor = useColorModeValue('white', 'gray.800');
     const panelBgColor = useColorModeValue('white', 'gray.800');
 
-    // Tạo danh sách modules với các quyền từ dữ liệu người dùng
+    // Load modules and permissions
     useEffect(() => {
-        if (user) {
-            setLoadingModules(true);
-
-            // Lấy tất cả modules và permissions
-            Promise.all([
-                moduleService.getModules(1, 100, true),
-                permissionService.getPermissions(1, 100, true)
-            ])
-                .then(([modulesResponse, permissionsResponse]) => {
-                    const allModules = modulesResponse.data;
-
-                    // Tạo cấu trúc dữ liệu modules với các quyền
-                    const formattedModules = allModules.map(module => {
-                        // Tìm module tương ứng trong quyền của người dùng
-                        const userModule = user.module_permission?.find(m => m.module_id === module.id);
-
-                        // Mặc định các quyền là false
-                        const moduleData = {
-                            id: module.id,
-                            name: module.name,
-                            read: false,
-                            create: false,
-                            update: false,
-                            delete: false,
-                            approve: false,
-                            reject: false
-                        };
-
-                        // Nếu người dùng có quyền cho module này, cập nhật trạng thái
-                        if (userModule) {
-                            userModule.permissions.forEach(permission => {
-                                const permName = permission.permission_name;
-                                if (permName in moduleData) {
-                                    moduleData[permName] = true;
-                                }
-                            });
-                        }
-
-                        return moduleData;
-                    });
-
-                    setModules(formattedModules);
-                })
-                .catch(error => {
-                    console.error('Error loading modules and permissions:', error);
-                })
-                .finally(() => {
-                    setLoadingModules(false);
-                });
+        if (role) {
+            // If modulesList is provided, use it
+            if (modulesList && modulesList.length > 0) {
+                mapModulesFromProps();
+            } else {
+                // Otherwise fetch from API
+                fetchModulesAndPermissions();
+            }
         }
-    }, [user]);
+    }, [role, modulesList]);
 
-    // Xử lý thay đổi quyền
+    // Map modules from props instead of fetching
+    const mapModulesFromProps = () => {
+        if (!role || !modulesList) return;
+
+        setLoadingModules(true);
+        try {
+            // Create the module permission structure
+            const formattedModules = modulesList.map(module => {
+                // Check if this module has permissions in the role
+                const modulePermissions = role.permissions?.find(p => p.module_id === module.id);
+
+                // Create a permissions object for this module
+                const permissionObject = {
+                    id: module.id,
+                    name: module.name,
+                    read: false,
+                    create: false,
+                    update: false,
+                    delete: false,
+                    approve: false,
+                    reject: false
+                };
+
+                // If this role has permissions for this module, mark them as true
+                if (modulePermissions) {
+                    const permList = modulePermissions.permissions || [];
+
+                    // Handle numeric permission IDs
+                    if (permList.includes(1)) permissionObject.read = true;
+                    if (permList.includes(2)) permissionObject.create = true;
+                    if (permList.includes(3)) permissionObject.update = true;
+                    if (permList.includes(4)) permissionObject.delete = true;
+                    if (permList.includes(5)) permissionObject.approve = true;
+                    if (permList.includes(6)) permissionObject.reject = true;
+                }
+
+                return permissionObject;
+            });
+
+            setModules(formattedModules);
+        } catch (error) {
+            console.error('Error mapping modules:', error);
+            toast({
+                title: 'Error loading permissions',
+                description: 'Failed to load module permissions.',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        } finally {
+            setLoadingModules(false);
+        }
+    };
+
+    // Fetch modules and permissions data from API
+    const fetchModulesAndPermissions = async () => {
+        setLoadingModules(true);
+        try {
+            // Get all modules and permissions in parallel to reduce API calls
+            const [modulesResponse, permissionsResponse] = await Promise.all([
+                moduleService.getModules({ getAll: true }),
+                permissionService.getPermissions({ getAll: true })
+            ]);
+
+            const allModules = modulesResponse.data || [];
+
+            // Create the module permission structure
+            const formattedModules = allModules.map(module => {
+                // Check if this module has permissions in the role
+                const modulePermissions = role.permissions?.find(p => p.module_id === module.id);
+
+                // Create a permissions object for this module
+                const permissionObject = {
+                    id: module.id,
+                    name: module.name,
+                    read: false,
+                    create: false,
+                    update: false,
+                    delete: false,
+                    approve: false,
+                    reject: false
+                };
+
+                // If this role has permissions for this module, mark them as true
+                if (modulePermissions) {
+                    const permList = modulePermissions.permissions || [];
+
+                    // Handle numeric permission IDs
+                    if (permList.includes(1)) permissionObject.read = true;
+                    if (permList.includes(2)) permissionObject.create = true;
+                    if (permList.includes(3)) permissionObject.update = true;
+                    if (permList.includes(4)) permissionObject.delete = true;
+                    if (permList.includes(5)) permissionObject.approve = true;
+                    if (permList.includes(6)) permissionObject.reject = true;
+                }
+
+                return permissionObject;
+            });
+
+            setModules(formattedModules);
+        } catch (error) {
+            console.error('Error loading modules and permissions:', error);
+            toast({
+                title: 'Error loading permissions',
+                description: 'Failed to load module permissions.',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        } finally {
+            setLoadingModules(false);
+        }
+    };
+
+    // Handle permission toggle
     const handleTogglePermission = (moduleId, permission) => {
         setModules(modules.map(module =>
             module.id === moduleId
                 ? { ...module, [permission]: !module[permission] }
                 : module
         ));
+        setHasChanges(true);
     };
 
-    // Xử lý lưu thay đổi
+    // Handle save permissions
     const handleSave = async () => {
-        if (!user) return;
+        if (!role) return;
 
         setSavingChanges(true);
-
         try {
-            // Định dạng dữ liệu để gửi lên server
-            const permissionsData = modules.map(module => {
-                const permissions = [];
+            // Format the modules with permissions according to the API schema
+            const modulesWithPermissions = modules
+                .filter(module =>
+                    module.read || module.create || module.update ||
+                    module.delete || module.approve || module.reject
+                )
+                .map(module => {
+                    // Map permissions to their numeric IDs
+                    const permissionIds = [];
+                    if (module.read) permissionIds.push(1);
+                    if (module.create) permissionIds.push(2);
+                    if (module.update) permissionIds.push(3);
+                    if (module.delete) permissionIds.push(4);
+                    if (module.approve) permissionIds.push(5);
+                    if (module.reject) permissionIds.push(6);
 
-                if (module.read) permissions.push({ permission_name: 'read' });
-                if (module.create) permissions.push({ permission_name: 'create' });
-                if (module.update) permissions.push({ permission_name: 'update' });
-                if (module.delete) permissions.push({ permission_name: 'delete' });
-                if (module.approve) permissions.push({ permission_name: 'approve' });
-                if (module.reject) permissions.push({ permission_name: 'reject' });
+                    return {
+                        module_id: module.id,
+                        permissions: permissionIds
+                    };
+                });
 
-                return {
-                    module_id: module.id,
-                    module_name: module.name,
-                    permissions
-                };
-            }).filter(module => module.permissions.length > 0);
+            // Format payload for the API - based on the Swagger documentation
+            const permissionsPayload = {
+                role_name: role.name, // Include role_name as required by API
+                modules_permissions: modulesWithPermissions, // Using the correct field name from API docs
+                description: role.description // Preserve existing description
+            };
 
-            // Gọi callback onSave và truyền dữ liệu
-            await onSave(user.id, permissionsData);
+            // Call the save callback with the updated permissions
+            await onSave(role.id, permissionsPayload);
+
+            toast({
+                title: 'Permissions updated',
+                description: 'Role permissions have been updated successfully.',
+                status: 'success',
+                duration: 3000,
+                isClosable: true,
+            });
+
+            setHasChanges(false);
             onClose();
         } catch (error) {
             console.error('Error saving permissions:', error);
+            toast({
+                title: 'Update failed',
+                description: 'Failed to update role permissions.',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
         } finally {
             setSavingChanges(false);
         }
     };
 
-    // Hiển thị Switch với tooltip
-    const PermissionSwitch = ({ isChecked, onChange, permission, isDisabled = false }) => {
-        // Lấy text tooltip dựa trên loại quyền
-        const getTooltipText = () => {
-            switch(permission) {
-                case 'read': return 'View permission';
-                case 'create': return 'Create permission';
-                case 'update': return 'Edit/Update permission';
-                case 'delete': return 'Delete permission';
-                case 'approve': return 'Approve permission';
-                case 'reject': return 'Reject permission';
-                default: return 'Toggle permission';
-            }
-        };
-
-        return (
-            <Tooltip label={getTooltipText()} hasArrow placement="top">
-                <Box
-                    position="relative"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    cursor={isDisabled ? "not-allowed" : "pointer"}
-                    onClick={isDisabled ? undefined : onChange}
-                    borderRadius="md"
-                    p={0.5}
-                    opacity={isDisabled ? 0.6 : 1}
-                >
-                    <Switch
-                        colorScheme="blue"
-                        size="sm"
-                        isChecked={isChecked}
-                        isDisabled={isDisabled}
-                    />
-                </Box>
-            </Tooltip>
-        );
-    };
-
-    // Hiển thị tên module với icon khóa cho các module hệ thống
+    // Render module name with lock icon for system modules
     const renderModuleName = (moduleName) => {
         const systemModules = ['User Management', 'Role & Permission', 'Module Management'];
         if (systemModules.includes(moduleName)) {
@@ -203,7 +268,7 @@ const InlineUserPermissionsPanel = ({ user, onSave, onClose, isLoading = false }
             position="relative"
             overflow="hidden"
         >
-            {/* Header với tiêu đề và nút đóng */}
+            {/* Header with title and close button */}
             <Flex
                 bg={headerBgColor}
                 px={4}
@@ -214,10 +279,10 @@ const InlineUserPermissionsPanel = ({ user, onSave, onClose, isLoading = false }
                 borderColor={borderColor}
             >
                 <HStack>
-                    <Heading size="sm">User Permissions</Heading>
-                    {user && (
+                    <Text fontSize="md" fontWeight="bold">Role Permissions</Text>
+                    {role && (
                         <Badge colorScheme="blue" ml={2} fontSize="xs">
-                            {user.fullname}
+                            {role.name}
                         </Badge>
                     )}
                 </HStack>
@@ -230,7 +295,7 @@ const InlineUserPermissionsPanel = ({ user, onSave, onClose, isLoading = false }
                 />
             </Flex>
 
-            {/* Nội dung */}
+            {/* Content */}
             <Box p={4}>
                 {(isLoading || loadingModules) ? (
                     <Flex justify="center" align="center" direction="column" py={10}>
@@ -324,10 +389,10 @@ const InlineUserPermissionsPanel = ({ user, onSave, onClose, isLoading = false }
                             </Table>
                         </Box>
 
-                        {/* Thông tin hướng dẫn */}
+                        {/* Help text */}
                         <Text fontSize="xs" color="gray.500" mb={4}>
                             <FiInfo size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-                            Changes to permissions will take effect immediately after saving.
+                            Changes to permissions will take effect after saving.
                         </Text>
 
                         {/* Footer buttons */}
@@ -346,6 +411,8 @@ const InlineUserPermissionsPanel = ({ user, onSave, onClose, isLoading = false }
                                 isLoading={savingChanges}
                                 loadingText="Saving"
                                 onClick={handleSave}
+                                leftIcon={<FiSave size={14} />}
+                                isDisabled={!hasChanges}
                             >
                                 Save Changes
                             </Button>
@@ -357,4 +424,4 @@ const InlineUserPermissionsPanel = ({ user, onSave, onClose, isLoading = false }
     );
 };
 
-export default InlineUserPermissionsPanel;
+export default RolePermissionPanel;
