@@ -28,6 +28,7 @@ func NewRouter(
 	permissionHandler api_gateway_handler.IPermissionsHandler,
 	userManagementHandler api_gateway_handler.IUserManagementHandler,
 	roleHandler api_gateway_handler.IRoleHandler,
+	userMeHandler api_gateway_handler.IUserHandler,
 	accessTokenMiddleware *middleware.JwtMiddleware,
 	permissionMiddleware *middleware.PermissionMiddleware,
 ) *Router {
@@ -39,6 +40,7 @@ func NewRouter(
 	registerPermissionEndPoint(apiV1Group, permissionMiddleware, accessTokenMiddleware, permissionHandler)
 	registerUserManagementEndpoint(apiV1Group, permissionMiddleware, accessTokenMiddleware, userManagementHandler)
 	registerRoleHandler(apiV1Group, permissionMiddleware, accessTokenMiddleware, roleHandler)
+	registerUserMeHandler(apiV1Group, permissionMiddleware, accessTokenMiddleware, userMeHandler)
 
 	return &Router{
 		Router: router,
@@ -131,5 +133,14 @@ func registerRoleHandler(group *gin.RouterGroup, permissionMiddleware *middlewar
 		roleGroup.POST("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Create), roleHandler.CreateRole)
 		roleGroup.PATCH("/:roleID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Update), roleHandler.UpdateRole)
 		roleGroup.DELETE("/:roleID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.RolePermission, common.Delete), roleHandler.DeleteRole)
+	}
+}
+
+func registerUserMeHandler(group *gin.RouterGroup, permissionMiddleware *middleware.PermissionMiddleware, accessTokenMiddleware *middleware.JwtMiddleware, handler api_gateway_handler.IUserHandler) {
+	userMeGroup := group.Group("users")
+	userMeGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		userMeGroup.GET("/me", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetCurrentUser)
+		userMeGroup.PATCH("/me", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateCurrentUser)
 	}
 }

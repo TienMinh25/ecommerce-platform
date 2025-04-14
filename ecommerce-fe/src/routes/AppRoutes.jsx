@@ -22,6 +22,12 @@ import OAuthCallbackPage from "../pages/Auth/OAuthCallbackPage.jsx";
 import PermissionManagementComponent from "../components/dashboard/admin/permission-management/PermissionManagementComponent.jsx";
 import ModuleManagementComponent from "../components/dashboard/admin/module-management/ModuleManagementComponent.jsx";
 import AddressTypesManagementComponent from "../components/dashboard/admin/address-types-management/AddressTypesManagementComponent.jsx";
+import UserAccountLayout from "../components/user/UserAccountLayout.jsx";
+import UserProfile from "../components/user/UserProfile.jsx";
+import ChangePassword from "../components/user/ChangePassword.jsx";
+import UserAddresses from "../components/user/UserAddresses.jsx";
+import NotificationSettings from "../components/user/NotificationSettings.jsx";
+import UserOrders from "../components/user/UserOrders.jsx";
 
 const AppRoutes = () => {
     return (
@@ -41,6 +47,15 @@ const AppRoutes = () => {
             <Route element={<PrivateRoute />}>
                 <Route element={<MainLayout />}>
                     <Route path='/' element={<Home />} />
+                    {/* User Account Routes */}
+                    <Route path='/user/account' element={<UserAccountLayout />}>
+                        <Route index element={<Navigate to='/user/account/profile' replace />} />
+                        <Route path='profile' element={<UserProfile />} />
+                        <Route path='password' element={<ChangePassword />} />
+                        <Route path='addresses' element={<UserAddresses />} />
+                        <Route path='notifications' element={<NotificationSettings />} />
+                        <Route path='orders' element={<UserOrders />} />
+                    </Route>
                 </Route>
                 <Route path='/dashboard' element={<DashboardLayout />}>
                     {/* Main dashboard */}

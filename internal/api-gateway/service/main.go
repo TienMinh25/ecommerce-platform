@@ -70,6 +70,12 @@ type IUserService interface {
 	DeleteUserByAdmin(ctx context.Context, userID int) error
 }
 
+type IUserMeService interface {
+	GetCurrentUser(ctx context.Context, email string) (*api_gateway_dto.GetCurrentUserResponse, error)
+	UpdateCurrentUser(ctx context.Context, email string, data *api_gateway_dto.UpdateCurrentUserRequest) error
+	CheckUserExistsByEmail(ctx context.Context, email string) (bool, error)
+}
+
 type IRoleService interface {
 	GetRoles(ctx context.Context, data *api_gateway_dto.GetRoleRequest) ([]api_gateway_dto.GetRoleResponse, int, int, bool, bool, error)
 	CreateRole(ctx context.Context, data *api_gateway_dto.CreateRoleRequest) error

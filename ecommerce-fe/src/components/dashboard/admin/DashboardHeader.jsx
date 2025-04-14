@@ -10,9 +10,10 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  MenuDivider,
   useDisclosure,
 } from '@chakra-ui/react';
-
+import { FaHome } from 'react-icons/fa';
 import LogoCompact from '../../ui/LogoCompact.jsx';
 import { useNavigate } from "react-router-dom";
 import useAuth from "../../../hooks/useAuth.js";
@@ -24,9 +25,7 @@ const DashboardHeader = () => {
   const navigate = useNavigate();
   const {user, logout} = useAuth()
 
-  // Use the useDisclosure hook for controlling the menu
-  const { isOpen, onOpen, onClose } = useDisclosure();
-
+  // Remove useDisclosure as we'll use Menu's built-in state control
   const handleLogout = async () => {
     try {
       await logout();
@@ -72,13 +71,18 @@ const DashboardHeader = () => {
           </Flex>
 
           {/* User Profile */}
-          <Menu isLazy placement="bottom-end" isOpen={isOpen}>
+          <Menu isLazy placement="bottom-end">
             <MenuButton
                 as={Box}
-                onMouseEnter={onOpen}
-                onMouseLeave={onClose}
+                cursor="pointer"
+                borderRadius="md"
+                px={3}
+                py={2}
+                _hover={{ bg: 'gray.100' }}
+                _active={{ bg: 'gray.200' }}
+                transition="all 0.2s"
             >
-              <HStack spacing={3} cursor="pointer">
+              <HStack spacing={3}>
                 <Avatar
                     size="sm"
                     src={user.avatarUrl}
@@ -94,20 +98,42 @@ const DashboardHeader = () => {
               </HStack>
             </MenuButton>
             <MenuList
-                shadow="md"
-                minW="180px"
-                onMouseEnter={onOpen}
-                onMouseLeave={onClose}
+                zIndex={1000}
+                p={0}
+                overflow="hidden"
+                borderRadius="md"
+                boxShadow="lg"
             >
-              <MenuItem>Profile</MenuItem>
-              <MenuItem>Settings</MenuItem>
+              <MenuItem
+                  py={3}
+                  onClick={() => navigate("/user/account/profile")}
+                  _hover={{ bg: 'gray.50' }}
+                  w="full"
+              >
+                Profile
+              </MenuItem>
+              <MenuDivider m={0} />
+              <MenuItem
+                  onClick={() => navigate('/')}
+                  py={3}
+                  _hover={{ bg: 'gray.50' }}
+                  w="full"
+              >
+                <Flex align="center">
+                  <FaHome style={{ marginRight: '8px' }} />
+                  Back to Home
+                </Flex>
+              </MenuItem>
+              <MenuDivider m={0} />
               <MenuItem
                   onClick={handleLogout}
                   color="red.500"
                   py={3}
                   _hover={{ bg: 'red.50' }}
                   w="full"
-              >Logout</MenuItem>
+              >
+                Logout
+              </MenuItem>
             </MenuList>
           </Menu>
         </Flex>

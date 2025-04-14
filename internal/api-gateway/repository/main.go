@@ -60,6 +60,10 @@ type IUserRepository interface {
 	UpdateUserByAdmin(ctx context.Context, data *api_gateway_dto.UpdateUserByAdminRequest, userID int) error
 
 	DeleteUserByID(ctx context.Context, userID int) error
+
+	GetCurrentUserInfo(ctx context.Context, email string) (*api_gateway_models.User, error)
+
+	UpdateCurrentUserInfo(ctx context.Context, email string, data *api_gateway_dto.UpdateCurrentUserRequest) error
 }
 
 type IUserPasswordRepository interface {
