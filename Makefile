@@ -10,7 +10,7 @@ protoc-compile:
 		internal/protos/*.proto
 
 migration-create:
-	@migrate create -ext sql -dir $(dir_api_gateway) -seq $(name)
+	@migrate create -ext sql -dir $(dir) -seq $(name)
 
 migrate-up:
 	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir_api_gateway) up
