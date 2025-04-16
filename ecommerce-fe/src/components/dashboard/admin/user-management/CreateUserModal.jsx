@@ -223,7 +223,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                     password: formData.password,
                     fullname: formData.fullname,
                     phone: formData.phone,
-                    birthdate: formData.birthdate,
+                    birthdate: formData.birthdate || "",
                     status: formData.status ? 'active' : 'inactive',
                     roles: formData.roles.map(role => parseInt(role.id)),
                     avatar_url: avatarUrl, // Sử dụng URL từ ui-avatars.com

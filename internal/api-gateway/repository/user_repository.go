@@ -588,11 +588,10 @@ func (u *userRepository) CreateUserByAdmin(ctx context.Context, data *api_gatewa
 			}
 		}
 
-		var birthDateOnly any = nil
+		var birthDateOnly *string = nil
 
-		if data.BirthDate != nil {
-			year, month, day := data.BirthDate.Date()
-			birthDateOnly = time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+		if data.BirthDate != "" {
+			*birthDateOnly = data.BirthDate
 		}
 		// insert into user
 		sqlInsertUser := `INSERT INTO users (fullname, email, avatar_url, birthdate, email_verified,
