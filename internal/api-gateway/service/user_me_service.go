@@ -2,24 +2,29 @@ package api_gateway_service
 
 import (
 	"context"
+	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/google/uuid"
 	"net/http"
+	"path/filepath"
 	"time"
 )
 
 type userMeService struct {
 	tracer   pkg.Tracer
 	userRepo api_gateway_repository.IUserRepository
+	minio    pkg.Storage
 }
 
-func NewUserMeService(tracer pkg.Tracer, userRepo api_gateway_repository.IUserRepository) IUserMeService {
+func NewUserMeService(tracer pkg.Tracer, userRepo api_gateway_repository.IUserRepository, minio pkg.Storage) IUserMeService {
 	return &userMeService{
 		tracer:   tracer,
 		userRepo: userRepo,
+		minio:    minio,
 	}
 }
 
@@ -49,7 +54,7 @@ func (u *userMeService) GetCurrentUser(ctx context.Context, email string) (*api_
 
 	response := &api_gateway_dto.GetCurrentUserResponse{
 		ID:          user.ID,
-		Fullname:    user.FullName,
+		FullName:    user.FullName,
 		Email:       user.Email,
 		AvatarURL:   user.AvatarURL,
 		BirthDate:   formatBirthDate(user.BirthDate),
@@ -110,4 +115,31 @@ func (u *userMeService) UpdateCurrentUser(ctx context.Context, email string, dat
 	}
 
 	return nil
+}
+
+func (u *userMeService) GetAvatarUploadURL(ctx context.Context, data *api_gateway_dto.GetAvatarPresignedURLRequest, userID int) (string, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetAvatarUploadURL"))
+	defer span.End()
+
+	// handle to get extension name
+	fileExt := filepath.Ext(data.FileName)
+
+	fileUUID := uuid.New().String()
+	timestamp := time.Now().UnixNano()
+
+	objectName := fmt.Sprintf("users/%v/%d_%s%s",
+		userID,
+		timestamp,
+		fileUUID,
+		fileExt,
+	)
+
+	presignedURL, err := u.minio.GenerateUploadPresignedURL(ctx, objectName, "")
+
+	if err != nil {
+		span.RecordError(err)
+		return "", err
+	}
+
+	return presignedURL, nil
 }

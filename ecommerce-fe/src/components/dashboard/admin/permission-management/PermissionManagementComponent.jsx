@@ -305,7 +305,7 @@ const PermissionManagementComponent = () => {
                                 <FiSearch color="gray.400" />
                             </InputLeftElement>
                             <Input
-                                placeholder="Search permissions..."
+                                placeholder="Tìm kiếm quyền truy cập theo tên..."
                                 pl={10}
                                 pr={2}
                                 py={2.5}
@@ -361,7 +361,7 @@ const PermissionManagementComponent = () => {
                             setIsCreateModalOpen(true);
                         }}
                     >
-                        Create
+                        Tạo mới quyền truy cập
                     </Button>
                 </HStack>
             </Flex>
@@ -416,7 +416,7 @@ const PermissionManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Permission Name
+                                    Tên quyền
                                 </Th>
                                 <Th
                                     py={4}
@@ -427,7 +427,7 @@ const PermissionManagementComponent = () => {
                                     fontWeight="bold"
                                     display={{ base: "none", md: "table-cell" }}
                                 >
-                                    Last Updated
+                                    Thời gian cập nhật gần nhất
                                 </Th>
                                 <Th
                                     py={4}
@@ -439,7 +439,7 @@ const PermissionManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Actions
+                                    Hành động
                                 </Th>
                             </Tr>
                         </Thead>
@@ -447,7 +447,7 @@ const PermissionManagementComponent = () => {
                             {isLoading ? (
                                 <Tr>
                                     <Td colSpan={3} textAlign="center">
-                                        <Text py={4}>Loading...</Text>
+                                        <Text py={4}>Đang tải...</Text>
                                     </Td>
                                 </Tr>
                             ) : filteredData.length > 0 ? (
@@ -520,8 +520,8 @@ const PermissionManagementComponent = () => {
                                             <Box color="gray.400" mb={3}>
                                                 <FiSearch size={36} />
                                             </Box>
-                                            <Text fontWeight="normal" color="gray.500" fontSize="md">No permissions found</Text>
-                                            <Text color="gray.400" fontSize="sm" mt={1}>Try a different search term</Text>
+                                            <Text fontWeight="normal" color="gray.500" fontSize="md">Hiện chưa có quyền nào</Text>
+                                            <Text color="gray.400" fontSize="sm" mt={1}>Hãy thử tìm kiếm bằng tên khác</Text>
                                         </Flex>
                                     </Td>
                                 </Tr>
@@ -552,8 +552,8 @@ const PermissionManagementComponent = () => {
                     >
                         <HStack spacing={1} flexShrink={0}>
                             <Text fontSize="sm" color="gray.600" fontWeight="normal">
-                                Showing {filteredData.length > 0 ? ((currentPage - 1) * rowsPerPage) + 1 : 0}-
-                                {Math.min(currentPage * rowsPerPage, totalItems)} of {totalItems} permissions
+                                Hiển thị {filteredData.length > 0 ? ((currentPage - 1) * rowsPerPage) + 1 : 0}-
+                                {Math.min(currentPage * rowsPerPage, totalItems)} trên tổng số {totalItems} quyền
                             </Text>
                             <Menu>
                                 <MenuButton
@@ -565,12 +565,12 @@ const PermissionManagementComponent = () => {
                                     fontWeight="normal"
                                     color="gray.600"
                                 >
-                                    {rowsPerPage} per page
+                                    {rowsPerPage} dòng mỗi trang
                                 </MenuButton>
                                 <MenuList minW="120px" shadow="lg" borderRadius="md">
-                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 per page</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 dòng mỗi trang</MenuItem>
                                 </MenuList>
                             </Menu>
                         </HStack>
@@ -624,30 +624,30 @@ const PermissionManagementComponent = () => {
             <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Create Permission</ModalHeader>
+                    <ModalHeader>Tạo quyền truy cập</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <FormControl isInvalid={!!formError}>
-                            <FormLabel>Permission Name</FormLabel>
+                            <FormLabel>Tên truy cập</FormLabel>
                             <Input
                                 value={permissionName}
                                 onChange={(e) => {
                                     setPermissionName(e.target.value);
                                     setFormError('');
                                 }}
-                                placeholder="Enter permission name"
+                                placeholder="Nhập tên truy cập"
                             />
                             {formError && <FormErrorMessage>{formError}</FormErrorMessage>}
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button mr={3} onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+                        <Button mr={3} onClick={() => setIsCreateModalOpen(false)}>Huỷ</Button>
                         <Button
                             colorScheme="blue"
                             onClick={handleCreatePermission}
                             isLoading={isLoading}
                         >
-                            Create
+                            Tạo mới quyền truy cập
                         </Button>
                     </ModalFooter>
                 </ModalContent>
@@ -657,30 +657,30 @@ const PermissionManagementComponent = () => {
             <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Edit Permission</ModalHeader>
+                    <ModalHeader>Chỉnh sửa quyền truy cập</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <FormControl isInvalid={!!formError}>
-                            <FormLabel>Permission Name</FormLabel>
+                            <FormLabel>Tên quyền truy cập</FormLabel>
                             <Input
                                 value={permissionName}
                                 onChange={(e) => {
                                     setPermissionName(e.target.value);
                                     setFormError('');
                                 }}
-                                placeholder="Enter permission name"
+                                placeholder="Nhập tên truy cập"
                             />
                             {formError && <FormErrorMessage>{formError}</FormErrorMessage>}
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button mr={3} onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+                        <Button mr={3} onClick={() => setIsEditModalOpen(false)}>Huỷ</Button>
                         <Button
                             colorScheme="blue"
                             onClick={handleUpdatePermission}
                             isLoading={isLoading}
                         >
-                            Update
+                            Cập nhật
                         </Button>
                     </ModalFooter>
                 </ModalContent>
@@ -698,18 +698,18 @@ const PermissionManagementComponent = () => {
                                 <FiAlertCircle size={24} />
                             </Box>
                             <Text>
-                                Are you sure you want to delete the permission <b>{currentPermission?.name}</b>? This action cannot be undone.
+                                Bạn có chắc chắn muốn xóa quyền <b>{currentPermission?.name}</b>? Hành động này không thể hoàn tác.
                             </Text>
                         </Flex>
                     </ModalBody>
                     <ModalFooter>
-                        <Button mr={3} onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+                        <Button mr={3} onClick={() => setIsDeleteModalOpen(false)}>Huỷ</Button>
                         <Button
                             colorScheme="red"
                             onClick={handleDeletePermission}
                             isLoading={isLoading}
                         >
-                            Delete
+                            Xoá
                         </Button>
                     </ModalFooter>
                 </ModalContent>

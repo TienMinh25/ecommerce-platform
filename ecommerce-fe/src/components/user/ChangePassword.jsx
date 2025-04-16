@@ -17,6 +17,7 @@ import {
 } from '@chakra-ui/react';
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 import { useNavigate } from 'react-router-dom';
+import userMeService from "../../services/userMeService.js";
 
 const ChangePassword = () => {
     const toast = useToast();
@@ -90,9 +91,11 @@ const ChangePassword = () => {
         setIsSubmitting(true);
 
         try {
-            // Here you would make an API call to change the password
-            // For now, we'll just simulate it with a timeout
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Use the userMeService to change the password
+            await userMeService.changePassword({
+                old_password: formData.old_password,
+                new_password: formData.new_password
+            });
 
             toast({
                 title: 'Đổi mật khẩu thành công',
@@ -110,9 +113,12 @@ const ChangePassword = () => {
             });
 
         } catch (error) {
+            // Handle specific API errors if needed
+            const errorMessage = error.response?.data?.error?.message || 'Không thể đổi mật khẩu';
+
             toast({
                 title: 'Lỗi',
-                description: error.message || 'Không thể đổi mật khẩu',
+                description: errorMessage,
                 status: 'error',
                 duration: 3000,
                 isClosable: true,

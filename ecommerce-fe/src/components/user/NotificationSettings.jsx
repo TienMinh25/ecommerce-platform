@@ -216,40 +216,6 @@ const NotificationSettings = () => {
                         isSubItem
                     />
                 </Box>
-
-                {/* Zalo Notifications */}
-                <Box
-                    bg={sectionBg}
-                    p={6}
-                    borderRadius="md"
-                    boxShadow="sm"
-                    borderWidth="1px"
-                    borderColor={borderColor}
-                >
-                    <Heading as="h2" size="md" mb={4}>
-                        Thông báo Zalo
-                    </Heading>
-                    <Text fontSize="sm" color="gray.500" mb={4}>
-                        Thông báo và nhắc nhở quan trọng về tài khoản sẽ không thể bị tắt
-                    </Text>
-
-                    <Divider mb={4} />
-
-                    <NotificationItem
-                        title="Thông báo Zalo"
-                        description="Thông báo và nhắc nhở quan trọng về tài khoản sẽ không thể bị tắt"
-                        isChecked={notifications.zaloNotifications}
-                        onChange={() => handleToggle('zaloNotifications')}
-                    />
-
-                    <NotificationItem
-                        title="Khuyến mãi (Shopee Việt Nam)"
-                        description="Cập nhật về các ưu đãi và khuyến mãi sắp tới"
-                        isChecked={notifications.zaloPromotionsVN}
-                        onChange={() => handleToggle('zaloPromotionsVN')}
-                        isSubItem
-                    />
-                </Box>
             </Stack>
         </Box>
     );

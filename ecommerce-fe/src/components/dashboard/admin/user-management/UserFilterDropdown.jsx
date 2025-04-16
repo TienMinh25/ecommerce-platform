@@ -295,11 +295,11 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
     };
 
     const sortByOptions = [
-        {label: 'Full Name', value: 'fullname'},
+        {label: 'Họ và tên', value: 'fullname'},
         {label: 'Email', value: 'email'},
-        {label: 'Birth Date', value: 'birthdate'},
-        {label: 'Updated At', value: 'updated_at'},
-        {label: 'Phone', value: 'phone'}
+        {label: 'Ngày sinh nhật', value: 'birthdate'},
+        {label: 'Thời gian cập nhật', value: 'updated_at'},
+        {label: 'Số điện thoại', value: 'phone'}
     ];
 
     const statusOptions = [
@@ -308,8 +308,8 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
     ];
 
     const sortOrderOptions = [
-        {label: 'Ascending', value: 'asc'},
-        {label: 'Descending', value: 'desc'}
+        {label: 'Tăng dần', value: 'asc'},
+        {label: 'Giảm dần', value: 'desc'}
     ];
 
     // Fetch roles when the filter dropdown is opened
@@ -351,7 +351,7 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                 borderRadius="md"
                 px={4}
             >
-                Filter
+                Bộ lọc
             </Button>
 
             {/* Filter Dropdown Panel */}
@@ -381,7 +381,7 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                         bg={headerBgColor}
                     >
                         <Text fontWeight="bold" fontSize="lg" color="gray.800">
-                            Filters
+                            Bộ lọc
                         </Text>
                         <IconButton
                             icon={<FiX/>}
@@ -419,15 +419,15 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             {/* Role Selection */}
                             <FormControl width={'100%'}>
                                 <FormLabel fontWeight="medium" fontSize="sm" mb={1} color="gray.700">
-                                    Role
+                                    Vai trò người dùng
                                 </FormLabel>
                                 {isLoadingRoles ? (
                                     <Flex align="center" justify="center" height="36px" borderWidth="1px" borderRadius="md" borderColor="gray.200" px={3}>
-                                        <Text fontSize="sm" color="gray.500">Loading roles...</Text>
+                                        <Text fontSize="sm" color="gray.500">Đang tải vai trò...</Text>
                                     </Flex>
                                 ) : roleError ? (
                                     <Flex align="center" justify="center" height="36px" borderWidth="1px" borderRadius="md" borderColor="red.200" bg="red.50" px={3}>
-                                        <Text fontSize="sm" color="red.500">Failed to load roles</Text>
+                                        <Text fontSize="sm" color="red.500">Thất bại khi lấy các vai trò</Text>
                                     </Flex>
                                 ) : (
                                     <CustomDropdown
@@ -435,7 +435,7 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                                         value={filters.roleID}
                                         onChange={handleChange}
                                         name="roleID"
-                                        placeholder="Please select"
+                                        placeholder="Chọn vai trò người dùng để lọc"
                                     />
                                 )}
                             </FormControl>
@@ -443,12 +443,12 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             {/* Email Verification */}
                             <FormControl>
                                 <FormLabel fontWeight="medium" fontSize="sm" mb={1} color="gray.700">
-                                    Email Verification
+                                    Xác thực email
                                 </FormLabel>
                                 <ModernToggleGroup
                                     options={[
-                                        {label: 'Verified', value: 'true'},
-                                        {label: 'Not Verified', value: 'false'}
+                                        {label: 'Đã xác thực', value: 'true'},
+                                        {label: 'Chưa xác thực', value: 'false'}
                                     ]}
                                     value={filters.emailVerify}
                                     onChange={handleToggleChange}
@@ -459,12 +459,12 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             {/* Phone Verification */}
                             <FormControl>
                                 <FormLabel fontWeight="medium" fontSize="sm" mb={1} color="gray.700">
-                                    Phone Verification
+                                    Xác thực số điện thoại
                                 </FormLabel>
                                 <ModernToggleGroup
                                     options={[
-                                        {label: 'Verified', value: 'true'},
-                                        {label: 'Not Verified', value: 'false'}
+                                        {label: 'Đã xác thực', value: 'true'},
+                                        {label: 'Chưa xác thực', value: 'false'}
                                     ]}
                                     value={filters.phoneVerify}
                                     onChange={handleToggleChange}
@@ -475,7 +475,7 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             {/* Status Selection */}
                             <FormControl>
                                 <FormLabel fontWeight="medium" fontSize="sm" mb={1} color="gray.700">
-                                    Status
+                                    Trạng thái người dùng
                                 </FormLabel>
                                 <ModernToggleGroup
                                     options={statusOptions}
@@ -488,21 +488,21 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             {/* Sort By */}
                             <FormControl>
                                 <FormLabel fontWeight="medium" fontSize="sm" mb={1} color="gray.700">
-                                    Sort By
+                                    Sắp xếp bởi
                                 </FormLabel>
                                 <CustomDropdown
                                     options={sortByOptions}
                                     value={filters.sortBy}
                                     onChange={handleChange}
                                     name="sortBy"
-                                    placeholder="Please select"
+                                    placeholder="Chọn trường để sắp xếp"
                                 />
                             </FormControl>
 
                             {/* Sort Order */}
                             <FormControl>
                                 <FormLabel fontWeight="medium" fontSize="sm" mb={1} color="gray.700">
-                                    Sort Order
+                                    Sắp xếp theo
                                 </FormLabel>
                                 <ModernToggleGroup
                                     options={sortOrderOptions}
@@ -515,12 +515,12 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             {/* Date Range */}
                             <FormControl>
                                 <FormLabel fontWeight="medium" fontSize="sm" mb={1} color="gray.700">
-                                    Date Range
+                                    Lọc theo thời gian cập nhật
                                 </FormLabel>
                                 <VStack spacing={3} align="stretch">
                                     <Box>
                                         <Text fontSize="xs" mb={1} color="gray.600">
-                                            From
+                                            Từ
                                         </Text>
                                         <InputGroup size="sm">
                                             <Input
@@ -541,7 +541,7 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                                     </Box>
                                     <Box>
                                         <Text fontSize="xs" mb={1} color="gray.600">
-                                            To
+                                            Đến
                                         </Text>
                                         <InputGroup size="sm">
                                             <Input
@@ -585,7 +585,7 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             _hover={{bg: buttonHoverColor}}
                             height="40px"
                         >
-                            Reset
+                            Reset bộ lọc
                         </Button>
                         <Button
                             colorScheme="blue"
@@ -596,7 +596,7 @@ const UserFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             _hover={{bg: "blue.600"}}
                             height="40px"
                         >
-                            Apply
+                            Áp dụng bộ lọc
                         </Button>
                     </Flex>
                 </Box>

@@ -304,7 +304,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                     <Box color={iconColor} mr={3}>
                         <FiUser size={24} />
                     </Box>
-                    <Text fontSize="xl" fontWeight="bold" color={textColor}>Create New User</Text>
+                    <Text fontSize="xl" fontWeight="bold" color={textColor}>Tạo người dùng mới</Text>
                 </ModalHeader>
                 <ModalCloseButton
                     size="lg"
@@ -319,9 +319,9 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                 <ModalBody py={6}>
                     <VStack spacing={6} align="stretch">
                         <Box>
-                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>Account Settings</Text>
+                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>Cài đặt tài khoản</Text>
                             <FormControl isRequired isInvalid={!!errors.roles} mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>User Roles</FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Vai trò người dùng</FormLabel>
                                 <Box position="relative">
                                     <Box
                                         onClick={() => setShowRoleMenu(true)}
@@ -354,7 +354,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                                 </Tag>
                                             ))}
                                             {formData.roles.length === 0 && (
-                                                <Text color="gray.500" fontSize="sm">Select user roles</Text>
+                                                <Text color="gray.500" fontSize="sm">Chọn vai trò người dùng</Text>
                                             )}
                                         </Flex>
                                     </Box>
@@ -435,7 +435,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                 {errors.roles && <FormErrorMessage fontWeight="medium">{errors.roles}</FormErrorMessage>}
                             </FormControl>
                             <FormControl mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>User Status</FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Trạng thái người dùng</FormLabel>
                                 <Flex
                                     align="center"
                                     justify="space-between"
@@ -463,8 +463,8 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                         </Text>
                                         <Text fontSize="xs" color={useColorModeValue('gray.700', 'gray.300')}>
                                             {formData.status
-                                                ? 'User will have immediate access to the system'
-                                                : 'User account will be created but suspended'}
+                                                ? 'Người dùng sẽ có quyền truy cập ngay lập tức vào hệ thống'
+                                                : 'Tài khoản người dùng sẽ được tạo nhưng bị tạm ngưng'}
                                         </Text>
                                     </Box>
                                     <Switch
@@ -478,7 +478,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                         </Box>
                         <Divider />
                         <Box>
-                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>User Information</Text>
+                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>Thông tin người dùng</Text>
                             <Flex
                                 align="center"
                                 p={4}
@@ -533,7 +533,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                 </Box>
                             </Flex>
                             <FormControl isRequired isInvalid={!!errors.fullname} mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Full Name</FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Họ và tên</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -544,7 +544,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                         name="fullname"
                                         value={formData.fullname}
                                         onChange={handleChange}
-                                        placeholder="Enter full name"
+                                        placeholder="Nhập họ và tên đầy đủ"
                                         bg={inputBg}
                                         color={textColor}
                                         borderWidth="1.5px"
@@ -555,7 +555,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                 {errors.fullname && <FormErrorMessage fontWeight="medium">{errors.fullname}</FormErrorMessage>}
                             </FormControl>
                             <FormControl isRequired isInvalid={!!errors.email} mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Email Address</FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Email</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -567,7 +567,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                         type="email"
                                         value={formData.email}
                                         onChange={handleChange}
-                                        placeholder="Enter email address"
+                                        placeholder="Nhập email"
                                         bg={inputBg}
                                         color={textColor}
                                         borderWidth="1.5px"
@@ -578,7 +578,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                 {errors.email && <FormErrorMessage fontWeight="medium">{errors.email}</FormErrorMessage>}
                             </FormControl>
                             <FormControl isInvalid={!!errors.phone} mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Phone Number (Optional)</FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Số điện thoại (Tuỳ chọn)</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -589,7 +589,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                         name="phone"
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        placeholder="Enter phone number"
+                                        placeholder="Nhập số điện thoại"
                                         bg={inputBg}
                                         color={textColor}
                                         borderWidth="1.5px"
@@ -600,7 +600,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                 {errors.phone && <FormErrorMessage fontWeight="medium">{errors.phone}</FormErrorMessage>}
                             </FormControl>
                             <FormControl isInvalid={!!errors.birthdate} mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Birth Date (Optional)</FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Ngày sinh nhật (Tuỳ chọn)</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -625,9 +625,9 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                         </Box>
                         <Divider />
                         <Box>
-                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>Password</Text>
+                            <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>Mật khẩu</Text>
                             <FormControl isRequired isInvalid={!!errors.password} mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Password</FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Mật khẩu</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -639,7 +639,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                         type={showPassword ? 'text' : 'password'}
                                         value={formData.password}
                                         onChange={handleChange}
-                                        placeholder="Enter password"
+                                        placeholder="Nhập mật khẩu"
                                         bg={inputBg}
                                         color={textColor}
                                         borderWidth="1.5px"
@@ -661,7 +661,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                 {errors.password && <FormErrorMessage fontWeight="medium">{errors.password}</FormErrorMessage>}
                             </FormControl>
                             <FormControl isRequired isInvalid={!!errors.confirmPassword} mb={4}>
-                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Confirm Password</FormLabel>
+                                <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>Xác nhận mật khẩu</FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
                                         <Box color={iconColor}>
@@ -673,7 +673,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                                         type={showConfirmPassword ? 'text' : 'password'}
                                         value={formData.confirmPassword}
                                         onChange={handleChange}
-                                        placeholder="Confirm password"
+                                        placeholder="Nhập mật khẩu xác nhận"
                                         bg={inputBg}
                                         color={textColor}
                                         borderWidth="1.5px"
@@ -713,7 +713,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                         borderColor={borderColor}
                         _hover={{ bg: useColorModeValue('gray.200', 'gray.700') }}
                     >
-                        Cancel
+                        Huỷ
                     </Button>
                     <Button
                         leftIcon={<FiPlus />}
@@ -735,7 +735,7 @@ const CreateUserModal = ({ isOpen, onClose, onUserCreated }) => {
                         }}
                         fontWeight="bold"
                     >
-                        Create User
+                        Tạo mới người dùng
                     </Button>
                 </ModalFooter>
             </ModalContent>

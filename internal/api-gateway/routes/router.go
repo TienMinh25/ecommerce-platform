@@ -137,10 +137,11 @@ func registerRoleHandler(group *gin.RouterGroup, permissionMiddleware *middlewar
 }
 
 func registerUserMeHandler(group *gin.RouterGroup, permissionMiddleware *middleware.PermissionMiddleware, accessTokenMiddleware *middleware.JwtMiddleware, handler api_gateway_handler.IUserHandler) {
-	userMeGroup := group.Group("users")
+	userMeGroup := group.Group("users/me")
 	userMeGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
-		userMeGroup.GET("/me", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetCurrentUser)
-		userMeGroup.PATCH("/me", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateCurrentUser)
+		userMeGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetCurrentUser)
+		userMeGroup.PATCH("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateCurrentUser)
+		userMeGroup.POST("/avatars/get-presigned-url", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.GetAvatarURLUpload)
 	}
 }

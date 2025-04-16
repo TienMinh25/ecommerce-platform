@@ -225,7 +225,7 @@ const UserManagementComponent = () => {
 
     // Handle user deleted and reload current page
     const handleDeleteUser = async (userId) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
+        if (window.confirm('Bạn có chắc chắn muốn xoá người dùng này?')) {
             try {
                 await userService.deleteUser(userId);
                 toast({
@@ -374,7 +374,7 @@ const UserManagementComponent = () => {
                         }}
                         transition="all 0.2s"
                     >
-                        Create
+                        Tạo mới người dùng
                     </Button>
                 </HStack>
             </Flex>
@@ -434,7 +434,7 @@ const UserManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    User
+                                    Người dùng
                                 </Th>
                                 <Th
                                     py={4}
@@ -445,7 +445,7 @@ const UserManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Contact Info
+                                    Thông tin liên hệ
                                 </Th>
                                 <Th
                                     py={4}
@@ -455,7 +455,7 @@ const UserManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Role
+                                    Vai trò người dùng
                                 </Th>
                                 <Th
                                     py={4}
@@ -465,7 +465,7 @@ const UserManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Status
+                                    Trạng thái
                                 </Th>
                                 <Th
                                     py={4}
@@ -475,7 +475,7 @@ const UserManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Last Updated
+                                    Thời gian cập nhật gần nhất
                                 </Th>
                                 <Th
                                     py={4}
@@ -487,7 +487,7 @@ const UserManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Actions
+                                    Hành động
                                 </Th>
                             </Tr>
                         </Thead>
@@ -713,7 +713,7 @@ const UserManagementComponent = () => {
                     >
                         <HStack spacing={1} flexShrink={0}>
                             <Text fontSize="sm" color="gray.600" fontWeight="normal">
-                                Showing {totalCount > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}-{Math.min(currentPage * rowsPerPage, totalCount)} of {totalCount} users
+                                Hiển thị {totalCount > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}-{Math.min(currentPage * rowsPerPage, totalCount)} trên tổng số {totalCount} người dùng
                             </Text>
                             <Menu>
                                 <MenuButton
@@ -725,13 +725,13 @@ const UserManagementComponent = () => {
                                     fontWeight="normal"
                                     color="gray.600"
                                 >
-                                    {rowsPerPage} per page
+                                    {rowsPerPage} dòng mỗi trang
                                 </MenuButton>
                                 <MenuList minW="120px" shadow="lg" borderRadius="md">
-                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(50)}>50 per page</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(50)}>50 dòng mỗi trang</MenuItem>
                                 </MenuList>
                             </Menu>
                         </HStack>

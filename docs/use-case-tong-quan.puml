@@ -1,0 +1,126 @@
+@startuml
+' Use horizontal layout with actors on both sides
+left to right direction
+' Improve visual appearance
+skinparam usecase {
+  BackgroundColor white
+  BorderColor black
+  ArrowColor black
+}
+skinparam packageStyle rectangle
+skinparam linetype polyline
+' Left actors
+actor "Khách hàng" as kh
+actor "Nhà cung cấp" as ncc
+' Right actors
+actor "Quản trị viên" as qtv
+actor "Người giao hàng" as ngh
+' Group common use cases in the middle (short names on same rows)
+rectangle "Nền tảng mua sắm trực tuyến Minh Plaza" {
+  ' Authentication use cases - rearranged for better layout
+  usecase "Đăng ký" as UC2
+  usecase "Đăng nhập/Đăng ký\nbằng bên thứ ba" as UC30
+  usecase "Đăng nhập" as UC1
+
+  usecase "Đăng xuất" as UC3
+  usecase "Quên mật khẩu" as UC4
+
+  ' User management use cases (admin)
+  usecase "Quản lý danh sách người dùng" as UC5
+  usecase "Quản lý vai trò và quyền" as UC6
+  usecase "Quản lý modules" as UC7
+  usecase "Quản lý kiểu địa chỉ" as UC8
+  usecase "Quản lý onboarding\ncủa người giao hàng\nvà nhà cung cấp" as UC9
+
+  ' Account and profile use cases
+  usecase "Quản lý tài khoản" as UC10
+
+  ' Catalog management use cases
+  usecase "Quản lý danh mục" as UC11
+  usecase "Quản lý khuyến mãi" as UC12
+  usecase "Quản lý sản phẩm" as UC19
+
+  ' Customer-facing use cases
+  usecase "Quản lý giỏ hàng" as UC13
+  usecase "Tìm kiếm sản phẩm" as UC14
+  usecase "Xem chi tiết sản phẩm" as UC15
+  usecase "Đặt hàng" as UC16
+  usecase "Cài đặt thông báo" as UC17
+  usecase "Xem danh mục" as UC18
+
+  ' Supplier-facing use cases
+  usecase "Quản lý tồn kho" as UC20
+  usecase "Quản lý đơn hàng" as UC21
+  usecase "Quản lý thanh toán" as UC22
+
+  ' Delivery person use cases
+  usecase "Xem đơn hàng" as UC24
+  usecase "Xem chi tiết đơn hàng" as UC25
+  usecase "Nhận đơn hàng" as UC26
+  usecase "Cập nhật đơn hàng" as UC27
+
+  ' New customer onboarding use cases
+  usecase "Đăng ký trở thành\nngười giao hàng" as UC28
+  usecase "Đăng ký trở thành\nnhà cung cấp" as UC29
+}
+
+' Extend relationships
+UC2 .> UC30 : <<extend>>
+UC1 .> UC30 : <<extend>>
+
+' Connect actors to their use cases
+' Khách hàng connections
+kh --> UC1
+kh --> UC2
+kh --> UC3
+kh --> UC4
+kh --> UC10
+kh --> UC13
+kh --> UC14
+kh --> UC15
+kh --> UC16
+kh --> UC17
+kh --> UC18
+kh --> UC28
+kh --> UC29
+kh --> UC30
+
+' Nhà cung cấp connections
+ncc --> UC1
+ncc --> UC2
+ncc --> UC3
+ncc --> UC4
+ncc --> UC10
+ncc --> UC12
+ncc --> UC19
+ncc --> UC20
+ncc --> UC21
+ncc --> UC22
+ncc --> UC30
+
+' Admin connections
+UC5 <-- qtv
+UC6 <-- qtv
+UC7 <-- qtv
+UC8 <-- qtv
+UC9 <-- qtv
+UC10 <-- qtv
+UC11 <-- qtv
+UC12 <-- qtv
+UC1 <-- qtv
+UC2 <-- qtv
+UC3 <-- qtv
+UC4 <-- qtv
+
+' Delivery person connections
+UC1 <-- ngh
+UC2 <-- ngh
+UC3 <-- ngh
+UC4 <-- ngh
+UC10 <-- ngh
+UC24 <-- ngh
+UC25 <-- ngh
+UC26 <-- ngh
+UC27 <-- ngh
+UC30 <-- ngh
+@enduml

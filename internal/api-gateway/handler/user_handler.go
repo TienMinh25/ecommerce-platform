@@ -32,11 +32,12 @@ func NewUserHandler(tracer pkg.Tracer, service api_gateway_service.IUserMeServic
 //	@Produce		json
 //
 //	@Security		BearerAuth
-//	@Success		200	{object}	api_gateway_dto.GetCurrentUserResponse
+//	@Success		200	{object}	api_gateway_dto.GetCurrentUserResponseDocs
 //	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/users/me [get]
 func (u *userHandler) GetCurrentUser(ctx *gin.Context) {
+	// todo: change here
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)
 	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetCurrentUser"))
@@ -73,12 +74,13 @@ func (u *userHandler) GetCurrentUser(ctx *gin.Context) {
 //
 //	@Security		BearerAuth
 //	@Param			request	body		api_gateway_dto.UpdateCurrentUserRequest	true	"Thông tin cần cập nhật"
-//	@Success		200		{object}	api_gateway_dto.ResponseSuccessDocs
+//	@Success		200		{object}	api_gateway_dto.UpdateCurrentUserResponseDocs
 //	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/users/me [patch]
 func (u *userHandler) UpdateCurrentUser(ctx *gin.Context) {
+	// todo: change here
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)
 	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateCurrentUser"))
@@ -111,4 +113,49 @@ func (u *userHandler) UpdateCurrentUser(ctx *gin.Context) {
 	}
 
 	utils.SuccessResponse[any](ctx, http.StatusOK, nil)
+}
+
+// GetAvatarURLUpload godoc
+//
+//	@Summary		lấy presigned url để upload ảnh
+//	@Tags			users
+//	@Description	lấy presigned url để upload ảnh
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//	@Param			request	body		api_gateway_dto.GetAvatarPresignedURLRequest	true	"Thông tin file"
+//	@Success		200		{object}	api_gateway_dto.GetAvatarPresignedURLResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/avatars/get-presigned-url [post]
+func (u *userHandler) GetAvatarURLUpload(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetAvatarURLUpload"))
+	defer span.End()
+
+	var data api_gateway_dto.GetAvatarPresignedURLRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	res, err := u.service.GetAvatarUploadURL(ct, &data, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.GetAvatarPresignedURLResponse{
+		URL: res,
+	})
 }

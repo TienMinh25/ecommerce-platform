@@ -12,7 +12,7 @@ type Storage interface {
 	Upload(ctx context.Context, payload UploadInput, bucket string) (string, error)
 
 	// Delete deletes a file from the specified bucket (or default bucket if empty)
-	Delete(ctx context.Context, name string) error
+	Delete(ctx context.Context, name, bucket string) error
 
 	// GenerateUploadPresignedURL generates a pre-signed URL for uploading to the
 	// specified bucket (or default bucket if empty)

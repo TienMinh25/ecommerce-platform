@@ -279,7 +279,7 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                 borderColor={borderColor}
             >
                 <HStack>
-                    <Text fontSize="md" fontWeight="bold">Role Permissions</Text>
+                    <Text fontSize="md" fontWeight="bold">Quyền của vai trò</Text>
                     {role && (
                         <Badge colorScheme="blue" ml={2} fontSize="xs">
                             {role.name}
@@ -300,7 +300,7 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                 {(isLoading || loadingModules) ? (
                     <Flex justify="center" align="center" direction="column" py={10}>
                         <Spinner size="xl" color="blue.500" mb={4} />
-                        <Text color="gray.500">Loading permissions...</Text>
+                        <Text color="gray.500">Đang tải quyền...</Text>
                     </Flex>
                 ) : (
                     <Box>
@@ -331,7 +331,7 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                                                     <Box color="gray.400" mb={2}>
                                                         <FiInfo size={24} />
                                                     </Box>
-                                                    <Text fontWeight="normal" color="gray.500" fontSize="sm">No module permissions found</Text>
+                                                    <Text fontWeight="normal" color="gray.500" fontSize="sm">Hiện chưa có modules nào</Text>
                                                 </Flex>
                                             </Td>
                                         </Tr>
@@ -392,7 +392,7 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                         {/* Help text */}
                         <Text fontSize="xs" color="gray.500" mb={4}>
                             <FiInfo size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-                            Changes to permissions will take effect after saving.
+                            Thay đổi quyền sẽ được áp dụng sau khi bạn lưu.
                         </Text>
 
                         {/* Footer buttons */}
@@ -403,7 +403,7 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                                 mr={2}
                                 onClick={onClose}
                             >
-                                Cancel
+                                Huỷ
                             </Button>
                             <Button
                                 colorScheme="blue"
@@ -414,7 +414,7 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                                 leftIcon={<FiSave size={14} />}
                                 isDisabled={!hasChanges}
                             >
-                                Save Changes
+                                Lưu thay đổi
                             </Button>
                         </Flex>
                     </Box>

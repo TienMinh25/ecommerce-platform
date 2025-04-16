@@ -110,7 +110,7 @@ const DashboardHeader = () => {
                   _hover={{ bg: 'gray.50' }}
                   w="full"
               >
-                Profile
+                Tài khoản của tôi
               </MenuItem>
               <MenuDivider m={0} />
               <MenuItem
@@ -121,7 +121,7 @@ const DashboardHeader = () => {
               >
                 <Flex align="center">
                   <FaHome style={{ marginRight: '8px' }} />
-                  Back to Home
+                  Về trang chủ
                 </Flex>
               </MenuItem>
               <MenuDivider m={0} />
@@ -132,7 +132,7 @@ const DashboardHeader = () => {
                   _hover={{ bg: 'red.50' }}
                   w="full"
               >
-                Logout
+                Đăng xuất
               </MenuItem>
             </MenuList>
           </Menu>

@@ -59,4 +59,5 @@ type IRoleHandler interface {
 type IUserHandler interface {
 	GetCurrentUser(ctx *gin.Context)
 	UpdateCurrentUser(ctx *gin.Context)
+	GetAvatarURLUpload(ctx *gin.Context)
 }

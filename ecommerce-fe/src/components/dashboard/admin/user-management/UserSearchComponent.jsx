@@ -99,10 +99,10 @@ const UserSearchComponent = ({ onSearch, isLoading }) => {
                 _focus={{ boxShadow: "none" }}
                 fontSize="sm"
             >
-                <option value="">Select field</option>
-                <option value="fullname">Name</option>
+                <option value="">Chọn trường tìm kiếm</option>
+                <option value="fullname">Tên</option>
                 <option value="email">Email</option>
-                <option value="phone">Phone</option>
+                <option value="phone">Số điện thoại</option>
             </Select>
 
             <InputGroup size="md" variant="unstyled">
@@ -110,7 +110,7 @@ const UserSearchComponent = ({ onSearch, isLoading }) => {
                     <FiSearch color="gray.400" />
                 </InputLeftElement>
                 <Input
-                    placeholder={searchField ? `Search by ${searchField.toLowerCase()}...` : "Select a field first"}
+                    placeholder={searchField ? `Tìm kiếm  ${searchField.toLowerCase()}...` : "Chọn một trường tìm kiếm trước"}
                     pl={10}
                     pr={2}
                     py={2.5}

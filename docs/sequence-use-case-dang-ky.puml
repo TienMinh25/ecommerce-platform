@@ -1,0 +1,42 @@
+@startuml
+
+actor "Khách hàng" as kh
+boundary "Đăng ký UI" as ui
+control "API Gateway service" as service
+database "API Gateway DB" as db
+database "Redis" as redis
+queue "Message queue" as msgqueue
+control "Notification service" as notiservice
+
+kh -> ui: 1. Kích nút đăng ký ngay
+ui -> ui: 2. Hiển thị màn hình đăng ký
+kh -> ui: 3. Nhập email, fullname \nvà password, đồng ý với \nđiều khoản
+kh -> ui: 4. Kích nút đăng ký
+ui -> service: 5. Gửi dữ liệu \n(email, fullname, password)
+service -> db: 6. Lấy dữ liệu \nngười dùng theo email
+db --> service: 7. Trả về kết quả
+
+alt Người dùng đã tồn tại
+    service --> ui: 8. Trả về lỗi người dùng\n đã tồn tại
+    ui -> ui: 9. Hiển thị thông báo lỗi
+end
+
+service -> db: 10. Tạo mới user dựa trên \n các thông tin nhận được
+service -> redis: 11. Lưu trữ mã OTP \n với expire time 7 phút
+service -> msgqueue: 12. Gửi message có chứa thông tin về mã OTP vào topic \n api-gateway.verify-otp
+service --> ui: 13. Thông báo đăng ký thành công
+ui -> ui: 14. Hiển thị màn hình xác\n thực mã OTP
+notiservice -> msgqueue: 15. Consume message từ topic \n api-gateway.verify-otp và gửi mail
+kh -> ui: 16. Nhập mã OTP và \n kích nút "Xác thực"
+ui -> service: 17. Gửi email và mã OTP
+service -> redis: 18. Lấy mã OTP đã lưu \n dựa trên email
+redis --> service: 19. Trả về kết quả
+
+alt Mã OTP hết hạn hoặc không đúng
+    service --> ui: 20. Trả về thông báo lỗi
+    ui -> ui: 21. Hiển thị thông báo lỗi
+end
+
+service --> ui: 21. Thông báo xác thực \n thành công
+ui -> ui: 22. Thông báo xác thực \n thành công và chuyển hướng \n về trang đăng nhập
+@enduml

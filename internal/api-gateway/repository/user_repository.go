@@ -124,7 +124,7 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 		permissionDetail := []api_gateway_models.PermissionDetailType{
 			{
 				ModuleID:    moduleMap[string(common.UserManagement)],
-				Permissions: []int{permissionMap[string(common.Read)], permissionMap[string(common.Update)]},
+				Permissions: []int{permissionMap[string(common.Read)], permissionMap[string(common.Create)], permissionMap[string(common.Update)], permissionMap[string(common.Delete)]},
 			},
 			{
 				ModuleID:    moduleMap[string(common.Cart)],

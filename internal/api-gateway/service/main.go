@@ -74,6 +74,7 @@ type IUserMeService interface {
 	GetCurrentUser(ctx context.Context, email string) (*api_gateway_dto.GetCurrentUserResponse, error)
 	UpdateCurrentUser(ctx context.Context, email string, data *api_gateway_dto.UpdateCurrentUserRequest) error
 	CheckUserExistsByEmail(ctx context.Context, email string) (bool, error)
+	GetAvatarUploadURL(ctx context.Context, data *api_gateway_dto.GetAvatarPresignedURLRequest, userID int) (string, error)
 }
 
 type IRoleService interface {
