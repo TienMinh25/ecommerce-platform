@@ -63,7 +63,7 @@ type IUserRepository interface {
 
 	GetCurrentUserInfo(ctx context.Context, email string) (*api_gateway_models.User, error)
 
-	UpdateCurrentUserInfo(ctx context.Context, email string, data *api_gateway_dto.UpdateCurrentUserRequest) error
+	UpdateCurrentUserInfo(ctx context.Context, userID int, data *api_gateway_dto.UpdateCurrentUserRequest) (*api_gateway_models.User, error)
 }
 
 type IUserPasswordRepository interface {

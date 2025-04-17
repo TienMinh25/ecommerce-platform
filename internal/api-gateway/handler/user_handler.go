@@ -26,35 +26,28 @@ func NewUserHandler(tracer pkg.Tracer, service api_gateway_service.IUserMeServic
 // GetCurrentUser godoc
 //
 //	@Summary		Lấy thông tin người dùng hiện tại
-//	@Tags			users
+//	@Tags			me
 //	@Description	Lấy thông tin người dùng hiện tại dựa vào access token
 //	@Accept			json
 //	@Produce		json
 //
 //	@Security		BearerAuth
 //	@Success		200	{object}	api_gateway_dto.GetCurrentUserResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
 //	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/users/me [get]
 func (u *userHandler) GetCurrentUser(ctx *gin.Context) {
-	// todo: change here
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)
 	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetCurrentUser"))
 	defer span.End()
 
-	req, exists := ctx.Get("user")
-	if !exists {
-		utils.HandleErrorResponse(ctx, utils.BusinessError{
-			Code:    http.StatusUnauthorized,
-			Message: "Not Found",
-		})
-		return
-	}
-
+	req, _ := ctx.Get("user")
 	userClaims := req.(*api_gateway_service.UserClaims)
 
 	res, err := u.service.GetCurrentUser(ct, userClaims.Email)
+
 	if err != nil {
 		span.RecordError(err)
 		utils.HandleErrorResponse(ctx, err)
@@ -67,7 +60,7 @@ func (u *userHandler) GetCurrentUser(ctx *gin.Context) {
 // UpdateCurrentUser godoc
 //
 //	@Summary		Cập nhật thông tin cá nhân
-//	@Tags			users
+//	@Tags			me
 //	@Description	Cập nhật thông tin cá nhân của người dùng hiện tại
 //	@Accept			json
 //	@Produce		json
@@ -80,21 +73,12 @@ func (u *userHandler) GetCurrentUser(ctx *gin.Context) {
 //	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/users/me [patch]
 func (u *userHandler) UpdateCurrentUser(ctx *gin.Context) {
-	// todo: change here
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)
 	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateCurrentUser"))
 	defer span.End()
 
-	req, exists := ctx.Get("user")
-	if !exists {
-		utils.HandleErrorResponse(ctx, utils.BusinessError{
-			Code:    http.StatusUnauthorized,
-			Message: "Unauthorized",
-		})
-		return
-	}
-
+	req, _ := ctx.Get("user")
 	userClaims := req.(*api_gateway_service.UserClaims)
 
 	var data api_gateway_dto.UpdateCurrentUserRequest
@@ -105,20 +89,21 @@ func (u *userHandler) UpdateCurrentUser(ctx *gin.Context) {
 		return
 	}
 
-	err := u.service.UpdateCurrentUser(ct, userClaims.Email, &data)
+	updatedUser, err := u.service.UpdateCurrentUser(ct, userClaims.UserID, &data)
+
 	if err != nil {
 		span.RecordError(err)
 		utils.HandleErrorResponse(ctx, err)
 		return
 	}
 
-	utils.SuccessResponse[any](ctx, http.StatusOK, nil)
+	utils.SuccessResponse(ctx, http.StatusOK, *updatedUser)
 }
 
 // GetAvatarURLUpload godoc
 //
 //	@Summary		lấy presigned url để upload ảnh
-//	@Tags			users
+//	@Tags			me
 //	@Description	lấy presigned url để upload ảnh
 //	@Accept			json
 //	@Produce		json

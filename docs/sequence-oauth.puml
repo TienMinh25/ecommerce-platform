@@ -1,0 +1,37 @@
+@startuml
+
+actor "Người dùng" as kh
+boundary "Đăng nhập/Đăng ký UI" as ui
+control "API Gateway service" as service
+database "API Gateway DB" as db
+actor "Google/Facebook" as btb
+
+kh -> ui: 1. Kích nút Google hoặc Facebook
+ui -> service: 2. Lấy url tương ứng đối \nvới Google hoặc Facebook
+ui -> ui: 3. Hiển thị màn hình xác thực\n của bên thứ ba
+
+alt Người dùng không uỷ quyền
+    kh -> ui: 4. Huỷ, từ chối uỷ quyền
+    ui -> ui: 5. Chuyển hướng về \ntrang đăng nhập
+end
+
+kh -> ui: 6. Uỷ quyền truy cập thông tin \ncho ứng dụng
+ui -> btb: 7. Gửi thông tin về việc đã uỷ quyền
+btb -> service: 8. Gửi mã xác thực (mã code)
+service --> ui: 9. Redirect cho Frontend
+ui -> service: 10. Gửi mã code để tiến hành xác thực
+service -> btb: 11. Gửi mã code + client secret + client id\n để lấy token truy cập thông tin
+btb --> service: 12. Trả về token
+service -> btb: 13. Truy cập tài nguyên cần lấy\n thông qua token
+btb --> service: 14. Trả về thông tin người dùng tương\n ứng với các thông tin được uỷ quyền
+
+alt Người dùng chưa \n có trong hệ thống
+    service -> db: 15. Lưu trữ lại user
+end
+
+service -> service: 16. Sinh token
+service -> db: 17. Lưu trữ refresh token\n vào database
+service --> ui: 18. Trả về thông tin user + token
+ui -> ui: 19. Lưu trữ lại dữ liệu\n vào local storage, đồng thời\n chuyển hướng về trang chủ
+
+@enduml

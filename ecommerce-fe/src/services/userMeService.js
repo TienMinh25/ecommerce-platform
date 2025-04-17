@@ -132,6 +132,15 @@ const userMeService = {
         } catch (error) {
             throw error;
         }
+    },
+
+    getPresignedUrl: async (presignedRequest) => {
+        try {
+            const response = await api.post('/users/me/avatars/get-presigned-url', presignedRequest);
+            return response.data.data;
+        } catch (error) {
+            throw error;
+        }
     }
 };
 

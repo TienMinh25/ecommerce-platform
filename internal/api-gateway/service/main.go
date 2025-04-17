@@ -72,7 +72,7 @@ type IUserService interface {
 
 type IUserMeService interface {
 	GetCurrentUser(ctx context.Context, email string) (*api_gateway_dto.GetCurrentUserResponse, error)
-	UpdateCurrentUser(ctx context.Context, email string, data *api_gateway_dto.UpdateCurrentUserRequest) error
+	UpdateCurrentUser(ctx context.Context, userID int, data *api_gateway_dto.UpdateCurrentUserRequest) (*api_gateway_dto.UpdateCurrentUserResponse, error)
 	CheckUserExistsByEmail(ctx context.Context, email string) (bool, error)
 	GetAvatarUploadURL(ctx context.Context, data *api_gateway_dto.GetAvatarPresignedURLRequest, userID int) (string, error)
 }

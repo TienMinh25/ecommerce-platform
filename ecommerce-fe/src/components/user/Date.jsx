@@ -32,11 +32,6 @@ export const DateDropdown = ({ label, options, value, onChange, width = "100%" }
         handler: () => setIsOpen(false),
     });
 
-    // Toggle dropdown
-    const toggleDropdown = () => {
-        setIsOpen(!isOpen);
-    };
-
     // Update dropdown position when it opens
     useEffect(() => {
         if (isOpen && inputRef.current) {
@@ -66,7 +61,7 @@ export const DateDropdown = ({ label, options, value, onChange, width = "100%" }
             position="relative"
             width={width}
             ref={ref}
-            onClick={toggleDropdown}
+            onClick={() => setIsOpen(true)}
             cursor="pointer"
         >
             <InputGroup>
@@ -116,7 +111,7 @@ export const DateDropdown = ({ label, options, value, onChange, width = "100%" }
                                     py={1.5} // Smaller padding to reduce item height
                                     cursor="pointer"
                                     fontSize="sm"
-                                    onClick={(e) => {
+                                    onMouseDown={(e) => {
                                         e.stopPropagation(); // Prevent click from propagating
                                         onChange(option.value);
                                         setIsOpen(false);

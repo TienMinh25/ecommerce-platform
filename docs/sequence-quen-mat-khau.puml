@@ -1,0 +1,46 @@
+@startuml
+
+actor "Người dùng" as kh
+boundary "Đăng nhập UI" as ui
+control "API Gateway service" as service
+database "API Gateway DB" as db
+database "Redis" as redis
+queue "Message queue" as msgqueue
+control "Notification service" as notiservice
+
+kh -> ui: 1. Người dùng nhấn vào\n "Quên mật khẩu"
+ui -> ui: 2. Hiển thị màn nhập\n email để nhận mã xác thực
+kh -> ui: 3. Nhập email và kích \nvào nút "Gửi mã xác thực"
+ui -> service: 4. Gửi thông tin email
+service -> db: 5. Kiểm tra user tồn tại không?
+
+alt Người dùng không tồn tại
+    db --> service: 6. Trả về kết quả\n người dùng không tồn tại
+    service --> ui: 7. Thông báo lỗi
+    ui -> ui: 8. Hiển thị lỗi
+end
+
+service -> service: 9. Sinh mã OTP
+service -> redis: 10. Lưu mã OTP
+service -> msgqueue: 11. Gửi tin nhắn có chứa OTP và email
+
+notiservice -> msgqueue: 12. Consume tin nhắn và gửi mã OTP\n cho email
+
+ui -> ui: 13. Hiển thị màn nhập\n mã OTP và mật khẩu mới
+kh -> ui: 14. Nhập mã OTP, mật khẩu mới\n và mật khẩu xác nhận, kích vào\n nút "Cập nhật mật khẩu"
+ui -> service: 15. Gửi dữ liệu về OTP,\n mật khẩu mới
+
+service -> redis: 16. Lấy email đã đăng ký quên mật khẩu\n dựa trên mã OTP
+
+alt OTP hết hạn hoặc không đúng
+    redis --> service: 17. Trả về null
+    service --> ui: 18. Thông báo lỗi
+    ui -> ui: 19. Hiển thị thông báo lỗi
+end
+
+redis --> service: 20. Trả về thông tin
+service -> db: 21. Cập nhật mật khẩu
+service -> ui: 22. Thông báo cập nhật mật khẩu thành công
+ui -> ui: 23. Hiển thị thông báo thành công
+
+@enduml

@@ -31,7 +31,7 @@ type GetUserByAdminResponse struct {
 	Fullname    string              `json:"fullname"`
 	Email       string              `json:"email"`
 	AvatarURL   string              `json:"avatar_url"`
-	BirthDate   *time.Time          `json:"birth_date"`
+	BirthDate   *string             `json:"birth_date"`
 	UpdatedAt   time.Time           `json:"updated_at"`
 	EmailVerify bool                `json:"email_verify"`
 	PhoneVerify bool                `json:"phone_verify"`

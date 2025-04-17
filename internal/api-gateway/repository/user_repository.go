@@ -11,6 +11,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
@@ -749,27 +750,23 @@ func (u *userRepository) DeleteUserByID(ctx context.Context, userID int) error {
 	return nil
 }
 
-// todo: change
 func (u *userRepository) GetCurrentUserInfo(ctx context.Context, email string) (*api_gateway_models.User, error) {
 	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetCurrentUserInfo"))
 	defer span.End()
 
 	query := `
-		SELECT id, fullname, email, avatar_url, birth_date,
-		       email_verified, phone_verified, status, phone_number
+		SELECT fullname, email, avatar_url, birthdate,
+		       phone_verified, phone
 		FROM users WHERE email = $1`
 
 	var user api_gateway_models.User
 
 	err := u.db.QueryRow(ctx, query, email).Scan(
-		&user.ID,
 		&user.FullName,
 		&user.Email,
 		&user.AvatarURL,
 		&user.BirthDate,
-		&user.EmailVerified,
 		&user.PhoneVerified,
-		&user.Status,
 		&user.PhoneNumber,
 	)
 
@@ -780,33 +777,49 @@ func (u *userRepository) GetCurrentUserInfo(ctx context.Context, email string) (
 		}
 	}
 
-	return &user, nil // Trả về thông tin người dùng nếu thành công.
+	return &user, nil
 }
 
-// todo: change
-func (u *userRepository) UpdateCurrentUserInfo(ctx context.Context, email string, data *api_gateway_dto.UpdateCurrentUserRequest) error {
+func (u *userRepository) UpdateCurrentUserInfo(ctx context.Context, userID int, data *api_gateway_dto.UpdateCurrentUserRequest) (*api_gateway_models.User, error) {
 	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateCurrentUserInfo"))
 	defer span.End()
 
 	query := `
 		UPDATE users
 		SET fullname = $1,
-		    birth_date = $2,
-		    phone = $3
-		WHERE email = $4`
+		    birthdate = $2,
+		    phone = $3,
+		    avatar_url = $4,
+		    email = $5
+		WHERE id = $6
+		RETURNING fullname, email, avatar_url, birthdate,
+		       phone_verified, phone`
 
-	err := u.db.Exec(ctx, query,
-		data.Fullname,
+	var user api_gateway_models.User
+	err := u.db.QueryRow(ctx, query,
+		data.FullName,
 		data.BirthDate,
-		email,
-	)
+		data.Phone,
+		data.AvatarURL,
+		data.Email,
+		userID,
+	).Scan(&user.FullName, &user.Email, &user.AvatarURL, &user.BirthDate, &user.PhoneVerified, &user.PhoneNumber)
 
 	if err != nil {
-		return utils.TechnicalError{
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, utils.BusinessError{
+				Code:    http.StatusBadRequest,
+				Message: "Email already in use by another user",
+			}
+		}
+
+		return nil, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
 
-	return nil
+	return &user, nil
 }

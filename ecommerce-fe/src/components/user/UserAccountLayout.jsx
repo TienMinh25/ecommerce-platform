@@ -60,11 +60,6 @@ const UserAccountLayout = () => {
                             <Text fontWeight="bold" fontSize="sm" noOfLines={1} mr={2}>
                                 {user?.fullname || 'User'}
                             </Text>
-                            <Text fontSize="xs" color="gray.500" noOfLines={1}>
-                                {user?.email && user.email.length > 16
-                                    ? user.email.substring(0, 16) + '...'
-                                    : user?.email || 'user@example.com'}
-                            </Text>
                         </Box>
                     </Flex>
 

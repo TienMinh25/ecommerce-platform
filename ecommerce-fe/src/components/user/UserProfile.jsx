@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
     Box,
     Button,
-    FormControl,
     Input,
     Avatar,
     Text,
@@ -14,67 +13,126 @@ import {
     Tbody,
     Tr,
     Td,
-    Radio,
-    RadioGroup,
-    Stack,
-    Link,
 } from '@chakra-ui/react';
-import { useAuth } from '../../hooks/useAuth';
-import { BirthDateSelector } from './Date'; // Import our custom component
+import { BirthDateSelector } from './Date';
+import userMeService from "../../services/userMeService.js"; // Import our custom component
 
 const UserProfile = () => {
-    const { user } = useAuth();
     const toast = useToast();
 
+    // Supported image types
+    const SUPPORTED_IMAGE_TYPES = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'image/webp',
+        'image/bmp',
+        'image/tiff',
+        'image/svg+xml'
+    ];
+
+    // Display names for supported formats
+    const SUPPORTED_FORMATS_DISPLAY = '.JPEG, .PNG, .GIF, .WEBP, .BMP, .TIFF, .SVG';
+
+    // Form state
+    const [formData, setFormData] = useState({
+        fullname: '',
+        email: '',
+        phone: '',
+        day: null,
+        month: null,
+        year: null,
+    });
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState('');
+    const [user, setUser] = useState(null);
+
+    // Fetch user profile on mount
+    useEffect(() => {
+        const fetchProfile = async () => {
+            try {
+                const profileData = await userMeService.getProfile();
+                setUser(profileData);
+                setFormData({
+                    fullname: profileData.full_name || '',
+                    email: profileData.email || '',
+                    phone: profileData.phone || '',
+                    ...parseBirthDate(profileData.birth_date),
+                });
+                setPreviewUrl(profileData.avatar_url || '');
+            } catch (error) {
+                toast({
+                    title: 'Lỗi',
+                    description: 'Không thể tải thông tin hồ sơ',
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true,
+                });
+            }
+        };
+        fetchProfile();
+    }, [toast]);
+
     // Parse birth date if available
-    const parseBirthDate = () => {
-        if (!user?.birth_date) return { day: null, month: null, year: null };
+    const parseBirthDate = (birthDate) => {
+        if (!birthDate) return { day: null, month: null, year: null };
 
         try {
-            const date = new Date(user.birth_date);
+            const date = new Date(birthDate);
             return {
                 day: date.getDate(),
                 month: date.getMonth() + 1, // JavaScript months are 0-indexed
-                year: date.getFullYear()
+                year: date.getFullYear(),
             };
         } catch (e) {
             return { day: null, month: null, year: null };
         }
     };
 
-    // Form state
-    const [formData, setFormData] = useState({
-        fullname: user?.fullname || '',
-        email: user?.email || '',
-        phone: user?.phone || '',
-        gender: user?.gender || 'Nam',
-        ...parseBirthDate()
-    });
-
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(user?.avatarUrl || '');
-
     // Handle input changes
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
 
-    // Handle date changes
+    // Handle date changes - fixed to ensure state update triggers re-render
     const handleDateChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
-
-    // Handle gender change
-    const handleGenderChange = (value) => {
-        setFormData(prev => ({ ...prev, gender: value }));
+        console.log("run")
+        setFormData((prev) => {
+            // Create a new object to ensure React detects the change
+            return { ...prev, [field]: value };
+        });
     };
 
     // Handle avatar file selection
     const handleFileSelect = (e) => {
         const file = e.target.files[0];
         if (file) {
+            if (file.size > 1024 * 1024) { // 1MB limit
+                toast({
+                    title: 'Lỗi',
+                    description: 'Dung lượng file vượt quá 1MB',
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true,
+                });
+                return;
+            }
+
+            // Check if file type is supported
+            if (!SUPPORTED_IMAGE_TYPES.includes(file.type)) {
+                toast({
+                    title: 'Lỗi',
+                    description: `Chỉ hỗ trợ định dạng ${SUPPORTED_FORMATS_DISPLAY}`,
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true,
+                });
+                return;
+            }
+
             setSelectedFile(file);
 
             // Create preview URL
@@ -89,27 +147,56 @@ const UserProfile = () => {
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Create a proper birth date string if all date components are present
-        let birthDateString = null;
-        if (formData.day && formData.month && formData.year) {
-            birthDateString = `${formData.year}-${formData.month.toString().padStart(2, '0')}-${formData.day.toString().padStart(2, '0')}`;
-        }
-
         setIsSubmitting(true);
 
         try {
-            // Data to send to the server
+            // Create birth date string if all components are present
+            let birthDateString = null;
+            if (formData.day && formData.month && formData.year) {
+                birthDateString = `${formData.year}-${formData.month
+                    .toString()
+                    .padStart(2, '0')}-${formData.day.toString().padStart(2, '0')}`;
+            }
+
+            // Prepare user data for update
             const userData = {
                 fullname: formData.fullname,
                 birth_date: birthDateString,
-                gender: formData.gender,
-                // Include other fields as needed
+                phone: formData.phone || null,
+                email: formData.email,
+                avatar_url: user?.avatar_url || '', // Will update if new avatar is uploaded
             };
 
-            // Here you would make an API call to update the user profile
-            // For now, we'll just simulate it with a timeout
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Handle avatar upload if a new file is selected
+            if (selectedFile) {
+                const presignedRequest = {
+                    file_name: selectedFile.name,
+                    file_size: selectedFile.size,
+                    content_type: selectedFile.type,
+                };
+
+                // Get presigned URL
+                const presignedResponse = await userMeService.getPresignedUrl(presignedRequest);
+                const presignedUrl = presignedResponse.url;
+
+                // Upload file to presigned URL
+                await fetch(presignedUrl, {
+                    method: 'PUT',
+                    body: selectedFile,
+                    headers: {
+                        'Content-Type': selectedFile.type,
+                    },
+                });
+
+                // Update avatar_url in userData (assuming the presigned URL service returns the final URL or we derive it)
+                userData.avatar_url = presignedUrl.split('?')[0]; // Assuming the final URL is the base URL without query params
+            }
+
+            // Update user profile
+            const updatedUser = await userMeService.updateProfile(userData);
+            setUser(updatedUser);
+            setPreviewUrl(updatedUser.avatar_url || '');
+            setSelectedFile(null); // Clear selected file after successful upload
 
             toast({
                 title: 'Hồ sơ đã được cập nhật',
@@ -130,13 +217,18 @@ const UserProfile = () => {
         }
     };
 
+    // Force a re-render when formData changes
+    useEffect(() => {
+        // This empty effect ensures component re-renders when formData changes
+    }, [formData]);
+
     return (
         <Box
             as="form"
             onSubmit={handleSubmit}
-            maxH="calc(100vh - 200px)"  // Set a max height to prevent excessive page length
-            overflowY="auto"  // Enable scrolling if content exceeds max height
-            pr={2}  // Add a bit of padding for the scrollbar
+            maxH="calc(100vh - 200px)"
+            overflowY="auto"
+            pr={2}
             sx={{
                 '&::-webkit-scrollbar': {
                     width: '4px',
@@ -144,10 +236,12 @@ const UserProfile = () => {
                 '&::-webkit-scrollbar-thumb': {
                     backgroundColor: 'rgba(0,0,0,0.2)',
                     borderRadius: '2px',
-                }
+                },
             }}
         >
-            <Heading as="h1" size="lg" mb={4}>Hồ Sơ Của Tôi</Heading>
+            <Heading as="h1" size="lg" mb={4}>
+                Hồ Sơ Của Tôi
+            </Heading>
             <Text mb={4} color="gray.500" fontSize="sm">
                 Quản lý thông tin hồ sơ để bảo mật tài khoản
             </Text>
@@ -189,12 +283,7 @@ const UserProfile = () => {
                                     <Text fontWeight="medium">Email</Text>
                                 </Td>
                                 <Td py={4} pl={4}>
-                                    <Flex align="center">
-                                        <Text>{formData.email}</Text>
-                                        <Link color="blue.500" fontSize="sm" ml={3}>
-                                            Thay Đổi
-                                        </Link>
-                                    </Flex>
+                                    <Text>{formData.email}</Text>
                                 </Td>
                             </Tr>
 
@@ -203,26 +292,66 @@ const UserProfile = () => {
                                     <Text fontWeight="medium">Số điện thoại</Text>
                                 </Td>
                                 <Td py={4} pl={4}>
-                                    {formData.phone ? (
-                                        <Flex align="center">
-                                            <Text>{formData.phone}</Text>
-                                            <Link color="blue.500" fontSize="sm" ml={3}>
-                                                Thay Đổi
-                                            </Link>
-                                        </Flex>
+                                    {formData.phone === "" || formData.phone === null ? (
+                                        formData._isAddingPhone ? (
+                                            <Input
+                                                name="phone"
+                                                value={formData.phone || ""}
+                                                onChange={handleChange}
+                                                size="md"
+                                                width="100%"
+                                                maxW="400px"
+                                                placeholder="Nhập số điện thoại"
+                                            />
+                                        ) : (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                colorScheme="blue"
+                                                borderRadius="sm"
+                                                onClick={() => {
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        _isAddingPhone: true,
+                                                    }));
+                                                }}
+                                            >
+                                                Thêm
+                                            </Button>
+                                        )
                                     ) : (
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            colorScheme="blue"
-                                            borderRadius="sm"
-                                        >
-                                            Thêm
-                                        </Button>
+                                        <Flex alignItems="center" gap={4}>
+                                            <Text>{formData.phone}</Text>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                colorScheme="blue"
+                                                borderRadius="sm"
+                                                onClick={() => {
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        _isEditingPhone: true,
+                                                    }));
+                                                }}
+                                            >
+                                                Sửa
+                                            </Button>
+                                        </Flex>
+                                    )}
+                                    {formData._isEditingPhone && (
+                                        <Input
+                                            name="phone"
+                                            value={formData.phone || ""}
+                                            onChange={handleChange}
+                                            size="md"
+                                            width="100%"
+                                            maxW="400px"
+                                            placeholder="Nhập số điện thoại"
+                                            mt={2}
+                                        />
                                     )}
                                 </Td>
                             </Tr>
-
                             <Tr>
                                 <Td width="180px" pr={2} pl={0} py={4} verticalAlign="center">
                                     <Text fontWeight="medium">Ngày sinh</Text>
@@ -240,8 +369,7 @@ const UserProfile = () => {
                             </Tr>
 
                             <Tr>
-                                <Td width="180px" pr={2} pl={0} py={6} verticalAlign="top">
-                                </Td>
+                                <Td width="180px" pr={2} pl={0} py={6} verticalAlign="top"></Td>
                                 <Td py={6} pl={4}>
                                     <Button
                                         colorScheme="red"
@@ -268,7 +396,7 @@ const UserProfile = () => {
                 >
                     <Avatar
                         size="2xl"
-                        src={previewUrl || user?.avatarUrl}
+                        src={previewUrl}
                         name={formData.fullname}
                         border="1px solid"
                         borderColor="gray.200"
@@ -298,7 +426,7 @@ const UserProfile = () => {
                     <Text fontSize="xs" color="gray.500" textAlign="center">
                         Dung lượng file tối đa 1 MB
                         <br />
-                        Định dạng: .JPEG, .PNG
+                        Định dạng: {SUPPORTED_FORMATS_DISPLAY}
                     </Text>
                 </Box>
             </Flex>

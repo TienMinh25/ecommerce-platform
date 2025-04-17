@@ -53,68 +53,48 @@ func (u *userMeService) GetCurrentUser(ctx context.Context, email string) (*api_
 	}
 
 	response := &api_gateway_dto.GetCurrentUserResponse{
-		ID:          user.ID,
 		FullName:    user.FullName,
 		Email:       user.Email,
 		AvatarURL:   user.AvatarURL,
-		BirthDate:   formatBirthDate(user.BirthDate),
-		EmailVerify: user.EmailVerified,
+		BirthDate:   utils.FormatBirthDate(user.BirthDate),
 		PhoneVerify: user.PhoneVerified,
-		Status:      string(user.Status),
 		Phone:       user.PhoneNumber,
 	}
 
 	return response, nil
 }
 
-// format from time to string
-func formatBirthDate(birthDate *time.Time) *string {
-	if birthDate == nil {
-		return nil
-	}
-	formattedDate := birthDate.Format("2006-01-02")
-	return &formattedDate
-}
-
-func (u *userMeService) UpdateCurrentUser(ctx context.Context, email string, data *api_gateway_dto.UpdateCurrentUserRequest) error {
+func (u *userMeService) UpdateCurrentUser(ctx context.Context, userID int, data *api_gateway_dto.UpdateCurrentUserRequest) (*api_gateway_dto.UpdateCurrentUserResponse, error) {
 	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateCurrentUser"))
 	defer span.End()
 
-	if data == nil {
-		return utils.BusinessError{
-			Code:    http.StatusBadRequest,
-			Message: "Not valid input data",
-		}
-	}
+	exists, err := u.userRepo.CheckUserExistsByID(ctx, userID)
 
-	exists, err := u.userRepo.CheckUserExistsByEmail(ctx, email)
-
-	//check xem  co  loi ko
 	if err != nil {
-		span.RecordError(err)
-		return utils.BusinessError{
-			Code:    http.StatusInternalServerError,
-			Message: err.Error(),
-		}
+		return nil, err
 	}
-	//check xem co ton tai  ko
+
 	if !exists {
-		return utils.BusinessError{
+		return nil, utils.BusinessError{
 			Code:    http.StatusNotFound,
-			Message: "Not found user",
-		}
-	}
-	//sau khi check thi check xem co update thanh cong hay ko
-	err = u.userRepo.UpdateCurrentUserInfo(ctx, email, data)
-	if err != nil {
-		span.RecordError(err)
-		return utils.BusinessError{
-			Code:    http.StatusInternalServerError,
-			Message: "Update fail",
+			Message: "User is not found",
 		}
 	}
 
-	return nil
+	user, err := u.userRepo.UpdateCurrentUserInfo(ctx, userID, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &api_gateway_dto.UpdateCurrentUserResponse{
+		FullName:    user.FullName,
+		Email:       user.Email,
+		AvatarURL:   user.AvatarURL,
+		BirthDate:   utils.FormatBirthDate(user.BirthDate),
+		PhoneVerify: user.PhoneVerified,
+		Phone:       user.PhoneNumber,
+	}, nil
 }
 
 func (u *userMeService) GetAvatarUploadURL(ctx context.Context, data *api_gateway_dto.GetAvatarPresignedURLRequest, userID int) (string, error) {
