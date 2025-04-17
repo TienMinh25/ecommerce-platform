@@ -73,7 +73,7 @@ const RoleFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                 variant="outline"
                 colorScheme="gray"
             >
-                Filter
+                Bộ lọc
             </MenuButton>
             <MenuList
                 bg={bgColor}
@@ -85,7 +85,7 @@ const RoleFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
             >
                 <VStack spacing={4} align="stretch">
                     <FormControl>
-                        <FormLabel fontSize="sm" fontWeight="medium">Sort By</FormLabel>
+                        <FormLabel fontSize="sm" fontWeight="medium">Sắp xếp bởi</FormLabel>
                         <Select
                             name="sortBy"
                             value={localFilters.sortBy}
@@ -93,12 +93,12 @@ const RoleFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             size="sm"
                             borderRadius="md"
                         >
-                            <option value="name">Name</option>
+                            <option value="name">Họ và tên</option>
                         </Select>
                     </FormControl>
 
                     <FormControl>
-                        <FormLabel fontSize="sm" fontWeight="medium">Sort Order</FormLabel>
+                        <FormLabel fontSize="sm" fontWeight="medium">Sắp xếp theo</FormLabel>
                         <Select
                             name="sortOrder"
                             value={localFilters.sortOrder}
@@ -106,8 +106,8 @@ const RoleFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             size="sm"
                             borderRadius="md"
                         >
-                            <option value="asc">Ascending</option>
-                            <option value="desc">Descending</option>
+                            <option value="asc">Tăng dần</option>
+                            <option value="desc">Giảm dần</option>
                         </Select>
                     </FormControl>
 
@@ -119,15 +119,14 @@ const RoleFilterDropdown = ({ filters, onFiltersChange, onApplyFilters }) => {
                             variant="ghost"
                             onClick={handleReset}
                         >
-                            Reset
+                            Reset bộ lọc
                         </Button>
                         <Button
                             size="sm"
                             colorScheme="blue"
                             onClick={handleApply}
-                            leftIcon={<FiCheck size={14} />}
                         >
-                            Apply
+                            Áp dụng bộ lọc
                         </Button>
                     </Flex>
                 </VStack>

@@ -1,0 +1,24 @@
+@startuml
+
+actor "Khách hàng" as kh
+boundary "Đăng nhập UI" as ui
+control "API Gateway service" as service
+database "API Gateway DB" as db
+
+kh -> ui: 1. Nhập email, password và kích \n nút Đăng nhập
+ui -> service: 2. Gửi dữ liệu đăng nhập
+service -> db: 3. Lấy dữ liệu người dùng dựa \n trên email
+db --> service: 4. Thông tin liên quan đến user
+
+
+alt Nếu mật khẩu sai hoặc người dùng chưa active \n hoặc người dùng chưa verify email
+    service --> ui: 5. Trả về thông báo lỗi
+    ui --> ui: 6. Hiển thị thông báo lỗi
+end
+
+service -> service: Sinh access token và \n refresh token
+service -> db: Lưu trữ refresh token vào \n bảng refresh_token
+service --> ui: Thông tin người dùng + \n access token và refresh token
+ui -> ui: Lưu trữ các thông tin \n vào local storage, chuyển hướng \n hiển thị trang chủ
+
+@enduml

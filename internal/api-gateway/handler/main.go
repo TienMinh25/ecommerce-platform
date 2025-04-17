@@ -55,3 +55,9 @@ type IRoleHandler interface {
 	UpdateRole(ctx *gin.Context)
 	DeleteRole(ctx *gin.Context)
 }
+
+type IUserHandler interface {
+	GetCurrentUser(ctx *gin.Context)
+	UpdateCurrentUser(ctx *gin.Context)
+	GetAvatarURLUpload(ctx *gin.Context)
+}

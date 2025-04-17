@@ -6,13 +6,17 @@ import (
 )
 
 type Storage interface {
-	// Upload Uploads a file or data to the storage system using the
-	// provided `UploadInput`
+	// Upload uploads a file to the specified bucket (or default bucket if empty)
+	// and returns the file's URL.
 	// (e.g., file content, metadata) and returns the file's unique identifier or URL.
-	Upload(ctx context.Context, payload UploadInput) (string, error)
+	Upload(ctx context.Context, payload UploadInput, bucket string) (string, error)
 
-	// Delete Deletes a file or object from the storage system by its name or identifier, returning an error if the operation fails
-	Delete(ctx context.Context, name string) error
+	// Delete deletes a file from the specified bucket (or default bucket if empty)
+	Delete(ctx context.Context, name, bucket string) error
+
+	// GenerateUploadPresignedURL generates a pre-signed URL for uploading to the
+	// specified bucket (or default bucket if empty)
+	GenerateUploadPresignedURL(ctx context.Context, objectName, bucket string) (string, error)
 }
 
 type UploadInput struct {

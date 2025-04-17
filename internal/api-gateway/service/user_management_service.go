@@ -67,7 +67,7 @@ func (u *userService) GetUserManagement(ctx context.Context, data *api_gateway_d
 			Fullname:    user.FullName,
 			Email:       user.Email,
 			AvatarURL:   avatarURL,
-			BirthDate:   user.BirthDate,
+			BirthDate:   utils.FormatBirthDate(user.BirthDate),
 			UpdatedAt:   user.UpdatedAt,
 			EmailVerify: user.EmailVerified,
 			PhoneVerify: user.PhoneVerified,

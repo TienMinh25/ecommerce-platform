@@ -120,10 +120,9 @@ const ModuleManagementComponent = () => {
                 }
             }
         } catch (error) {
-            console.error('Error fetching modules:', error);
             toast({
-                title: 'Error',
-                description: 'Failed to load modules',
+                title: 'Lỗi',
+                description: 'Lỗi khi tải danh sách modules',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -136,7 +135,7 @@ const ModuleManagementComponent = () => {
     // Handle create module
     const handleCreateModule = async () => {
         if (!moduleName.trim()) {
-            setFormError('Module name is required');
+            setFormError('Tên module là bắt buộc');
             return;
         }
 
@@ -144,8 +143,8 @@ const ModuleManagementComponent = () => {
         try {
             await moduleService.createModule({ name: moduleName });
             toast({
-                title: 'Success',
-                description: 'Module created successfully',
+                title: 'Thành công',
+                description: 'Tạo mới module thành công',
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
@@ -154,10 +153,9 @@ const ModuleManagementComponent = () => {
             setModuleName('');
             fetchModules();
         } catch (error) {
-            console.error('Error creating module:', error);
             toast({
-                title: 'Error',
-                description: error.response?.data?.error?.message || 'Failed to create module',
+                title: 'Lỗi',
+                description: error.response?.data?.error?.message || 'Thất bại khi tạo module',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -170,7 +168,7 @@ const ModuleManagementComponent = () => {
     // Handle update module
     const handleUpdateModule = async () => {
         if (!moduleName.trim()) {
-            setFormError('Module name is required');
+            setFormError('Tên module là bắt buộc');
             return;
         }
 
@@ -178,8 +176,8 @@ const ModuleManagementComponent = () => {
         try {
             await moduleService.updateModule(currentModule.id, { name: moduleName });
             toast({
-                title: 'Success',
-                description: 'Module updated successfully',
+                title: 'Thành công',
+                description: 'Cập nhật module thành công',
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
@@ -188,10 +186,9 @@ const ModuleManagementComponent = () => {
             setModuleName('');
             fetchModules();
         } catch (error) {
-            console.error('Error updating module:', error);
             toast({
-                title: 'Error',
-                description: error.response?.data?.error?.message || 'Failed to update module',
+                title: 'Lỗi',
+                description: error.response?.data?.error?.message || 'Thất bại khi cập nhât module',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -207,8 +204,8 @@ const ModuleManagementComponent = () => {
         try {
             await moduleService.deleteModule(currentModule.id);
             toast({
-                title: 'Success',
-                description: 'Module deleted successfully',
+                title: 'Thành công',
+                description: 'Xoá module thành công',
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
@@ -216,10 +213,9 @@ const ModuleManagementComponent = () => {
             setIsDeleteModalOpen(false);
             fetchModules();
         } catch (error) {
-            console.error('Error deleting module:', error);
             toast({
-                title: 'Error',
-                description: error.response?.data?.error?.message || 'Failed to delete module',
+                title: 'Lỗi',
+                description: error.response?.data?.error?.message || 'Thất bại khi xoá module',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -303,7 +299,7 @@ const ModuleManagementComponent = () => {
                                 <FiSearch color="gray.400" />
                             </InputLeftElement>
                             <Input
-                                placeholder="Search by module name..."
+                                placeholder="Tìm kiếm bằng tên module..."
                                 pl={10}
                                 pr={2}
                                 py={2.5}
@@ -359,7 +355,7 @@ const ModuleManagementComponent = () => {
                             setIsCreateModalOpen(true);
                         }}
                     >
-                        Create
+                        Tạo mới module
                     </Button>
                 </HStack>
             </Flex>
@@ -414,7 +410,7 @@ const ModuleManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Module
+                                    Tên module
                                 </Th>
                                 <Th
                                     py={4}
@@ -425,7 +421,7 @@ const ModuleManagementComponent = () => {
                                     fontWeight="bold"
                                     display={{ base: "none", md: "table-cell" }}
                                 >
-                                    Last Updated
+                                    Thời gian cập nhật gần nhất
                                 </Th>
                                 <Th
                                     py={4}
@@ -437,7 +433,7 @@ const ModuleManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Actions
+                                    Hành động
                                 </Th>
                             </Tr>
                         </Thead>
@@ -445,7 +441,7 @@ const ModuleManagementComponent = () => {
                             {isLoading ? (
                                 <Tr>
                                     <Td colSpan={3} textAlign="center">
-                                        <Text py={4}>Loading...</Text>
+                                        <Text py={4}>Đang tải...</Text>
                                     </Td>
                                 </Tr>
                             ) : filteredData.length > 0 ? (
@@ -518,8 +514,8 @@ const ModuleManagementComponent = () => {
                                             <Box color="gray.400" mb={3}>
                                                 <FiSearch size={36} />
                                             </Box>
-                                            <Text fontWeight="normal" color="gray.500" fontSize="md">No modules found</Text>
-                                            <Text color="gray.400" fontSize="sm" mt={1}>Try a different search term</Text>
+                                            <Text fontWeight="normal" color="gray.500" fontSize="md">Không tìm thấy modules nào</Text>
+                                            <Text color="gray.400" fontSize="sm" mt={1}>Hãy thử với tên module khác</Text>
                                         </Flex>
                                     </Td>
                                 </Tr>
@@ -550,8 +546,8 @@ const ModuleManagementComponent = () => {
                     >
                         <HStack spacing={1} flexShrink={0}>
                             <Text fontSize="sm" color="gray.600" fontWeight="normal">
-                                Showing {filteredData.length > 0 ? ((currentPage - 1) * rowsPerPage) + 1 : 0}-
-                                {Math.min(currentPage * rowsPerPage, totalItems)} of {totalItems} modules
+                                Hiển thị {filteredData.length > 0 ? ((currentPage - 1) * rowsPerPage) + 1 : 0}-
+                                {Math.min(currentPage * rowsPerPage, totalItems)} trong tổng số {totalItems} modules
                             </Text>
                             <Menu>
                                 <MenuButton
@@ -563,12 +559,12 @@ const ModuleManagementComponent = () => {
                                     fontWeight="normal"
                                     color="gray.600"
                                 >
-                                    {rowsPerPage} per page
+                                    {rowsPerPage} dòng mỗi trang
                                 </MenuButton>
                                 <MenuList minW="120px" shadow="lg" borderRadius="md">
-                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 per page</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 dòng mỗi trang</MenuItem>
                                 </MenuList>
                             </Menu>
                         </HStack>
@@ -622,30 +618,30 @@ const ModuleManagementComponent = () => {
             <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Create Module</ModalHeader>
+                    <ModalHeader>Tạo mới module</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <FormControl isInvalid={!!formError}>
-                            <FormLabel>Module Name</FormLabel>
+                            <FormLabel>Tên module</FormLabel>
                             <Input
                                 value={moduleName}
                                 onChange={(e) => {
                                     setModuleName(e.target.value);
                                     setFormError('');
                                 }}
-                                placeholder="Enter module name"
+                                placeholder="Nhập tên module"
                             />
                             {formError && <FormErrorMessage>{formError}</FormErrorMessage>}
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button mr={3} onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+                        <Button mr={3} onClick={() => setIsCreateModalOpen(false)}>Huỷ</Button>
                         <Button
                             colorScheme="blue"
                             onClick={handleCreateModule}
                             isLoading={isLoading}
                         >
-                            Create
+                            Tạo mới module
                         </Button>
                     </ModalFooter>
                 </ModalContent>
@@ -655,30 +651,30 @@ const ModuleManagementComponent = () => {
             <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Edit Module</ModalHeader>
+                    <ModalHeader>Chỉnh sửa module</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <FormControl isInvalid={!!formError}>
-                            <FormLabel>Module Name</FormLabel>
+                            <FormLabel>Tên module</FormLabel>
                             <Input
                                 value={moduleName}
                                 onChange={(e) => {
                                     setModuleName(e.target.value);
                                     setFormError('');
                                 }}
-                                placeholder="Enter module name"
+                                placeholder="Nhập tên module"
                             />
                             {formError && <FormErrorMessage>{formError}</FormErrorMessage>}
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button mr={3} onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+                        <Button mr={3} onClick={() => setIsEditModalOpen(false)}>Huỷ</Button>
                         <Button
                             colorScheme="blue"
                             onClick={handleUpdateModule}
                             isLoading={isLoading}
                         >
-                            Update
+                            Cập nhật
                         </Button>
                     </ModalFooter>
                 </ModalContent>
@@ -688,7 +684,7 @@ const ModuleManagementComponent = () => {
             <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Confirm Delete</ModalHeader>
+                    <ModalHeader>Xác nhận xoá</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <Flex align="center" mb={4}>
@@ -696,7 +692,7 @@ const ModuleManagementComponent = () => {
                                 <FiAlertCircle size={24} />
                             </Box>
                             <Text>
-                                Are you sure you want to delete the module <b>{currentModule?.name}</b>? This action cannot be undone.
+                                Bạn có chắc chắn muốn xóa module <b>{currentModule?.name}</b>? Hành động này không thể hoàn tác.
                             </Text>
                         </Flex>
                     </ModalBody>
@@ -707,7 +703,7 @@ const ModuleManagementComponent = () => {
                             onClick={handleDeleteModule}
                             isLoading={isLoading}
                         >
-                            Delete
+                            Xoá
                         </Button>
                     </ModalFooter>
                 </ModalContent>

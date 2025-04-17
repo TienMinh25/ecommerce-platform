@@ -120,10 +120,9 @@ const AddressTypesManagementComponent = () => {
                 }
             }
         } catch (error) {
-            console.error('Error fetching address types:', error);
             toast({
-                title: 'Error',
-                description: 'Failed to load address types',
+                title: 'Lỗi',
+                description: 'Lỗi khi tải danh sách kiểu địa chỉ',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -136,7 +135,7 @@ const AddressTypesManagementComponent = () => {
     // Handle create address type
     const handleCreateAddressType = async () => {
         if (!addressTypeName.trim()) {
-            setFormError('Address type name is required');
+            setFormError('Tên của kiểu địa chỉ là bắt buộc');
             return;
         }
 
@@ -144,20 +143,19 @@ const AddressTypesManagementComponent = () => {
         try {
             await addressTypeService.createAddressType({ address_type: addressTypeName });
             toast({
-                title: 'Success',
-                description: 'Address type created successfully',
+                title: 'Thành công',
+                description: 'Tạo mới thành công kiểu địa chỉ',
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
             });
             setIsCreateModalOpen(false);
             setAddressTypeName('');
-            fetchAddressTypes();
+            await fetchAddressTypes();
         } catch (error) {
-            console.error('Error creating address type:', error);
             toast({
-                title: 'Error',
-                description: error.response?.data?.error?.message || 'Failed to create address type',
+                title: 'Lỗi',
+                description: error.response?.data?.error?.message || 'Lỗi khi tạo mới kiểu địa chỉ',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -170,7 +168,7 @@ const AddressTypesManagementComponent = () => {
     // Handle update address type
     const handleUpdateAddressType = async () => {
         if (!addressTypeName.trim()) {
-            setFormError('Address type name is required');
+            setFormError('Tên của kiểu địa chỉ là bắt buộc');
             return;
         }
 
@@ -178,20 +176,19 @@ const AddressTypesManagementComponent = () => {
         try {
             await addressTypeService.updateAddressType(currentAddressType.id, { address_type: addressTypeName });
             toast({
-                title: 'Success',
-                description: 'Address type updated successfully',
+                title: 'Thành công',
+                description: 'Cập nhật kiểu địa chỉ thành công',
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
             });
             setIsEditModalOpen(false);
             setAddressTypeName('');
-            fetchAddressTypes();
+            await fetchAddressTypes();
         } catch (error) {
-            console.error('Error updating address type:', error);
             toast({
-                title: 'Error',
-                description: error.response?.data?.error?.message || 'Failed to update address type',
+                title: 'Lỗi',
+                description: error.response?.data?.error?.message || 'Lỗi khi cập nhật kiểu địa chỉ',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -207,19 +204,18 @@ const AddressTypesManagementComponent = () => {
         try {
             await addressTypeService.deleteAddressType(currentAddressType.id);
             toast({
-                title: 'Success',
-                description: 'Address type deleted successfully',
+                title: 'Thành công',
+                description: 'Xoá kiểu địa chỉ thành công',
                 status: 'success',
                 duration: 3000,
                 isClosable: true,
             });
             setIsDeleteModalOpen(false);
-            fetchAddressTypes();
+            await fetchAddressTypes();
         } catch (error) {
-            console.error('Error deleting address type:', error);
             toast({
-                title: 'Error',
-                description: error.response?.data?.error?.message || 'Failed to delete address type',
+                title: 'Lỗi',
+                description: error.response?.data?.error?.message || 'Lỗi khi xoá kiểu địa chỉ',
                 status: 'error',
                 duration: 3000,
                 isClosable: true,
@@ -303,7 +299,7 @@ const AddressTypesManagementComponent = () => {
                                 <FiSearch color="gray.400" />
                             </InputLeftElement>
                             <Input
-                                placeholder="Search by name..."
+                                placeholder="Tìm kiếm theo tên của kiểu địa chỉ..."
                                 pl={10}
                                 pr={2}
                                 py={2.5}
@@ -359,7 +355,7 @@ const AddressTypesManagementComponent = () => {
                             setIsCreateModalOpen(true);
                         }}
                     >
-                        Create
+                        Tạo mới kiểu địa chỉ
                     </Button>
                 </HStack>
             </Flex>
@@ -414,7 +410,7 @@ const AddressTypesManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Type Name
+                                    Tên kiểu địa chỉ
                                 </Th>
                                 <Th
                                     py={4}
@@ -425,7 +421,7 @@ const AddressTypesManagementComponent = () => {
                                     fontWeight="bold"
                                     display={{ base: "none", md: "table-cell" }}
                                 >
-                                    Last Updated
+                                    Thời gian cập nhật gần nhất
                                 </Th>
                                 <Th
                                     py={4}
@@ -437,7 +433,7 @@ const AddressTypesManagementComponent = () => {
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Actions
+                                    Hành động
                                 </Th>
                             </Tr>
                         </Thead>
@@ -445,7 +441,7 @@ const AddressTypesManagementComponent = () => {
                             {isLoading ? (
                                 <Tr>
                                     <Td colSpan={3} textAlign="center">
-                                        <Text py={4}>Loading...</Text>
+                                        <Text py={4}>Đang tải...</Text>
                                     </Td>
                                 </Tr>
                             ) : filteredData.length > 0 ? (
@@ -518,8 +514,8 @@ const AddressTypesManagementComponent = () => {
                                             <Box color="gray.400" mb={3}>
                                                 <FiSearch size={36} />
                                             </Box>
-                                            <Text fontWeight="normal" color="gray.500" fontSize="md">No address types found</Text>
-                                            <Text color="gray.400" fontSize="sm" mt={1}>Try a different search term</Text>
+                                            <Text fontWeight="normal" color="gray.500" fontSize="md">Không tìm thấy kiểu địa chỉ nào</Text>
+                                            <Text color="gray.400" fontSize="sm" mt={1}>Hãy thử tìm kiếm kiểu địa chỉ khác</Text>
                                         </Flex>
                                     </Td>
                                 </Tr>
@@ -550,8 +546,8 @@ const AddressTypesManagementComponent = () => {
                     >
                         <HStack spacing={1} flexShrink={0}>
                             <Text fontSize="sm" color="gray.600" fontWeight="normal">
-                                Showing {filteredData.length > 0 ? ((currentPage - 1) * rowsPerPage) + 1 : 0}-
-                                {Math.min(currentPage * rowsPerPage, totalItems)} of {totalItems} types
+                                Hiển thị {filteredData.length > 0 ? ((currentPage - 1) * rowsPerPage) + 1 : 0}-
+                                {Math.min(currentPage * rowsPerPage, totalItems)} trên tổng số {totalItems} kiểu địa chỉ
                             </Text>
                             <Menu>
                                 <MenuButton
@@ -563,12 +559,12 @@ const AddressTypesManagementComponent = () => {
                                     fontWeight="normal"
                                     color="gray.600"
                                 >
-                                    {rowsPerPage} per page
+                                    {rowsPerPage} dòng mỗi trang
                                 </MenuButton>
                                 <MenuList minW="120px" shadow="lg" borderRadius="md">
-                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 per page</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 dòng mỗi trang</MenuItem>
                                 </MenuList>
                             </Menu>
                         </HStack>
@@ -622,30 +618,30 @@ const AddressTypesManagementComponent = () => {
             <Modal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Create Address Type</ModalHeader>
+                    <ModalHeader>Tạo kiểu địa chỉ</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <FormControl isInvalid={!!formError}>
-                            <FormLabel>Address Type Name</FormLabel>
+                            <FormLabel>Tên kiểu địa chỉ</FormLabel>
                             <Input
                                 value={addressTypeName}
                                 onChange={(e) => {
                                     setAddressTypeName(e.target.value);
                                     setFormError('');
                                 }}
-                                placeholder="Enter address type name"
+                                placeholder="Nhập tên kiểu địa chỉ"
                             />
                             {formError && <FormErrorMessage>{formError}</FormErrorMessage>}
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button mr={3} onClick={() => setIsCreateModalOpen(false)}>Cancel</Button>
+                        <Button mr={3} onClick={() => setIsCreateModalOpen(false)}>Huỷ</Button>
                         <Button
                             colorScheme="blue"
                             onClick={handleCreateAddressType}
                             isLoading={isLoading}
                         >
-                            Create
+                            Tạo
                         </Button>
                     </ModalFooter>
                 </ModalContent>
@@ -655,30 +651,30 @@ const AddressTypesManagementComponent = () => {
             <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Edit Address Type</ModalHeader>
+                    <ModalHeader>Chỉnh sửa kiểu địa chỉ</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <FormControl isInvalid={!!formError}>
-                            <FormLabel>Address Type Name</FormLabel>
+                            <FormLabel>Tên kiểu địa chỉ</FormLabel>
                             <Input
                                 value={addressTypeName}
                                 onChange={(e) => {
                                     setAddressTypeName(e.target.value);
                                     setFormError('');
                                 }}
-                                placeholder="Enter address type name"
+                                placeholder="Nhập tên kiểu địa chỉ"
                             />
                             {formError && <FormErrorMessage>{formError}</FormErrorMessage>}
                         </FormControl>
                     </ModalBody>
                     <ModalFooter>
-                        <Button mr={3} onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+                        <Button mr={3} onClick={() => setIsEditModalOpen(false)}>Huỷ</Button>
                         <Button
                             colorScheme="blue"
                             onClick={handleUpdateAddressType}
                             isLoading={isLoading}
                         >
-                            Update
+                            Cập nhật
                         </Button>
                     </ModalFooter>
                 </ModalContent>
@@ -688,7 +684,7 @@ const AddressTypesManagementComponent = () => {
             <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
                 <ModalOverlay />
                 <ModalContent>
-                    <ModalHeader>Confirm Delete</ModalHeader>
+                    <ModalHeader>Xác nhận xoá</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
                         <Flex align="center" mb={4}>
@@ -696,18 +692,18 @@ const AddressTypesManagementComponent = () => {
                                 <FiAlertCircle size={24} />
                             </Box>
                             <Text>
-                                Are you sure you want to delete the address type <b>{currentAddressType?.name}</b>? This action cannot be undone.
+                                Bạn có chắc chắn muốn xóa kiểu địa chỉ <b>{currentAddressType?.name}</b>? Hành động này không thể hoàn tác.
                             </Text>
                         </Flex>
                     </ModalBody>
                     <ModalFooter>
-                        <Button mr={3} onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+                        <Button mr={3} onClick={() => setIsDeleteModalOpen(false)}>Huỷ</Button>
                         <Button
                             colorScheme="red"
                             onClick={handleDeleteAddressType}
                             isLoading={isLoading}
                         >
-                            Delete
+                            Xoá
                         </Button>
                     </ModalFooter>
                 </ModalContent>

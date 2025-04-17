@@ -244,6 +244,53 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetAvatarPresignedURLRequest:
+    properties:
+      content_type:
+        type: string
+      file_name:
+        type: string
+      file_size:
+        type: integer
+    required:
+    - content_type
+    - file_name
+    - file_size
+    type: object
+  api_gateway_dto.GetAvatarPresignedURLResponse:
+    properties:
+      url:
+        type: string
+    type: object
+  api_gateway_dto.GetAvatarPresignedURLResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetAvatarPresignedURLResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetCurrentUserResponse:
+    properties:
+      avatar_url:
+        type: string
+      birth_date:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      phone:
+        type: string
+      phone_verify:
+        type: boolean
+    type: object
+  api_gateway_dto.GetCurrentUserResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetCurrentUserResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.GetListModuleResponseDocs:
     properties:
       data:
@@ -530,6 +577,45 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.UpdateAddressTypeByAdminResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.UpdateCurrentUserRequest:
+    properties:
+      avatar_url:
+        type: string
+      birth_date:
+        type: string
+      email:
+        type: string
+      fullname:
+        type: string
+      phone:
+        type: string
+    required:
+    - avatar_url
+    - email
+    - fullname
+    type: object
+  api_gateway_dto.UpdateCurrentUserResponse:
+    properties:
+      avatar_url:
+        type: string
+      birth_date:
+        type: string
+      email:
+        type: string
+      full_name:
+        type: string
+      phone:
+        type: string
+      phone_verify:
+        type: boolean
+    type: object
+  api_gateway_dto.UpdateCurrentUserResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateCurrentUserResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -1961,6 +2047,106 @@ paths:
       summary: update user by admin
       tags:
       - users
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Lấy thông tin người dùng hiện tại dựa vào access token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetCurrentUserResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Lấy thông tin người dùng hiện tại
+      tags:
+      - me
+    patch:
+      consumes:
+      - application/json
+      description: Cập nhật thông tin cá nhân của người dùng hiện tại
+      parameters:
+      - description: Thông tin cần cập nhật
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateCurrentUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateCurrentUserResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật thông tin cá nhân
+      tags:
+      - me
+  /users/me/avatars/get-presigned-url:
+    post:
+      consumes:
+      - application/json
+      description: lấy presigned url để upload ảnh
+      parameters:
+      - description: Thông tin file
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.GetAvatarPresignedURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetAvatarPresignedURLResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: lấy presigned url để upload ảnh
+      tags:
+      - me
 securityDefinitions:
   BearerAuth:
     in: header

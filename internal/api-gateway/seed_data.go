@@ -121,7 +121,7 @@ func seedRolePermissions(ctx context.Context, db *pgxpool.Pool) {
 			{ModuleID: 12, Permissions: []int{1, 2, 3, 4, 5, 6}},
 		},
 		"customer": {
-			{ModuleID: 1, Permissions: []int{4, 2}},
+			{ModuleID: 1, Permissions: []int{1, 2, 3, 4}},
 			{ModuleID: 4, Permissions: []int{1, 2, 3, 4}},
 			{ModuleID: 5, Permissions: []int{1, 4}},
 			{ModuleID: 6, Permissions: []int{1, 4, 3}},

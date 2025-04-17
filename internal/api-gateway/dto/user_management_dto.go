@@ -31,7 +31,7 @@ type GetUserByAdminResponse struct {
 	Fullname    string              `json:"fullname"`
 	Email       string              `json:"email"`
 	AvatarURL   string              `json:"avatar_url"`
-	BirthDate   *time.Time          `json:"birth_date"`
+	BirthDate   *string             `json:"birth_date"`
 	UpdatedAt   time.Time           `json:"updated_at"`
 	EmailVerify bool                `json:"email_verify"`
 	PhoneVerify bool                `json:"phone_verify"`
@@ -45,7 +45,7 @@ type CreateUserByAdminRequest struct {
 	Email     string                        `json:"email" binding:"required,email"`
 	Phone     *string                       `json:"phone" binding:"omitempty"`
 	Roles     []int                         `json:"roles" binding:"required"`
-	BirthDate *time.Time                    `json:"birth_date" binding:"omitempty"`
+	BirthDate string                        `json:"birth_date" binding:"omitempty" time_format:"2006-01-02"`
 	Password  string                        `json:"password" binding:"required,min=6,max=32"`
 	Status    api_gateway_models.UserStatus `json:"status" binding:"omitempty,oneof=active inactive" example:"active"`
 	AvatarURL string                        `json:"avatar_url" binding:"required,uri"`

@@ -292,7 +292,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                     <Box color={iconColor} mr={3}>
                         <FiShield size={24} />
                     </Box>
-                    <Text fontSize="xl" fontWeight="bold" color={textColor}>Create New Role</Text>
+                    <Text fontSize="xl" fontWeight="bold" color={textColor}>Tạo vai trò mới</Text>
                 </ModalHeader>
 
                 <ModalCloseButton
@@ -308,12 +308,12 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                 <ModalBody py={6}>
                     <VStack spacing={6} align="stretch">
                         <FormControl isRequired isInvalid={!!errors.name}>
-                            <FormLabel fontWeight="semibold" fontSize="md" color={labelColor}>Role Name</FormLabel>
+                            <FormLabel fontWeight="semibold" fontSize="md" color={labelColor}>Tên vai trò</FormLabel>
                             <Input
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                placeholder="Enter role name"
+                                placeholder="Nhập tên vai trò"
                                 bg={inputBg}
                                 color={textColor}
                                 borderWidth="1px"
@@ -326,12 +326,12 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel fontWeight="semibold" fontSize="md" color={labelColor}>Description (Optional)</FormLabel>
+                            <FormLabel fontWeight="semibold" fontSize="md" color={labelColor}>Mô tả (Tuỳ chọn)</FormLabel>
                             <Textarea
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
-                                placeholder="Enter role description"
+                                placeholder="Nhập mô tả"
                                 bg={inputBg}
                                 color={textColor}
                                 borderWidth="1px"
@@ -347,12 +347,12 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
 
                         {/* Permissions Section */}
                         <Box>
-                            <Text fontSize="lg" fontWeight="semibold" color={labelColor} mb={4}>Module Permissions</Text>
+                            <Text fontSize="lg" fontWeight="semibold" color={labelColor} mb={4}>Quyền trên modules</Text>
 
                             {loadingModules ? (
                                 <Flex justify="center" align="center" py={4}>
                                     <Spinner size="md" thickness="3px" color="blue.500" mr={3} />
-                                    <Text color="gray.500">Loading module permissions...</Text>
+                                    <Text color="gray.500">Đang tải dữ liệu quyền của modules...</Text>
                                 </Flex>
                             ) : (
                                 <Box
@@ -452,7 +452,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                                                             <Box color="gray.400" mb={2}>
                                                                 <FiInfo size={24} />
                                                             </Box>
-                                                            <Text color="gray.500">No modules available. Please add modules first.</Text>
+                                                            <Text color="gray.500">Không có modules khả dụng. Vui lòng thêm module trước khi tiếp tục.</Text>
                                                         </Flex>
                                                     </Td>
                                                 </Tr>
@@ -463,7 +463,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                             )}
                             <Text fontSize="xs" color="gray.500" mt={2}>
                                 <FiInfo size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-                                Set permissions for this role. Permissions determine what actions users with this role can perform.
+                                Thiết lập quyền cho vai trò này. Quyền hạn quyết định những hành động mà người dùng với vai trò này có thể thực hiện.
                             </Text>
                         </Box>
                     </VStack>
@@ -487,7 +487,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                         height="40px"
                         minWidth="120px"
                     >
-                        Cancel
+                        Huỷ
                     </Button>
                     <Button
                         leftIcon={<FiPlus />}
@@ -506,7 +506,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                         fontWeight="bold"
                         isDisabled={loadingModules || !hasChanges}
                     >
-                        Create Role
+                        Tạo vai trò
                     </Button>
                 </ModalFooter>
             </ModalContent>

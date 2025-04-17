@@ -2,7 +2,6 @@ package api_gateway_repository
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
@@ -12,6 +11,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"net/http"
 	"strconv"
@@ -101,66 +101,9 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 		roleIDStr, err := u.redis.Get(ctx, fmt.Sprintf("role:%s", common.RoleCustomer))
 		roleID, _ := strconv.Atoi(roleIDStr)
 
-		// get permission from redis
-		permissionMap, err := u.getPermissionFromRedis(ctx)
+		userRoleCus := `INSERT INTO users_roles (role_id, user_id) VALUES ($1, $2)`
 
-		if err != nil {
-			return utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: common.MSG_INTERNAL_ERROR,
-			}
-		}
-
-		// get module for customer from redis
-		moduleMap, err := u.getModuleForCustomerFromRedis(ctx)
-
-		if err != nil {
-			return utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: common.MSG_INTERNAL_ERROR,
-			}
-		}
-
-		permissionDetail := []api_gateway_models.PermissionDetailType{
-			{
-				ModuleID:    moduleMap[string(common.UserManagement)],
-				Permissions: []int{permissionMap[string(common.Read)], permissionMap[string(common.Update)]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.Cart)],
-				Permissions: []int{permissionMap[string(common.Create)], permissionMap[string(common.Update)], permissionMap[string(common.Delete)], permissionMap[(string(common.Read))]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.OrderManagement)],
-				Permissions: []int{permissionMap[string(common.Create)], permissionMap[string(common.Read)]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.Payment)],
-				Permissions: []int{permissionMap[string(common.Create)], permissionMap[string(common.Read)], permissionMap[string(common.Delete)]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.ShippingManagement)],
-				Permissions: []int{permissionMap[string(common.Read)]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.ReviewRating)],
-				Permissions: []int{permissionMap[string(common.Create)], permissionMap[string(common.Read)], permissionMap[string(common.Delete)]},
-			},
-		}
-
-		permBytes, err := json.Marshal(permissionDetail)
-
-		if err != nil {
-			return utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: common.MSG_INTERNAL_ERROR,
-			}
-		}
-
-		userRolePermissionCustomer := `INSERT INTO role_user_permissions(role_id, user_id, permission_detail)
-		VALUES ($1, $2, $3::jsonb)`
-
-		if err = tx.Exec(ctx, userRolePermissionCustomer, roleID, userID, string(permBytes)); err != nil {
+		if err = tx.Exec(ctx, userRoleCus, roleID, userID); err != nil {
 			return utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,
@@ -169,52 +112,6 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 
 		return nil
 	})
-}
-
-func (u *userRepository) getPermissionFromRedis(ctx context.Context) (map[string]int, error) {
-	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "getPermissionFromRedis"))
-	defer span.End()
-
-	permissionMap := make(map[string]int)
-
-	permissionsName := []common.PermissionName{common.Create, common.Update, common.Delete, common.Read}
-
-	for _, permission := range permissionsName {
-		idStr, err := u.redis.Get(ctx, fmt.Sprintf("permission:%v", permission))
-
-		if err != nil {
-			return nil, errors.Wrap(err, "u.getPermissionFromRedis.redis.Get")
-		}
-
-		id, _ := strconv.Atoi(idStr)
-
-		permissionMap[string(permission)] = id
-	}
-
-	return permissionMap, nil
-}
-
-func (u *userRepository) getModuleForCustomerFromRedis(ctx context.Context) (map[string]int, error) {
-	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "getModuleFromRedis"))
-	defer span.End()
-
-	moduleMap := make(map[string]int)
-
-	moduleName := []common.ModuleName{common.UserManagement, common.Cart, common.OrderManagement, common.Payment, common.ShippingManagement, common.ReviewRating}
-
-	for _, module := range moduleName {
-		idStr, err := u.redis.Get(ctx, fmt.Sprintf("module:%v", module))
-
-		if err != nil {
-			return nil, errors.Wrap(err, "u.getModuleFromRedis.redis.Get")
-		}
-
-		id, _ := strconv.Atoi(idStr)
-
-		moduleMap[string(module)] = id
-	}
-
-	return moduleMap, nil
 }
 
 func (u *userRepository) GetUserByEmailWithoutPassword(ctx context.Context, email string) (*api_gateway_models.User, error) {
@@ -441,66 +338,9 @@ func (u *userRepository) CreateUserBasedOauth(ctx context.Context, user *api_gat
 		roleIDStr, err := u.redis.Get(ctx, fmt.Sprintf("role:%s", common.RoleCustomer))
 		roleID, _ := strconv.Atoi(roleIDStr)
 
-		// get permission from redis
-		permissionMap, err := u.getPermissionFromRedis(ctx)
+		userRoleCus := `INSERT INTO users_roles (role_id, user_id) VALUES ($1, $2)`
 
-		if err != nil {
-			return utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: common.MSG_INTERNAL_ERROR,
-			}
-		}
-
-		// get module for customer from redis
-		moduleMap, err := u.getModuleForCustomerFromRedis(ctx)
-
-		if err != nil {
-			return utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: common.MSG_INTERNAL_ERROR,
-			}
-		}
-
-		permissionDetail := []api_gateway_models.PermissionDetailType{
-			{
-				ModuleID:    moduleMap[string(common.UserManagement)],
-				Permissions: []int{permissionMap[string(common.Read)], permissionMap[string(common.Update)]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.Cart)],
-				Permissions: []int{permissionMap[string(common.Create)], permissionMap[string(common.Update)], permissionMap[string(common.Delete)], permissionMap[(string(common.Read))]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.OrderManagement)],
-				Permissions: []int{permissionMap[string(common.Create)], permissionMap[string(common.Read)]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.Payment)],
-				Permissions: []int{permissionMap[string(common.Create)], permissionMap[string(common.Read)], permissionMap[string(common.Delete)]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.ShippingManagement)],
-				Permissions: []int{permissionMap[string(common.Read)]},
-			},
-			{
-				ModuleID:    moduleMap[string(common.ReviewRating)],
-				Permissions: []int{permissionMap[string(common.Create)], permissionMap[string(common.Read)], permissionMap[string(common.Delete)]},
-			},
-		}
-
-		permBytes, err := json.Marshal(permissionDetail)
-
-		if err != nil {
-			return utils.TechnicalError{
-				Code:    http.StatusInternalServerError,
-				Message: common.MSG_INTERNAL_ERROR,
-			}
-		}
-
-		userRolePermissionCustomer := `INSERT INTO role_user_permissions(role_id, user_id, permission_detail)
-		VALUES ($1, $2, $3::jsonb)`
-
-		if err = tx.Exec(ctx, userRolePermissionCustomer, roleID, userID, string(permBytes)); err != nil {
+		if err = tx.Exec(ctx, userRoleCus, roleID, userID); err != nil {
 			return utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,
@@ -749,11 +589,10 @@ func (u *userRepository) CreateUserByAdmin(ctx context.Context, data *api_gatewa
 			}
 		}
 
-		var birthDateOnly any = nil
+		var birthDateOnly *string = nil
 
-		if data.BirthDate != nil {
-			year, month, day := data.BirthDate.Date()
-			birthDateOnly = time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+		if data.BirthDate != "" {
+			*birthDateOnly = data.BirthDate
 		}
 		// insert into user
 		sqlInsertUser := `INSERT INTO users (fullname, email, avatar_url, birthdate, email_verified,
@@ -909,4 +748,78 @@ func (u *userRepository) DeleteUserByID(ctx context.Context, userID int) error {
 	}
 
 	return nil
+}
+
+func (u *userRepository) GetCurrentUserInfo(ctx context.Context, email string) (*api_gateway_models.User, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetCurrentUserInfo"))
+	defer span.End()
+
+	query := `
+		SELECT fullname, email, avatar_url, birthdate,
+		       phone_verified, phone
+		FROM users WHERE email = $1`
+
+	var user api_gateway_models.User
+
+	err := u.db.QueryRow(ctx, query, email).Scan(
+		&user.FullName,
+		&user.Email,
+		&user.AvatarURL,
+		&user.BirthDate,
+		&user.PhoneVerified,
+		&user.PhoneNumber,
+	)
+
+	if err != nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return &user, nil
+}
+
+func (u *userRepository) UpdateCurrentUserInfo(ctx context.Context, userID int, data *api_gateway_dto.UpdateCurrentUserRequest) (*api_gateway_models.User, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateCurrentUserInfo"))
+	defer span.End()
+
+	query := `
+		UPDATE users
+		SET fullname = $1,
+		    birthdate = $2,
+		    phone = $3,
+		    avatar_url = $4,
+		    email = $5
+		WHERE id = $6
+		RETURNING fullname, email, avatar_url, birthdate,
+		       phone_verified, phone`
+
+	var user api_gateway_models.User
+	err := u.db.QueryRow(ctx, query,
+		data.FullName,
+		data.BirthDate,
+		data.Phone,
+		data.AvatarURL,
+		data.Email,
+		userID,
+	).Scan(&user.FullName, &user.Email, &user.AvatarURL, &user.BirthDate, &user.PhoneVerified, &user.PhoneNumber)
+
+	if err != nil {
+		var pgErr *pgconn.PgError
+
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, utils.BusinessError{
+				Code:    http.StatusBadRequest,
+				Message: "Email already in use by another user",
+			}
+		}
+
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return &user, nil
 }

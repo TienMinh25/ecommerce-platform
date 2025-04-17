@@ -1909,6 +1909,164 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/me": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lấy thông tin người dùng hiện tại dựa vào access token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Lấy thông tin người dùng hiện tại",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetCurrentUserResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật thông tin cá nhân của người dùng hiện tại",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Cập nhật thông tin cá nhân",
+                "parameters": [
+                    {
+                        "description": "Thông tin cần cập nhật",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateCurrentUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateCurrentUserResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/avatars/get-presigned-url": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "lấy presigned url để upload ảnh",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "lấy presigned url để upload ảnh",
+                "parameters": [
+                    {
+                        "description": "Thông tin file",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetAvatarPresignedURLRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetAvatarPresignedURLResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{userID}": {
             "delete": {
                 "security": [
@@ -2400,6 +2558,78 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.GetAvatarPresignedURLRequest": {
+            "type": "object",
+            "required": [
+                "content_type",
+                "file_name",
+                "file_size"
+            ],
+            "properties": {
+                "content_type": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "file_size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.GetAvatarPresignedURLResponse": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetAvatarPresignedURLResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetAvatarPresignedURLResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.GetCurrentUserResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "phone_verify": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api_gateway_dto.GetCurrentUserResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetCurrentUserResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.GetListModuleResponseDocs": {
             "type": "object",
             "properties": {
@@ -2835,6 +3065,65 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.UpdateAddressTypeByAdminResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateCurrentUserRequest": {
+            "type": "object",
+            "required": [
+                "avatar_url",
+                "email",
+                "fullname"
+            ],
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "fullname": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateCurrentUserResponse": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "full_name": {
+                    "type": "string"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "phone_verify": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateCurrentUserResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateCurrentUserResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"

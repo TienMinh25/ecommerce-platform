@@ -420,7 +420,7 @@ const RoleManagementComponent = () => {
                 color="white"
                 _hover={{ bgGradient: 'linear(to-r, blue.500, blue.600)', shadow: 'lg', transform: 'translateY(-1px)' }}
             >
-              Create Role
+              Tạo mới vai trò
             </Button>
           </HStack>
         </Flex>
@@ -466,16 +466,16 @@ const RoleManagementComponent = () => {
               <Thead bg={headerBgColor} position="sticky" top={0} zIndex={1}>
                 <Tr>
                   <Th py={4} fontWeight="bold" borderTopLeftRadius="md" fontSize="xs" color={textColor} width="40%">
-                    Role
+                    Tên vai trò
                   </Th>
                   <Th py={4} fontWeight="bold" fontSize="xs" color={textColor} width="40%">
-                    Description
+                    Mô tả
                   </Th>
                   <Th py={4} fontWeight="bold" fontSize="xs" color={textColor} width="15%">
-                    Updated
+                    Ngày gần nhất cập nhật
                   </Th>
                   <Th py={4} textAlign="right" borderTopRightRadius="md" fontSize="xs" color={textColor} width="5%">
-                    Actions
+                    Hành động
                   </Th>
                 </Tr>
               </Thead>
@@ -634,7 +634,7 @@ const RoleManagementComponent = () => {
                                             handleOpenPermissionsPanel(role, e);
                                           }}
                                       >
-                                        Manage Permissions
+                                        Quản lý quyền
                                       </Button>
                                     </Flex>
                                   </Box>
@@ -651,10 +651,10 @@ const RoleManagementComponent = () => {
                             <FiSearch size={36} />
                           </Box>
                           <Text fontWeight="normal" color="gray.500" fontSize="md">
-                            No roles found
+                            Không tìm thấy vai trò nào
                           </Text>
                           <Text color="gray.400" fontSize="sm" mt={1}>
-                            Try a different search term or filter
+                            Vui lòng thử với từ khóa hoặc bộ lọc khác
                           </Text>
                         </Flex>
                       </Td>
@@ -678,17 +678,17 @@ const RoleManagementComponent = () => {
             <Flex justifyContent="space-between" alignItems="center" py={4} px={6} flexWrap={{ base: "wrap", md: "nowrap" }} gap={4}>
               <HStack spacing={1} flexShrink={0}>
                 <Text fontSize="sm" color="gray.600" fontWeight="normal">
-                  Showing {totalCount > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}-{Math.min(currentPage * rowsPerPage, totalCount)} of {totalCount} roles
+                  Hiển thị {totalCount > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}-{Math.min(currentPage * rowsPerPage, totalCount)} trên tổng số {totalCount} vai trò
                 </Text>
                 <Menu>
                   <MenuButton as={Button} size="xs" variant="ghost" rightIcon={<FiChevronDown />} ml={2} fontWeight="normal" color="gray.600">
-                    {rowsPerPage} per page
+                    {rowsPerPage} dòng mỗi trang
                   </MenuButton>
                   <MenuList minW="120px" shadow="lg" borderRadius="md">
-                    <MenuItem onClick={() => setRowsPerPage(10)}>10 per page</MenuItem>
-                    <MenuItem onClick={() => setRowsPerPage(15)}>15 per page</MenuItem>
-                    <MenuItem onClick={() => setRowsPerPage(20)}>20 per page</MenuItem>
-                    <MenuItem onClick={() => setRowsPerPage(50)}>50 per page</MenuItem>
+                    <MenuItem onClick={() => setRowsPerPage(10)}>10 dòng mỗi trang</MenuItem>
+                    <MenuItem onClick={() => setRowsPerPage(15)}>15 dòng mỗi trang</MenuItem>
+                    <MenuItem onClick={() => setRowsPerPage(20)}>20 dòng mỗi trang</MenuItem>
+                    <MenuItem onClick={() => setRowsPerPage(50)}>50 dòng mỗi trang</MenuItem>
                   </MenuList>
                 </Menu>
               </HStack>
@@ -764,8 +764,8 @@ const RoleManagementComponent = () => {
             isOpen={isDeleteModalOpen}
             onClose={onCloseDeleteModal}
             onConfirm={handleConfirmDelete}
-            title="Delete Role"
-            message="Are you sure you want to delete this role? This action cannot be undone."
+            title="Xoá vai trò"
+            message="Bạn có chắc chắn muốn xóa vai trò này không? Hành động này không thể hoàn tác."
             itemName={roleToDelete?.name}
             isLoading={isDeletingRole}
         />

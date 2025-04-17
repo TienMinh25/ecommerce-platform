@@ -268,7 +268,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                         <FiUser size={24} />
                     </Box>
                     <Text fontSize="xl" fontWeight="bold" color={textColor}>
-                        Edit User
+                        Chỉnh sửa người dùng
                     </Text>
                 </ModalHeader>
                 <ModalCloseButton
@@ -286,13 +286,13 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                         {/* Account Settings Section */}
                         <Box>
                             <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>
-                                Account Settings
+                                Cài đặt tài khoản
                             </Text>
 
                             {/* Role Selection */}
                             <FormControl isRequired isInvalid={!!errors.roles} mb={4}>
                                 <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    User Roles
+                                    Vai trò người dùng
                                 </FormLabel>
                                 <Box position="relative">
                                     <Box
@@ -406,7 +406,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                             {/* Status Toggle */}
                             <FormControl mb={4}>
                                 <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    User Status
+                                    Trạng thái người dùng
                                 </FormLabel>
                                 <Flex
                                     align="center"
@@ -434,8 +434,8 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                                         </Text>
                                         <Text fontSize="xs" color={useColorModeValue('gray.700', 'gray.300')}>
                                             {formData.status
-                                                ? 'User will have immediate access to the system'
-                                                : 'User account will be suspended'}
+                                                ? 'Người dùng sẽ có quyền truy cập ngay lập tức vào hệ thống'
+                                                : 'Tài khoản người dùng sẽ bị tạm ngưng'}
                                         </Text>
                                     </Box>
                                     <Switch
@@ -453,7 +453,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                         {/* User Information Section */}
                         <Box>
                             <Text fontSize="md" fontWeight="semibold" color={labelColor} mb={4}>
-                                User Information
+                                Thông tin người dùng
                             </Text>
 
                             {/* User Preview */}
@@ -517,7 +517,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                             {/* Full Name Input (Disabled) */}
                             <FormControl mb={4}>
                                 <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    Full Name
+                                    Họ và tên
                                 </FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
@@ -539,7 +539,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                             {/* Email Input (Disabled) */}
                             <FormControl mb={4}>
                                 <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    Email Address
+                                    Email
                                 </FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
@@ -562,7 +562,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                             {/* Phone Input (Disabled) */}
                             <FormControl mb={4}>
                                 <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    Phone Number
+                                    Số điện thoại
                                 </FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
@@ -584,7 +584,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                             {/* Birth Date Input (Disabled) */}
                             <FormControl mb={4}>
                                 <FormLabel fontWeight="semibold" fontSize="sm" color={labelColor}>
-                                    Birth Date
+                                    Ngày sinh nhật
                                 </FormLabel>
                                 <InputGroup>
                                     <InputLeftElement pointerEvents="none">
@@ -623,7 +623,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                         borderColor={borderColor}
                         _hover={{ bg: useColorModeValue('gray.200', 'gray.700') }}
                     >
-                        Cancel
+                        Huỷ
                     </Button>
                     <Button
                         leftIcon={<FiSave />}  // Icon đã thay đổi
@@ -645,7 +645,7 @@ const EditUserModal = ({ isOpen, onClose, user, onUserUpdated }) => {
                         }}
                         fontWeight="bold"
                     >
-                        Update User
+                        Cập nhật
                     </Button>
                 </ModalFooter>
             </ModalContent>

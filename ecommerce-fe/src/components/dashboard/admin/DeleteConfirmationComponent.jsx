@@ -31,8 +31,8 @@ const DeleteConfirmationModal = ({
                                      isOpen,
                                      onClose,
                                      onConfirm,
-                                     title = 'Confirm Deletion',
-                                     message = 'Are you sure you want to delete this item?',
+                                     title = 'Xác nhận xoá',
+                                     message = 'Bạn có chắc chắn muốn xoá phần tử này?',
                                      itemName = '',
                                      isLoading = false,
                                  }) => {
@@ -87,7 +87,7 @@ const DeleteConfirmationModal = ({
                         size="md"
                         isDisabled={isLoading}
                     >
-                        Cancel
+                        Huỷ
                     </Button>
                     <Button
                         colorScheme="red"
@@ -96,7 +96,7 @@ const DeleteConfirmationModal = ({
                         loadingText="Deleting..."
                         size="md"
                     >
-                        Delete
+                        Xoá
                     </Button>
                 </ModalFooter>
             </ModalContent>

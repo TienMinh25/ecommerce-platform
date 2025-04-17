@@ -51,6 +51,24 @@ import UserSearchComponent from './UserSearchComponent.jsx';
 import EditUserModal from "./EditUserModal.jsx";
 
 const UserManagementComponent = () => {
+    // Theme colors - Define ALL color mode values at the TOP of the component
+    const bgColor = useColorModeValue('white', 'gray.800');
+    const borderColor = useColorModeValue('gray.200', 'gray.700');
+    const scrollTrackBg = useColorModeValue('#f1f1f1', '#2d3748');
+    const scrollThumbBg = useColorModeValue('#c1c1c1', '#4a5568');
+    const scrollThumbHoverBg = useColorModeValue('#a1a1a1', '#718096');
+    const tableBgColor = useColorModeValue('gray.50', 'gray.900');
+    const tableTextColor = useColorModeValue('gray.600', 'gray.300');
+    const tableRowHoverBg = useColorModeValue('blue.50', 'gray.700');
+    const tableRowActiveBg = useColorModeValue('blue.100', 'gray.600');
+    const footerBgGradient = useColorModeValue(
+        "linear(to-r, white, gray.50, white)",
+        "linear(to-r, gray.800, gray.700, gray.800)"
+    );
+    const textColorPrimary = useColorModeValue('gray.800', 'white');
+    const textColorSecondary = useColorModeValue('gray.500', 'gray.400');
+    const textColorTertiary = useColorModeValue('gray.600', 'gray.300');
+
     // Toast for notifications
     const toast = useToast();
 
@@ -90,13 +108,6 @@ const UserManagementComponent = () => {
         searchBy: '',
         searchValue: ''
     });
-
-    // Theme colors
-    const bgColor = useColorModeValue('white', 'gray.800');
-    const borderColor = useColorModeValue('gray.200', 'gray.700');
-    const scrollTrackBg = useColorModeValue('#f1f1f1', '#2d3748');
-    const scrollThumbBg = useColorModeValue('#c1c1c1', '#4a5568');
-    const scrollThumbHoverBg = useColorModeValue('#a1a1a1', '#718096');
 
     // Create params object with only needed parameters
     const createRequestParams = useCallback(() => {
@@ -214,7 +225,7 @@ const UserManagementComponent = () => {
 
     // Handle user deleted and reload current page
     const handleDeleteUser = async (userId) => {
-        if (window.confirm('Are you sure you want to delete this user?')) {
+        if (window.confirm('Bạn có chắc chắn muốn xoá người dùng này?')) {
             try {
                 await userService.deleteUser(userId);
                 toast({
@@ -363,7 +374,7 @@ const UserManagementComponent = () => {
                         }}
                         transition="all 0.2s"
                     >
-                        Create
+                        Tạo mới người dùng
                     </Button>
                 </HStack>
             </Flex>
@@ -412,71 +423,71 @@ const UserManagementComponent = () => {
                     borderColor={borderColor}
                 >
                     <Table variant="simple" size="md" colorScheme="gray" style={{ borderCollapse: 'separate', borderSpacing: '0' }}>
-                        <Thead bg={useColorModeValue('gray.50', 'gray.900')} position="sticky" top={0} zIndex={1}>
+                        <Thead bg={tableBgColor} position="sticky" top={0} zIndex={1}>
                             <Tr>
                                 <Th
                                     py={4}
                                     borderTopLeftRadius="md"
                                     fontSize="xs"
-                                    color={useColorModeValue('gray.600', 'gray.300')}
+                                    color={tableTextColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    User
+                                    Người dùng
                                 </Th>
                                 <Th
                                     py={4}
                                     display={{ base: "none", md: "table-cell" }}
                                     fontSize="xs"
-                                    color={useColorModeValue('gray.600', 'gray.300')}
+                                    color={tableTextColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Contact Info
+                                    Thông tin liên hệ
                                 </Th>
                                 <Th
                                     py={4}
                                     fontSize="xs"
-                                    color={useColorModeValue('gray.600', 'gray.300')}
+                                    color={tableTextColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Role
+                                    Vai trò người dùng
                                 </Th>
                                 <Th
                                     py={4}
                                     fontSize="xs"
-                                    color={useColorModeValue('gray.600', 'gray.300')}
+                                    color={tableTextColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Status
+                                    Trạng thái
                                 </Th>
                                 <Th
                                     py={4}
                                     fontSize="xs"
-                                    color={useColorModeValue('gray.600', 'gray.300')}
+                                    color={tableTextColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Last Updated
+                                    Thời gian cập nhật gần nhất
                                 </Th>
                                 <Th
                                     py={4}
                                     textAlign="right"
                                     borderTopRightRadius="md"
                                     fontSize="xs"
-                                    color={useColorModeValue('gray.600', 'gray.300')}
+                                    color={tableTextColor}
                                     letterSpacing="0.5px"
                                     textTransform="uppercase"
                                     fontWeight="bold"
                                 >
-                                    Actions
+                                    Hành động
                                 </Th>
                             </Tr>
                         </Thead>
@@ -510,11 +521,11 @@ const UserManagementComponent = () => {
                                 users.map((user) => (
                                     <Tr
                                         key={user.id}
-                                        _hover={{ bg: useColorModeValue('blue.50', 'gray.700') }}
+                                        _hover={{ bg: tableRowHoverBg }}
                                         transition="background-color 0.2s"
                                         borderBottomWidth="1px"
                                         borderColor={borderColor}
-                                        _active={{ bg: useColorModeValue('blue.100', 'gray.600') }}
+                                        _active={{ bg: tableRowActiveBg }}
                                         h="60px"
                                         bg={bgColor}
                                     >
@@ -525,13 +536,13 @@ const UserManagementComponent = () => {
                                                     <Text
                                                         fontWeight="medium"
                                                         fontSize="sm"
-                                                        color={useColorModeValue('gray.800', 'white')}
+                                                        color={textColorPrimary}
                                                     >
                                                         {user.fullname}
                                                     </Text>
                                                     <Text
                                                         fontSize="xs"
-                                                        color={useColorModeValue('gray.500', 'gray.400')}
+                                                        color={textColorSecondary}
                                                         display={{ base: "none", lg: "block" }}
                                                     >
                                                         {user.email}
@@ -545,7 +556,7 @@ const UserManagementComponent = () => {
                                                     <FiMail size={12} />
                                                     <Text
                                                         fontSize="sm"
-                                                        color={useColorModeValue('gray.600', 'gray.300')}
+                                                        color={textColorTertiary}
                                                     >
                                                         {user.email}
                                                     </Text>
@@ -566,7 +577,7 @@ const UserManagementComponent = () => {
                                                 <HStack spacing={1} align="center">
                                                     <Text
                                                         fontSize="sm"
-                                                        color={useColorModeValue('gray.500', 'gray.400')}
+                                                        color={textColorSecondary}
                                                     >
                                                         {user.phone || 'No phone'}
                                                     </Text>
@@ -625,7 +636,7 @@ const UserManagementComponent = () => {
                                         <Td>
                                             <Text
                                                 fontSize="sm"
-                                                color={useColorModeValue('gray.500', 'gray.400')}
+                                                color={textColorSecondary}
                                             >
                                                 {formatDate(user.updated_at)}
                                             </Text>
@@ -656,7 +667,7 @@ const UserManagementComponent = () => {
                                                         borderRadius="md"
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            handleDeleteUser(user.id); // Gọi hàm xoá
+                                                            handleDeleteUser(user.id);
                                                         }}
                                                     />
                                                 </Tooltip>
@@ -685,10 +696,7 @@ const UserManagementComponent = () => {
                     borderTop="1px"
                     borderColor={borderColor}
                     bg={useColorModeValue('gray.50', 'gray.800')}
-                    bgGradient={useColorModeValue(
-                        "linear(to-r, white, gray.50, white)",
-                        "linear(to-r, gray.800, gray.700, gray.800)"
-                    )}
+                    bgGradient={footerBgGradient}
                     position="sticky"
                     bottom="0"
                     width="100%"
@@ -705,7 +713,7 @@ const UserManagementComponent = () => {
                     >
                         <HStack spacing={1} flexShrink={0}>
                             <Text fontSize="sm" color="gray.600" fontWeight="normal">
-                                Showing {totalCount > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}-{Math.min(currentPage * rowsPerPage, totalCount)} of {totalCount} users
+                                Hiển thị {totalCount > 0 ? (currentPage - 1) * rowsPerPage + 1 : 0}-{Math.min(currentPage * rowsPerPage, totalCount)} trên tổng số {totalCount} người dùng
                             </Text>
                             <Menu>
                                 <MenuButton
@@ -717,13 +725,13 @@ const UserManagementComponent = () => {
                                     fontWeight="normal"
                                     color="gray.600"
                                 >
-                                    {rowsPerPage} per page
+                                    {rowsPerPage} dòng mỗi trang
                                 </MenuButton>
                                 <MenuList minW="120px" shadow="lg" borderRadius="md">
-                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 per page</MenuItem>
-                                    <MenuItem onClick={() => setRowsPerPage(50)}>50 per page</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(10)}>10 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(15)}>15 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(20)}>20 dòng mỗi trang</MenuItem>
+                                    <MenuItem onClick={() => setRowsPerPage(50)}>50 dòng mỗi trang</MenuItem>
                                 </MenuList>
                             </Menu>
                         </HStack>

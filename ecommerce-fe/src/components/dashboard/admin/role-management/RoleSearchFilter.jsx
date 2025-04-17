@@ -110,7 +110,7 @@ const RoleSearchFilter = ({
                     <FiSearch color={useColorModeValue('gray.400', 'gray.500')} />
                 </InputLeftElement>
                 <Input
-                    placeholder="Search by name..."
+                    placeholder="Tìm kiếm theo tên..."
                     pl={10}
                     pr={2}
                     py={2.5}

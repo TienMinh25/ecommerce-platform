@@ -85,17 +85,17 @@ const DashboardSidebar = ({ onStateChange }) => {
 
   // Menu configuration - Updated with new menu items
   const menuItems = [
-    { icon: FiUsers, label: 'User Management', path: '/dashboard/users' },
-    { icon: FiShield, label: 'Role Management', path: '/dashboard/roles' },
-    { icon: FiKey, label: 'Permission Management', path: '/dashboard/permissions' },
-    { icon: FiLayers, label: 'Module Management', path: '/dashboard/modules' },
-    { icon: FiMapPin, label: 'Address Types Management', path: '/dashboard/address-types' },
-    { icon: FiPackage, label: 'Onboarding Supplier Management', path: '/dashboard/onboarding/suppliers' },
-    { icon: FiTruck, label: 'Onboarding Deliverer Management', path: '/dashboard/onboarding/deliverers' },
+    { icon: FiUsers, label: 'Quản lý người dùng', path: '/dashboard/users' },
+    { icon: FiShield, label: 'Quản lý vai trò', path: '/dashboard/roles' },
+    { icon: FiKey, label: 'Quản lý quyền', path: '/dashboard/permissions' },
+    { icon: FiLayers, label: 'Quản lý modules', path: '/dashboard/modules' },
+    { icon: FiMapPin, label: 'Quản lý kiểu địa chỉ', path: '/dashboard/address-types' },
+    { icon: FiPackage, label: 'Quản lý nhà cung cấp', path: '/dashboard/onboarding/suppliers' },
+    { icon: FiTruck, label: 'Quản lý người giao hàng', path: '/dashboard/onboarding/deliverers' },
   ];
 
   // Logout item separate (for positioning at bottom)
-  const logoutItem = { icon: FiLogOut, label: 'Logout', path: '/logout', logout: handleLogout};
+  const logoutItem = { icon: FiLogOut, label: 'Đăng xuất', path: '/logout', logout: handleLogout};
 
   // Theme colors
   const borderColor = useColorModeValue('gray.200', 'gray.700');

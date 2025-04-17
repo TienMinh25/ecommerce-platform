@@ -369,7 +369,7 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                     <Box color={iconColor} mr={3}>
                         <FiShield size={24} />
                     </Box>
-                    <Text fontSize="xl" fontWeight="bold" color={textColor}>Edit Role</Text>
+                    <Text fontSize="xl" fontWeight="bold" color={textColor}>Chỉnh sửa vai trò</Text>
                 </ModalHeader>
 
                 <ModalCloseButton
@@ -385,12 +385,12 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                 <ModalBody py={6}>
                     <VStack spacing={6} align="stretch">
                         <FormControl isRequired isInvalid={!!errors.name}>
-                            <FormLabel fontWeight="semibold" fontSize="md" color={labelColor}>Role Name</FormLabel>
+                            <FormLabel fontWeight="semibold" fontSize="md" color={labelColor}>Tên vai trò</FormLabel>
                             <Input
                                 name="name"
                                 value={formData.name}
                                 onChange={handleChange}
-                                placeholder="Enter role name"
+                                placeholder="Nhập tên vai trò"
                                 bg={inputBg}
                                 color={textColor}
                                 borderWidth="1px"
@@ -404,12 +404,12 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                         </FormControl>
 
                         <FormControl>
-                            <FormLabel fontWeight="semibold" fontSize="md" color={labelColor}>Description (Optional)</FormLabel>
+                            <FormLabel fontWeight="semibold" fontSize="md" color={labelColor}>Mô tả (Tuỳ chọn)</FormLabel>
                             <Textarea
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
-                                placeholder="Enter role description"
+                                placeholder="Nhập mô tả"
                                 bg={inputBg}
                                 color={textColor}
                                 borderWidth="1px"
@@ -425,12 +425,12 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
 
                         {/* Permissions Section */}
                         <Box>
-                            <Text fontSize="lg" fontWeight="semibold" color={labelColor} mb={4}>Module Permissions</Text>
+                            <Text fontSize="lg" fontWeight="semibold" color={labelColor} mb={4}>Quyền trên modules</Text>
 
                             {loadingModules ? (
                                 <Flex justify="center" align="center" py={4}>
                                     <Spinner size="md" thickness="3px" color="blue.500" mr={3} />
-                                    <Text color="gray.500">Loading module permissions...</Text>
+                                    <Text color="gray.500">Đang tải dữ liệu quyền của modules...</Text>
                                 </Flex>
                             ) : (
                                 <Box
@@ -541,7 +541,7 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                             )}
                             <Text fontSize="xs" color="gray.500" mt={2}>
                                 <FiInfo size={14} style={{ display: 'inline', marginRight: '4px', verticalAlign: 'middle' }} />
-                                Set permissions for this role. Permissions determine what actions users with this role can perform.
+                                Thiết lập quyền cho vai trò này. Quyền hạn quyết định những hành động mà người dùng với vai trò này có thể thực hiện.
                             </Text>
                         </Box>
                     </VStack>
@@ -565,7 +565,7 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                         height="40px"
                         minWidth="120px"
                     >
-                        Cancel
+                        Huỷ
                     </Button>
                     <Button
                         leftIcon={<FiSave />}
@@ -584,7 +584,7 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                         fontWeight="bold"
                         isDisabled={loadingModules || !hasChanges}
                     >
-                        Save Changes
+                        Lưu thay đổi
                     </Button>
                 </ModalFooter>
             </ModalContent>

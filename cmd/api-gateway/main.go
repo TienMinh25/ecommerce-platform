@@ -143,6 +143,7 @@ func main() {
 			api_gateway_handler.NewPermissionHanlder,
 			api_gateway_handler.NewUserManagementHandler,
 			api_gateway_handler.NewRoleHandler,
+			api_gateway_handler.NewUserHandler,
 			// service
 			api_gateway_service.NewAdminAddressTypeService,
 			api_gateway_service.NewAuthenticationService,
@@ -153,6 +154,7 @@ func main() {
 			api_gateway_service.NewOauthCacheService,
 			api_gateway_service.NewUserService,
 			api_gateway_service.NewRoleService,
+			api_gateway_service.NewUserMeService,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
 			api_gateway_repository.NewUserRepository,
