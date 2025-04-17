@@ -45,7 +45,6 @@ rectangle "Nền tảng mua sắm trực tuyến Minh Plaza" {
   usecase "Tìm kiếm sản phẩm" as UC14
   usecase "Xem chi tiết sản phẩm" as UC15
   usecase "Đặt hàng" as UC16
-  usecase "Cài đặt thông báo" as UC17
   usecase "Xem danh mục" as UC18
 
   ' Supplier-facing use cases
@@ -78,7 +77,6 @@ kh --> UC13
 kh --> UC14
 kh --> UC15
 kh --> UC16
-kh --> UC17
 kh --> UC18
 kh --> UC28
 kh --> UC29
