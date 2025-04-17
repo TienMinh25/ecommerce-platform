@@ -169,16 +169,7 @@ const UserProfile = () => {
                     <Table variant="simple" size="md">
                         <Tbody>
                             <Tr>
-                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="top">
-                                    <Text fontWeight="medium">Tên đăng nhập</Text>
-                                </Td>
-                                <Td py={4} pl={4}>
-                                    <Text>{formData.username || user?.username}</Text>
-                                </Td>
-                            </Tr>
-
-                            <Tr>
-                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="top">
+                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="center">
                                     <Text fontWeight="medium">Tên</Text>
                                 </Td>
                                 <Td py={4} pl={4}>
@@ -194,7 +185,7 @@ const UserProfile = () => {
                             </Tr>
 
                             <Tr>
-                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="top">
+                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="center">
                                     <Text fontWeight="medium">Email</Text>
                                 </Td>
                                 <Td py={4} pl={4}>
@@ -208,7 +199,7 @@ const UserProfile = () => {
                             </Tr>
 
                             <Tr>
-                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="top">
+                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="center">
                                     <Text fontWeight="medium">Số điện thoại</Text>
                                 </Td>
                                 <Td py={4} pl={4}>
@@ -233,22 +224,7 @@ const UserProfile = () => {
                             </Tr>
 
                             <Tr>
-                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="top">
-                                    <Text fontWeight="medium">Giới tính</Text>
-                                </Td>
-                                <Td py={4} pl={4}>
-                                    <RadioGroup onChange={handleGenderChange} value={formData.gender}>
-                                        <Stack direction="row" spacing={6}>
-                                            <Radio value="Nam">Nam</Radio>
-                                            <Radio value="Nữ">Nữ</Radio>
-                                            <Radio value="Khác">Khác</Radio>
-                                        </Stack>
-                                    </RadioGroup>
-                                </Td>
-                            </Tr>
-
-                            <Tr>
-                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="top">
+                                <Td width="180px" pr={2} pl={0} py={4} verticalAlign="center">
                                     <Text fontWeight="medium">Ngày sinh</Text>
                                 </Td>
                                 <Td py={4} pl={4}>
