@@ -1,0 +1,158 @@
+@startuml Quản lý Tài khoản
+
+actor "Người dùng" as nd
+
+boundary "Web UI" as UI
+control "API Gateway service" as Gateway
+control "Notification Service" as NotificationService
+control "Order Service" as OrderService
+database "API Gateway DB" as db
+database "Notification DB" as notidb
+database "Order DB" as orderdb
+
+' Luồng cơ bản - Hiển thị thông tin tài khoản
+group Hiển thị thông tin tài khoản
+    nd -> UI: Kích vào "Tài khoản của tôi"
+    UI -> Gateway: GET /api/v1/users/me
+    Gateway -> db: Lấy thông tin của người dùng
+    db --> Gateway: Trả về thông tin
+    Gateway --> UI: Thông tin người dùng
+    UI -> UI: Hiển thị lên màn hình
+end
+
+' Thay đổi thông tin cá nhân
+group Thay đổi thông tin cá nhân
+    nd -> UI: Sửa đổi các thông tin cá nhân\n trên trang và nhấn nút Lưu
+    UI -> Gateway: PATCH /api/v1/users/me
+    Gateway -> db: Lưu trữ lại thông tin\n cập nhật
+    db --> Gateway: Thông tin người dùng\n sau cập nhật
+    Gateway -> UI: Trả về thông tin\n người dùng sau cập nhật
+    UI -> UI: Hiển thị thông tin đã cập nhật
+end
+
+' Đổi mật khẩu
+group Đổi mật khẩu
+    nd -> UI: Kích vào "Đổi mật khẩu"
+    UI -> UI: Hiển thị trang đổi mật khẩu
+    nd -> UI: Nhập mật khẩu hiện tại, mật khẩu\n mới và xác nhận mật khẩu và kích "Xác nhận"
+    UI -> Gateway: POST /api/v1/auth/change-password
+    Gateway -> db: Lấy password cũ dựa trên user id
+    db --> Gateway: Trả về dữ liệu về mật khẩu cũ
+
+    alt Mật khẩu hiện tại đúng
+        Gateway -> db: Cập nhật mật khẩu mới
+        Gateway --> UI: Thông báo thành công
+        UI -> UI: Hiển thị thông báo thành công
+    else Mật khẩu hiện tại không đúng
+        Gateway --> UI: Thông báo mật khẩu sai
+        UI -> UI: Hiển thị thông báo lỗi
+    end
+end
+
+' Quản lý địa chỉ - Xem danh sách
+group Quản lý địa chỉ - Xem danh sách
+    nd -> UI: Kích vào "Địa chỉ"
+    UI -> Gateway: GET api/v1/users/me/addresses
+    Gateway -> db: Lấy dữ liệu dựa trên user id
+    db --> Gateway: Trả về dữ liệu
+    Gateway --> UI: Trả về dữ liệu
+    UI -> UI: Hiển thị dữ liệu
+end
+
+' Quản lý địa chỉ - Thêm địa chỉ mới
+group Quản lý địa chỉ - Thêm địa chỉ mới
+    nd -> UI: Kích vào "Thêm địa chỉ mới"
+    UI -> UI: Hiển thị form thêm địa chỉ
+    nd -> UI: Nhập thông tin địa chỉ và kích "Thêm mới"
+    UI -> Gateway: POST api/v1/users/me/addresses
+
+    Gateway -> db: Lưu lại địa chỉ mới
+
+    alt Đặt làm địa chỉ mặc định
+        Gateway -> db: Cập nhật lại địa chỉ mặc định\n cũ thành không phải địa chỉ mặc định
+    end
+
+    Gateway --> UI: Thông báo thêm thành công
+    UI -> UI: Hiển thị thông báo\n thêm thành công
+    UI -> Gateway: Lấy dữ liệu mới
+    Gateway -> db: Lấy dữ liệu dựa trên user id
+    db --> Gateway: Trả về dữ liệu
+    Gateway --> UI: Trả về dữ liệu
+    UI -> UI: Hiển thị dữ liệu
+end
+
+' Quản lý địa chỉ - Sửa địa chỉ
+group Quản lý địa chỉ - Sửa địa chỉ
+    nd -> UI: Kích vào "Sửa" trên một địa chỉ
+    UI -> UI: Hiển thị form sửa
+    nd -> UI: Nhập các thông tin cần sửa\n và nhấn nút "Cập nhật"
+    UI -> Gateway: PATCH api/v1/users/me/addresses/:addressID
+    Gateway -> db: Sửa thông tin về\n địa chỉ
+
+    db --> Gateway: Trả về thông tin sau khi sửa
+    Gateway --> UI: Trả về thông tin địa chỉ
+    UI -> UI: Hiển thị danh sách địa chỉ (sau khi sửa)
+end
+
+' Quản lý địa chỉ - Xóa địa chỉ
+group Quản lý địa chỉ - Xóa địa chỉ
+    nd -> UI: Kích vào "Xóa" trên một địa chỉ
+    UI -> UI: Hiển thị yêu cầu xác nhận xóa
+
+    alt nd chọn "Xoá"
+        nd -> UI: Kích vào "Xoá"
+        UI -> Gateway: DELETE api/v1/users/me/addresses/:addressID
+        Gateway -> db: Xoá địa chỉ dựa trên addressID
+        Gateway --> UI: Thông báo xoá thành công
+        UI -> UI: Hiển thị thông báo\n xoá thành công
+    else nd chọn "Hủy"
+        nd -> UI: Kích vào "Hủy"
+        UI -> UI: Đóng hộp thoại xác nhận
+    end
+end
+
+' Quản lý địa chỉ - Đặt làm mặc định
+group Quản lý địa chỉ - Đặt địa chỉ làm mặc định
+    nd -> UI: Kích vào "Thiết lập mặc định" trên một địa chỉ
+    UI -> Gateway: PATCH api/v1/users/me/addresses/:address_id/default
+
+    Gateway -> db: Cập nhật lại địa chỉ mặc định cũ\n và đặt địa chỉ hiện tại làm mặc định
+    Gateway --> UI: Thông báo cập nhật thành công
+    UI -> UI: Hiển thị lại địa chỉ làm mặc định
+end
+
+' Cài đặt thông báo
+group Cài đặt thông báo
+    nd -> UI: Kích vào "Cài đặt thông báo"
+    UI -> UI: Hiển thị màn hình cài đặt thông báo
+    UI -> Gateway: Gửi thay đổi về cài đặt
+    Gateway -> NotificationService: Gửi dữ liệu thay đổi về cài đặt\n thông báo của user
+    NotificationService -> notidb: Cập nhật lại
+    NotificationService --> Gateway: Trả về thông báo thành công
+    Gateway --> UI: Trả về thông báo thành công
+    UI --> nd: Hiển thị thông báo thành công
+end
+
+' Xem đơn hàng của tôi
+group Xem đơn hàng của tôi
+    nd -> UI: Kích vào "Đơn hàng của tôi"
+    UI -> Gateway: GET /api/v1/users/me/orders
+    Gateway -> OrderService: Lấy danh sách phân trang về order dựa\n trên user id
+    OrderService -> orderdb: Lấy dữ liệu
+    orderdb --> OrderService: Trả về danh sách đơn hàng
+    OrderService --> Gateway: Trả về danh sách đơn hàng
+    Gateway --> UI: Trả về danh sách đơn hàng
+    UI -> UI: Hiển thị danh sách đơn hàng
+
+    ' Xem chi tiết đơn hàng
+    nd -> UI: Kích vào nút "Xem chi tiết"\n trên một đơn hàng cụ thể
+    UI -> Gateway: GET /api/v1/users/me/orders/{orderId}
+    Gateway -> OrderService: Lấy dữ liệu chi tiết về đơn hàng
+    OrderService -> orderdb: Lấy dữ liệu
+    orderdb --> OrderService: Trả về chi tiết đơn hàng
+    OrderService --> Gateway: Trả về chi tiết đơn hàng
+    Gateway --> UI: Trả về chi tiết đơn hàng
+    UI -> UI: Hiển thị chi tiết đơn hàng
+end
+
+@enduml

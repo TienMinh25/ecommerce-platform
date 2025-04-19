@@ -52,10 +52,7 @@ rectangle "Nền tảng mua sắm trực tuyến Minh Plaza" {
   usecase "Quản lý thanh toán" as UC22
 
   ' Delivery person use cases
-  usecase "Xem đơn hàng" as UC24
-  usecase "Xem chi tiết đơn hàng" as UC25
-  usecase "Nhận đơn hàng" as UC26
-  usecase "Cập nhật đơn hàng" as UC27
+  usecase "Quản lý đơn hàng giao" as UC24
 
   ' New customer onboarding use cases
   usecase "Đăng ký trở thành\nngười giao hàng" as UC28
@@ -63,8 +60,8 @@ rectangle "Nền tảng mua sắm trực tuyến Minh Plaza" {
 }
 
 ' Extend relationships
-UC2 .> UC30 : <<extend>>
-UC1 .> UC30 : <<extend>>
+UC2 <. UC30 : <<extend>>
+UC30 .> UC1 : <<extend>>
 
 ' Connect actors to their use cases
 ' Khách hàng connections
@@ -115,8 +112,5 @@ UC3 <-- ngh
 UC4 <-- ngh
 UC10 <-- ngh
 UC24 <-- ngh
-UC25 <-- ngh
-UC26 <-- ngh
-UC27 <-- ngh
 UC30 <-- ngh
 @enduml
