@@ -1,0 +1,39 @@
+@startuml
+
+actor "Khách hàng" as kh
+boundary "Web UI" as UI
+control "API Gateway service" as Gateway
+control "Order Service" as OrderService
+database "API Gateway DB" as db
+database "Order DB" as orderdb
+
+kh -> UI: 1. Kích vào "Trở thành người giao hàng"
+UI -> UI: 2. Hiển thị form đăng ký \n trở thành người giao hàng
+kh -> UI: 3. Nhập các thông tin bắt buộc\n và nhấn nút đăng ký.
+
+UI -> Gateway: 4. Gửi dữ liệu đăng ký
+
+Gateway -> OrderService: 5. Gửi dữ liệu đăng ký
+
+OrderService -> orderdb: 6. Lấy dữ liệu từ bảng delivery_person_applications\n và bảng delivery_persons dựa trên user_id
+orderdb --> OrderService: 7. Trả về dữ liệu
+
+alt Đã có đơn đăng ký chờ xét duyệt
+    OrderService --> Gateway: Thông báo đã có đơn đăng ký
+    Gateway --> UI: Thông báo đã có đơn đăng ký
+    UI -> UI: Hiển thị thông báo đã có đơn đăng ký
+else Chưa có đơn đăng ký
+    alt Đã là người giao hàng
+        OrderService --> Gateway: Thông báo đã là người giao hàng
+        Gateway --> UI: Thông báo đã là người giao hàng
+        UI -> UI: Hiển thị thông báo đã là người giao hàng
+    else Chưa là người giao hàng
+        OrderService -> orderdb: Lưu trữ thông tin đơn đăng ký.
+        OrderService --> Gateway: Thông báo đăng ký thành công,\n chờ xét duyệt
+
+        Gateway --> UI: Thông báo đăng ký thành công,\n chờ xét duyệt
+        UI -> UI: Hiển thị thông báo.
+    end
+end
+
+@enduml

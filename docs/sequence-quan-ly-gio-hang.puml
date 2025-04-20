@@ -1,0 +1,76 @@
+@startuml
+
+actor "Khách hàng" as kh
+boundary "Web UI" as UI
+control "API Gateway service" as Gateway
+control "Order Service" as OrderService
+control "Partner Service" as PartnerService
+database "API Gateway DB" as db
+database "Order DB" as orderdb
+database "Partner DB" as partnerdb
+
+' Xem giỏ hàng
+kh -> UI: 1. Kích vào biểu tượng giỏ hàng
+UI -> Gateway: 2. Gửi yêu cầu lấy dữ liệu giỏ hàng
+Gateway -> OrderService: 3. Gửi yêu cầu lấy dữ liệu giỏ hàng
+OrderService -> orderdb: 4. Truy vấn dữ liệu giỏ hàng theo user_id
+orderdb --> OrderService: 5. Trả về dữ liệu giỏ hàng
+
+loop Cho mỗi sản phẩm trong giỏ hàng
+  OrderService -> PartnerService: 6. Lấy thông tin chi tiết và tình trạng sản phẩm
+  PartnerService -> partnerdb: 7. Truy vấn thông tin sản phẩm
+  partnerdb --> PartnerService: 8. Trả về thông tin sản phẩm
+  PartnerService --> OrderService: 9. Trả về thông tin sản phẩm
+end
+
+OrderService --> Gateway: 10. Trả về dữ liệu giỏ hàng đã được cập nhật
+Gateway --> UI: 11. Trả về dữ liệu giỏ hàng đã được cập nhật
+UI -> UI: 12. Hiển thị giỏ hàng với các sản phẩm,\n giá, số lượng và trạng thái sản phẩm
+
+' Thêm sản phẩm vào giỏ hàng
+kh -> UI: 13. Kích vào nút "Thêm vào giỏ hàng" \nở trang chi tiết sản phẩm
+UI -> Gateway: 14. Gửi yêu cầu thêm sản phẩm vào giỏ hàng
+Gateway -> OrderService: 15. Gửi yêu cầu thêm sản phẩm vào giỏ hàng
+OrderService -> orderdb: 16. Kiểm tra xem sản phẩm đã có trong giỏ hàng chưa
+orderdb --> OrderService: 17. Trả về kết quả kiểm tra
+
+alt Sản phẩm đã có trong giỏ hàng
+    OrderService -> orderdb: 18a. Cập nhật số lượng sản phẩm
+else Sản phẩm chưa có trong giỏ hàng
+    OrderService -> orderdb: 18b. Thêm sản phẩm mới vào giỏ hàng
+end
+
+OrderService --> Gateway: 19. Trả về kết quả thành công
+Gateway --> UI: 20. Trả về kết quả thành công
+UI -> UI: 21. Hiển thị thông báo thành công\n và cập nhật biểu tượng giỏ hàng
+
+' Cập nhật số lượng sản phẩm
+kh -> UI: 22. Thay đổi số lượng sản phẩm \ntrong giỏ hàng
+UI -> Gateway: 23. Gửi yêu cầu cập nhật số lượng
+Gateway -> OrderService: 24. Gửi yêu cầu cập nhật số lượng
+OrderService -> PartnerService: 25. Kiểm tra tồn kho
+PartnerService -> partnerdb: 26. Truy vấn tồn kho
+partnerdb --> PartnerService: 27. Trả về thông tin tồn kho
+PartnerService --> OrderService: 28. Trả về thông tin tồn kho
+
+alt Đủ số lượng tồn kho
+    OrderService -> orderdb: 29a. Cập nhật số lượng sản phẩm
+    OrderService --> Gateway: 30a. Trả về kết quả thành công
+    Gateway --> UI: 31a. Trả về kết quả thành công
+    UI -> UI: 32a. Cập nhật hiển thị số lượng và tổng giá
+else Không đủ số lượng tồn kho
+    OrderService --> Gateway: 29b. Trả về thông báo không đủ hàng
+    Gateway --> UI: 30b. Trả về thông báo không đủ hàng
+    UI -> UI: 31b. Hiển thị thông báo không đủ hàng
+end
+
+' Xóa sản phẩm khỏi giỏ hàng
+kh -> UI: 33. Kích vào nút "Xóa" bên cạnh sản phẩm
+UI -> Gateway: 34. Gửi yêu cầu xóa sản phẩm
+Gateway -> OrderService: 35. Gửi yêu cầu xóa sản phẩm
+OrderService -> orderdb: 36. Xóa sản phẩm khỏi giỏ hàng
+OrderService --> Gateway: 37. Trả về kết quả thành công
+Gateway --> UI: 38. Trả về kết quả thành công
+UI -> UI: 39. Cập nhật hiển thị giỏ hàng\n và tổng giá
+
+@enduml

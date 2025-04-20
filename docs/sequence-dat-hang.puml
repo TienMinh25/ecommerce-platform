@@ -1,0 +1,76 @@
+@startuml Đặt Hàng
+
+actor "Người dùng" as User
+boundary "Web UI" as FE
+control "API Gateway" as APIGateway
+database "Redis" as Redis
+control "Order Service" as OrderService
+control "Partner Service" as PartnerService
+control "Stripe Adapter" as StripeAdapter
+control "Notification Service" as NotificationService
+database "Orders DB" as OrdersDB
+database "Partner DB" as PartnerDB
+
+autonumber
+User -> FE: Nhấn nút "Mua hàng" từ giỏ hàng
+FE -> APIGateway: Gửi yêu cầu trang đặt hàng
+APIGateway -> FE: Trả về thông tin sản phẩm đã chọn
+
+APIGateway -> FE: Trả về thông tin địa chỉ đã lưu
+User -> FE: Chọn địa chỉ giao hàng
+
+FE -> APIGateway: Kiểm tra tình trạng sản phẩm
+APIGateway -> Redis: Kiểm tra tồn kho
+Redis --> APIGateway: Trả về thông tin tồn kho
+APIGateway --> FE: Trả về trạng thái sản phẩm
+
+alt Sản phẩm còn hàng
+    User -> FE: Nhập mã voucher
+    FE -> APIGateway: Kiểm tra voucher
+    APIGateway -> OrderService: Xác thực voucher
+    OrderService --> APIGateway: Kết quả xác thực và giá trị voucher
+
+    alt Voucher hợp lệ
+        APIGateway --> FE: Trả về thông tin giảm giá
+        FE -> FE: Tính toán tổng tiền sau giảm giá
+    else Voucher không hợp lệ
+        APIGateway --> FE: Trả về thông báo lỗi voucher
+        FE -> User: Hiển thị thông báo lỗi
+    end
+
+    FE -> User: Hiển thị phương thức thanh toán
+    User -> FE: Chọn phương thức thanh toán
+
+    alt Thanh toán qua Stripe
+        User -> FE: Chọn thanh toán qua Stripe
+        FE -> APIGateway: Yêu cầu xác thực OTP
+        APIGateway -> NotificationService: Gửi OTP qua email
+        NotificationService --> APIGateway: Xác nhận gửi OTP
+        APIGateway --> FE: Yêu cầu nhập OTP
+        User -> FE: Nhập OTP
+        FE -> APIGateway: Xác thực OTP
+        APIGateway -> StripeAdapter: Khởi tạo phiên thanh toán
+        StripeAdapter --> APIGateway: Trả về kết quả thanh toán
+    else Thanh toán COD
+        User -> FE: Chọn thanh toán khi nhận hàng
+    end
+
+    User -> FE: Nhấn nút "Đặt hàng"
+    FE -> APIGateway: Gửi yêu cầu đặt hàng
+    APIGateway -> OrderService: Tạo đơn hàng mới
+    OrderService -> OrdersDB: Lưu thông tin đơn hàng
+    OrdersDB --> OrderService: Xác nhận lưu thành công
+    OrderService -> PartnerService: Cập nhật số lượng tồn kho
+    PartnerService -> PartnerDB: Cập nhật tồn kho
+    PartnerDB --> PartnerService: Xác nhận cập nhật thành công
+    OrderService -> NotificationService: Gửi thông báo xác nhận đơn hàng
+    NotificationService --> OrderService: Xác nhận gửi thông báo
+    OrderService --> APIGateway: Xác nhận đặt hàng thành công
+    APIGateway --> FE: Trả về kết quả đặt hàng thành công
+    FE -> User: Hiển thị thông báo đặt hàng thành công
+else Sản phẩm hết hàng
+    APIGateway --> FE: Trả về thông báo hết hàng
+    FE -> User: Hiển thị thông báo hết hàng
+end
+
+@enduml

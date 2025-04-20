@@ -1,0 +1,29 @@
+@startuml
+
+actor "Khách hàng" as kh
+boundary "Web UI" as UI
+control "API Gateway" as Gateway
+control "Partner Service" as ProductService
+database "Partner DB" as productdb
+
+kh -> UI: 1. Kích vào sản phẩm
+UI -> Gateway: 2. Gửi yêu cầu lấy chi tiết sản phẩm
+
+Gateway -> ProductService: 3. Chuyển yêu cầu lấy chi tiết sản phẩm
+
+ProductService -> ProductService: 4. Kiểm tra cache
+
+alt Dữ liệu không có trong cache
+    ProductService -> productdb: 5. Truy vấn thông tin sản phẩm
+    productdb --> ProductService: 6. Trả về dữ liệu sản phẩm
+    ProductService -> ProductService: 7. Lưu dữ liệu vào cache
+else Dữ liệu có trong cache
+    ProductService -> ProductService: 5. Lấy dữ liệu từ cache
+end
+
+ProductService --> Gateway: 6. Trả về dữ liệu sản phẩm
+
+Gateway --> UI: 7. Trả về tất cả dữ liệu
+UI -> UI: 8. Hiển thị trang chi tiết sản phẩm
+
+@enduml

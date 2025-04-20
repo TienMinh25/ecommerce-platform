@@ -1,0 +1,31 @@
+@startuml
+' Use horizontal layout with actors on both sides
+left to right direction
+
+' Improve visual appearance
+skinparam usecase {
+  BackgroundColor white
+  BorderColor black
+  ArrowColor black
+}
+
+skinparam linetype polyline
+
+' Left actors
+actor "Khách hàng" as kh
+actor "Nhà cung cấp" as ncc
+actor "Người giao hàng" as ngh
+actor "Quản trị viên" as qtv
+
+usecase "Quản lý giỏ hàng" as UC1
+usecase "Đặt hàng" as UC2
+
+kh --> UC1
+ncc --> UC1
+UC1 <-- ngh
+UC1 <-- qtv
+
+UC1 <|... UC2
+
+
+@enduml

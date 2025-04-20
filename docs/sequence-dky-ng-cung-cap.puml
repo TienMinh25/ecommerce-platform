@@ -1,0 +1,39 @@
+@startuml
+
+actor "Khách hàng" as kh
+boundary "Web UI" as UI
+control "API Gateway service" as Gateway
+control "Partner Service" as PartnerService
+database "API Gateway DB" as db
+database "Partner DB" as partnerdb
+
+kh -> UI: 1. Kích vào "Trở thành nhà cung cấp"
+UI -> UI: 2. Hiển thị form đăng ký \n trở thành nhà cung cấp
+kh -> UI: 3. Nhập các thông tin bắt buộc\n và nhấn nút đăng ký.
+
+UI -> Gateway: 4. Gửi dữ liệu đăng ký
+
+Gateway -> PartnerService: 5. Gửi dữ liệu đăng ký
+
+PartnerService -> partnerdb: 6. Lấy dữ liệu từ bảng supplier_profiles \n và bảng supplier_documents dựa trên user_id
+partnerdb --> PartnerService: 7. Trả về dữ liệu
+
+alt Đã có đơn đăng ký chờ xét duyệt
+    PartnerService --> Gateway: Thông báo đã có đơn đăng ký
+    Gateway --> UI: Thông báo đã có đơn đăng ký
+    UI -> UI: Hiển thị thông báo đã có đơn đăng ký
+else Chưa có đơn đăng ký
+    alt Đã là nhà cung cấp
+        PartnerService --> Gateway: Thông báo đã là nhà cung cấp
+        Gateway --> UI: Thông báo đã là nhà cung cấp
+        UI -> UI: Hiển thị thông báo đã là nhà cung cấp
+    else Chưa là nhà cung cấp
+        PartnerService -> partnerdb: Lưu trữ thông tin đơn đăng ký.
+        PartnerService --> Gateway: Thông báo đăng ký thành công,\n chờ xét duyệt
+
+        Gateway --> UI: Thông báo đăng ký thành công,\n chờ xét duyệt
+        UI -> UI: Hiển thị thông báo.
+    end
+end
+
+@enduml

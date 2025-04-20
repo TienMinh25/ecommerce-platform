@@ -1,0 +1,22 @@
+@startuml
+
+actor "Khách hàng" as kh
+boundary "Web UI" as UI
+control "API Gateway" as Gateway
+control "Partner Service" as ProductService
+database "Partner DB" as productdb
+
+kh -> UI: 1. Nhập vào ô nhập tìm kiếm\n trên thanh tiêu đề keyword cần tìm
+UI -> Gateway: 2. Gửi yêu cầu lấy danh sách\n sản phẩm dựa trên keyword
+
+Gateway -> ProductService: 3. Chuyển yêu cầu lấy danh sách\n sản phẩm dựa trên keyword
+
+ProductService -> productdb: 4. Truy vấn dữ liệu dựa trên keyword
+productdb --> ProductService: 5. Trả về danh sách dữ liệu
+
+ProductService --> Gateway: 6. Trả về dữ liệu
+
+Gateway --> UI: 7. Trả về tất cả dữ liệu
+UI -> UI: 8. Hiển thị kết quả tìm kiếm
+
+@enduml
