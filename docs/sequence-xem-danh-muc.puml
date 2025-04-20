@@ -1,22 +1,21 @@
-@startuml
-'https://plantuml.com/use-case-diagram
+@startuml Quản lý Đơn hàng giao
 
-:Main Admin: as Admin
-(Use the application) as (Use)
+actor "Người dùng" as nd
 
-User -> (Start)
-User --> (Use)
+boundary "Web UI" as UI
+control "API Gateway service" as Gateway
+control "Partner Service" as PartnerService
+database "Partner DB" as partnerdb
 
-Admin ---> (Use)
+nd -> UI: 1. Truy cập trang chủ
+UI -> Gateway: 2. Lấy danh sách danh mục
+Gateway -> PartnerService: 3. Chuyển yêu cầu lấy\n danh sách danh mục
+PartnerService -> partnerdb: 4. Lấy dữ liệu danh mục
+partnerdb --> PartnerService: 5. Trả về danh sách danh mục
 
-note right of Admin : This is an example.
+PartnerService --> Gateway: 6. Trả về danh sách danh mục
 
-note right of (Use)
-A note can also
-be on several lines
-end note
+Gateway --> UI: 7. Trả về dữ liệu
+UI -> UI: 8. Hiển thị danh sách danh mục
 
-note "This note is connected\nto several objects." as N2
-(Start) .. N2
-N2 .. (Use)
 @enduml

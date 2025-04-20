@@ -1,22 +1,128 @@
-@startuml
-'https://plantuml.com/use-case-diagram
+@startuml Quản lý Đơn hàng giao
 
-:Main Admin: as Admin
-(Use the application) as (Use)
+actor "Người giao hàng" as ngh
+actor "Khách hàng" as kh
 
-User -> (Start)
-User --> (Use)
+boundary "Web UI" as UI
+control "API Gateway service" as Gateway
+control "Order Service" as OrderService
+control "Notification Service" as NotificationService
+database "Order DB" as orderdb
+database "Notification DB" as notidb
 
-Admin ---> (Use)
+' Xem danh sách đơn hàng cần giao theo khu vực
+group Xem danh sách đơn hàng cần giao
+    ngh -> UI: 1. Đăng nhập và kích vào nút "Đơn hàng cần giao"
+    UI -> Gateway: 2. GET /api/v1/delivery/orders
+    Gateway -> OrderService: 3. Lấy danh sách đơn hàng theo khu vực
+    OrderService -> orderdb: 4. Truy vấn đơn hàng theo khu vực và trạng thái "Sẵn sàng giao hàng"
+    orderdb --> OrderService: 5. Trả về danh sách đơn hàng được sắp xếp theo ưu tiên
+    OrderService --> Gateway: 6. Trả về danh sách đơn hàng
+    Gateway --> UI: 7. Trả về danh sách đơn hàng
+    UI -> UI: 8. Hiển thị danh sách đơn hàng ưu tiên theo khu vực
+end
 
-note right of Admin : This is an example.
+' Xem chi tiết đơn hàng cần giao
+group Xem chi tiết đơn hàng
+    ngh -> UI: 1. Kích vào một đơn hàng cụ thể
+    UI -> Gateway: 2. GET /api/v1/delivery/orders/:orderId
+    Gateway -> OrderService: 3. Lấy chi tiết đơn hàng
+    OrderService -> orderdb: 4. Truy vấn chi tiết đơn hàng theo orderId
+    orderdb --> OrderService: 5. Trả về chi tiết đơn hàng
+    OrderService --> Gateway: 6. Trả về chi tiết đơn hàng
+    Gateway --> UI: 7. Trả về chi tiết đơn hàng
+    UI -> UI: 8. Hiển thị chi tiết đơn hàng bao gồm:\n- Địa chỉ giao hàng,\n- Thông tin liên hệ khách hàng\n- Thông tin sản phẩm\n - Ghi chú
+end
 
-note right of (Use)
-A note can also
-be on several lines
-end note
+' Nhận đơn hàng để giao
+group Nhận đơn hàng để giao
+    ngh -> UI: 1. Kích "Nhận đơn" trên một đơn hàng
+    UI -> Gateway: 2. PATCH /api/v1/delivery/orders/:orderId/pickup
+    Gateway -> OrderService: 3. Cập nhật trạng thái đơn hàng
+    OrderService -> orderdb: 4. Cập nhật trạng thái thành "Đang giao hàng" và gán người giao hàng
+    orderdb --> OrderService: 5. Xác nhận cập nhật thành công
+    OrderService -> NotificationService: 6. Gửi thông báo đơn hàng đang giao
+    NotificationService -> notidb: 7. Lưu thông báo cho khách hàng
+    NotificationService --> OrderService: 8. Xác nhận gửi thông báo
+    OrderService --> Gateway: 9. Trả về kết quả cập nhật
+    Gateway --> UI: 10. Trả về kết quả cập nhật
+    UI -> UI: 11. Hiển thị thông báo cập nhật thành công
+end
 
-note "This note is connected\nto several objects." as N2
-(Start) .. N2
-N2 .. (Use)
+' Cập nhật trạng thái giao hàng
+group Cập nhật trạng thái giao hàng
+    ngh -> UI: 1. Kích "Đang trên đường giao"
+    UI -> Gateway: 2. PATCH /api/v1/delivery/orders/:orderId/status
+    Gateway -> OrderService: 3. Cập nhật trạng thái chi tiết của đơn hàng
+    OrderService -> orderdb: 4. Cập nhật trạng thái chi tiết và ghi nhận thời gian
+    orderdb --> OrderService: 5. Xác nhận cập nhật thành công
+    OrderService -> NotificationService: 6. Gửi thông báo cập nhật trạng thái
+    NotificationService -> notidb: 7. Lưu thông báo cho khách hàng
+    NotificationService --> OrderService: 8. Xác nhận gửi thông báo
+    OrderService --> Gateway: 9. Trả về kết quả cập nhật
+    Gateway --> UI: 10. Trả về kết quả cập nhật
+    UI -> UI: 11. Hiển thị xác nhận cập nhật thành công
+
+    ngh -> UI: 12. Cập nhật "Đã đến địa điểm giao hàng"
+    UI -> Gateway: 12. PATCH /api/v1/delivery/orders/:orderId/status
+    Gateway -> OrderService: 13. Cập nhật trạng thái chi tiết của đơn hàng
+    OrderService -> orderdb: 14. Cập nhật trạng thái chi tiết và ghi nhận thời gian
+    orderdb --> OrderService: 15. Xác nhận cập nhật thành công
+    OrderService -> NotificationService: 16. Gửi thông báo cập nhật trạng thái
+    NotificationService -> notidb: 17. Lưu thông báo cho khách hàng
+    NotificationService --> OrderService: 18. Xác nhận gửi thông báo
+    OrderService --> Gateway: 19. Trả về kết quả cập nhật
+    Gateway --> UI: 20. Trả về kết quả cập nhật
+    UI -> UI: 21. Hiển thị xác nhận cập nhật thành công
+end
+
+' Giao hàng thành công
+group Giao hàng thành công
+    ngh -> UI: 1. Kích "Đã giao hàng" sau khi giao thành công
+    UI -> UI: 2. Hiển thị form xác nhận giao hàng
+    ngh -> UI: 3. Nhập thông tin xác nhận (chụp ảnh, chữ ký, ghi chú)
+    UI -> Gateway: 4. PATCH /api/v1/delivery/orders/:orderId/delivered
+    Gateway -> OrderService: 5. Cập nhật trạng thái đơn hàng
+    OrderService -> orderdb: 6. Cập nhật trạng thái thành "Đã giao hàng" và lưu bằng chứng giao hàng
+    orderdb --> OrderService: 7. Xác nhận cập nhật thành công
+    OrderService -> NotificationService: 8. Gửi thông báo đơn hàng đã giao
+    NotificationService -> notidb: 9. Lưu thông báo cho khách hàng
+    NotificationService --> OrderService: 10. Xác nhận gửi thông báo
+    OrderService --> Gateway: 11. Trả về kết quả cập nhật
+    Gateway --> UI: 12. Trả về kết quả cập nhật
+    UI -> UI: 13. Hiển thị thông báo cập nhật thành công
+end
+
+' Xác nhận đã nhận hàng (khách hàng)
+group Xác nhận đã nhận hàng
+    kh -> UI: 1. Kích "Xác nhận đã nhận hàng"
+    UI -> Gateway: 2. PATCH /api/v1/orders/:orderId/confirm-receipt
+    Gateway -> OrderService: 3. Cập nhật trạng thái đơn hàng
+    OrderService -> orderdb: 4. Cập nhật trạng thái thành "Hoàn thành"
+    orderdb --> OrderService: 5. Xác nhận cập nhật thành công
+    OrderService -> NotificationService: 6. Gửi thông báo hoàn thành đơn hàng
+    NotificationService -> notidb: 7. Lưu thông báo cho người giao hàng
+    NotificationService --> OrderService: 8. Xác nhận gửi thông báo
+    OrderService --> Gateway: 9. Trả về kết quả cập nhật
+    Gateway --> UI: 10. Trả về kết quả cập nhật
+    UI -> UI: 11. Hiển thị thông báo xác nhận thành công
+end
+
+' Giao hàng không thành công
+group Giao hàng không thành công
+    ngh -> UI: 1. Kích "Giao hàng không thành công"
+    UI -> UI: 2. Hiển thị form báo cáo giao hàng không thành công
+    ngh -> UI: 3. Nhập lý do không giao được và chụp ảnh bằng chứng (nếu có)
+    UI -> Gateway: 4. PATCH /api/v1/delivery/orders/:orderId/delivery-failed
+    Gateway -> OrderService: 5. Cập nhật trạng thái đơn hàng
+    OrderService -> orderdb: 6. Cập nhật trạng thái thành "Giao hàng không thành công", lý do và bằng chứng
+    orderdb --> OrderService: 7. Xác nhận cập nhật thành công
+    OrderService -> NotificationService: 8. Gửi thông báo giao hàng không thành công
+    NotificationService -> notidb: 9. Lưu thông báo cho khách hàng
+    NotificationService --> OrderService: 10. Xác nhận gửi thông báo
+    OrderService --> Gateway: 11. Trả về kết quả cập nhật
+    Gateway --> UI: 12. Trả về kết quả cập nhật
+    UI -> UI: 13. Hiển thị thông báo cập nhật thành công
+end
+
 @enduml

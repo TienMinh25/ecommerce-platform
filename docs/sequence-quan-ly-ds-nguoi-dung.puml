@@ -1,22 +1,95 @@
 @startuml
-'https://plantuml.com/use-case-diagram
 
-:Main Admin: as Admin
-(Use the application) as (Use)
+actor "Quản trị viên" as qtv
+boundary "Web UI" as UI
+control "API Gateway Service" as Gateway
+database "API Gateway DB" as db
 
-User -> (Start)
-User --> (Use)
+' Xem danh sách người dùng
+qtv -> UI: 1. Truy cập trang quản lý người dùng
+UI -> Gateway: 2. Gửi yêu cầu lấy danh sách người dùng
+Gateway -> db: 3. Truy vấn danh sách người dùng
+db --> Gateway: 4. Trả về danh sách người dùng
+Gateway --> UI: 5. Trả về danh sách người dùng
+UI -> UI: 6. Hiển thị danh sách người dùng
 
-Admin ---> (Use)
+' Tạo mới người dùng
+qtv -> UI: 7. Kích vào "Thêm người dùng mới"
+UI -> UI: 8. Hiển thị form nhập thông tin
+qtv -> UI: 9. Nhập thông tin và gửi
+UI -> Gateway: 10. Gửi yêu cầu tạo người dùng mới
+Gateway -> db: 11. Kiểm tra email và số điện thoại tồn tại
+db --> Gateway: 12. Trả về kết quả kiểm tra
 
-note right of Admin : This is an example.
+alt Email đã tồn tại
+    Gateway --> UI: 13a. Trả về lỗi
+    UI -> UI: 14a. Hiển thị thông báo lỗi
+else Email chưa tồn tại
+    Gateway -> Gateway: 13b. Mã hóa mật khẩu
+    Gateway -> db: 14b. Lưu thông tin người dùng mới
+    db --> Gateway: 15b. Trả về kết quả thành công
+    Gateway --> UI: 16b. Trả về kết quả thành công
+    UI -> UI: 17b. Hiển thị thông báo thành công
+    UI -> Gateway: 18b. Yêu cầu làm mới danh sách người dùng
+    Gateway -> db: 19b. Truy vấn danh sách người dùng
+    db --> Gateway: 20b. Trả về danh sách người dùng
+    Gateway --> UI: 21b. Trả về danh sách người dùng mới
+    UI -> UI: 22b. Hiển thị danh sách người dùng đã cập nhật
+end
 
-note right of (Use)
-A note can also
-be on several lines
-end note
+' Cập nhật người dùng
+qtv -> UI: 23. Kích vào icon "Chỉnh sửa" bên cạnh người dùng
+UI -> Gateway: 24. Gửi yêu cầu lấy thông tin chi tiết người dùng
+Gateway -> db: 25. Truy vấn thông tin người dùng
+db --> Gateway: 26. Trả về thông tin người dùng
+Gateway --> UI: 27. Trả về thông tin người dùng
+UI -> UI: 28. Hiển thị form chỉnh sửa với thông tin hiện tại
+qtv -> UI: 29. Cập nhật thông tin và gửi
+UI -> Gateway: 30. Gửi yêu cầu cập nhật thông tin
+Gateway -> db: 31. Kiểm tra tính hợp lệ của thông tin
+db --> Gateway: 32. Trả về kết quả kiểm tra
 
-note "This note is connected\nto several objects." as N2
-(Start) .. N2
-N2 .. (Use)
+alt Thông tin không hợp lệ
+    Gateway --> UI: 33a. Trả về lỗi
+    UI -> UI: 34a. Hiển thị thông báo lỗi
+else Thông tin hợp lệ
+    Gateway -> db: 33b. Cập nhật thông tin người dùng
+    db --> Gateway: 34b. Trả về kết quả thành công
+    Gateway --> UI: 35b. Trả về kết quả thành công
+    UI -> UI: 36b. Hiển thị thông báo thành công
+    UI -> Gateway: 37b. Yêu cầu làm mới danh sách người dùng
+    Gateway -> db: 38b. Truy vấn danh sách người dùng
+    db --> Gateway: 39b. Trả về danh sách người dùng
+    Gateway --> UI: 40b. Trả về danh sách người dùng
+    UI -> UI: 41b. Hiển thị danh sách người dùng đã cập nhật
+end
+
+' Xóa người dùng
+qtv -> UI: 42. Kích vào icon "Xóa" bên cạnh người dùng
+UI -> UI: 43. Hiển thị hộp thoại xác nhận
+qtv -> UI: 44. Xác nhận xóa
+UI -> Gateway: 45. Gửi yêu cầu xóa người dùng
+Gateway -> db: 46. Xóa hoặc đánh dấu người dùng không hoạt động
+db --> Gateway: 47. Trả về kết quả thành công
+Gateway --> UI: 48. Trả về kết quả thành công
+UI -> UI: 49. Hiển thị thông báo thành công
+UI -> Gateway: 50. Yêu cầu làm mới danh sách người dùng
+Gateway -> db: 51. Truy vấn danh sách người dùng
+db --> Gateway: 52. Trả về danh sách người dùng
+Gateway --> UI: 53. Trả về danh sách người dùng
+UI -> UI: 54. Hiển thị danh sách người dùng đã cập nhật
+
+' Tìm kiếm người dùng
+qtv -> UI: 55. Nhập từ khóa tìm kiếm (tên, email, số điện thoại)
+UI -> Gateway: 56. Gửi yêu cầu tìm kiếm người dùng
+Gateway -> db: 57. Thực hiện tìm kiếm trong cơ sở dữ liệu
+db --> Gateway: 58. Trả về kết quả tìm kiếm
+Gateway --> UI: 59. Trả về kết quả tìm kiếm
+
+alt Không tìm thấy kết quả
+    UI -> UI: 60a. Hiển thị thông báo "Không tìm thấy người dùng"
+else Tìm thấy kết quả
+    UI -> UI: 60b. Hiển thị danh sách người dùng phù hợp
+end
+
 @enduml
