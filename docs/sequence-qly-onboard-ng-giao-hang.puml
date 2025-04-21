@@ -1,0 +1,79 @@
+@startuml
+
+actor "Quản trị viên" as qtv
+boundary "Web UI" as UI
+control "API Gateway Service" as Gateway
+control "Order Service" as OrderService
+database "Order DB" as db
+control "Notification Service" as NotificationService
+database "Notifications DB" as notifyDB
+
+' === QUẢN LÝ ONBOARD NGƯỜI GIAO HÀNG ===
+
+' Xem danh sách yêu cầu onboard
+qtv -> UI: 1. Truy cập trang quản lý onboard người giao hàng
+UI -> Gateway: 2. Gửi yêu cầu lấy danh sách người giao hàng đăng ký
+Gateway -> OrderService: 3. Chuyển tiếp yêu cầu
+OrderService -> db: 4. Truy vấn danh sách người giao hàng chờ phê duyệt
+db --> OrderService: 5. Trả về danh sách người giao hàng
+OrderService --> Gateway: 6. Trả về danh sách người giao hàng
+Gateway --> UI: 7. Trả về danh sách người giao hàng
+UI -> UI: 8. Hiển thị danh sách người giao hàng chờ phê duyệt
+
+' Xem chi tiết hồ sơ onboard
+qtv -> UI: 9. Kích vào nút "Xem chi tiết" một hồ sơ
+UI -> Gateway: 10. Gửi yêu cầu lấy thông tin chi tiết người giao hàng
+Gateway -> OrderService: 11. Chuyển tiếp yêu cầu
+OrderService -> db: 12. Truy vấn thông tin chi tiết người giao hàng
+db --> OrderService: 13. Trả về thông tin chi tiết và tài liệu
+OrderService --> Gateway: 14. Trả về thông tin chi tiết và tài liệu
+Gateway --> UI: 15. Trả về thông tin chi tiết và tài liệu
+UI -> UI: 16. Hiển thị thông tin chi tiết và tài liệu onboard
+
+' Phê duyệt yêu cầu onboard
+qtv -> UI: 17a. Kích vào nút "Phê duyệt"
+UI -> UI: 18a. Hiển thị hộp thoại xác nhận phê duyệt
+qtv -> UI: 19a. Xác nhận phê duyệt
+UI -> Gateway: 20a. Gửi yêu cầu phê duyệt người giao hàng
+Gateway -> OrderService: 21a. Chuyển tiếp yêu cầu phê duyệt
+OrderService -> db: 22a. Cập nhật trạng thái người giao hàng thành "Đã phê duyệt"
+db --> OrderService: 23a. Trả về kết quả cập nhật thành công
+OrderService -> NotificationService: 24a. Gửi yêu cầu tạo thông báo cho người giao hàng
+NotificationService -> notifyDB: 25a. Lưu thông báo vào cơ sở dữ liệu
+notifyDB --> NotificationService: 26a. Trả về kết quả lưu thông báo thành công
+NotificationService --> OrderService: 27a. Trả về kết quả gửi thông báo thành công
+OrderService --> Gateway: 28a. Trả về kết quả thành công
+Gateway --> UI: 29a. Trả về kết quả thành công
+UI -> UI: 30a. Hiển thị thông báo phê duyệt thành công
+UI -> Gateway: 31a. Yêu cầu làm mới danh sách người giao hàng
+Gateway -> OrderService: 32a. Chuyển tiếp yêu cầu
+OrderService -> db: 33a. Truy vấn danh sách người giao hàng chờ phê duyệt
+db --> OrderService: 34a. Trả về danh sách người giao hàng
+OrderService --> Gateway: 35a. Trả về danh sách người giao hàng
+Gateway --> UI: 36a. Trả về danh sách người giao hàng
+UI -> UI: 37a. Hiển thị danh sách người giao hàng đã cập nhật
+
+' Từ chối yêu cầu onboard
+qtv -> UI: 17b. Kích vào nút "Từ chối"
+UI -> UI: 18b. Hiển thị form nhập lý do từ chối
+qtv -> UI: 19b. Nhập lý do từ chối và xác nhận
+UI -> Gateway: 20b. Gửi yêu cầu từ chối người giao hàng kèm lý do
+Gateway -> OrderService: 21b. Chuyển tiếp yêu cầu từ chối
+OrderService -> db: 22b. Cập nhật trạng thái người giao hàng thành "Bị từ chối" và lưu lý do
+db --> OrderService: 23b. Trả về kết quả cập nhật thành công
+OrderService -> NotificationService: 24b. Gửi yêu cầu tạo thông báo cho người giao hàng kèm lý do
+NotificationService -> notifyDB: 25b. Lưu thông báo kèm lý do vào cơ sở dữ liệu
+notifyDB --> NotificationService: 26b. Trả về kết quả lưu thông báo thành công
+NotificationService --> OrderService: 27b. Trả về kết quả gửi thông báo thành công
+OrderService --> Gateway: 28b. Trả về kết quả thành công
+Gateway --> UI: 29b. Trả về kết quả thành công
+UI -> UI: 30b. Hiển thị thông báo từ chối thành công
+UI -> Gateway: 31b. Yêu cầu làm mới danh sách người giao hàng
+Gateway -> OrderService: 32b. Chuyển tiếp yêu cầu
+OrderService -> db: 33b. Truy vấn danh sách người giao hàng chờ phê duyệt
+db --> OrderService: 34b. Trả về danh sách người giao hàng
+OrderService --> Gateway: 35b. Trả về danh sách người giao hàng
+Gateway --> UI: 36b. Trả về danh sách người giao hàng
+UI -> UI: 37b. Hiển thị danh sách người giao hàng đã cập nhật
+
+@enduml
