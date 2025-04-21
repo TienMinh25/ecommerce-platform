@@ -1,0 +1,20 @@
+@startuml
+' Use horizontal layout with actors on both sides
+left to right direction
+
+' Improve visual appearance
+skinparam usecase {
+  BackgroundColor white
+  BorderColor black
+  ArrowColor black
+}
+skinparam linetype polyline
+
+' Actors
+actor "Quản trị viên" as qtv
+
+usecase "Quản lý vai trò và quyền" as UC1
+
+qtv --> UC1
+
+@enduml

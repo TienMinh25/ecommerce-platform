@@ -1,0 +1,176 @@
+@startuml
+
+actor "Quản trị viên" as qtv
+boundary "Web UI" as UI
+control "API Gateway Service" as Gateway
+database "API Gateway DB" as db
+
+' === QUẢN LÝ VAI TRÒ ===
+
+' Xem danh sách vai trò
+qtv -> UI: 1. Truy cập trang quản lý vai trò
+UI -> Gateway: 2. Gửi yêu cầu lấy danh sách vai trò
+Gateway -> db: 3. Truy vấn danh sách vai trò
+db --> Gateway: 4. Trả về danh sách vai trò
+Gateway --> UI: 5. Trả về danh sách vai trò
+UI -> UI: 6. Hiển thị danh sách vai trò
+
+' Tạo mới vai trò
+qtv -> UI: 7. Kích vào "Tạo mới vai trò"
+UI -> UI: 8. Hiển thị form nhập thông tin vai trò
+qtv -> UI: 9. Nhập tên, mô tả và thiết lập quyền truy cập
+UI -> Gateway: 10. Gửi yêu cầu tạo vai trò mới
+Gateway -> db: 11. Kiểm tra tên vai trò đã tồn tại
+db --> Gateway: 12. Trả về kết quả kiểm tra
+
+alt Tên vai trò đã tồn tại
+    Gateway --> UI: 13a. Trả về lỗi
+    UI -> UI: 14a. Hiển thị thông báo lỗi
+else Tên vai trò chưa tồn tại
+    Gateway -> db: 13b. Lưu thông tin vai trò mới và quyền truy cập
+    db --> Gateway: 14b. Trả về kết quả thành công
+    Gateway --> UI: 15b. Trả về kết quả thành công
+    UI -> UI: 16b. Hiển thị thông báo thành công
+    UI -> Gateway: 17b. Yêu cầu làm mới danh sách vai trò
+    Gateway -> db: 18b. Truy vấn danh sách vai trò
+    db --> Gateway: 19b. Trả về danh sách vai trò
+    Gateway --> UI: 20b. Trả về danh sách vai trò
+    UI -> UI: 21b. Hiển thị danh sách vai trò đã cập nhật
+end
+
+' Cập nhật vai trò
+qtv -> UI: 22. Kích vào nút "Chỉnh sửa" bên cạnh vai trò
+UI -> Gateway: 23. Gửi yêu cầu lấy thông tin chi tiết vai trò
+Gateway -> db: 24. Truy vấn thông tin vai trò và quyền truy cập
+db --> Gateway: 25. Trả về thông tin vai trò và quyền truy cập
+Gateway --> UI: 26. Trả về thông tin vai trò và quyền truy cập
+UI -> UI: 27. Hiển thị form chỉnh sửa với thông tin hiện tại
+qtv -> UI: 28. Cập nhật thông tin và quyền truy cập
+UI -> Gateway: 29. Gửi yêu cầu cập nhật thông tin
+
+alt Vai trò hệ thống
+    Gateway --> UI: 30a. Trả về lỗi không thể chỉnh sửa vai trò hệ thống
+    UI -> UI: 31a. Hiển thị thông báo lỗi
+else Vai trò thông thường
+    Gateway -> db: 30b. Cập nhật thông tin vai trò và quyền truy cập
+    db --> Gateway: 31b. Trả về kết quả thành công
+    Gateway --> UI: 32b. Trả về kết quả thành công
+    UI -> UI: 33b. Hiển thị thông báo thành công
+    UI -> Gateway: 34b. Yêu cầu làm mới danh sách vai trò
+    Gateway -> db: 35b. Truy vấn danh sách vai trò
+    db --> Gateway: 36b. Trả về danh sách vai trò
+    Gateway --> UI: 37b. Trả về danh sách vai trò
+    UI -> UI: 38b. Hiển thị danh sách vai trò đã cập nhật
+end
+
+' Xóa vai trò
+qtv -> UI: 39. Kích vào nút "Xóa" bên cạnh vai trò
+UI -> UI: 40. Hiển thị hộp thoại xác nhận
+qtv -> UI: 41. Xác nhận xóa
+UI -> Gateway: 42. Gửi yêu cầu xóa vai trò
+Gateway -> db: 43. Kiểm tra vai trò có đang được gán cho người dùng không
+db --> Gateway: 44. Trả về kết quả kiểm tra
+
+alt Vai trò hệ thống
+    Gateway --> UI: 45a. Trả về lỗi không thể xóa vai trò hệ thống
+    UI -> UI: 46a. Hiển thị thông báo lỗi
+else Vai trò đang được gán cho người dùng
+    Gateway --> UI: 45b. Trả về lỗi vai trò đang được sử dụng
+    UI -> UI: 46b. Hiển thị thông báo lỗi
+else Vai trò không được sử dụng
+    Gateway -> db: 45c. Xóa vai trò và quyền truy cập liên quan
+    db --> Gateway: 46c. Trả về kết quả thành công
+    Gateway --> UI: 47c. Trả về kết quả thành công
+    UI -> UI: 48c. Hiển thị thông báo thành công
+    UI -> Gateway: 49c. Yêu cầu làm mới danh sách vai trò
+    Gateway -> db: 50c. Truy vấn danh sách vai trò
+    db --> Gateway: 51c. Trả về danh sách vai trò
+    Gateway --> UI: 52c. Trả về danh sách vai trò
+    UI -> UI: 53c. Hiển thị danh sách vai trò đã cập nhật
+end
+
+' === QUẢN LÝ QUYỀN HẠN ===
+
+' Xem danh sách quyền hạn
+qtv -> UI: 54. Truy cập trang quản lý quyền hạn
+UI -> Gateway: 55. Gửi yêu cầu lấy danh sách quyền hạn
+Gateway -> db: 56. Truy vấn danh sách quyền hạn
+db --> Gateway: 57. Trả về danh sách quyền hạn
+Gateway --> UI: 58. Trả về danh sách quyền hạn
+UI -> UI: 59. Hiển thị danh sách quyền hạn
+
+' Tạo mới quyền hạn
+qtv -> UI: 60. Kích vào "Tạo mới quyền truy cập"
+UI -> UI: 61. Hiển thị form nhập thông tin quyền hạn
+qtv -> UI: 62. Nhập tên và mô tả quyền hạn
+UI -> Gateway: 63. Gửi yêu cầu tạo quyền hạn mới
+Gateway -> db: 64. Kiểm tra tên quyền hạn đã tồn tại
+db --> Gateway: 65. Trả về kết quả kiểm tra
+
+alt Tên quyền hạn đã tồn tại
+    Gateway --> UI: 66a. Trả về lỗi
+    UI -> UI: 67a. Hiển thị thông báo lỗi
+else Tên quyền hạn chưa tồn tại
+    Gateway -> db: 66b. Lưu thông tin quyền hạn mới
+    db --> Gateway: 67b. Trả về kết quả thành công
+    Gateway --> UI: 68b. Trả về kết quả thành công
+    UI -> UI: 69b. Hiển thị thông báo thành công
+    UI -> Gateway: 70b. Yêu cầu làm mới danh sách quyền hạn
+    Gateway -> db: 71b. Truy vấn danh sách quyền hạn
+    db --> Gateway: 72b. Trả về danh sách quyền hạn
+    Gateway --> UI: 73b. Trả về danh sách quyền hạn
+    UI -> UI: 74b. Hiển thị danh sách quyền hạn đã cập nhật
+end
+
+' Cập nhật quyền hạn
+qtv -> UI: 75. Kích vào nút "Chỉnh sửa" bên cạnh quyền hạn
+UI -> Gateway: 76. Gửi yêu cầu lấy thông tin chi tiết quyền hạn
+Gateway -> db: 77. Truy vấn thông tin quyền hạn
+db --> Gateway: 78. Trả về thông tin quyền hạn
+Gateway --> UI: 79. Trả về thông tin quyền hạn
+UI -> UI: 80. Hiển thị form chỉnh sửa với thông tin hiện tại
+qtv -> UI: 81. Cập nhật thông tin quyền hạn
+UI -> Gateway: 82. Gửi yêu cầu cập nhật thông tin
+
+alt Quyền hạn hệ thống
+    Gateway --> UI: 83a. Trả về lỗi không thể chỉnh sửa quyền hệ thống
+    UI -> UI: 84a. Hiển thị thông báo lỗi
+else Quyền hạn thông thường
+    Gateway -> db: 83b. Cập nhật thông tin quyền hạn
+    db --> Gateway: 84b. Trả về kết quả thành công
+    Gateway --> UI: 85b. Trả về kết quả thành công
+    UI -> UI: 86b. Hiển thị thông báo thành công
+    UI -> Gateway: 87b. Yêu cầu làm mới danh sách quyền hạn
+    Gateway -> db: 88b. Truy vấn danh sách quyền hạn
+    db --> Gateway: 89b. Trả về danh sách quyền hạn
+    Gateway --> UI: 90b. Trả về danh sách quyền hạn
+    UI -> UI: 91b. Hiển thị danh sách quyền hạn đã cập nhật
+end
+
+' Xóa quyền hạn
+qtv -> UI: 92. Kích vào nút "Xóa" bên cạnh quyền hạn
+UI -> UI: 93. Hiển thị hộp thoại xác nhận
+qtv -> UI: 94. Xác nhận xóa
+UI -> Gateway: 95. Gửi yêu cầu xóa quyền hạn
+Gateway -> db: 96. Kiểm tra quyền hạn có đang được sử dụng trong vai trò không
+db --> Gateway: 97. Trả về kết quả kiểm tra
+
+alt Quyền hạn hệ thống
+    Gateway --> UI: 98a. Trả về lỗi không thể xóa quyền hệ thống
+    UI -> UI: 99a. Hiển thị thông báo lỗi
+else Quyền hạn đang được sử dụng
+    Gateway --> UI: 98b. Trả về lỗi quyền hạn đang được sử dụng
+    UI -> UI: 99b. Hiển thị thông báo lỗi
+else Quyền hạn không được sử dụng
+    Gateway -> db: 98c. Xóa quyền hạn
+    db --> Gateway: 99c. Trả về kết quả thành công
+    Gateway --> UI: 100c. Trả về kết quả thành công
+    UI -> UI: 101c. Hiển thị thông báo thành công
+    UI -> Gateway: 102c. Yêu cầu làm mới danh sách quyền hạn
+    Gateway -> db: 103c. Truy vấn danh sách quyền hạn
+    db --> Gateway: 104c. Trả về danh sách quyền hạn
+    Gateway --> UI: 105c. Trả về danh sách quyền hạn
+    UI -> UI: 106c. Hiển thị danh sách quyền hạn đã cập nhật
+end
+
+@enduml

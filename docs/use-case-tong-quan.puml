@@ -30,7 +30,8 @@ rectangle "Nền tảng mua sắm trực tuyến Minh Plaza" {
   usecase "Quản lý vai trò và quyền" as UC6
   usecase "Quản lý modules" as UC7
   usecase "Quản lý kiểu địa chỉ" as UC8
-  usecase "Quản lý onboarding\ncủa người giao hàng\nvà nhà cung cấp" as UC9
+  usecase "Quản lý onboarding\ncủa người giao hàng" as UC9
+  usecase "Quản lý onboarding\ncủa nhà cung cấp" as UC31
 
   ' Account and profile use cases
   usecase "Quản lý tài khoản" as UC10
@@ -97,6 +98,7 @@ UC6 <-- qtv
 UC7 <-- qtv
 UC8 <-- qtv
 UC9 <-- qtv
+UC31 <-- qtv
 UC10 <-- qtv
 UC11 <-- qtv
 UC12 <-- qtv
