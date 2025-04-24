@@ -11,7 +11,7 @@ import (
 	api_gateway_client_response "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service/response"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
-	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/transport/grpc/proto/notification_proto_gen"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"

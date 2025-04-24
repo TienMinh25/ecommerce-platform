@@ -13,13 +13,13 @@ migration-create:
 	@migrate create -ext sql -dir $(dir) -seq $(name)
 
 migrate-up:
-	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir_api_gateway) up
+	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir) up
 
 migrate-down:
 	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir_api_gateway) down $(version)
 
 fix-dirty-db:
-	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir_api_gateway) force $(version)
+	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir) force $(version)
 
 generate-public-key: generate-private-key
 	@openssl rsa -pubout -in jwtRSA256.key -out jwtRSA256.key.pub

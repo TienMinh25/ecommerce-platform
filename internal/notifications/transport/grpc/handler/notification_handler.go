@@ -2,8 +2,8 @@ package notification_handler
 
 import (
 	"context"
-	notification_service "github.com/TienMinh25/ecommerce-platform/internal/notifcations/service"
-	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/transport/grpc/proto/notification_proto_gen"
+	notification_service "github.com/TienMinh25/ecommerce-platform/internal/notifications/service"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 )
 
 type NotificationHandler struct {
