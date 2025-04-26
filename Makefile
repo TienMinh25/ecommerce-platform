@@ -16,7 +16,7 @@ migrate-up:
 	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir) up
 
 migrate-down:
-	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir_api_gateway) down $(version)
+	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir) down $(version)
 
 fix-dirty-db:
 	@migrate -database $(postgres_dsn)/$(dbname)?sslmode=disable -path $(dir) force $(version)

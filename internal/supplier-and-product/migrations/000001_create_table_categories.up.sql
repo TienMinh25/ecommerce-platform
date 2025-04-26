@@ -9,7 +9,7 @@ create table categories (
     created_at timestamptz default current_timestamp,
     updated_at timestamptz default current_timestamp,
     constraint fk_parent_category foreign key (parent_id)
-        references categories(id);
+        references categories(id) on delete set null
 );
 
 -- function trigger update timestamps when update
