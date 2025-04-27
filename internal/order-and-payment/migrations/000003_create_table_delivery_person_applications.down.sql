@@ -1,0 +1,11 @@
+drop trigger if exists set_timestamp_delivery_person_applications
+on delivery_person_applications;
+
+drop index if exists idx_user_id_delivery_person_applications;
+drop index if exists idx_id_card_number_delivery_person_applications;
+drop index if exists idx_vehicle_license_plate_delivery_person_applications;
+
+alter table delivery_person_applications
+drop constraint if exists check_application_status_delivery_person_applications;
+
+drop table if exists delivery_person_applications;
