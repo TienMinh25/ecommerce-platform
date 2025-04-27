@@ -1,6 +1,7 @@
 create table if not exists orders (
     id uuid primary key default gen_random_uuid(),
     user_id bigint not null,
+    tracking_number varchar(100) unique,
     shipping_address text not null,
     country varchar(1000) not null,
     city varchar(1000) not null,
