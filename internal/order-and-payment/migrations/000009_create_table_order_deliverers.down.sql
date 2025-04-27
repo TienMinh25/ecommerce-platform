@@ -2,9 +2,6 @@ drop trigger if exists set_timestamp_order_deliverers
 on order_deliverers;
 
 alter table order_deliverers
-drop constraint if exists fk_order_id_order_deliverers;
-
-alter table order_deliverers
 drop constraint if exists fk_deliverer_id_order_deliverers;
 
 alter table order_deliverers
