@@ -1,0 +1,12 @@
+alter table inventory_transactions
+drop constraint if exists check_transaction_type_inventory_transactions;
+
+alter table inventory_transactions
+drop constraint if exists fk_product_variant_id_inventory_transactions;
+
+drop index if exists idx_product_variant_id_inventory_transactions;
+drop index if exists idx_transaction_type_inventory_transactions;
+drop index if exists idx_performed_by_inventory_transactions;
+drop index if exists idx_created_at_inventory_transactions;
+
+drop table if exists inventory_transactions;

@@ -1,0 +1,20 @@
+-- drop foreign key
+alter table product_variant_attributes
+drop constraint if exists fk_product_variant_id_product_variant_attributes;
+
+alter table product_variant_attributes
+drop constraint if exists fk_attribute_definition_id_product_variant_attributes;
+
+alter table product_variant_attributes
+drop constraint if exists fk_attribute_option_id_product_variant_attributes;
+
+alter table product_variant_attributes
+drop constraint if exists unique_attribute_option_id_product_variant_attributes;
+
+drop index if exists idx_product_variant_id_product_variant_attributes;
+drop index if exists idx_attribute_definition_id_product_variant_attributes;
+
+drop trigger if exists set_timestamp_product_variant_attributes
+on product_variant_attributes;
+
+drop table if exists product_variant_attributes;

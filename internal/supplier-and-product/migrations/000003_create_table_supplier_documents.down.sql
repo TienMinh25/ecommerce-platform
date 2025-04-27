@@ -9,3 +9,4 @@ on supplier_documents;
 
 drop index if exists idx_supplier_id_supplier_documents;
 
+drop table if exists supplier_documents;

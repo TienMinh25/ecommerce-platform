@@ -21,3 +21,5 @@ drop function if exists update_product_rating_on_delete();
 drop index if exists idx_product_id_product_reviews;
 drop index if exists idx_user_id_product_reviews;
 drop index if exists idx_rating_product_reviews;
+
+drop table if exists product_reviews;

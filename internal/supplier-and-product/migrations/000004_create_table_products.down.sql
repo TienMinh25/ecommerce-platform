@@ -9,3 +9,5 @@ on products;
 
 drop index if exists idx_supplier_id_products;
 drop index if exists idx_category_id_products;
+
+drop table if exists products;
