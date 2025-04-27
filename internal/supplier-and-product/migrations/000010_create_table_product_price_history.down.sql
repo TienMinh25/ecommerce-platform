@@ -1,0 +1,22 @@
+alter table product_price_history
+drop constraint fk_product_variant_id_product_price_history;
+
+alter table product_price_history
+drop constraint check_old_price_non_negative_product_price_history;
+
+alter table product_price_history
+drop constraint check_new_price_non_negative_product_price_history;
+
+alter table product_price_history
+drop constraint check_old_discount_price_non_negative_product_price_history;
+
+alter table product_price_history
+drop constraint check_new_discount_price_non_negative_product_price_history;
+
+drop index if exists idx_product_variant_id_product_price_history;
+
+drop index if exists idx_changed_by_product_price_history;
+
+drop index if exists idx_created_at_product_price_history;
+
+drop table if exists product_price_history;

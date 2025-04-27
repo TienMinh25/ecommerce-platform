@@ -5,7 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
-	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/transport/grpc/proto/notification_proto_gen"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"gopkg.in/gomail.v2"
 	"html/template"

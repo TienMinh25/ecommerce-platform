@@ -2,9 +2,9 @@ package notification_service
 
 import (
 	"context"
-	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/adaptor"
-	notification_repository "github.com/TienMinh25/ecommerce-platform/internal/notifcations/repository"
-	"github.com/TienMinh25/ecommerce-platform/internal/notifcations/transport/grpc/proto/notification_proto_gen"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifications/adaptor"
+	notification_repository "github.com/TienMinh25/ecommerce-platform/internal/notifications/repository"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	kafkaconfluent "github.com/confluentinc/confluent-kafka-go/kafka"

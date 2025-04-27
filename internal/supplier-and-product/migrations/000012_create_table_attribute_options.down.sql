@@ -1,0 +1,12 @@
+alter table attribute_options
+drop constraint if exists fk_attribute_definition_id_attribute_options;
+
+alter table attribute_options
+drop constraint if exists unique_attribute_definition_id_and_option_value_attribute_options;
+
+drop index if exists idx_attribute_definition_id_attribute_options;
+
+drop trigger if exists set_timestamp_attribute_options
+on attribute_options;
+
+drop table if exists attribute_options;
