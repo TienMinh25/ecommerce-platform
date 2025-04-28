@@ -7,7 +7,6 @@ create table if not exists order_items (
     product_variant_name varchar(2000) not null,
     quantity int not null,
     unit_price numeric(14, 2) not null,
-    discount_price numeric(14, 2),
     total_price numeric(14, 2),
     attributes jsonb,
     estimated_delivery_date	date,
