@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "./notification_proto_gen";
+
+message GetEmailNotificationPreferencesResponse {
+  bool order_status = 1;
+  bool payment_status = 2;
+  bool product_status = 3;
+  bool promotion = 4;
+}
+
+message GetInAppNotificationPreferencesResponse {
+  bool order_status = 1;
+  bool payment_status = 2;
+  bool product_status = 3;
+  bool promotion = 4;
+}
+

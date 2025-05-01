@@ -7,10 +7,12 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/api-gateway/middleware"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/kafka"
 	"github.com/TienMinh25/ecommerce-platform/third_party/s3"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"google.golang.org/grpc"
 	"log"
 	"net/http"
 	"time"
@@ -42,6 +44,22 @@ func NewGinEngine() *gin.Engine {
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
+}
+
+func NewGrpcNotificationClient(env *env.EnvManager) notification_proto_gen.NotificationServiceClient {
+	var otps []grpc.DialOption
+
+	otps = append(otps, grpc.WithInsecure())
+
+	conn, err := grpc.NewClient(env.NotificationServerConfig.ServerAddresss, otps...)
+
+	if err != nil {
+		log.Fatalf("NewGrpcNotificationClient err: %v", err)
+	}
+
+	client := notification_proto_gen.NewNotificationServiceClient(conn)
+
+	return client
 }
 
 func StartServer(lifecycle fx.Lifecycle, r *api_gateway_router.Router, env *env.EnvManager) {
@@ -168,11 +186,11 @@ func main() {
 			NewTracerApiGatewayService,
 			// adapter
 			httpclient.NewHTTPClient,
+			// client grpc
+			NewGrpcNotificationClient,
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),
-		// todo: change to service and handler of role
-		fx.Invoke(func(role api_gateway_repository.IRoleRepository) {}),
 	)
 
 	app.Run()

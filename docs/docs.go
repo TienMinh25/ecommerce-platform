@@ -2067,6 +2067,107 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/me/notification-settings": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lấy cài đặt thông báo",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Lấy cài đặt thông báo",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetNotificationSettingsResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật cài đặt thông báo",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Cập nhật cài đặt thông báo",
+                "parameters": [
+                    {
+                        "description": "Dữ liệu cập nhật",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateNotificationSettingsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateNotificationSettingsResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/users/{userID}": {
             "delete": {
                 "security": [
@@ -2672,6 +2773,28 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.GetNotificationSettingsResponse": {
+            "type": "object",
+            "properties": {
+                "email_setting": {
+                    "$ref": "#/definitions/api_gateway_dto.SettingsResponse"
+                },
+                "in_app_setting": {
+                    "$ref": "#/definitions/api_gateway_dto.SettingsResponse"
+                }
+            }
+        },
+        "api_gateway_dto.GetNotificationSettingsResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetNotificationSettingsResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.GetPermissionResponse": {
             "type": "object",
             "properties": {
@@ -3046,6 +3169,23 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.SettingsResponse": {
+            "type": "object",
+            "properties": {
+                "order_status": {
+                    "type": "boolean"
+                },
+                "payment_status": {
+                    "type": "boolean"
+                },
+                "product_status": {
+                    "type": "boolean"
+                },
+                "promotion": {
+                    "type": "boolean"
+                }
+            }
+        },
         "api_gateway_dto.UpdateAddressTypeBodyRequest": {
             "type": "object",
             "required": [
@@ -3130,6 +3270,52 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.UpdateEmailSettingRequest": {
+            "type": "object",
+            "required": [
+                "order_status",
+                "payment_status",
+                "product_status",
+                "promotion"
+            ],
+            "properties": {
+                "order_status": {
+                    "type": "boolean"
+                },
+                "payment_status": {
+                    "type": "boolean"
+                },
+                "product_status": {
+                    "type": "boolean"
+                },
+                "promotion": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateInAppSettingRequest": {
+            "type": "object",
+            "required": [
+                "order_status",
+                "payment_status",
+                "product_status",
+                "promotion"
+            ],
+            "properties": {
+                "order_status": {
+                    "type": "boolean"
+                },
+                "payment_status": {
+                    "type": "boolean"
+                },
+                "product_status": {
+                    "type": "boolean"
+                },
+                "promotion": {
+                    "type": "boolean"
+                }
+            }
+        },
         "api_gateway_dto.UpdateModuleByModuleIDRequest": {
             "type": "object",
             "required": [
@@ -3151,6 +3337,43 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.UpdateModuleByModuleIDResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateNotificationSettingsRequest": {
+            "type": "object",
+            "required": [
+                "email_setting",
+                "in_app_setting"
+            ],
+            "properties": {
+                "email_setting": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateEmailSettingRequest"
+                },
+                "in_app_setting": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateInAppSettingRequest"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateNotificationSettingsResponse": {
+            "type": "object",
+            "properties": {
+                "email_setting": {
+                    "$ref": "#/definitions/api_gateway_dto.SettingsResponse"
+                },
+                "in_app_setting": {
+                    "$ref": "#/definitions/api_gateway_dto.SettingsResponse"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateNotificationSettingsResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateNotificationSettingsResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"

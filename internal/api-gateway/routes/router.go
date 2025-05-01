@@ -143,5 +143,7 @@ func registerUserMeHandler(group *gin.RouterGroup, permissionMiddleware *middlew
 		userMeGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetCurrentUser)
 		userMeGroup.PATCH("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateCurrentUser)
 		userMeGroup.POST("/avatars/get-presigned-url", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.GetAvatarURLUpload)
+		userMeGroup.POST("/notification-settings", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateNotificationSettings)
+		userMeGroup.GET("/notification-settings", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetNotificationSettings)
 	}
 }

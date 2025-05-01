@@ -60,4 +60,6 @@ type IUserHandler interface {
 	GetCurrentUser(ctx *gin.Context)
 	UpdateCurrentUser(ctx *gin.Context)
 	GetAvatarURLUpload(ctx *gin.Context)
+	UpdateNotificationSettings(ctx *gin.Context)
+	GetNotificationSettings(ctx *gin.Context)
 }

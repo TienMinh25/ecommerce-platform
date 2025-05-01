@@ -144,3 +144,80 @@ func (u *userHandler) GetAvatarURLUpload(ctx *gin.Context) {
 		URL: res,
 	})
 }
+
+// UpdateNotificationSettings godoc
+//
+//	@Summary		Cập nhật cài đặt thông báo
+//	@Tags			me
+//	@Description	Cập nhật cài đặt thông báo
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//	@Param			request	body		api_gateway_dto.UpdateNotificationSettingsRequest	true	"Dữ liệu cập nhật"
+//	@Success		200		{object}	api_gateway_dto.UpdateNotificationSettingsResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/notification-settings [post]
+func (u *userHandler) UpdateNotificationSettings(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateNotificationSettings"))
+	defer span.End()
+
+	var data api_gateway_dto.UpdateNotificationSettingsRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	res, err := u.service.UpdateNotificationSettings(ct, &data, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, *res)
+}
+
+// GetNotificationSettings godoc
+//
+//	@Summary		Lấy cài đặt thông báo
+//	@Tags			me
+//	@Description	Lấy cài đặt thông báo
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//	@Success		200	{object}	api_gateway_dto.GetNotificationSettingsResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/notification-settings [get]
+func (u *userHandler) GetNotificationSettings(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetNotificationSettings"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	res, err := u.service.GetNotificationSettings(ct, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, *res)
+}

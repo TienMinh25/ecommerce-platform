@@ -35,3 +35,39 @@ type GetAvatarPresignedURLRequest struct {
 type GetAvatarPresignedURLResponse struct {
 	URL string `json:"url"`
 }
+
+type UpdateNotificationSettingsRequest struct {
+	EmailSetting UpdateEmailSettingRequest `json:"email_setting" binding:"required"`
+	InAppSetting UpdateInAppSettingRequest `json:"in_app_setting" binding:"required"`
+}
+
+type UpdateEmailSettingRequest struct {
+	OrderStatus   *bool `json:"order_status" binding:"required"`
+	PaymentStatus *bool `json:"payment_status" binding:"required"`
+	ProductStatus *bool `json:"product_status" binding:"required"`
+	Promotion     *bool `json:"promotion" binding:"required"`
+}
+
+type UpdateInAppSettingRequest struct {
+	OrderStatus   *bool `json:"order_status" binding:"required"`
+	PaymentStatus *bool `json:"payment_status" binding:"required"`
+	ProductStatus *bool `json:"product_status" binding:"required"`
+	Promotion     *bool `json:"promotion" binding:"required"`
+}
+
+type UpdateNotificationSettingsResponse struct {
+	EmailSetting SettingsResponse `json:"email_setting"`
+	InAppSetting SettingsResponse `json:"in_app_setting"`
+}
+
+type SettingsResponse struct {
+	OrderStatus   bool `json:"order_status"`
+	PaymentStatus bool `json:"payment_status"`
+	ProductStatus bool `json:"product_status"`
+	Promotion     bool `json:"promotion"`
+}
+
+type GetNotificationSettingsResponse struct {
+	EmailSetting SettingsResponse `json:"email_setting"`
+	InAppSetting SettingsResponse `json:"in_app_setting"`
+}

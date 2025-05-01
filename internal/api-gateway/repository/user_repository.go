@@ -6,6 +6,7 @@ import (
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
@@ -13,6 +14,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"net/http"
 	"strconv"
 	"strings"
@@ -25,14 +28,17 @@ type userRepository struct {
 	tracer                 pkg.Tracer
 	userPasswordRepository IUserPasswordRepository
 	redis                  pkg.ICache
+	client                 notification_proto_gen.NotificationServiceClient
 }
 
-func NewUserRepository(db pkg.Database, tracer pkg.Tracer, userPasswordRepository IUserPasswordRepository, redis pkg.ICache) IUserRepository {
+func NewUserRepository(db pkg.Database, tracer pkg.Tracer, userPasswordRepository IUserPasswordRepository, redis pkg.ICache,
+	client notification_proto_gen.NotificationServiceClient) IUserRepository {
 	return &userRepository{
 		db:                     db,
 		tracer:                 tracer,
 		userPasswordRepository: userPasswordRepository,
 		redis:                  redis,
+		client:                 client,
 	}
 }
 
@@ -97,6 +103,18 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 			}
 		}
 
+		wg := sync.WaitGroup{}
+		var errNotiService error
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// call grpc to notification to create new notifications
+			_, errNotiService = u.client.CreateUserSettingNotification(ctx, &notification_proto_gen.CreateUserSettingNotificationRequest{
+				UserId: int64(userID),
+			})
+		}()
+
 		// get role id from redis
 		roleIDStr, err := u.redis.Get(ctx, fmt.Sprintf("role:%s", common.RoleCustomer))
 		roleID, _ := strconv.Atoi(roleIDStr)
@@ -107,6 +125,25 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 			return utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		wg.Wait()
+
+		if errNotiService != nil {
+			st, _ := status.FromError(errNotiService)
+
+			switch st.Code() {
+			case codes.AlreadyExists:
+				return utils.BusinessError{
+					Code:    http.StatusConflict,
+					Message: st.Message(),
+				}
+			default:
+				return utils.TechnicalError{
+					Code:    http.StatusInternalServerError,
+					Message: common.MSG_INTERNAL_ERROR,
+				}
 			}
 		}
 
@@ -334,6 +371,18 @@ func (u *userRepository) CreateUserBasedOauth(ctx context.Context, user *api_gat
 			}
 		}
 
+		wg := sync.WaitGroup{}
+		var errNotiService error
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			// call grpc to notification to create new notifications
+			_, errNotiService = u.client.CreateUserSettingNotification(ctx, &notification_proto_gen.CreateUserSettingNotificationRequest{
+				UserId: int64(userID),
+			})
+		}()
+
 		// get role id from redis
 		roleIDStr, err := u.redis.Get(ctx, fmt.Sprintf("role:%s", common.RoleCustomer))
 		roleID, _ := strconv.Atoi(roleIDStr)
@@ -344,6 +393,25 @@ func (u *userRepository) CreateUserBasedOauth(ctx context.Context, user *api_gat
 			return utils.TechnicalError{
 				Code:    http.StatusInternalServerError,
 				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+		wg.Wait()
+
+		if errNotiService != nil {
+			st, _ := status.FromError(errNotiService)
+
+			switch st.Code() {
+			case codes.AlreadyExists:
+				return utils.BusinessError{
+					Code:    http.StatusConflict,
+					Message: st.Message(),
+				}
+			default:
+				return utils.TechnicalError{
+					Code:    http.StatusInternalServerError,
+					Message: common.MSG_INTERNAL_ERROR,
+				}
 			}
 		}
 

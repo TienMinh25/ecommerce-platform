@@ -141,6 +141,33 @@ const userMeService = {
         } catch (error) {
             throw error;
         }
+    },
+
+    /**
+     * Lấy cài đặt thông báo
+     * @returns {Promise} Promise object với dữ liệu cài đặt thông báo
+     */
+    getNotificationSettings: async () => {
+        try {
+            const response = await api.get('/users/me/notification-settings');
+            return response.data.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    /**
+     * Cập nhật cài đặt thông báo
+     * @param {Object} settings - Object chứa cài đặt email_setting và in_app_setting
+     * @returns {Promise} Promise object với dữ liệu cài đặt thông báo đã cập nhật
+     */
+    updateNotificationSettings: async (settings) => {
+        try {
+            const response = await api.post('/users/me/notification-settings', settings);
+            return response.data.data;
+        } catch (error) {
+            throw error;
+        }
     }
 };
 
