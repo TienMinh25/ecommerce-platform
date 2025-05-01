@@ -120,8 +120,10 @@ func main() {
 			notification_handler.NewNotificationHandler,
 			// service
 			notification_service.NewNotificationService,
+			notification_service.NewNotificationPreferencesService,
 			// repository
 			notification_repository.NewNotificationRepository,
+			notification_repository.NewNotificationPreferencesRepository,
 			// tracer
 			NewTracerNotificationService,
 			// kafka,

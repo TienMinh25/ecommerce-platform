@@ -4,17 +4,42 @@ import (
 	"context"
 	notification_service "github.com/TienMinh25/ecommerce-platform/internal/notifications/service"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
+	"github.com/TienMinh25/ecommerce-platform/pkg"
+	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type NotificationHandler struct {
 	notification_proto_gen.UnimplementedNotificationServiceServer
-	service notification_service.INotificationService
+	service                notification_service.INotificationService
+	serviceNotiPreferences notification_service.INotificationPreferencesService
+	tracer                 pkg.Tracer
 }
 
-func NewNotificationHandler(service notification_service.INotificationService) *NotificationHandler {
+func NewNotificationHandler(service notification_service.INotificationService,
+	serviceNotiPreferences notification_service.INotificationPreferencesService) *NotificationHandler {
 	return &NotificationHandler{
-		service: service,
+		service:                service,
+		serviceNotiPreferences: serviceNotiPreferences,
 	}
+}
+
+func (h *NotificationHandler) CreateUserSettingNotification(ctx context.Context, data *notification_proto_gen.CreateUserSettingNotificationRequest) (*notification_proto_gen.CreateUserSettingNotificationResponse, error) {
+	ctx, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "CreateUserSettingNotification"))
+	defer span.End()
+
+	err := h.serviceNotiPreferences.CreateNotificationPreferences(ctx, data.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &notification_proto_gen.CreateUserSettingNotificationResponse{}, nil
+}
+
+func (h *NotificationHandler) UpdateUserSettingNotification(ctx context.Context, data *notification_proto_gen.UpdateUserSettingNotificationRequest) (*notification_proto_gen.UpdateUserSettingNotificationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
 func (h *NotificationHandler) SendNotification(ctx context.Context, data *notification_proto_gen.SendNotificationRequest) (*notification_proto_gen.SendNotificationResponse, error) {

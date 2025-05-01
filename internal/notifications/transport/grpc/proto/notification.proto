@@ -4,8 +4,15 @@ option go_package = "./notification_proto_gen";
 
 import "google/protobuf/timestamp.proto";
 import "metadata.proto";
+import "update_notification_preferences.proto";
 
 service NotificationService {
+  // Khi user đăng ký ứng dụng để sử dụng -> sẽ tạo ra dữ liệu ở bảng notification_preferences
+  rpc CreateUserSettingNotification(CreateUserSettingNotificationRequest) returns (CreateUserSettingNotificationResponse);
+
+  // Khi user cập nhật lại việc nhận thông báo -> sẽ cập nhật
+  rpc UpdateUserSettingNotification(UpdateUserSettingNotificationRequest) returns (UpdateUserSettingNotificationResponse);
+
   // Gửi thông báo cho user
   rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse) {}
 
@@ -25,9 +32,26 @@ enum NotificationType {
   PROMOTION = 5;
 }
 
+message CreateUserSettingNotificationRequest {
+  int64 user_id = 1;
+}
+
+message CreateUserSettingNotificationResponse {}
+
+message UpdateUserSettingNotificationRequest {
+    UpdateEmailNotificationPreferencesRequest email_preferences = 1;
+    UpdateInAppNotificationPreferencesRequest in_app_preferences = 2;
+    int64 user_id = 3;
+}
+
+message UpdateUserSettingNotificationResponse {
+    UpdateEmailNotificationPreferencesResponse email_preferences = 1;
+    UpdateInAppNotificationPreferencesResponse in_app_preferences = 2;
+}
+
 message Notification {
   string id = 1;
-  string user_id = 2;
+  int64 user_id = 2;
   NotificationType type = 3;
   string title = 4;
   string content = 5;
@@ -38,7 +62,7 @@ message Notification {
 }
 
 message SendNotificationRequest {
-  string user_id = 1;
+  int64 user_id = 1;
   NotificationType type = 2;
   string title = 3;
   string content = 4;
@@ -52,7 +76,7 @@ message SendNotificationResponse {
 }
 
 message GetUserNotificationsRequest {
-  string user_id = 1;
+  int64 user_id = 1;
   int32 page = 2;
   int32 limit = 3;
   bool unread_only = 4;
@@ -66,7 +90,7 @@ message GetUserNotificationsResponse {
 
 message MarkAsReadRequest {
   string notification_id = 1;
-  string user_id = 2;
+  int64 user_id = 2;
 }
 
 message MarkAsReadResponse {
