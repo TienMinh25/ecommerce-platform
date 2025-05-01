@@ -42,17 +42,17 @@ type UpdateNotificationSettingsRequest struct {
 }
 
 type UpdateEmailSettingRequest struct {
-	OrderStatus   bool `json:"order_status" binding:"required"`
-	PaymentStatus bool `json:"payment_status" binding:"required"`
-	ProductStatus bool `json:"product_status" binding:"required"`
-	Promotion     bool `json:"promotion" binding:"required"`
+	OrderStatus   *bool `json:"order_status" binding:"required"`
+	PaymentStatus *bool `json:"payment_status" binding:"required"`
+	ProductStatus *bool `json:"product_status" binding:"required"`
+	Promotion     *bool `json:"promotion" binding:"required"`
 }
 
 type UpdateInAppSettingRequest struct {
-	OrderStatus   bool `json:"order_status" binding:"required"`
-	PaymentStatus bool `json:"payment_status" binding:"required"`
-	ProductStatus bool `json:"product_status" binding:"required"`
-	Promotion     bool `json:"promotion" binding:"required"`
+	OrderStatus   *bool `json:"order_status" binding:"required"`
+	PaymentStatus *bool `json:"payment_status" binding:"required"`
+	ProductStatus *bool `json:"product_status" binding:"required"`
+	Promotion     *bool `json:"promotion" binding:"required"`
 }
 
 type UpdateNotificationSettingsResponse struct {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Heading,
@@ -8,103 +8,127 @@ import {
     Stack,
     Flex,
     useColorModeValue,
-    useToast
+    useToast,
+    Spinner,
+    Center,
+    Alert,
+    AlertIcon,
+    AlertTitle,
+    AlertDescription
 } from '@chakra-ui/react';
+import userMeService from "../../services/userMeService.js";
 
-// Notification settings component based on Shopee's interface
+// Component cài đặt thông báo dựa trên tài liệu API
 const NotificationSettings = () => {
     const toast = useToast();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-    // State for notification settings
-    const [notifications, setNotifications] = useState({
-        // Email notifications
-        emailNotifications: true,
-        emailOrderUpdates: true,
-        emailPromotions: false,
-        emailSurveys: true,
-
-        // SMS notifications
-        smsNotifications: true,
-        smsPromotions: false,
-
-        // Zalo notifications
-        zaloNotifications: true,
-        zaloPromotionsVN: true
+    // State cho cài đặt thông báo
+    const [settings, setSettings] = useState({
+        email_setting: {
+            order_status: false,
+            payment_status: false,
+            product_status: false,
+            promotion: false
+        },
+        in_app_setting: {
+            order_status: false,
+            payment_status: false,
+            product_status: false,
+            promotion: false
+        }
     });
 
-    // Handle switch toggle
-    const handleToggle = (setting) => {
-        setNotifications(prev => {
-            const newSettings = { ...prev, [setting]: !prev[setting] };
+    // Lấy cài đặt thông báo
+    useEffect(() => {
+        const fetchSettings = async () => {
+            try {
+                setLoading(true);
+                const data = await userMeService.getNotificationSettings();
+                setSettings(data);
+                setError(null);
+            } catch (err) {
+                setError('Không thể tải cài đặt thông báo. Vui lòng thử lại sau.');
+                console.error('Lỗi khi lấy cài đặt thông báo:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-            // If main category is turned off, turn off all sub-settings
-            if (setting === 'emailNotifications' && !newSettings.emailNotifications) {
-                newSettings.emailOrderUpdates = false;
-                newSettings.emailPromotions = false;
-                newSettings.emailSurveys = false;
-            }
+        fetchSettings();
+    }, []);
 
-            if (setting === 'smsNotifications' && !newSettings.smsNotifications) {
-                newSettings.smsPromotions = false;
+    // Xử lý khi chuyển đổi cài đặt email
+    const handleEmailToggle = (setting) => {
+        const newSettings = {
+            ...settings,
+            email_setting: {
+                ...settings.email_setting,
+                [setting]: !settings.email_setting[setting]
             }
+        };
 
-            if (setting === 'zaloNotifications' && !newSettings.zaloNotifications) {
-                newSettings.zaloPromotionsVN = false;
-            }
+        setSettings(newSettings);
+        saveSettings(newSettings);
+    };
 
-            // If any sub-setting is turned on, ensure main category is on
-            if (setting === 'emailOrderUpdates' && newSettings.emailOrderUpdates) {
-                newSettings.emailNotifications = true;
+    // Xử lý khi chuyển đổi cài đặt trong ứng dụng
+    const handleInAppToggle = (setting) => {
+        const newSettings = {
+            ...settings,
+            in_app_setting: {
+                ...settings.in_app_setting,
+                [setting]: !settings.in_app_setting[setting]
             }
-            if (setting === 'emailPromotions' && newSettings.emailPromotions) {
-                newSettings.emailNotifications = true;
-            }
-            if (setting === 'emailSurveys' && newSettings.emailSurveys) {
-                newSettings.emailNotifications = true;
-            }
+        };
 
-            if (setting === 'smsPromotions' && newSettings.smsPromotions) {
-                newSettings.smsNotifications = true;
-            }
+        setSettings(newSettings);
+        saveSettings(newSettings);
+    };
 
-            if (setting === 'zaloPromotionsVN' && newSettings.zaloPromotionsVN) {
-                newSettings.zaloNotifications = true;
-            }
-
-            // Show toast notification
+    // Lưu cài đặt vào API
+    const saveSettings = async (newSettings) => {
+        try {
+            await userMeService.updateNotificationSettings(newSettings);
             toast({
                 title: 'Cài đặt đã được cập nhật',
                 status: 'success',
                 duration: 2000,
                 isClosable: true,
             });
-
-            return newSettings;
-        });
+        } catch (err) {
+            toast({
+                title: 'Không thể cập nhật cài đặt',
+                description: 'Đã xảy ra lỗi khi lưu cài đặt của bạn.',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+            console.error('Lỗi khi lưu cài đặt thông báo:', err);
+        }
     };
 
     // Styling
     const sectionBg = useColorModeValue('white', 'gray.800');
     const borderColor = useColorModeValue('gray.200', 'gray.700');
 
-    // Notification setting item component
+    // Component cho mỗi mục cài đặt thông báo
     const NotificationItem = ({
                                   title,
                                   description,
                                   isChecked,
-                                  onChange,
-                                  isSubItem = false
+                                  onChange
                               }) => (
         <Flex
             justify="space-between"
             align="center"
             py={4}
-            pl={isSubItem ? 6 : 0}
             borderBottomWidth={1}
             borderBottomColor={borderColor}
         >
             <Box>
-                <Text fontWeight={isSubItem ? "normal" : "medium"} mb={1}>
+                <Text fontWeight="medium" mb={1}>
                     {title}
                 </Text>
                 <Text fontSize="sm" color="gray.500" maxW="550px">
@@ -124,6 +148,24 @@ const NotificationSettings = () => {
             />
         </Flex>
     );
+
+    if (loading) {
+        return (
+            <Center h="200px">
+                <Spinner size="xl" color="green.500" thickness="4px" />
+            </Center>
+        );
+    }
+
+    if (error) {
+        return (
+            <Alert status="error" borderRadius="md" mb={6}>
+                <AlertIcon />
+                <AlertTitle mr={2}>Lỗi!</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+            </Alert>
+        );
+    }
 
     return (
         <Box>
@@ -146,44 +188,41 @@ const NotificationSettings = () => {
                         Email thông báo
                     </Heading>
                     <Text fontSize="sm" color="gray.500" mb={4}>
-                        Thông báo và nhắc nhở quan trọng về tài khoản sẽ không thể bị tắt
+                        Nhận thông báo qua email
                     </Text>
 
                     <Divider mb={4} />
 
                     <NotificationItem
-                        title="Email thông báo"
-                        description="Thông báo và nhắc nhở quan trọng về tài khoản sẽ không thể bị tắt"
-                        isChecked={notifications.emailNotifications}
-                        onChange={() => handleToggle('emailNotifications')}
+                        title="Trạng thái đơn hàng"
+                        description="Cập nhật về tình trạng vận chuyển của tất cả các đơn hàng"
+                        isChecked={settings.email_setting.order_status}
+                        onChange={() => handleEmailToggle('order_status')}
                     />
 
                     <NotificationItem
-                        title="Cập nhật đơn hàng"
-                        description="Cập nhật về tình trạng vận chuyển của tất cả các đơn hàng"
-                        isChecked={notifications.emailOrderUpdates}
-                        onChange={() => handleToggle('emailOrderUpdates')}
-                        isSubItem
+                        title="Trạng thái thanh toán"
+                        description="Nhận thông báo về trạng thái thanh toán của đơn hàng"
+                        isChecked={settings.email_setting.payment_status}
+                        onChange={() => handleEmailToggle('payment_status')}
+                    />
+
+                    <NotificationItem
+                        title="Trạng thái sản phẩm"
+                        description="Cập nhật về sự thay đổi trạng thái của sản phẩm"
+                        isChecked={settings.email_setting.product_status}
+                        onChange={() => handleEmailToggle('product_status')}
                     />
 
                     <NotificationItem
                         title="Khuyến mãi"
                         description="Cập nhật về các ưu đãi và khuyến mãi sắp tới"
-                        isChecked={notifications.emailPromotions}
-                        onChange={() => handleToggle('emailPromotions')}
-                        isSubItem
-                    />
-
-                    <NotificationItem
-                        title="Khảo sát"
-                        description="Đồng ý nhận khảo sát để cho chúng tôi được lắng nghe bạn"
-                        isChecked={notifications.emailSurveys}
-                        onChange={() => handleToggle('emailSurveys')}
-                        isSubItem
+                        isChecked={settings.email_setting.promotion}
+                        onChange={() => handleEmailToggle('promotion')}
                     />
                 </Box>
 
-                {/* SMS Notifications */}
+                {/* In-App Notifications */}
                 <Box
                     bg={sectionBg}
                     p={6}
@@ -193,27 +232,40 @@ const NotificationSettings = () => {
                     borderColor={borderColor}
                 >
                     <Heading as="h2" size="md" mb={4}>
-                        Thông báo SMS
+                        Thông báo trong ứng dụng
                     </Heading>
                     <Text fontSize="sm" color="gray.500" mb={4}>
-                        Thông báo và nhắc nhở quan trọng về tài khoản sẽ không thể bị tắt
+                        Nhận thông báo trong ứng dụng
                     </Text>
 
                     <Divider mb={4} />
 
                     <NotificationItem
-                        title="Thông báo SMS"
-                        description="Thông báo và nhắc nhở quan trọng về tài khoản sẽ không thể bị tắt"
-                        isChecked={notifications.smsNotifications}
-                        onChange={() => handleToggle('smsNotifications')}
+                        title="Trạng thái đơn hàng"
+                        description="Cập nhật về tình trạng vận chuyển của tất cả các đơn hàng"
+                        isChecked={settings.in_app_setting.order_status}
+                        onChange={() => handleInAppToggle('order_status')}
+                    />
+
+                    <NotificationItem
+                        title="Trạng thái thanh toán"
+                        description="Nhận thông báo về trạng thái thanh toán của đơn hàng"
+                        isChecked={settings.in_app_setting.payment_status}
+                        onChange={() => handleInAppToggle('payment_status')}
+                    />
+
+                    <NotificationItem
+                        title="Trạng thái sản phẩm"
+                        description="Cập nhật về sự thay đổi trạng thái của sản phẩm"
+                        isChecked={settings.in_app_setting.product_status}
+                        onChange={() => handleInAppToggle('product_status')}
                     />
 
                     <NotificationItem
                         title="Khuyến mãi"
                         description="Cập nhật về các ưu đãi và khuyến mãi sắp tới"
-                        isChecked={notifications.smsPromotions}
-                        onChange={() => handleToggle('smsPromotions')}
-                        isSubItem
+                        isChecked={settings.in_app_setting.promotion}
+                        onChange={() => handleInAppToggle('promotion')}
                     />
                 </Box>
             </Stack>

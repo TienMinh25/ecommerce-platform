@@ -137,16 +137,16 @@ func (u *userMeService) UpdateNotificationSettings(ctx context.Context, data *ap
 	in := &notification_proto_gen.UpdateUserSettingNotificationRequest{
 		UserId: int64(userID),
 		EmailPreferences: &notification_proto_gen.UpdateEmailNotificationPreferencesRequest{
-			OrderStatus:   data.EmailSetting.OrderStatus,
-			PaymentStatus: data.EmailSetting.PaymentStatus,
-			ProductStatus: data.EmailSetting.ProductStatus,
-			Promotion:     data.EmailSetting.Promotion,
+			OrderStatus:   *data.EmailSetting.OrderStatus,
+			PaymentStatus: *data.EmailSetting.PaymentStatus,
+			ProductStatus: *data.EmailSetting.ProductStatus,
+			Promotion:     *data.EmailSetting.Promotion,
 		},
 		InAppPreferences: &notification_proto_gen.UpdateInAppNotificationPreferencesRequest{
-			OrderStatus:   data.InAppSetting.OrderStatus,
-			PaymentStatus: data.InAppSetting.PaymentStatus,
-			ProductStatus: data.InAppSetting.ProductStatus,
-			Promotion:     data.InAppSetting.Promotion,
+			OrderStatus:   *data.InAppSetting.OrderStatus,
+			PaymentStatus: *data.InAppSetting.PaymentStatus,
+			ProductStatus: *data.InAppSetting.ProductStatus,
+			Promotion:     *data.InAppSetting.Promotion,
 		},
 	}
 

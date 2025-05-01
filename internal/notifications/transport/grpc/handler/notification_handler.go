@@ -16,10 +16,12 @@ type NotificationHandler struct {
 }
 
 func NewNotificationHandler(service notification_service.INotificationService,
-	serviceNotiPreferences notification_service.INotificationPreferencesService) *NotificationHandler {
+	serviceNotiPreferences notification_service.INotificationPreferencesService,
+	tracer pkg.Tracer) *NotificationHandler {
 	return &NotificationHandler{
 		service:                service,
 		serviceNotiPreferences: serviceNotiPreferences,
+		tracer:                 tracer,
 	}
 }
 
