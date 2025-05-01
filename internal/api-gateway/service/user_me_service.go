@@ -5,10 +5,14 @@ import (
 	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"net/http"
 	"path/filepath"
 	"time"
@@ -18,13 +22,15 @@ type userMeService struct {
 	tracer   pkg.Tracer
 	userRepo api_gateway_repository.IUserRepository
 	minio    pkg.Storage
+	client   notification_proto_gen.NotificationServiceClient
 }
 
-func NewUserMeService(tracer pkg.Tracer, userRepo api_gateway_repository.IUserRepository, minio pkg.Storage) IUserMeService {
+func NewUserMeService(tracer pkg.Tracer, userRepo api_gateway_repository.IUserRepository, minio pkg.Storage, client notification_proto_gen.NotificationServiceClient) IUserMeService {
 	return &userMeService{
 		tracer:   tracer,
 		userRepo: userRepo,
 		minio:    minio,
+		client:   client,
 	}
 }
 
@@ -122,4 +128,108 @@ func (u *userMeService) GetAvatarUploadURL(ctx context.Context, data *api_gatewa
 	}
 
 	return presignedURL, nil
+}
+
+func (u *userMeService) UpdateNotificationSettings(ctx context.Context, data *api_gateway_dto.UpdateNotificationSettingsRequest, userID int) (*api_gateway_dto.UpdateNotificationSettingsResponse, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateNotificationSettings"))
+	defer span.End()
+
+	in := &notification_proto_gen.UpdateUserSettingNotificationRequest{
+		UserId: int64(userID),
+		EmailPreferences: &notification_proto_gen.UpdateEmailNotificationPreferencesRequest{
+			OrderStatus:   data.EmailSetting.OrderStatus,
+			PaymentStatus: data.EmailSetting.PaymentStatus,
+			ProductStatus: data.EmailSetting.ProductStatus,
+			Promotion:     data.EmailSetting.Promotion,
+		},
+		InAppPreferences: &notification_proto_gen.UpdateInAppNotificationPreferencesRequest{
+			OrderStatus:   data.InAppSetting.OrderStatus,
+			PaymentStatus: data.InAppSetting.PaymentStatus,
+			ProductStatus: data.InAppSetting.ProductStatus,
+			Promotion:     data.InAppSetting.Promotion,
+		},
+	}
+
+	res, err := u.client.UpdateUserSettingNotification(ctx, in)
+
+	if err != nil {
+		span.RecordError(err)
+
+		st, _ := status.FromError(err)
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, utils.BusinessError{
+				Code:    http.StatusNotFound,
+				Message: st.Message(),
+			}
+		case codes.Internal:
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: st.Message(),
+			}
+		}
+	}
+
+	out := &api_gateway_dto.UpdateNotificationSettingsResponse{
+		EmailSetting: api_gateway_dto.SettingsResponse{
+			OrderStatus:   res.EmailPreferences.OrderStatus,
+			PaymentStatus: res.EmailPreferences.PaymentStatus,
+			ProductStatus: res.EmailPreferences.ProductStatus,
+			Promotion:     res.EmailPreferences.Promotion,
+		},
+		InAppSetting: api_gateway_dto.SettingsResponse{
+			OrderStatus:   res.InAppPreferences.OrderStatus,
+			PaymentStatus: res.InAppPreferences.PaymentStatus,
+			ProductStatus: res.InAppPreferences.ProductStatus,
+			Promotion:     res.InAppPreferences.Promotion,
+		},
+	}
+
+	return out, nil
+}
+
+func (u *userMeService) GetNotificationSettings(ctx context.Context, userID int) (*api_gateway_dto.GetNotificationSettingsResponse, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetNotificationSettings"))
+	defer span.End()
+
+	// call notification grpc to get current notification settings
+	in := &notification_proto_gen.GetUserNotificationSettingRequest{
+		UserId: int64(userID),
+	}
+
+	res, err := u.client.GetUserSettingNotification(ctx, in)
+
+	if err != nil {
+		span.RecordError(err)
+		st, _ := status.FromError(err)
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, utils.BusinessError{
+				Code:    http.StatusNotFound,
+				Message: st.Message(),
+			}
+		case codes.Internal:
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+	}
+
+	return &api_gateway_dto.GetNotificationSettingsResponse{
+		EmailSetting: api_gateway_dto.SettingsResponse{
+			OrderStatus:   res.EmailPreferences.OrderStatus,
+			PaymentStatus: res.EmailPreferences.PaymentStatus,
+			ProductStatus: res.EmailPreferences.ProductStatus,
+			Promotion:     res.EmailPreferences.Promotion,
+		},
+		InAppSetting: api_gateway_dto.SettingsResponse{
+			OrderStatus:   res.InAppPreferences.OrderStatus,
+			PaymentStatus: res.InAppPreferences.PaymentStatus,
+			ProductStatus: res.InAppPreferences.ProductStatus,
+			Promotion:     res.InAppPreferences.Promotion,
+		},
+	}, nil
 }

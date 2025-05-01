@@ -5,10 +5,13 @@ option go_package = "./notification_proto_gen";
 import "google/protobuf/timestamp.proto";
 import "metadata.proto";
 import "update_notification_preferences.proto";
+import "get_notification_preferences.proto";
 
 service NotificationService {
   // Khi user đăng ký ứng dụng để sử dụng -> sẽ tạo ra dữ liệu ở bảng notification_preferences
   rpc CreateUserSettingNotification(CreateUserSettingNotificationRequest) returns (CreateUserSettingNotificationResponse);
+
+  rpc GetUserSettingNotification(GetUserNotificationSettingRequest) returns (GetUserNotificationSettingResponse);
 
   // Khi user cập nhật lại việc nhận thông báo -> sẽ cập nhật
   rpc UpdateUserSettingNotification(UpdateUserSettingNotificationRequest) returns (UpdateUserSettingNotificationResponse);
@@ -96,4 +99,13 @@ message MarkAsReadRequest {
 message MarkAsReadResponse {
   bool success = 1;
   string error = 2;
+}
+
+message GetUserNotificationSettingRequest {
+  int64 user_id = 1;
+}
+
+message GetUserNotificationSettingResponse {
+  GetEmailNotificationPreferencesResponse email_preferences = 1;
+  GetInAppNotificationPreferencesResponse in_app_preferences = 2;
 }

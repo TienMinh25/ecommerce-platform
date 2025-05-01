@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	NotificationService_CreateUserSettingNotification_FullMethodName = "/NotificationService/CreateUserSettingNotification"
+	NotificationService_GetUserSettingNotification_FullMethodName    = "/NotificationService/GetUserSettingNotification"
 	NotificationService_UpdateUserSettingNotification_FullMethodName = "/NotificationService/UpdateUserSettingNotification"
 	NotificationService_SendNotification_FullMethodName              = "/NotificationService/SendNotification"
 	NotificationService_GetUserNotifications_FullMethodName          = "/NotificationService/GetUserNotifications"
@@ -32,6 +33,7 @@ const (
 type NotificationServiceClient interface {
 	// Khi user đăng ký ứng dụng để sử dụng -> sẽ tạo ra dữ liệu ở bảng notification_preferences
 	CreateUserSettingNotification(ctx context.Context, in *CreateUserSettingNotificationRequest, opts ...grpc.CallOption) (*CreateUserSettingNotificationResponse, error)
+	GetUserSettingNotification(ctx context.Context, in *GetUserNotificationSettingRequest, opts ...grpc.CallOption) (*GetUserNotificationSettingResponse, error)
 	// Khi user cập nhật lại việc nhận thông báo -> sẽ cập nhật
 	UpdateUserSettingNotification(ctx context.Context, in *UpdateUserSettingNotificationRequest, opts ...grpc.CallOption) (*UpdateUserSettingNotificationResponse, error)
 	// Gửi thông báo cho user
@@ -54,6 +56,16 @@ func (c *notificationServiceClient) CreateUserSettingNotification(ctx context.Co
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateUserSettingNotificationResponse)
 	err := c.cc.Invoke(ctx, NotificationService_CreateUserSettingNotification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *notificationServiceClient) GetUserSettingNotification(ctx context.Context, in *GetUserNotificationSettingRequest, opts ...grpc.CallOption) (*GetUserNotificationSettingResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserNotificationSettingResponse)
+	err := c.cc.Invoke(ctx, NotificationService_GetUserSettingNotification_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +118,7 @@ func (c *notificationServiceClient) MarkAsRead(ctx context.Context, in *MarkAsRe
 type NotificationServiceServer interface {
 	// Khi user đăng ký ứng dụng để sử dụng -> sẽ tạo ra dữ liệu ở bảng notification_preferences
 	CreateUserSettingNotification(context.Context, *CreateUserSettingNotificationRequest) (*CreateUserSettingNotificationResponse, error)
+	GetUserSettingNotification(context.Context, *GetUserNotificationSettingRequest) (*GetUserNotificationSettingResponse, error)
 	// Khi user cập nhật lại việc nhận thông báo -> sẽ cập nhật
 	UpdateUserSettingNotification(context.Context, *UpdateUserSettingNotificationRequest) (*UpdateUserSettingNotificationResponse, error)
 	// Gửi thông báo cho user
@@ -126,6 +139,9 @@ type UnimplementedNotificationServiceServer struct{}
 
 func (UnimplementedNotificationServiceServer) CreateUserSettingNotification(context.Context, *CreateUserSettingNotificationRequest) (*CreateUserSettingNotificationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateUserSettingNotification not implemented")
+}
+func (UnimplementedNotificationServiceServer) GetUserSettingNotification(context.Context, *GetUserNotificationSettingRequest) (*GetUserNotificationSettingResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserSettingNotification not implemented")
 }
 func (UnimplementedNotificationServiceServer) UpdateUserSettingNotification(context.Context, *UpdateUserSettingNotificationRequest) (*UpdateUserSettingNotificationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserSettingNotification not implemented")
@@ -174,6 +190,24 @@ func _NotificationService_CreateUserSettingNotification_Handler(srv interface{},
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(NotificationServiceServer).CreateUserSettingNotification(ctx, req.(*CreateUserSettingNotificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _NotificationService_GetUserSettingNotification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserNotificationSettingRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).GetUserSettingNotification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_GetUserSettingNotification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).GetUserSettingNotification(ctx, req.(*GetUserNotificationSettingRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -260,6 +294,10 @@ var NotificationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateUserSettingNotification",
 			Handler:    _NotificationService_CreateUserSettingNotification_Handler,
+		},
+		{
+			MethodName: "GetUserSettingNotification",
+			Handler:    _NotificationService_GetUserSettingNotification_Handler,
 		},
 		{
 			MethodName: "UpdateUserSettingNotification",

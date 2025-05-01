@@ -318,6 +318,20 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetNotificationSettingsResponse:
+    properties:
+      email_setting:
+        $ref: '#/definitions/api_gateway_dto.SettingsResponse'
+      in_app_setting:
+        $ref: '#/definitions/api_gateway_dto.SettingsResponse'
+    type: object
+  api_gateway_dto.GetNotificationSettingsResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetNotificationSettingsResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.GetPermissionResponse:
     properties:
       created_at:
@@ -564,6 +578,17 @@ definitions:
       name:
         type: string
     type: object
+  api_gateway_dto.SettingsResponse:
+    properties:
+      order_status:
+        type: boolean
+      payment_status:
+        type: boolean
+      product_status:
+        type: boolean
+      promotion:
+        type: boolean
+    type: object
   api_gateway_dto.UpdateAddressTypeBodyRequest:
     properties:
       address_type:
@@ -619,6 +644,38 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.UpdateEmailSettingRequest:
+    properties:
+      order_status:
+        type: boolean
+      payment_status:
+        type: boolean
+      product_status:
+        type: boolean
+      promotion:
+        type: boolean
+    required:
+    - order_status
+    - payment_status
+    - product_status
+    - promotion
+    type: object
+  api_gateway_dto.UpdateInAppSettingRequest:
+    properties:
+      order_status:
+        type: boolean
+      payment_status:
+        type: boolean
+      product_status:
+        type: boolean
+      promotion:
+        type: boolean
+    required:
+    - order_status
+    - payment_status
+    - product_status
+    - promotion
+    type: object
   api_gateway_dto.UpdateModuleByModuleIDRequest:
     properties:
       name:
@@ -634,6 +691,30 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.UpdateModuleByModuleIDResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.UpdateNotificationSettingsRequest:
+    properties:
+      email_setting:
+        $ref: '#/definitions/api_gateway_dto.UpdateEmailSettingRequest'
+      in_app_setting:
+        $ref: '#/definitions/api_gateway_dto.UpdateInAppSettingRequest'
+    required:
+    - email_setting
+    - in_app_setting
+    type: object
+  api_gateway_dto.UpdateNotificationSettingsResponse:
+    properties:
+      email_setting:
+        $ref: '#/definitions/api_gateway_dto.SettingsResponse'
+      in_app_setting:
+        $ref: '#/definitions/api_gateway_dto.SettingsResponse'
+    type: object
+  api_gateway_dto.UpdateNotificationSettingsResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateNotificationSettingsResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -2145,6 +2226,70 @@ paths:
       security:
       - BearerAuth: []
       summary: lấy presigned url để upload ảnh
+      tags:
+      - me
+  /users/me/notification-settings:
+    get:
+      consumes:
+      - application/json
+      description: Lấy cài đặt thông báo
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetNotificationSettingsResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Lấy cài đặt thông báo
+      tags:
+      - me
+    post:
+      consumes:
+      - application/json
+      description: Cập nhật cài đặt thông báo
+      parameters:
+      - description: Dữ liệu cập nhật
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateNotificationSettingsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateNotificationSettingsResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật cài đặt thông báo
       tags:
       - me
 securityDefinitions:

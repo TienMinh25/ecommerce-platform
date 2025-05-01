@@ -2,8 +2,10 @@ package notification_repository
 
 import (
 	"context"
+	"github.com/TienMinh25/ecommerce-platform/internal/notifications/models"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
@@ -45,8 +47,55 @@ func (n *notificationPreferencesRepository) CreateNotificationPreferences(ctx co
 			}
 		}
 
-		return status.Error(codes.Internal, "Error inserting notification_preferences record")
+		return status.Error(codes.Internal, "Error when create notification preferences setting for user")
 	}
 
 	return nil
+}
+
+func (n *notificationPreferencesRepository) UpdateNotificationPreferences(ctx context.Context, data *models.NotificationPreferences) (*models.NotificationPreferences, error) {
+	ctx, span := n.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateNotificationPreferences"))
+	defer span.End()
+
+	// update query
+	queryUpdate := `UPDATE notification_preferences
+					SET email_preferences = $1, in_app_preferences = $2
+					WHERE user_id = $3
+					RETURNING email_preferences, in_app_preferences`
+
+	args := []interface{}{data.EmailPreferences, data.InAppPreferences, data.UserID}
+	updatedRecord := models.NotificationPreferences{}
+
+	if err := n.db.QueryRow(ctx, queryUpdate, args...).Scan(&updatedRecord.EmailPreferences, &updatedRecord.InAppPreferences); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, status.Error(codes.NotFound, "Notification preferences not found")
+		}
+
+		return nil, status.Error(codes.Internal, "Error when update notification preferences setting for user")
+	}
+
+	return &updatedRecord, nil
+}
+
+func (n *notificationPreferencesRepository) GetNotificationPreferencesByUserID(ctx context.Context, userID int64) (*models.NotificationPreferences, error) {
+	ctx, span := n.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetNotificationPreferencesByUserID"))
+	defer span.End()
+
+	queryGet := `SELECT email_preferences, in_app_preferences
+				FROM notification_preferences
+				WHERE user_id = $1`
+
+	var res models.NotificationPreferences
+	if err := n.db.QueryRow(ctx, queryGet, userID).Scan(&res.EmailPreferences, &res.InAppPreferences); err != nil {
+		span.RecordError(err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, status.Error(codes.NotFound, "Notification preferences not found")
+		}
+
+		return nil, status.Error(codes.Internal, "Error when get notification preferences for user")
+	}
+
+	return &res, nil
 }

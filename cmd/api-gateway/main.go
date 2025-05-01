@@ -49,6 +49,8 @@ func NewGinEngine() *gin.Engine {
 func NewGrpcNotificationClient(env *env.EnvManager) notification_proto_gen.NotificationServiceClient {
 	var otps []grpc.DialOption
 
+	otps = append(otps, grpc.WithInsecure())
+
 	conn, err := grpc.NewClient(env.NotificationServerConfig.ServerAddresss, otps...)
 
 	if err != nil {
@@ -189,8 +191,6 @@ func main() {
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),
-		// todo: change to service and handler of role
-		fx.Invoke(func(role api_gateway_repository.IRoleRepository) {}),
 	)
 
 	app.Run()

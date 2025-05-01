@@ -6,8 +6,6 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type NotificationHandler struct {
@@ -39,7 +37,29 @@ func (h *NotificationHandler) CreateUserSettingNotification(ctx context.Context,
 }
 
 func (h *NotificationHandler) UpdateUserSettingNotification(ctx context.Context, data *notification_proto_gen.UpdateUserSettingNotificationRequest) (*notification_proto_gen.UpdateUserSettingNotificationResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "not implemented")
+	ctx, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateUserSettingNotification"))
+	defer span.End()
+
+	res, err := h.serviceNotiPreferences.UpdateNotificationPreferences(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func (h *NotificationHandler) GetUserSettingNotification(ctx context.Context, data *notification_proto_gen.GetUserNotificationSettingRequest) (*notification_proto_gen.GetUserNotificationSettingResponse, error) {
+	ctx, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetUserSettingNotification"))
+	defer span.End()
+
+	res, err := h.serviceNotiPreferences.GetNotificationPreferencesByUserID(ctx, data.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func (h *NotificationHandler) SendNotification(ctx context.Context, data *notification_proto_gen.SendNotificationRequest) (*notification_proto_gen.SendNotificationResponse, error) {
