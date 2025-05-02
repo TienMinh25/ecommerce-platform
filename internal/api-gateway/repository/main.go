@@ -127,3 +127,7 @@ type IRefreshTokenRepository interface {
 
 	RefreshToken(ctx context.Context, userID int, email string, oldRefreshToken, refreshToken string, expireAt time.Time) error
 }
+
+type IAddressRepository interface {
+	GetCurrentAddressByUserID(ctx context.Context, limit, page, userID int) ([]api_gateway_models.Address, int, error)
+}

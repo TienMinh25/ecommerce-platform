@@ -5,7 +5,7 @@ type ResponseSuccessDocs[T any] struct {
 	Metadata Metadata `json:"metadata"`
 }
 
-type ResponseSuccessPagingationDocs[T any] struct {
+type ResponseSuccessPaginationDocs[T any] struct {
 	Data     T                      `json:"data,omitempty"`
 	Metadata MetadataWithPagination `json:"metadata"`
 }
@@ -36,16 +36,16 @@ type Pagination struct {
 type DeleteAddressTypeResponseDocs = ResponseSuccessDocs[DeleteAddressTypeByAdminResponse]
 type UpdateAddressTypeResponseDocs = ResponseSuccessDocs[UpdateAddressTypeByAdminResponse]
 type CreateAddressTypeResponseDocs = ResponseSuccessDocs[CreateAddressTypeByAdminResponse]
-type ListAddressTypesResponseDocs = ResponseSuccessDocs[[]GetAddressTypeQueryResponse]
+type ListAddressTypesResponseDocs = ResponseSuccessPaginationDocs[[]GetAddressTypeQueryResponse]
 type GetAddressTypeByIdResponseDocs = ResponseSuccessDocs[GetAddressTypeByIdResponse]
 type GetModuleResponseDocs = ResponseSuccessDocs[GetModuleResponse]
 type CreateModuleResponseDocs = ResponseSuccessDocs[CreateModuleResponse]
 type UpdateModuleByModuleIDResponseDocs = ResponseSuccessDocs[UpdateModuleByModuleIDResponse]
-type GetListModuleResponseDocs = ResponseSuccessDocs[[]GetModuleResponse]
+type GetListModuleResponseDocs = ResponseSuccessPaginationDocs[[]GetModuleResponse]
 type DeletePermissionByPermissionIDURIResponseDocs = ResponseSuccessDocs[DeletePermissionByPermissionIDURIResponse]
 type GetPermissionResponseDocs = ResponseSuccessDocs[[]GetPermissionResponse]
 type CreatePermissionResponseDocs = ResponseSuccessDocs[CreatePermissionResponse]
-type GetListPermissionResponseDocs = ResponseSuccessDocs[[]GetPermissionResponse]
+type GetListPermissionResponseDocs = ResponseSuccessPaginationDocs[[]GetPermissionResponse]
 type UpdatePermissionByIDResponseDocs = ResponseSuccessDocs[UpdatePermissionByPermissionIDResponse]
 type RegisterResponseDocs = ResponseSuccessDocs[RegisterResponse]
 type LoginResponseDocs = ResponseSuccessDocs[LoginResponse]
@@ -58,12 +58,12 @@ type ForgotPasswordResponseDocs = ResponseSuccessDocs[ForgotPasswordResponse]
 type ResetPasswordResponseDocs = ResponseSuccessDocs[ResetPasswordResponse]
 type ChangePasswordResponseDocs = ResponseSuccessDocs[ChangePasswordResponse]
 type GetAuthorizationURLResponseDocs = ResponseSuccessDocs[GetAuthorizationURLResponse]
-type GetUserByAdminResponseDocs = ResponseSuccessDocs[GetUserByAdminResponse]
+type GetUserByAdminResponseDocs = ResponseSuccessPaginationDocs[[]GetUserByAdminResponse]
 type RoleLoginResponseDocs = ResponseSuccessDocs[RoleLoginResponse]
 type CreateUserByAdminResponseDocs = ResponseSuccessDocs[CreateUserByAdminResponse]
 type UpdateUserByAdminResponseDocs = ResponseSuccessDocs[UpdateUserByAdminResponse]
 type DeleteUserByAdminResponseDocs = ResponseSuccessDocs[DeleteUserByAdminResponse]
-type GetRoleResponseDocs = ResponseSuccessDocs[[]GetRoleResponse]
+type GetRoleResponseDocs = ResponseSuccessPaginationDocs[[]GetRoleResponse]
 type CreateRoleResponseDocs = ResponseSuccessDocs[CreateRoleResponse]
 type UpdateRolesResponseDocs = ResponseSuccessDocs[UpdateRoleResponse]
 type DeleteRolesResponseDocs = ResponseSuccessDocs[DeleteRoleResponse]
@@ -72,3 +72,4 @@ type GetCurrentUserResponseDocs = ResponseSuccessDocs[GetCurrentUserResponse]
 type UpdateCurrentUserResponseDocs = ResponseSuccessDocs[UpdateCurrentUserResponse]
 type UpdateNotificationSettingsResponseDocs = ResponseSuccessDocs[UpdateNotificationSettingsResponse]
 type GetNotificationSettingsResponseDocs = ResponseSuccessDocs[GetNotificationSettingsResponse]
+type GetListCurrentAddressResponseDocs = ResponseSuccessPaginationDocs[[]GetUserAddressResponse]

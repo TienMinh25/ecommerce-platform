@@ -1339,6 +1339,8 @@ func seedAttributeDefinitions(ctx context.Context, db *pgxpool.Pool) {
 		{"Phong cách", "Phong cách thời trang", "select", true, false},
 		{"Loại thiết bị", "Loại thiết bị thể thao", "select", true, false},
 		{"Hệ điều hành", "Hệ điều hành thiết bị", "select", true, false},
+		// Add the missing attribute
+		{"Kích cỡ màn hình", "Kích thước màn hình hiển thị", "select", true, false},
 	}
 
 	// Seed attribute definitions
@@ -1936,11 +1938,11 @@ func createProductVariants(
 
 		// Thêm thuộc tính cho biến thể
 		_, err = db.Exec(ctx, `
-            INSERT INTO product_variant_attributes (
-                product_variant_id, attribute_definition_id, attribute_option_id, text_value
-            )
-            VALUES ($1, $2, $3, $4);
-        `, variantID, attributeDefs[attrName], optionID, attrValue)
+			INSERT INTO product_variant_attributes (
+				product_variant_id, attribute_definition_id, attribute_option_id
+			)
+			VALUES ($1, $2, $3);
+		`, variantID, attributeDefs[attrName], optionID)
 
 		if err != nil {
 			log.Printf("Error inserting product variant attribute: %v", err)

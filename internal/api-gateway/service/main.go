@@ -77,6 +77,9 @@ type IUserMeService interface {
 	GetAvatarUploadURL(ctx context.Context, data *api_gateway_dto.GetAvatarPresignedURLRequest, userID int) (string, error)
 	UpdateNotificationSettings(ctx context.Context, data *api_gateway_dto.UpdateNotificationSettingsRequest, userID int) (*api_gateway_dto.UpdateNotificationSettingsResponse, error)
 	GetNotificationSettings(ctx context.Context, userID int) (*api_gateway_dto.GetNotificationSettingsResponse, error)
+
+	// addresses
+	GetListCurrentAddress(ctx context.Context, data *api_gateway_dto.GetUserAddressRequest, userID int) ([]api_gateway_dto.GetUserAddressResponse, int, int, bool, bool, error)
 }
 
 type IRoleService interface {

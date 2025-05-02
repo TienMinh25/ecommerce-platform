@@ -182,6 +182,7 @@ func main() {
 			api_gateway_repository.NewUserPasswordRepository,
 			api_gateway_repository.NewRefreshTokenRepository,
 			api_gateway_repository.NewRoleRepository,
+			api_gateway_repository.NewAddressRepository,
 			// tracer
 			NewTracerApiGatewayService,
 			// adapter

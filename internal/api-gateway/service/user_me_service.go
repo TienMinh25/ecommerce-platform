@@ -13,24 +13,28 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"math"
 	"net/http"
 	"path/filepath"
 	"time"
 )
 
 type userMeService struct {
-	tracer   pkg.Tracer
-	userRepo api_gateway_repository.IUserRepository
-	minio    pkg.Storage
-	client   notification_proto_gen.NotificationServiceClient
+	tracer      pkg.Tracer
+	userRepo    api_gateway_repository.IUserRepository
+	addressRepo api_gateway_repository.IAddressRepository
+	minio       pkg.Storage
+	client      notification_proto_gen.NotificationServiceClient
 }
 
-func NewUserMeService(tracer pkg.Tracer, userRepo api_gateway_repository.IUserRepository, minio pkg.Storage, client notification_proto_gen.NotificationServiceClient) IUserMeService {
+func NewUserMeService(tracer pkg.Tracer, userRepo api_gateway_repository.IUserRepository, minio pkg.Storage,
+	client notification_proto_gen.NotificationServiceClient, addressRepo api_gateway_repository.IAddressRepository) IUserMeService {
 	return &userMeService{
-		tracer:   tracer,
-		userRepo: userRepo,
-		minio:    minio,
-		client:   client,
+		tracer:      tracer,
+		userRepo:    userRepo,
+		minio:       minio,
+		client:      client,
+		addressRepo: addressRepo,
 	}
 }
 
@@ -232,4 +236,40 @@ func (u *userMeService) GetNotificationSettings(ctx context.Context, userID int)
 			Promotion:     res.InAppPreferences.Promotion,
 		},
 	}, nil
+}
+
+func (u *userMeService) GetListCurrentAddress(ctx context.Context, data *api_gateway_dto.GetUserAddressRequest, userID int) ([]api_gateway_dto.GetUserAddressResponse, int, int, bool, bool, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetUserAddress"))
+	defer span.End()
+
+	res, totalItems, err := u.addressRepo.GetCurrentAddressByUserID(ctx, data.Limit, data.Page, userID)
+
+	if err != nil {
+		return nil, 0, 0, false, false, err
+	}
+
+	totalPages := int(math.Ceil(float64(totalItems) / float64(data.Limit)))
+
+	hasNext := data.Page < totalPages
+	hasPrevious := data.Page > 1
+
+	var response []api_gateway_dto.GetRoleResponse
+
+	for _, role := range res {
+		description := ""
+
+		if role.Description != nil {
+			description = *role.Description
+		}
+
+		response = append(response, api_gateway_dto.GetRoleResponse{
+			ID:          role.ID,
+			Name:        role.RoleName,
+			Description: description,
+			UpdatedAt:   role.UpdatedAt,
+			Permissions: role.ModulePermissions,
+		})
+	}
+
+	return response, totalItems, totalPages, hasNext, hasPrevious, nil
 }

@@ -222,6 +222,23 @@ func (u *userHandler) GetNotificationSettings(ctx *gin.Context) {
 	utils.SuccessResponse(ctx, http.StatusOK, *res)
 }
 
+// GetCurrentAddress godoc
+//
+//	@Summary		Lấy danh sách địa chỉ của người dùng
+//	@Tags			me
+//	@Description	Lấy danh sách địa chỉ của người dùng
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+// @Param reqQuery query api_gateway_dto.GetUserAddressRequest false "Page and limit to get pagination"
+//
+//	@Success		200	{object}	api_gateway_dto.GetListCurrentAddressResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/addresses [get]
 func (u *userHandler) GetCurrentAddress(ctx *gin.Context) {
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)
@@ -231,6 +248,23 @@ func (u *userHandler) GetCurrentAddress(ctx *gin.Context) {
 	userClaimsRaw, _ := ctx.Get("user")
 	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
 
+	var queryReq api_gateway_dto.GetUserAddressRequest
+
+	if err := ctx.ShouldBindQuery(&queryReq); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	res, totalItems, totalPages, hasNext, hasPrevious, err := u.service.GetListCurrentAddress(ct, &queryReq, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.PaginatedResponse(ctx, res, queryReq.Page, queryReq.Limit, totalPages, totalItems, hasNext, hasPrevious)
 }
 
 func (u *userHandler) CreateNewAddress(ctx *gin.Context) {}
