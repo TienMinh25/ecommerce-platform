@@ -28,9 +28,9 @@ foreign key (attribute_option_id) references
     attribute_options(id) on delete set null;
 
 -- index
-alter table product_variant_attributes
-add constraint unique_attribute_option_id_product_variant_attributes
-unique (attribute_option_id);
+
+create index if not exists idx_attribute_option_id_product_variant_attributes
+on product_variant_attributes(attribute_option_id);
 
 create index if not exists idx_product_variant_id_product_variant_attributes
 on product_variant_attributes(product_variant_id);

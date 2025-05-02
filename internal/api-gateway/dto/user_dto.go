@@ -71,3 +71,23 @@ type GetNotificationSettingsResponse struct {
 	EmailSetting SettingsResponse `json:"email_setting"`
 	InAppSetting SettingsResponse `json:"in_app_setting"`
 }
+
+type GetUserAddressRequest struct {
+	Limit int `form:"limit,default=1" binding:"omitempty,gte=1"`
+	Page  int `form:"page,default=1" binding:"omitempty,gte=1"`
+}
+
+type GetUserAddressResponse struct {
+	ID            int     `json:"id"`
+	RecipientName string  `json:"recipient_name"`
+	Phone         string  `json:"phone"`
+	Street        string  `json:"street"`
+	District      string  `json:"district"`
+	Province      string  `json:"province"`
+	PostalCode    string  `json:"postal_code"`
+	Country       string  `json:"country"`
+	IsDefault     bool    `json:"is_default"`
+	Longtitude    float64 `json:"longtitude"`
+	Lattitude     float64 `json:"lattitude"`
+	AddressType   string  `json:"address_type"`
+}

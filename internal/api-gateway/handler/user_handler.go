@@ -221,3 +221,22 @@ func (u *userHandler) GetNotificationSettings(ctx *gin.Context) {
 
 	utils.SuccessResponse(ctx, http.StatusOK, *res)
 }
+
+func (u *userHandler) GetCurrentAddress(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetCurrentAddress"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+}
+
+func (u *userHandler) CreateNewAddress(ctx *gin.Context) {}
+
+func (u *userHandler) UpdateAddressByID(ctx *gin.Context) {}
+
+func (u *userHandler) DeleteAddressByID(ctx *gin.Context) {}
+
+func (u *userHandler) SetDefaultAddressForUser(ctx *gin.Context) {}
