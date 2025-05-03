@@ -9,7 +9,7 @@ import {
     VStack,
     useColorModeValue
 } from '@chakra-ui/react';
-import { FaUser, FaLock, FaMapMarkerAlt, FaShoppingBag, FaHeart, FaBell } from 'react-icons/fa';
+import {FaUser, FaLock, FaMapMarkerAlt, FaShoppingBag, FaHeart, FaBell, FaEnvelope} from 'react-icons/fa';
 import { useAuth } from '../../hooks/useAuth';
 
 // This component is designed to work within MainLayout's Outlet
@@ -23,7 +23,8 @@ const UserAccountLayout = () => {
         { label: 'Đổi mật khẩu', icon: <FaLock />, path: '/user/account/password' },
         { label: 'Địa chỉ', icon: <FaMapMarkerAlt />, path: '/user/account/addresses' },
         { label: 'Đơn hàng của tôi', icon: <FaShoppingBag />, path: '/user/account/orders' },
-        { label: 'Cài đặt thông báo', icon: <FaBell />, path: '/user/account/notifications' },
+        { label: 'Cài đặt thông báo', icon: <FaBell />, path: '/user/account/notifications/settings' },
+        {label: 'Thông báo của tôi', icon: <FaEnvelope />, path: '/user/account/notifications/see'}
     ];
 
     // Check if a menu item is active
