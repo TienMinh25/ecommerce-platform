@@ -379,6 +379,15 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
     type: object
+  api_gateway_dto.GetListNotificationsHistoryResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetNotificationsHistory'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.MetadataNotification'
+    type: object
   api_gateway_dto.GetModuleResponse:
     properties:
       created_at:
@@ -410,6 +419,27 @@ definitions:
         $ref: '#/definitions/api_gateway_dto.GetNotificationSettingsResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetNotificationsHistory:
+    properties:
+      content:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      image_url:
+        type: string
+      is_read:
+        type: boolean
+      title:
+        type: string
+      type:
+        type: integer
+      updated_at:
+        type: string
+      user_id:
+        type: integer
     type: object
   api_gateway_dto.GetPermissionResponse:
     properties:
@@ -457,8 +487,8 @@ definitions:
     type: object
   api_gateway_dto.GetUserAddressResponse:
     properties:
-      address_type:
-        type: string
+      address_type_id:
+        type: integer
       country:
         type: string
       district:
@@ -579,9 +609,27 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.MarkNotificationResponse:
+    type: object
+  api_gateway_dto.MarkNotificationResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.MarkNotificationResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.Metadata:
     properties:
       code:
+        type: integer
+    type: object
+  api_gateway_dto.MetadataNotification:
+    properties:
+      code:
+        type: integer
+      pagination:
+        $ref: '#/definitions/api_gateway_dto.Pagination'
+      unread:
         type: integer
     type: object
   api_gateway_dto.MetadataWithPagination:
@@ -2773,6 +2821,108 @@ paths:
       security:
       - BearerAuth: []
       summary: Cập nhật cài đặt thông báo
+      tags:
+      - me
+  /users/me/notifications:
+    get:
+      consumes:
+      - application/json
+      description: Lấy danh sách lịch sử thông báo
+      parameters:
+      - in: query
+        minimum: 1
+        name: limit
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetListNotificationsHistoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Lấy danh sách lịch sử thông báo
+      tags:
+      - me
+  /users/me/notifications/{notificationID}/mark-read:
+    post:
+      consumes:
+      - application/json
+      description: Đánh dấu một thông báo đã được đọc
+      parameters:
+      - description: notification id
+        in: path
+        name: notificationID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.MarkNotificationResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Đánh dấu một thông báo đã được đọc
+      tags:
+      - me
+  /users/me/notifications/mark-all-read:
+    post:
+      consumes:
+      - application/json
+      description: Đánh dấu tất cả thông báo đã được đọc
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.MarkNotificationResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Đánh dấu tất cả thông báo đã được đọc
       tags:
       - me
 securityDefinitions:

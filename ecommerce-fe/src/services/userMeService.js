@@ -202,6 +202,41 @@ const userMeService = {
             throw error;
         }
     },
+
+    // Get notifications with pagination
+    getNotifications: async (params = { page: 1, limit: 5 }) => {
+        try {
+            const response = await api.get('/users/me/notifications', {
+                params: {
+                    page: params.page,
+                    limit: params.limit
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+// Mark a single notification as read
+    markNotificationAsRead: async (notificationId) => {
+        try {
+            const response = await api.post(`/users/me/notifications/${notificationId}/mark-read`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+// Mark all notifications as read
+    markAllNotificationsAsRead: async () => {
+        try {
+            const response = await api.post('/users/me/notifications/mark-all-read');
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
 };
 
 export default userMeService;

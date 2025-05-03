@@ -28,10 +28,11 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { useState } from 'react';
-import { FaBell, FaShoppingCart, FaStore, FaShippingFast, FaUserShield } from 'react-icons/fa';
+import { FaShoppingCart, FaStore, FaShippingFast, FaUserShield } from 'react-icons/fa';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Logo from '../ui/Logo';
+import NotificationBell from '../notifications/NotificationBell';
 
 // Định nghĩa constants cho các role
 const ROLE_CUSTOMER = 'customer';
@@ -137,28 +138,9 @@ const Header = () => {
                   />
               )}
 
-              {/* Notification icon */}
-              <Box
-                  position='relative'
-                  display={{ base: 'none', md: 'block' }}
-              >
-                <IconButton
-                    as={RouterLink}
-                    to='/notifications'
-                    aria-label='Notifications'
-                    icon={<FaBell />}
-                    variant='ghost'
-                />
-                <Badge
-                    position='absolute'
-                    top='-2px'
-                    right='-2px'
-                    colorScheme='red'
-                    borderRadius='full'
-                    size='xs'
-                >
-                  3
-                </Badge>
+              {/* Notification bell - replaced with new component */}
+              <Box display={{ base: 'none', md: 'block' }}>
+                <NotificationBell />
               </Box>
 
               {/* Cart icon */}

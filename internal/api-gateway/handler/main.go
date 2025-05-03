@@ -72,6 +72,11 @@ type IUserHandler interface {
 	UpdateAddressByID(ctx *gin.Context)
 	DeleteAddressByID(ctx *gin.Context)
 	SetDefaultAddressForUser(ctx *gin.Context)
+
+	// notifications
+	GetListNotificationsHistory(ctx *gin.Context)
+	MarkAllNotificationsRead(ctx *gin.Context)
+	MarkOnlyOneNotificationRead(ctx *gin.Context)
 }
 
 type IAdministrativeDivisionHandler interface {

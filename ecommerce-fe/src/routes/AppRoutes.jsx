@@ -28,6 +28,7 @@ import ChangePassword from "../components/user/ChangePassword.jsx";
 import UserAddresses from "../components/user/UserAddresses.jsx";
 import NotificationSettings from "../components/user/NotificationSettings.jsx";
 import UserOrders from "../components/user/UserOrders.jsx";
+import UserNotifications from "../components/user/UserNotifications.jsx";
 
 const AppRoutes = () => {
     return (
@@ -53,8 +54,9 @@ const AppRoutes = () => {
                         <Route path='profile' element={<UserProfile />} />
                         <Route path='password' element={<ChangePassword />} />
                         <Route path='addresses' element={<UserAddresses />} />
-                        <Route path='notifications' element={<NotificationSettings />} />
+                        <Route path='notifications/settings' element={<NotificationSettings />} />
                         <Route path='orders' element={<UserOrders />} />
+                        <Route path='notifications/see' element={<UserNotifications />} />
                     </Route>
                 </Route>
                 <Route path='/dashboard' element={<DashboardLayout />}>

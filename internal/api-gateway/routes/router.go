@@ -154,6 +154,11 @@ func registerUserMeHandler(group *gin.RouterGroup, permissionMiddleware *middlew
 		userMeGroup.PATCH("/addresses/:addressID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateAddressByID)
 		userMeGroup.DELETE("/addresses/:addressID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Delete), handler.DeleteAddressByID)
 		userMeGroup.PATCH("/addresses/:addressID/default", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.SetDefaultAddressForUser)
+
+		// notifications
+		userMeGroup.GET("/notifications", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetListNotificationsHistory)
+		userMeGroup.POST("/notifications/mark-all-read", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.MarkAllNotificationsRead)
+		userMeGroup.POST("/notifications/:notificationID/mark-read", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.MarkOnlyOneNotificationRead)
 	}
 }
 

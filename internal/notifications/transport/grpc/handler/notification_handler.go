@@ -69,9 +69,36 @@ func (h *NotificationHandler) SendNotification(ctx context.Context, data *notifi
 }
 
 func (h *NotificationHandler) GetUserNotifications(ctx context.Context, data *notification_proto_gen.GetUserNotificationsRequest) (*notification_proto_gen.GetUserNotificationsResponse, error) {
-	return nil, nil
+	ctx, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetUserNotifications"))
+	defer span.End()
+
+	res, err := h.service.GetListNotificationHistory(ctx, data.Limit, data.Page, data.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func (h *NotificationHandler) MarkAsRead(ctx context.Context, data *notification_proto_gen.MarkAsReadRequest) (*notification_proto_gen.MarkAsReadResponse, error) {
-	return nil, nil
+	ctx, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "MarkAsRead"))
+	defer span.End()
+
+	if err := h.service.MarkAsRead(ctx, data); err != nil {
+		return nil, err
+	}
+
+	return &notification_proto_gen.MarkAsReadResponse{}, nil
+}
+
+func (h *NotificationHandler) MarkAllRead(ctx context.Context, data *notification_proto_gen.MarkAllReadRequest) (*notification_proto_gen.MarkAsReadResponse, error) {
+	ctx, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "MarkAllRead"))
+	defer span.End()
+
+	if err := h.service.MarkAllRead(ctx, data); err != nil {
+		return nil, err
+	}
+
+	return &notification_proto_gen.MarkAsReadResponse{}, nil
 }

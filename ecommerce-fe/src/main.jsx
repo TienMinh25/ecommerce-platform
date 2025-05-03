@@ -6,12 +6,15 @@ import App from './App';
 import theme from './config/theme';
 import './index.css';
 import { AuthProvider } from './context/AuthProvider';
+import {NotificationProvider} from "./context/NotificationProvider.jsx";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
         <ChakraProvider theme={theme}>
             <AuthProvider>
-                <App />
+                <NotificationProvider>
+                    <App />
+                </NotificationProvider>
             </AuthProvider>
         </ChakraProvider>
     </BrowserRouter>
