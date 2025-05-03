@@ -19,6 +19,9 @@ import { useRef, useState } from 'react';
 import { FaArrowRight } from 'react-icons/fa';
 import { Link as RouterLink } from 'react-router-dom';
 import ProductCard from '../components/products/ProductCard';
+import slideImage from '../assets/images/sale.png'
+import freeshipImage from '../assets/images/freeship.png'
+import newCollectionImage from '../assets/images/new_collection.png'
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -27,27 +30,21 @@ const Home = () => {
   const slides = [
     {
       id: 1,
-      title: 'Siêu sale tháng 6',
-      description: 'Giảm đến 70% toàn bộ sản phẩm',
-      image: 'https://via.placeholder.com/1200x400?text=Banner+1',
-      buttonText: 'Mua ngay',
-      buttonLink: '/promotions/summer-sale',
+      title: 'Siêu sale',
+      description: 'Giảm đến 50% toàn bộ sản phẩm',
+      image: slideImage,
     },
     {
       id: 2,
       title: 'Bộ sưu tập mới',
       description: 'Khám phá xu hướng thời trang 2025',
-      image: 'https://via.placeholder.com/1200x400?text=Banner+2',
-      buttonText: 'Xem ngay',
-      buttonLink: '/collections/new-arrivals',
+      image: newCollectionImage,
     },
     {
       id: 3,
       title: 'Miễn phí vận chuyển',
       description: 'Cho đơn hàng từ 299.000đ',
-      image: 'https://via.placeholder.com/1200x400?text=Banner+3',
-      buttonText: 'Tìm hiểu thêm',
-      buttonLink: '/shipping-policy',
+      image: freeshipImage,
     },
   ];
 
@@ -192,12 +189,15 @@ const Home = () => {
                     minW='100%'
                     h={{ base: '200px', md: '300px', lg: '400px' }}
                 >
-                  <Image
-                      src={slide.image}
-                      alt={slide.title}
-                      objectFit='cover'
-                      w='100%'
-                      h='100%'
+                  <Box
+                      position='absolute'
+                      top='0'
+                      left='0'
+                      right='0'
+                      bottom='0'
+                      backgroundImage={`url(${slide.image})`}
+                      backgroundSize='cover'
+                      backgroundPosition='center'
                   />
                   <Box
                       position='absolute'
@@ -222,16 +222,6 @@ const Home = () => {
                         <Text fontSize={{ base: 'md', md: 'lg' }}>
                           {slide.description}
                         </Text>
-                        <Box>
-                          <Button
-                              as={RouterLink}
-                              to={slide.buttonLink}
-                              colorScheme='brand'
-                              size='lg'
-                          >
-                            {slide.buttonText}
-                          </Button>
-                        </Box>
                       </Stack>
                     </Container>
                   </Box>
@@ -249,8 +239,11 @@ const Home = () => {
               borderRadius='full'
               onClick={prevSlide}
               bg='white'
+              color='black' // Thêm màu cho icon
+              boxShadow='md' // Thêm shadow để nổi bật hơn
               opacity='0.8'
-              _hover={{ opacity: 1 }}
+              _hover={{ opacity: 1, bg: 'white' }} // Đảm bảo hover vẫn giữ màu trắng
+              zIndex='1'
           />
 
           <IconButton
@@ -263,8 +256,11 @@ const Home = () => {
               borderRadius='full'
               onClick={nextSlide}
               bg='white'
+              color='black' // Thêm màu cho icon
+              boxShadow='md' // Thêm shadow để nổi bật hơn
               opacity='0.8'
-              _hover={{ opacity: 1 }}
+              _hover={{ opacity: 1, bg: 'white' }} // Đảm bảo hover vẫn giữ màu trắng
+              zIndex='1'
           />
         </Box>
 
