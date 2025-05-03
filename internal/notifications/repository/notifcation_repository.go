@@ -51,7 +51,7 @@ func (n *notificationRepository) GetListNotificationHistory(ctx context.Context,
 					ORDER BY created_at DESC
 					LIMIT $2 OFFSET $3`
 
-	rows, err := n.db.Query(ctx, querySelect, userID, limit, page)
+	rows, err := n.db.Query(ctx, querySelect, userID, limit, (page-1)*limit)
 
 	if err != nil {
 		return nil, 0, 0, status.Error(codes.Internal, "Error when select notification history")

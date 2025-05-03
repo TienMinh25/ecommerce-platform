@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Container,
@@ -10,7 +10,10 @@ import {
     Divider,
     Spinner,
     Center,
+    HStack,
+    IconButton,
 } from '@chakra-ui/react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import NotificationItem from '../notifications/NotificationItem.jsx';
 import useNotification from "../../hooks/useNotification.js";
 
@@ -19,19 +22,38 @@ const UserNotifications = () => {
         notifications,
         unreadCount,
         isLoading,
+        isPaginating,
         fetchNotifications,
         markAllAsRead,
         markAsRead,
+        pagination
     } = useNotification();
 
-    // Fetch all notifications with a larger limit when component mounts
+    // Thêm state cho phân trang
+    const [currentPage, setCurrentPage] = useState(1);
+    // Thêm state lưu trữ dữ liệu hiện tại
+    const [displayedNotifications, setDisplayedNotifications] = useState([]);
+    const pageSize = 10;
+
+    // Cập nhật displayedNotifications khi notifications thay đổi và không trong trạng thái paginating
     useEffect(() => {
-        fetchNotifications(1, 20); // Fetch more notifications for the full page view
-    }, [fetchNotifications]);
+        if (!isPaginating) {
+            setDisplayedNotifications(notifications);
+        }
+    }, [notifications, isPaginating]);
+
+    // Fetch notifications với phân trang
+    useEffect(() => {
+        fetchNotifications(currentPage, pageSize, currentPage > 1);
+    }, [fetchNotifications, currentPage, pageSize]);
 
     // Group notifications by date for better display
     const groupNotificationsByDate = (notifications) => {
         const grouped = {};
+
+        if (!notifications || !Array.isArray(notifications)) {
+            return grouped;
+        }
 
         notifications.forEach(notification => {
             const date = new Date(notification.created_at);
@@ -51,6 +73,19 @@ const UserNotifications = () => {
         return grouped;
     };
 
+    // Xử lý chuyển trang
+    const handleNextPage = () => {
+        if (pagination && currentPage < pagination.total_pages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handlePrevPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
     // Handle notification click
     const handleNotificationClick = (notification) => {
         // Mark as read if not already read
@@ -59,10 +94,14 @@ const UserNotifications = () => {
         }
     };
 
-    const groupedNotifications = groupNotificationsByDate(notifications);
+    // Sử dụng displayedNotifications thay vì notifications
+    const groupedNotifications = groupNotificationsByDate(displayedNotifications);
     const dateGroups = Object.keys(groupedNotifications).sort((a, b) =>
         new Date(b) - new Date(a)
     );
+
+    // Lấy giá trị totalPages từ pagination
+    const totalPages = pagination?.total_pages || 1;
 
     return (
         <Container maxW="container.lg" py={6}>
@@ -107,7 +146,31 @@ const UserNotifications = () => {
                 </Flex>
 
                 {/* Notification Content */}
-                <Box minH="500px">
+                <Box minH="500px" position="relative">
+                    {/* Overlay loading khi đang chuyển trang */}
+                    {isPaginating && (
+                        <Box
+                            position="absolute"
+                            top="0"
+                            left="0"
+                            right="0"
+                            bottom="0"
+                            bg="rgba(255, 255, 255, 0.7)"
+                            zIndex="10"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                        >
+                            <Spinner
+                                thickness="4px"
+                                speed="0.65s"
+                                emptyColor="gray.200"
+                                color="brand.500"
+                                size="lg"
+                            />
+                        </Box>
+                    )}
+
                     {isLoading ? (
                         <Center py={10}>
                             <Spinner
@@ -118,7 +181,7 @@ const UserNotifications = () => {
                                 size="xl"
                             />
                         </Center>
-                    ) : notifications.length === 0 ? (
+                    ) : !displayedNotifications || displayedNotifications.length === 0 ? (
                         <Center py={10} flexDirection="column">
                             <Text color="gray.500" fontSize="lg" mb={2}>
                                 Không có thông báo nào
@@ -156,6 +219,31 @@ const UserNotifications = () => {
                                     ))}
                                 </Box>
                             ))}
+
+                            <Flex justify="center" p={4} borderTop="1px" borderColor="gray.200">
+                                <HStack spacing={4}>
+                                    <IconButton
+                                        icon={<ChevronLeftIcon />}
+                                        aria-label="Previous page"
+                                        onClick={handlePrevPage}
+                                        isDisabled={currentPage === 1 || isPaginating}
+                                        size="sm"
+                                    />
+
+                                    <Text fontSize="sm" fontWeight="medium">
+                                        Trang {currentPage} / {totalPages}
+                                    </Text>
+
+                                    <IconButton
+                                        icon={<ChevronRightIcon />}
+                                        aria-label="Next page"
+                                        onClick={handleNextPage}
+                                        isDisabled={currentPage === totalPages || isPaginating}
+                                        size="sm"
+                                    />
+                                </HStack>
+                            </Flex>
+
                         </Box>
                     )}
                 </Box>

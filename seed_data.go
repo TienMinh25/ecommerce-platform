@@ -2824,8 +2824,8 @@ func seedOrders(ctx context.Context, db *pgxpool.Pool, userIDs []int64) {
 }
 
 func seedNotifications(ctx context.Context, db *pgxpool.Pool, userIDs []int64) {
-	// Số lượng thông báo mỗi người dùng (3-10)
-	numPerUser := 5
+	// Số lượng thông báo mỗi người dùng (tăng từ 5 lên 15)
+	numPerUser := 15
 
 	// Các loại thông báo
 	types := []int{1, 2, 3, 4, 5} // 1: order, 2: payment, 3: product, 4: promotion, 5: system
@@ -2837,27 +2837,38 @@ func seedNotifications(ctx context.Context, db *pgxpool.Pool, userIDs []int64) {
 			"Đơn hàng đang được xử lý",
 			"Đơn hàng đang được giao",
 			"Đơn hàng đã được giao thành công",
+			"Cập nhật trạng thái đơn hàng",
+			"Thông báo về đơn hàng của bạn",
 		},
 		2: { // Payment
 			"Thanh toán thành công",
 			"Thanh toán đang được xử lý",
 			"Yêu cầu thanh toán đơn hàng",
+			"Hóa đơn mới",
+			"Xác nhận thanh toán",
 		},
 		3: { // Product
 			"Sản phẩm đang giảm giá",
 			"Sản phẩm bạn quan tâm đã có hàng",
 			"Đánh giá sản phẩm đã mua",
+			"Sản phẩm mới ra mắt",
+			"Cập nhật thông tin sản phẩm",
 		},
 		4: { // Promotion
 			"Khuyến mãi mùa hè",
 			"Flash sale cuối tuần",
 			"Mã giảm giá cho thành viên",
 			"Ưu đãi đặc biệt dành cho bạn",
+			"Quà tặng sinh nhật",
+			"Ưu đãi độc quyền",
 		},
 		5: { // System
 			"Cập nhật thông tin tài khoản",
 			"Xác thực tài khoản thành công",
 			"Bảo mật tài khoản",
+			"Thay đổi mật khẩu",
+			"Cập nhật ứng dụng",
+			"Thông báo bảo trì hệ thống",
 		},
 	}
 
@@ -2867,27 +2878,38 @@ func seedNotifications(ctx context.Context, db *pgxpool.Pool, userIDs []int64) {
 			"Đơn hàng #ORDER-ID của bạn đang được xử lý. Dự kiến đơn hàng sẽ được giao trong 3-5 ngày tới.",
 			"Đơn hàng #ORDER-ID của bạn đang được giao. Vui lòng chuẩn bị nhận hàng.",
 			"Đơn hàng #ORDER-ID của bạn đã được giao thành công. Cảm ơn bạn đã mua sắm!",
+			"Chúng tôi đã cập nhật trạng thái đơn hàng #ORDER-ID của bạn. Vui lòng kiểm tra chi tiết trong tài khoản.",
+			"Có thông báo mới về đơn hàng #ORDER-ID. Vui lòng kiểm tra để biết thêm chi tiết.",
 		},
 		2: { // Payment
 			"Thanh toán đơn hàng #ORDER-ID của bạn đã thành công. Cảm ơn bạn!",
 			"Thanh toán đơn hàng #ORDER-ID của bạn đang được xử lý. Chúng tôi sẽ thông báo cho bạn khi hoàn tất.",
 			"Vui lòng thanh toán đơn hàng #ORDER-ID của bạn trong vòng 24 giờ để tránh bị hủy.",
+			"Hóa đơn mới cho đơn hàng #ORDER-ID đã được tạo. Vui lòng thanh toán đúng hạn.",
+			"Chúng tôi đã nhận được thanh toán cho đơn hàng #ORDER-ID của bạn. Xác nhận thanh toán đã hoàn tất.",
 		},
 		3: { // Product
 			"Sản phẩm [PRODUCT-NAME] bạn đã xem gần đây đang được giảm giá 20%. Mua ngay!",
 			"Sản phẩm [PRODUCT-NAME] bạn quan tâm đã có hàng trở lại. Nhanh tay mua ngay!",
 			"Bạn đã mua sản phẩm [PRODUCT-NAME] gần đây. Vui lòng đánh giá sản phẩm để nhận voucher!",
+			"Sản phẩm mới [PRODUCT-NAME] vừa ra mắt. Khám phá ngay hôm nay với ưu đãi đặc biệt!",
+			"Thông tin về sản phẩm [PRODUCT-NAME] bạn đã mua đã được cập nhật. Kiểm tra ngay!",
 		},
 		4: { // Promotion
 			"Khuyến mãi mùa hè với hàng ngàn sản phẩm giảm giá lên đến 50%. Khám phá ngay!",
 			"Flash sale cuối tuần - Giảm giá sốc chỉ trong 2 giờ. Bắt đầu từ 20:00 tối nay.",
 			"Tặng bạn mã giảm giá SUMMER10 giảm 10% cho đơn hàng tiếp theo. Hạn sử dụng 7 ngày.",
 			"Ưu đãi đặc biệt cho thành viên thân thiết - Giảm 15% cho các sản phẩm thời trang.",
+			"Chúc mừng sinh nhật! Tặng bạn voucher giảm 100.000đ cho đơn hàng từ 500.000đ.",
+			"Ưu đãi độc quyền dành riêng cho bạn - Mua 1 tặng 1 cho các sản phẩm chăm sóc cá nhân.",
 		},
 		5: { // System
 			"Thông tin tài khoản của bạn đã được cập nhật thành công.",
 			"Tài khoản của bạn đã được xác thực thành công. Bạn có thể sử dụng đầy đủ tính năng của hệ thống.",
 			"Vì lý do bảo mật, vui lòng cập nhật mật khẩu của bạn định kỳ.",
+			"Mật khẩu của bạn đã được thay đổi thành công. Nếu không phải bạn thực hiện, vui lòng liên hệ ngay với chúng tôi.",
+			"Phiên bản mới của ứng dụng đã có sẵn. Cập nhật ngay để trải nghiệm những tính năng mới!",
+			"Hệ thống sẽ tiến hành bảo trì từ 23:00 đến 05:00 ngày mai. Mong bạn thông cảm cho sự bất tiện này.",
 		},
 	}
 
@@ -2907,11 +2929,34 @@ func seedNotifications(ctx context.Context, db *pgxpool.Pool, userIDs []int64) {
 		"Nồi cơm điện", "Máy lọc không khí", "Đắc Nhân Tâm", "Tạ tay 5kg",
 	}
 
+	// Đảm bảo admin cũng có thông báo (ID = 1)
+	var adminID int64 = 1
+	var adminExists bool = false
+
+	// Kiểm tra xem admin ID có trong danh sách userIDs không
+	for _, id := range userIDs {
+		if id == adminID {
+			adminExists = true
+			break
+		}
+	}
+
+	// Nếu admin không có trong danh sách, thêm vào
+	if !adminExists {
+		userIDs = append([]int64{adminID}, userIDs...)
+	}
+
 	// Tạo thông báo cho mỗi người dùng
 	totalNotifs := 0
 
 	for _, userID := range userIDs {
-		for i := 0; i < numPerUser; i++ {
+		// Đảm bảo admin có ít nhất 15 thông báo
+		notifCount := numPerUser
+		if userID == adminID {
+			notifCount = 15 // Hoặc nhiều hơn nếu muốn admin có nhiều thông báo hơn
+		}
+
+		for i := 0; i < notifCount; i++ {
 			// Chọn loại thông báo ngẫu nhiên
 			typeIndex := gofakeit.Number(0, len(types)-1)
 			notifType := types[typeIndex]
@@ -2940,15 +2985,22 @@ func seedNotifications(ctx context.Context, db *pgxpool.Pool, userIDs []int64) {
 			}
 
 			// Tạo thông báo
+			// Đảm bảo một số thông báo đã đọc và một số chưa đọc
+			isRead := gofakeit.Bool()
+
+			// Nếu là thông báo cuối cùng, đảm bảo chưa đọc
+			if i >= notifCount-5 {
+				isRead = false
+			}
+
 			_, err := db.Exec(ctx, `
-				INSERT INTO notifications (
-					user_id, type, title, content, is_read, image_title
-				)
-				VALUES ($1, $2, $3, $4, $5, $6)
-				ON CONFLICT DO NOTHING;
-			`,
-				userID, notifType, title, content,
-				gofakeit.Bool(), imageURL)
+                INSERT INTO notifications (
+                    user_id, type, title, content, is_read, image_title
+                )
+                VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT DO NOTHING;
+            `,
+				userID, notifType, title, content, isRead, imageURL)
 
 			if err != nil {
 				log.Printf("Error inserting notification: %v", err)

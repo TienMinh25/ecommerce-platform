@@ -6,7 +6,6 @@ import {
     Image,
     Icon,
     Badge,
-    Button,
 } from '@chakra-ui/react';
 import { FaShoppingBag, FaCreditCard, FaBox, FaGift, FaBell, FaCheck } from 'react-icons/fa';
 import { format } from 'date-fns';
@@ -74,7 +73,9 @@ const NotificationItem = ({ notification, onAction }) => {
     // Handle mark as read - prevent event propagation to parent
     const handleMarkAsRead = (e) => {
         e.stopPropagation();
-        onAction && onAction(notification);
+        if (notification.id) {
+            onAction && onAction(notification);
+        }
     };
 
     return (
@@ -110,26 +111,25 @@ const NotificationItem = ({ notification, onAction }) => {
                 <Text fontSize="sm" color="gray.600">
                     {notification.content}
                 </Text>
-                <Text fontSize="xs" color="gray.500" mt={1}>
-                    {formatTime(notification.created_at)}
-                </Text>
+                <Flex justifyContent="space-between" alignItems="center" mt={1}>
+                    <Text fontSize="xs" color="gray.500">
+                        {formatTime(notification.created_at)}
+                    </Text>
+                    {/* "Mark as read" text only for unread notifications */}
+                    {!notification.is_read && (
+                        <Text
+                            fontSize="xs"
+                            color="blue.500"
+                            fontWeight="medium"
+                            cursor="pointer"
+                            _hover={{ textDecoration: "underline" }}
+                            onClick={handleMarkAsRead}
+                        >
+                            Đánh dấu đã đọc
+                        </Text>
+                    )}
+                </Flex>
             </Box>
-
-            {/* Mark as read button - only show for unread notifications */}
-            {!notification.is_read && (
-                <Button
-                    size="xs"
-                    variant="ghost"
-                    colorScheme="blue"
-                    leftIcon={<FaCheck />}
-                    onClick={handleMarkAsRead}
-                    position="absolute"
-                    bottom="8px"
-                    right="8px"
-                >
-                    Đánh dấu đã đọc
-                </Button>
-            )}
         </Flex>
     );
 };

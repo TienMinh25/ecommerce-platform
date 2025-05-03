@@ -8,4 +8,5 @@ message Metadata {
   bool hasPrevious = 3;
   bool hasNext = 4;
   int64 totalItems = 5;
+  int64 totalPages = 6;
 }

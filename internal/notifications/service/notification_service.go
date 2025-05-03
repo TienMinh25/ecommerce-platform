@@ -99,6 +99,7 @@ func (service *notificationService) GetListNotificationHistory(ctx context.Conte
 			HasPrevious: hasPrevious,
 			HasNext:     hasNext,
 			TotalItems:  totalItems,
+			TotalPages:  totalPages,
 		},
 		UnreadCount: unreadTotal,
 	}, nil

@@ -353,6 +353,7 @@ func (u *userMeService) GetListNotificationHistory(ctx context.Context, limit, p
 	res.Metadata.Unread = int(resultGrpc.UnreadCount)
 	res.Metadata.Code = 200
 	res.Metadata.Pagination.TotalItems = int(resultGrpc.Metadata.TotalItems)
+	res.Metadata.Pagination.TotalPages = int(resultGrpc.Metadata.TotalPages)
 	res.Metadata.Pagination.Page = page
 	res.Metadata.Pagination.Limit = limit
 	res.Metadata.Pagination.HasNext = resultGrpc.Metadata.HasNext
