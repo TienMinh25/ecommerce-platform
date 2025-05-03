@@ -57,9 +57,25 @@ type IRoleHandler interface {
 }
 
 type IUserHandler interface {
+	// user info
 	GetCurrentUser(ctx *gin.Context)
 	UpdateCurrentUser(ctx *gin.Context)
 	GetAvatarURLUpload(ctx *gin.Context)
+
+	// notification preferences
 	UpdateNotificationSettings(ctx *gin.Context)
 	GetNotificationSettings(ctx *gin.Context)
+
+	// manage address
+	GetCurrentAddress(ctx *gin.Context)
+	CreateNewAddress(ctx *gin.Context)
+	UpdateAddressByID(ctx *gin.Context)
+	DeleteAddressByID(ctx *gin.Context)
+	SetDefaultAddressForUser(ctx *gin.Context)
+}
+
+type IAdministrativeDivisionHandler interface {
+	GetProvinces(ctx *gin.Context)
+	GetDistricts(ctx *gin.Context)
+	GetWards(ctx *gin.Context)
 }

@@ -1,9 +1,9 @@
 create table if not exists areas (
     id bigserial primary key,
-    city varchar(1000) not null,
-    country varchar(1000) not null,
-    district varchar(1000) not null,
-    ward varchar(1000),
+    city varchar(2000) not null,
+    country varchar(2000) not null,
+    district varchar(2000) not null,
+    ward varchar(2000),
     area_code varchar(200) not null unique,
     created_at timestamptz default current_timestamp,
     updated_at timestamptz default current_timestamp

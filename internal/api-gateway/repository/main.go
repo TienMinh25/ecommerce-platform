@@ -127,3 +127,17 @@ type IRefreshTokenRepository interface {
 
 	RefreshToken(ctx context.Context, userID int, email string, oldRefreshToken, refreshToken string, expireAt time.Time) error
 }
+
+type IAddressRepository interface {
+	GetCurrentAddressByUserID(ctx context.Context, limit, page, userID int) ([]api_gateway_models.Address, int, error)
+	SetDefaultAddressByID(ctx context.Context, addressID, userID int) error
+	CreateNewAddress(ctx context.Context, data *api_gateway_dto.CreateAddressRequest, userID int) error
+	UpdateAddressByID(ctx context.Context, data *api_gateway_dto.UpdateAddressRequest, userID, addressID int) error
+	DeleteAddressByID(ctx context.Context, addressID int) error
+}
+
+type IAdministrativeDivisionRepository interface {
+	GetProvinces(ctx context.Context) ([]AdministrativeDivision, error)
+	GetDistrictsByProvinceID(ctx context.Context, provinceID string) ([]District, error)
+	GetWardsByDistrictID(ctx context.Context, provinceID, districtID string) ([]Ward, error)
+}

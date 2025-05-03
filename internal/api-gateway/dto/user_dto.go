@@ -71,3 +71,74 @@ type GetNotificationSettingsResponse struct {
 	EmailSetting SettingsResponse `json:"email_setting"`
 	InAppSetting SettingsResponse `json:"in_app_setting"`
 }
+
+type GetUserAddressRequest struct {
+	Limit int `form:"limit,default=1" binding:"omitempty,gte=1"`
+	Page  int `form:"page,default=1" binding:"omitempty,gte=1"`
+}
+
+type GetUserAddressResponse struct {
+	ID            int      `json:"id"`
+	RecipientName string   `json:"recipient_name"`
+	Phone         string   `json:"phone"`
+	Street        string   `json:"street"`
+	District      string   `json:"district"`
+	Province      string   `json:"province"`
+	Ward          string   `json:"ward"`
+	PostalCode    string   `json:"postal_code"`
+	Country       string   `json:"country"`
+	IsDefault     bool     `json:"is_default"`
+	Longtitude    *float64 `json:"longtitude"`
+	Lattitude     *float64 `json:"lattitude"`
+	AddressTypeID int      `json:"address_type_id"`
+}
+
+type SetDefaultAddressRequest struct {
+	AddressID int `uri:"addressID" binding:"required"`
+}
+
+type SetDefaultAddressResponse struct{}
+
+type CreateAddressRequest struct {
+	RecipientName string   `json:"recipient_name" binding:"required"`
+	Phone         string   `json:"phone" binding:"required"`
+	Street        string   `json:"street" binding:"required"`
+	District      string   `json:"district" binding:"required"`
+	Province      string   `json:"province" binding:"required"`
+	Country       string   `json:"country" binding:"required"`
+	Ward          string   `json:"ward" binding:"required"`
+	PostalCode    string   `json:"postal_code"`
+	IsDefault     bool     `json:"is_default"`
+	AddressTypeID int      `json:"address_type_id" binding:"required"`
+	Latitude      *float64 `json:"lattitude"`
+	Longitude     *float64 `json:"longtitude"`
+}
+
+type CreateAddressResponse struct{}
+
+type UpdateAddressRequest struct {
+	RecipientName string   `json:"recipient_name" binding:"required"`
+	Phone         string   `json:"phone" binding:"required"`
+	Street        string   `json:"street" binding:"required"`
+	District      string   `json:"district" binding:"required"`
+	Province      string   `json:"province" binding:"required"`
+	Country       string   `json:"country" binding:"required"`
+	Ward          string   `json:"ward" binding:"required"`
+	PostalCode    string   `json:"postal_code"`
+	IsDefault     bool     `json:"is_default"`
+	AddressTypeID int      `json:"address_type_id" binding:"required"`
+	Latitude      *float64 `json:"lattitude"`
+	Longitude     *float64 `json:"longtitude"`
+}
+
+type UpdateAddressURI struct {
+	AddressID int `uri:"addressID" binding:"required,gte=1"`
+}
+
+type UpdateAddressResponse struct{}
+
+type DeleteAddressRequest struct {
+	AddressID int `uri:"addressID" binding:"required,gte=1"`
+}
+
+type DeleteAddressResponse struct{}

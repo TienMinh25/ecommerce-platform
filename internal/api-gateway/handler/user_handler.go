@@ -221,3 +221,230 @@ func (u *userHandler) GetNotificationSettings(ctx *gin.Context) {
 
 	utils.SuccessResponse(ctx, http.StatusOK, *res)
 }
+
+// GetCurrentAddress godoc
+//
+//	@Summary		Lấy danh sách địa chỉ của người dùng
+//	@Tags			me
+//	@Description	Lấy danh sách địa chỉ của người dùng
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			reqQuery	query		api_gateway_dto.GetUserAddressRequest	false	"Page and limit to get pagination"
+//
+//	@Success		200			{object}	api_gateway_dto.GetListCurrentAddressResponseDocs
+//	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/addresses [get]
+func (u *userHandler) GetCurrentAddress(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetCurrentAddress"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	var queryReq api_gateway_dto.GetUserAddressRequest
+
+	if err := ctx.ShouldBindQuery(&queryReq); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	res, totalItems, totalPages, hasNext, hasPrevious, err := u.service.GetListCurrentAddress(ct, &queryReq, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.PaginatedResponse(ctx, res, queryReq.Page, queryReq.Limit, totalPages, totalItems, hasNext, hasPrevious)
+}
+
+// CreateNewAddress godoc
+//
+//	@Summary		Tạo thêm 1 địa chỉ
+//	@Tags			me
+//	@Description	Tạo thêm 1 địa chỉ
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			request	body		api_gateway_dto.CreateAddressRequest	true	"Body gui len"
+//
+//	@Success		200		{object}	api_gateway_dto.CreateAddressResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/addresses [post]
+func (u *userHandler) CreateNewAddress(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "CreateNewAddress"))
+	defer span.End()
+
+	var data api_gateway_dto.CreateAddressRequest
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	err := u.service.CreateNewAddress(ct, &data, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.CreateAddressResponse{})
+}
+
+// UpdateAddressByID godoc
+//
+//	@Summary		Cập nhật địa chỉ bằng id của địa chỉ
+//	@Tags			me
+//	@Description	Cập nhật địa chỉ bằng id của địa chỉ
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			addressID	path		int										true	"address id on path"
+//
+//	@Param			req			body		api_gateway_dto.UpdateAddressRequest	true	"body of data"
+//
+//	@Success		200			{object}	api_gateway_dto.UpdateAddressResponseDocs
+//	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/addresses/{addressID} [patch]
+func (u *userHandler) UpdateAddressByID(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateAddressByID"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	var data api_gateway_dto.UpdateAddressRequest
+	var uri api_gateway_dto.UpdateAddressURI
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := u.service.UpdateAddressByID(ct, &data, userClaims.UserID, uri.AddressID); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.UpdateAddressResponse{})
+}
+
+// DeleteAddressByID godoc
+//
+//	@Summary		Xoá địa chỉ
+//	@Tags			me
+//	@Description	Xoá địa chỉ
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			addressID	path		int	true	"address id on path"
+//
+//	@Success		200			{object}	api_gateway_dto.DeleteAddressResponseDocs
+//	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/addresses/{addressID} [delete]
+func (u *userHandler) DeleteAddressByID(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "DeleteAddressByID"))
+	defer span.End()
+
+	var uri api_gateway_dto.DeleteAddressRequest
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := u.service.DeleteAddressByID(ct, uri.AddressID); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.DeleteAddressResponse{})
+}
+
+// SetDefaultAddressForUser godoc
+//
+//	@Summary		Cập nhật địa chỉ mặc định
+//	@Tags			me
+//	@Description	Cập nhật địa chỉ mặc định
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			addressID	path		int	true	"address id on path"
+//
+//	@Success		200			{object}	api_gateway_dto.SetDefaultAddressResponseDocs
+//	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/addresses/{addressID}/default [patch]
+func (u *userHandler) SetDefaultAddressForUser(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "SetDefaultAddressForUser"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	var uri api_gateway_dto.SetDefaultAddressRequest
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	err := u.service.SetDefaultAddressByID(ct, uri.AddressID, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.SetDefaultAddressResponse{})
+}

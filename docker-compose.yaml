@@ -148,6 +148,9 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
     ports:
       - "2181:2181"
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_log:/var/lib/zookeeper/log
     networks:
       - ecommerce_network
 
@@ -169,6 +172,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 1
+    volumes:
+      - kafka1_data:/var/lib/kafka/data
     networks:
       - ecommerce_network
 
@@ -190,6 +195,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 1
+    volumes:
+      - kafka2_data:/var/lib/kafka/data
     networks:
       - ecommerce_network
 
@@ -211,6 +218,8 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
       KAFKA_DEFAULT_REPLICATION_FACTOR: 3
       KAFKA_MIN_INSYNC_REPLICAS: 1
+    volumes:
+      - kafka3_data:/var/lib/kafka/data
     networks:
       - ecommerce_network
 
@@ -221,3 +230,8 @@ networks:
 volumes:
   postgres_data:
   minio_data:
+  zookeeper_data:
+  zookeeper_log:
+  kafka1_data:
+  kafka2_data:
+  kafka3_data:

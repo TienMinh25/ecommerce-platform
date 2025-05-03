@@ -10,4 +10,5 @@ const (
 	OTP_TIMEOUT                 = "4007"
 	EMAIL_OR_PASSWORD_INCOORECT = "4008"
 	FORBIDDEN                   = "4009"
+	BAD_REQUEST                 = "4010"
 )

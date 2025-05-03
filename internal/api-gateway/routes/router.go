@@ -31,6 +31,7 @@ func NewRouter(
 	userMeHandler api_gateway_handler.IUserHandler,
 	accessTokenMiddleware *middleware.JwtMiddleware,
 	permissionMiddleware *middleware.PermissionMiddleware,
+	administrativeDivisionHandler api_gateway_handler.IAdministrativeDivisionHandler,
 ) *Router {
 	apiV1Group := router.Group("/api/v1")
 
@@ -41,6 +42,7 @@ func NewRouter(
 	registerUserManagementEndpoint(apiV1Group, permissionMiddleware, accessTokenMiddleware, userManagementHandler)
 	registerRoleHandler(apiV1Group, permissionMiddleware, accessTokenMiddleware, roleHandler)
 	registerUserMeHandler(apiV1Group, permissionMiddleware, accessTokenMiddleware, userMeHandler)
+	registerAddressDataEndpoint(apiV1Group, accessTokenMiddleware, administrativeDivisionHandler)
 
 	return &Router{
 		Router: router,
@@ -52,7 +54,7 @@ func registerAdminAddressManagementEndpoint(group *gin.RouterGroup, permissionMi
 
 	adminAddressGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
-		adminAddressGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Read), handler.GetAddressTypes)
+		adminAddressGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.AddressTypeManagement, common.Read), handler.GetAddressTypes)
 		adminAddressGroup.POST("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Create), handler.CreateAddressType)
 		adminAddressGroup.GET("/:addressTypeID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Read), handler.GetAddressTypeByID)
 		adminAddressGroup.PATCH("/:addressTypeID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.AddressTypeManagement, common.Update), handler.UpdateAddressType)
@@ -145,5 +147,22 @@ func registerUserMeHandler(group *gin.RouterGroup, permissionMiddleware *middlew
 		userMeGroup.POST("/avatars/get-presigned-url", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.GetAvatarURLUpload)
 		userMeGroup.POST("/notification-settings", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateNotificationSettings)
 		userMeGroup.GET("/notification-settings", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetNotificationSettings)
+
+		// address
+		userMeGroup.GET("/addresses", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetCurrentAddress)
+		userMeGroup.POST("/addresses", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Create), handler.CreateNewAddress)
+		userMeGroup.PATCH("/addresses/:addressID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateAddressByID)
+		userMeGroup.DELETE("/addresses/:addressID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Delete), handler.DeleteAddressByID)
+		userMeGroup.PATCH("/addresses/:addressID/default", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.SetDefaultAddressForUser)
+	}
+}
+
+func registerAddressDataEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, divisionHandler api_gateway_handler.IAdministrativeDivisionHandler) {
+	addressGroup := group.Group("/addresses")
+	addressGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		addressGroup.GET("/provinces", divisionHandler.GetProvinces)
+		addressGroup.GET("/provinces/:provinceID/districts", divisionHandler.GetDistricts)
+		addressGroup.GET("/provinces/:provinceID/districts/:districtID/wards", divisionHandler.GetWards)
 	}
 }
