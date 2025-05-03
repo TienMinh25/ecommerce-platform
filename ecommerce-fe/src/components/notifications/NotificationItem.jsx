@@ -4,11 +4,13 @@ import {
     Flex,
     Text,
     Image,
-    Button,
     Icon,
+    Badge,
+    Button,
 } from '@chakra-ui/react';
-import { FaHeart } from 'react-icons/fa';
+import { FaShoppingBag, FaCreditCard, FaBox, FaGift, FaBell, FaCheck } from 'react-icons/fa';
 import { format } from 'date-fns';
+import { NOTIFICATION_TYPES } from '../../constants/notificationTypes';
 
 // Component for individual notification items - reusable in both popup and full page
 const NotificationItem = ({ notification, onAction }) => {
@@ -18,55 +20,61 @@ const NotificationItem = ({ notification, onAction }) => {
         return format(date, 'HH:mm dd-MM-yyyy');
     };
 
-    // Render different notification types
-    const renderNotificationContent = () => {
+    // Get appropriate icon based on notification type
+    const getNotificationIcon = () => {
         switch (notification.type) {
-            case 'order_status':
-                return (
-                    <Box>
-                        <Text fontWeight="medium" mb={1}>
-                            Bạn có đơn hàng đang trên đường giao
-                        </Text>
-                        <Text fontSize="sm" color="gray.600">
-                            🚚 Shipper báo rằng: đơn hàng {notification.orderId} của bạn vẫn đang trong quá trình vận chuyển và dự kiến được giao trong 1-2 ngày tới. Vui lòng bỏ qua thông báo này nếu bạn đã nhận được hàng nhé!😊
-                        </Text>
-                    </Box>
-                );
-            case 'voucher':
-                return (
-                    <Box>
-                        <Flex alignItems="center" mb={1}>
-                            <Icon as={FaHeart} color="red.500" mr={1} />
-                            <Text fontWeight="medium">
-                                Voucher dành riêng cho bạn
-                            </Text>
-                        </Flex>
-                        <Text fontSize="sm" color="gray.600">
-                            Shopee gửi bạn Voucher đ{notification.amount.toLocaleString()} thay lời xin lỗi cho đơn đã giao sau ngày Shopee đảm bảo. Lưu Voucher ngay! *Lưu ý: Nếu đơn hàng bị hủy hoặc có phát sinh yêu cầu Trả hàng/Hoàn tiền trước khi giao hàng thành công, Voucher sẽ không được áp dụng
-                        </Text>
-                    </Box>
-                );
-            case 'freeship':
-                return (
-                    <Box>
-                        <Text fontWeight="medium" mb={1}>
-                            Mã freeship cho đơn từ 0Đ có sẵn trong ví 😊
-                        </Text>
-                        <Text fontSize="sm" color="gray.600">
-                            🎫 Mã sẽ hết hạn vào {notification.expiryDate}! Áp dụng cho đơn từ 0Đ👑
-                        </Text>
-                        <Text fontSize="sm" color="gray.600">
-                            🏷️ Voucher freeship có sẵn trong ví, đừng ngay kẻo lỡ!
-                        </Text>
-                    </Box>
-                );
+            case NOTIFICATION_TYPES.ORDER:
+                return <FaShoppingBag />;
+            case NOTIFICATION_TYPES.PAYMENT:
+                return <FaCreditCard />;
+            case NOTIFICATION_TYPES.PRODUCT:
+                return <FaBox />;
+            case NOTIFICATION_TYPES.PROMOTION:
+                return <FaGift />;
+            case NOTIFICATION_TYPES.SYSTEM:
             default:
-                return (
-                    <Text fontSize="sm">
-                        {notification.message}
-                    </Text>
-                );
+                return <FaBell />;
         }
+    };
+
+    // Get icon color based on notification type
+    const getIconColor = () => {
+        switch (notification.type) {
+            case NOTIFICATION_TYPES.ORDER:
+                return "blue.500";
+            case NOTIFICATION_TYPES.PAYMENT:
+                return "green.500";
+            case NOTIFICATION_TYPES.PRODUCT:
+                return "purple.500";
+            case NOTIFICATION_TYPES.PROMOTION:
+                return "red.500";
+            case NOTIFICATION_TYPES.SYSTEM:
+            default:
+                return "gray.500";
+        }
+    };
+
+    // Generate fallback image URL from Unsplash based on notification type
+    const getFallbackImage = () => {
+        switch (notification.type) {
+            case NOTIFICATION_TYPES.ORDER:
+                return "https://images.unsplash.com/photo-1556741533-6e6a62bd8b49?w=60&h=60&fit=crop";
+            case NOTIFICATION_TYPES.PAYMENT:
+                return "https://images.unsplash.com/photo-1580048915913-4f8f5cb481c4?w=60&h=60&fit=crop";
+            case NOTIFICATION_TYPES.PRODUCT:
+                return "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=60&h=60&fit=crop";
+            case NOTIFICATION_TYPES.PROMOTION:
+                return "https://images.unsplash.com/photo-1607083206968-13611e3d76db?w=60&h=60&fit=crop";
+            case NOTIFICATION_TYPES.SYSTEM:
+            default:
+                return "https://images.unsplash.com/photo-1586769852044-692d6e3703f0?w=60&h=60&fit=crop";
+        }
+    };
+
+    // Handle mark as read - prevent event propagation to parent
+    const handleMarkAsRead = (e) => {
+        e.stopPropagation();
+        onAction && onAction(notification);
     };
 
     return (
@@ -74,36 +82,52 @@ const NotificationItem = ({ notification, onAction }) => {
             p={4}
             borderBottom="1px"
             borderColor="gray.200"
-            bg={notification.isRead ? "white" : "gray.50"}
+            bg={notification.is_read ? "white" : "gray.50"}
             _hover={{ bg: "gray.100" }}
-            cursor="pointer"
+            position="relative"
         >
             <Image
-                src={notification.image}
+                src={notification.image_url}
                 alt="Notification"
                 boxSize="60px"
                 objectFit="cover"
                 borderRadius="md"
                 mr={3}
-                fallbackSrc="https://via.placeholder.com/60"
+                fallbackSrc={getFallbackImage()}
             />
             <Box flex="1">
-                {renderNotificationContent()}
+                <Flex alignItems="center" mb={1}>
+                    <Icon as={getNotificationIcon} color={getIconColor()} mr={1} />
+                    <Text fontWeight="medium">
+                        {notification.title}
+                    </Text>
+                    {!notification.is_read && (
+                        <Badge ml={2} colorScheme="red" borderRadius="full">
+                            Mới
+                        </Badge>
+                    )}
+                </Flex>
+                <Text fontSize="sm" color="gray.600">
+                    {notification.content}
+                </Text>
                 <Text fontSize="xs" color="gray.500" mt={1}>
-                    {formatTime(notification.timestamp)}
+                    {formatTime(notification.created_at)}
                 </Text>
             </Box>
-            {notification.hasAction && (
+
+            {/* Mark as read button - only show for unread notifications */}
+            {!notification.is_read && (
                 <Button
-                    size="sm"
-                    colorScheme="red"
-                    variant="solid"
-                    height="36px"
-                    mt={2}
-                    fontSize="sm"
-                    onClick={() => onAction && onAction(notification)}
+                    size="xs"
+                    variant="ghost"
+                    colorScheme="blue"
+                    leftIcon={<FaCheck />}
+                    onClick={handleMarkAsRead}
+                    position="absolute"
+                    bottom="8px"
+                    right="8px"
                 >
-                    {notification.actionText || "Dùng ngay!"}
+                    Đánh dấu đã đọc
                 </Button>
             )}
         </Flex>

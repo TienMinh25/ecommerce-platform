@@ -84,6 +84,11 @@ type IUserMeService interface {
 	CreateNewAddress(ctx context.Context, data *api_gateway_dto.CreateAddressRequest, userID int) error
 	UpdateAddressByID(ctx context.Context, data *api_gateway_dto.UpdateAddressRequest, userID, addressID int) error
 	DeleteAddressByID(ctx context.Context, addressID int) error
+
+	// notification
+	GetListNotificationHistory(ctx context.Context, limit, page, userID int) (*api_gateway_dto.GetListNotificationsHistoryResponse, error)
+	MarkRead(ctx context.Context, userID int, notificationID string) error
+	MarkAllRead(ctx context.Context, userID int) error
 }
 
 type IRoleService interface {

@@ -22,17 +22,10 @@ service NotificationService {
   // Lấy danh sách thông báo của user
   rpc GetUserNotifications(GetUserNotificationsRequest) returns (GetUserNotificationsResponse) {}
 
-  // Đánh dấu đã đọc thông báo
+  // Đánh dấu 1 thông báo đã đọc thông báo
   rpc MarkAsRead(MarkAsReadRequest) returns (MarkAsReadResponse) {}
-}
 
-enum NotificationType {
-  UNKNOWN = 0;
-  ORDER_STATUS = 1;
-  PAYMENT_STATUS = 2;
-  PRODUCT_UPDATE = 3;
-  SHIPPING_UPDATE = 4;
-  PROMOTION = 5;
+  rpc MarkAllRead(MarkAllReadRequest) returns (MarkAsReadResponse) {}
 }
 
 message CreateUserSettingNotificationRequest {
@@ -55,18 +48,18 @@ message UpdateUserSettingNotificationResponse {
 message Notification {
   string id = 1;
   int64 user_id = 2;
-  NotificationType type = 3;
+  int64 type = 3;
   string title = 4;
   string content = 5;
-  bool read = 6;
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp updated_at = 8;
-  map<string, string> metadata = 9;
+  string image_url = 6;
+  bool is_read = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
 }
 
 message SendNotificationRequest {
   int64 user_id = 1;
-  NotificationType type = 2;
+  int64 type = 2;
   string title = 3;
   string content = 4;
   map<string, string> metadata = 5;
@@ -80,9 +73,8 @@ message SendNotificationResponse {
 
 message GetUserNotificationsRequest {
   int64 user_id = 1;
-  int32 page = 2;
-  int32 limit = 3;
-  bool unread_only = 4;
+  int64 page = 2;
+  int64 limit = 3;
 }
 
 message GetUserNotificationsResponse {
@@ -96,10 +88,7 @@ message MarkAsReadRequest {
   int64 user_id = 2;
 }
 
-message MarkAsReadResponse {
-  bool success = 1;
-  string error = 2;
-}
+message MarkAsReadResponse {}
 
 message GetUserNotificationSettingRequest {
   int64 user_id = 1;
@@ -108,4 +97,8 @@ message GetUserNotificationSettingRequest {
 message GetUserNotificationSettingResponse {
   GetEmailNotificationPreferencesResponse email_preferences = 1;
   GetInAppNotificationPreferencesResponse in_app_preferences = 2;
+}
+
+message MarkAllReadRequest {
+  int64 user_id = 1;
 }

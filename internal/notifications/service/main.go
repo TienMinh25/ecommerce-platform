@@ -7,6 +7,9 @@ import (
 
 type INotificationService interface {
 	SendOTPByEmail(ctx context.Context, message interface{}) error
+	GetListNotificationHistory(ctx context.Context, limit, page, userID int64) (*notification_proto_gen.GetUserNotificationsResponse, error)
+	MarkAsRead(ctx context.Context, data *notification_proto_gen.MarkAsReadRequest) error
+	MarkAllRead(ctx context.Context, data *notification_proto_gen.MarkAllReadRequest) error
 }
 
 type INotificationPreferencesService interface {

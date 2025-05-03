@@ -25,6 +25,7 @@ const (
 	NotificationService_SendNotification_FullMethodName              = "/NotificationService/SendNotification"
 	NotificationService_GetUserNotifications_FullMethodName          = "/NotificationService/GetUserNotifications"
 	NotificationService_MarkAsRead_FullMethodName                    = "/NotificationService/MarkAsRead"
+	NotificationService_MarkAllRead_FullMethodName                   = "/NotificationService/MarkAllRead"
 )
 
 // NotificationServiceClient is the client API for NotificationService service.
@@ -40,8 +41,9 @@ type NotificationServiceClient interface {
 	SendNotification(ctx context.Context, in *SendNotificationRequest, opts ...grpc.CallOption) (*SendNotificationResponse, error)
 	// Lấy danh sách thông báo của user
 	GetUserNotifications(ctx context.Context, in *GetUserNotificationsRequest, opts ...grpc.CallOption) (*GetUserNotificationsResponse, error)
-	// Đánh dấu đã đọc thông báo
+	// Đánh dấu 1 thông báo đã đọc thông báo
 	MarkAsRead(ctx context.Context, in *MarkAsReadRequest, opts ...grpc.CallOption) (*MarkAsReadResponse, error)
+	MarkAllRead(ctx context.Context, in *MarkAllReadRequest, opts ...grpc.CallOption) (*MarkAsReadResponse, error)
 }
 
 type notificationServiceClient struct {
@@ -112,6 +114,16 @@ func (c *notificationServiceClient) MarkAsRead(ctx context.Context, in *MarkAsRe
 	return out, nil
 }
 
+func (c *notificationServiceClient) MarkAllRead(ctx context.Context, in *MarkAllReadRequest, opts ...grpc.CallOption) (*MarkAsReadResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(MarkAsReadResponse)
+	err := c.cc.Invoke(ctx, NotificationService_MarkAllRead_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NotificationServiceServer is the server API for NotificationService service.
 // All implementations must embed UnimplementedNotificationServiceServer
 // for forward compatibility.
@@ -125,8 +137,9 @@ type NotificationServiceServer interface {
 	SendNotification(context.Context, *SendNotificationRequest) (*SendNotificationResponse, error)
 	// Lấy danh sách thông báo của user
 	GetUserNotifications(context.Context, *GetUserNotificationsRequest) (*GetUserNotificationsResponse, error)
-	// Đánh dấu đã đọc thông báo
+	// Đánh dấu 1 thông báo đã đọc thông báo
 	MarkAsRead(context.Context, *MarkAsReadRequest) (*MarkAsReadResponse, error)
+	MarkAllRead(context.Context, *MarkAllReadRequest) (*MarkAsReadResponse, error)
 	mustEmbedUnimplementedNotificationServiceServer()
 }
 
@@ -154,6 +167,9 @@ func (UnimplementedNotificationServiceServer) GetUserNotifications(context.Conte
 }
 func (UnimplementedNotificationServiceServer) MarkAsRead(context.Context, *MarkAsReadRequest) (*MarkAsReadResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarkAsRead not implemented")
+}
+func (UnimplementedNotificationServiceServer) MarkAllRead(context.Context, *MarkAllReadRequest) (*MarkAsReadResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MarkAllRead not implemented")
 }
 func (UnimplementedNotificationServiceServer) mustEmbedUnimplementedNotificationServiceServer() {}
 func (UnimplementedNotificationServiceServer) testEmbeddedByValue()                             {}
@@ -284,6 +300,24 @@ func _NotificationService_MarkAsRead_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NotificationService_MarkAllRead_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MarkAllReadRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NotificationServiceServer).MarkAllRead(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NotificationService_MarkAllRead_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NotificationServiceServer).MarkAllRead(ctx, req.(*MarkAllReadRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NotificationService_ServiceDesc is the grpc.ServiceDesc for NotificationService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -314,6 +348,10 @@ var NotificationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarkAsRead",
 			Handler:    _NotificationService_MarkAsRead_Handler,
+		},
+		{
+			MethodName: "MarkAllRead",
+			Handler:    _NotificationService_MarkAllRead_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

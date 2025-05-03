@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     Box,
     Container,
@@ -11,24 +11,30 @@ import {
     Spinner,
     Center,
 } from '@chakra-ui/react';
-import NotificationItem from '../components/notifications/NotificationItem';
-import useNotification from "../hooks/useNotification.js";
+import NotificationItem from '../notifications/NotificationItem.jsx';
+import useNotification from "../../hooks/useNotification.js";
 
-const Notifications = () => {
+const UserNotifications = () => {
     const {
         notifications,
         unreadCount,
         isLoading,
+        fetchNotifications,
         markAllAsRead,
-        handleNotificationAction
+        markAsRead,
     } = useNotification();
+
+    // Fetch all notifications with a larger limit when component mounts
+    useEffect(() => {
+        fetchNotifications(1, 20); // Fetch more notifications for the full page view
+    }, [fetchNotifications]);
 
     // Group notifications by date for better display
     const groupNotificationsByDate = (notifications) => {
         const grouped = {};
 
         notifications.forEach(notification => {
-            const date = new Date(notification.timestamp);
+            const date = new Date(notification.created_at);
             const dateStr = date.toLocaleDateString('vi-VN', {
                 year: 'numeric',
                 month: 'long',
@@ -43,6 +49,14 @@ const Notifications = () => {
         });
 
         return grouped;
+    };
+
+    // Handle notification click
+    const handleNotificationClick = (notification) => {
+        // Mark as read if not already read
+        if (!notification.is_read) {
+            markAsRead(notification.id);
+        }
     };
 
     const groupedNotifications = groupNotificationsByDate(notifications);
@@ -135,7 +149,7 @@ const Notifications = () => {
                                         <Box key={notification.id}>
                                             <NotificationItem
                                                 notification={notification}
-                                                onAction={handleNotificationAction}
+                                                onAction={handleNotificationClick}
                                             />
                                             <Divider />
                                         </Box>
@@ -150,4 +164,4 @@ const Notifications = () => {
     );
 };
 
-export default Notifications;
+export default UserNotifications;

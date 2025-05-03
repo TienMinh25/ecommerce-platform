@@ -7,5 +7,5 @@ message Metadata {
   int64 page = 2;
   bool hasPrevious = 3;
   bool hasNext = 4;
-  int64 totalElement = 5;
+  int64 totalItems = 5;
 }

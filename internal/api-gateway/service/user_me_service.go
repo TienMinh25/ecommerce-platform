@@ -323,3 +323,102 @@ func (u *userMeService) DeleteAddressByID(ctx context.Context, addressID int) er
 
 	return nil
 }
+
+func (u *userMeService) GetListNotificationHistory(ctx context.Context, limit, page, userID int) (*api_gateway_dto.GetListNotificationsHistoryResponse, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetListNotificationHistory"))
+	defer span.End()
+
+	in := &notification_proto_gen.GetUserNotificationsRequest{
+		UserId: int64(userID),
+		Limit:  int64(limit),
+		Page:   int64(page),
+	}
+
+	// call grpc and get result
+	resultGrpc, err := u.client.GetUserNotifications(ctx, in)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	// serialize result
+	res := api_gateway_dto.GetListNotificationsHistoryResponse{}
+
+	resArray := make([]api_gateway_dto.GetNotificationsHistory, 0)
+
+	res.Metadata.Unread = int(resultGrpc.UnreadCount)
+	res.Metadata.Code = 200
+	res.Metadata.Pagination.TotalItems = int(resultGrpc.Metadata.TotalItems)
+	res.Metadata.Pagination.Page = page
+	res.Metadata.Pagination.Limit = limit
+	res.Metadata.Pagination.HasNext = resultGrpc.Metadata.HasNext
+	res.Metadata.Pagination.HasPrevious = resultGrpc.Metadata.HasPrevious
+	res.Data = resArray
+
+	if resultGrpc.Data != nil {
+		for _, data := range resultGrpc.Data {
+			var notificationHistory api_gateway_dto.GetNotificationsHistory
+
+			notificationHistory.ID = data.Id
+			notificationHistory.UserID = int(data.UserId)
+			notificationHistory.Type = int(data.Type)
+			notificationHistory.Title = data.Title
+			notificationHistory.Content = data.Content
+			notificationHistory.ImageUrl = data.ImageUrl
+			notificationHistory.IsRead = data.IsRead
+			notificationHistory.CreatedAt = data.CreatedAt.AsTime()
+			notificationHistory.UpdatedAt = data.UpdatedAt.AsTime()
+
+			resArray = append(resArray, notificationHistory)
+		}
+
+		res.Data = resArray
+	}
+
+	return &res, nil
+}
+
+func (u *userMeService) MarkRead(ctx context.Context, userID int, notificationID string) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "MarkRead"))
+	defer span.End()
+
+	// call grpc
+	_, err := u.client.MarkAsRead(ctx, &notification_proto_gen.MarkAsReadRequest{
+		UserId:         int64(userID),
+		NotificationId: notificationID,
+	})
+
+	if err != nil {
+		span.RecordError(err)
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	return nil
+}
+
+func (u *userMeService) MarkAllRead(ctx context.Context, userID int) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "MarkAllRead"))
+	defer span.End()
+
+	// call grpc
+	_, err := u.client.MarkAllRead(ctx, &notification_proto_gen.MarkAllReadRequest{
+		UserId: int64(userID),
+	})
+
+	if err != nil {
+		span.RecordError(err)
+		return utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	return nil
+}

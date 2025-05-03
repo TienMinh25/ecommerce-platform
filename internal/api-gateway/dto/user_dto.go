@@ -1,5 +1,7 @@
 package api_gateway_dto
 
+import "time"
+
 type GetCurrentUserResponse struct {
 	FullName    string  `json:"full_name"`
 	Email       string  `json:"email"`
@@ -142,3 +144,37 @@ type DeleteAddressRequest struct {
 }
 
 type DeleteAddressResponse struct{}
+
+type MarkReadNotificationRequest struct {
+	NotificationID string `uri:"notificationID" binding:"required"`
+}
+
+type MarkNotificationResponse struct{}
+
+type GetListNotificationsHistoryRequest struct {
+	Limit int `form:"limit,default=10" binding:"omitempty,gte=1"`
+	Page  int `form:"page,default=1" binding:"omitempty,gte=1"`
+}
+
+type GetListNotificationsHistoryResponse struct {
+	Data     []GetNotificationsHistory `json:"data"`
+	Metadata MetadataNotification      `json:"metadata"`
+}
+
+type GetNotificationsHistory struct {
+	ID        string    `json:"id"`
+	UserID    int       `json:"user_id"`
+	Type      int       `json:"type"`
+	Title     string    `json:"title"`
+	Content   string    `json:"content"`
+	ImageUrl  string    `json:"image_url"`
+	IsRead    bool      `json:"is_read"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type MetadataNotification struct {
+	Code       int        `json:"code"`
+	Pagination Pagination `json:"pagination"`
+	Unread     int        `json:"unread"`
+}

@@ -6,6 +6,9 @@ import (
 )
 
 type INotificationRepository interface {
+	GetListNotificationHistory(ctx context.Context, limit, page, userID int64) ([]models.NotificationHistory, int64, int64, error)
+	MarkRead(ctx context.Context, userID int64, notificationID string) error
+	MarkAllRead(ctx context.Context, userID int64) error
 }
 
 type INotificationPreferencesRepository interface {

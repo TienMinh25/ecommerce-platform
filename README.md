@@ -27,7 +27,7 @@ Hệ thống sử dụng kiến trúc microservices, giao tiếp qua gRPC và s�
 ### 4️⃣ **Notification Service**
 - Gửi thông báo khi có sự kiện quan trọng (đơn hàng, khuyến mãi, v.v.).
 - Sử dụng Kafka để xử lý thông báo nền.
-- Lưu dữ liệu vào **Notifications DB**.
+- Lưu dữ liệu vào **UserNotifications DB**.
 
 ### 5️⃣ **MinIO Storage**
 - Lưu trữ ảnh sản phẩm và tài nguyên khác (tương tự S3).

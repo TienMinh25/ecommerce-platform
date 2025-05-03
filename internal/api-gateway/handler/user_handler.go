@@ -448,3 +448,124 @@ func (u *userHandler) SetDefaultAddressForUser(ctx *gin.Context) {
 
 	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.SetDefaultAddressResponse{})
 }
+
+// GetListNotificationsHistory godoc
+//
+//	@Summary		Lấy danh sách lịch sử thông báo
+//	@Tags			me
+//	@Description	Lấy danh sách lịch sử thông báo
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			data	query		api_gateway_dto.GetListNotificationsHistoryRequest	false	"information about pagination"
+//
+//	@Success		200		{object}	api_gateway_dto.GetListNotificationsHistoryResponse
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/notifications [get]
+func (u *userHandler) GetListNotificationsHistory(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetListNotificationsHistory"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	var data api_gateway_dto.GetListNotificationsHistoryRequest
+
+	if err := ctx.ShouldBindQuery(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	res, err := u.service.GetListNotificationHistory(ct, data.Limit, data.Page, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, *res)
+}
+
+// MarkAllNotificationsRead godoc
+//
+//	@Summary		Đánh dấu tất cả thông báo đã được đọc
+//	@Tags			me
+//	@Description	Đánh dấu tất cả thông báo đã được đọc
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Success		200	{object}	api_gateway_dto.MarkNotificationResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/notifications/mark-all-read [post]
+func (u *userHandler) MarkAllNotificationsRead(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "MarkAllNotificationsRead"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	if err := u.service.MarkAllRead(ct, userClaims.UserID); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.MarkNotificationResponse{})
+}
+
+// MarkOnlyOneNotificationRead godoc
+//
+//	@Summary		Đánh dấu một thông báo đã được đọc
+//	@Tags			me
+//	@Description	Đánh dấu một thông báo đã được đọc
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			notificationID	path		string	true	"notification id"
+//
+//	@Success		200				{object}	api_gateway_dto.MarkNotificationResponseDocs
+//	@Failure		400				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500				{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/notifications/{notificationID}/mark-read [post]
+func (u *userHandler) MarkOnlyOneNotificationRead(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "MarkAllNotificationsRead"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	var uri api_gateway_dto.MarkReadNotificationRequest
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := u.service.MarkRead(ct, userClaims.UserID, uri.NotificationID); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.MarkNotificationResponse{})
+}
