@@ -451,6 +451,7 @@ func seedRolePermissions(ctx context.Context, db *pgxpool.Pool) {
 			{ModuleID: 6, Permissions: []int{1, 4, 3}},
 			{ModuleID: 7, Permissions: []int{4}},
 			{ModuleID: 8, Permissions: []int{1, 4, 3}},
+			{ModuleID: 11, Permissions: []int{4}},
 		},
 		"supplier": {
 			{ModuleID: 3, Permissions: []int{1, 2, 3, 4}},
@@ -524,7 +525,7 @@ func seedAdmin(ctx context.Context, db *pgxpool.Pool) {
 	}
 }
 
-// Thêm phần này để insert cart và notification preferences cho admin
+// Cập nhật seedAdminDependentData để sử dụng dữ liệu từ file JSON
 func seedAdminDependentData(ctx context.Context, pools map[string]*pgxpool.Pool) {
 	var adminID int64
 	var homeAddressTypeID int64
@@ -541,22 +542,66 @@ func seedAdminDependentData(ctx context.Context, pools map[string]*pgxpool.Pool)
 		log.Fatal("get home address type:", err)
 	}
 
-	// Insert Address cho admin
+	// Đọc dữ liệu từ file hanh-chinh-viet-nam.json để lấy thông tin Hà Nội
+	var provinces []Province
+	data, err := os.ReadFile("hanh-chinh-viet-nam.json")
+
+	// Mặc định sử dụng dữ liệu cứng nếu không đọc được file
+	provinceName := "Hà Nội"
+	districtName := "Hai Bà Trưng"
+	wardName := "Phường Bách Khoa"
+
+	if err == nil {
+		// Parse JSON data
+		if err := json.Unmarshal(data, &provinces); err == nil {
+			// Tìm Hà Nội trong danh sách tỉnh/thành phố
+			for _, province := range provinces {
+				if province.Name == "Hà Nội" || province.Name == "Thành phố Hà Nội" {
+					provinceName = province.Name
+
+					// Tìm quận Hai Bà Trưng
+					for _, district := range province.Districts {
+						if district.Name == "Quận Hai Bà Trưng" {
+							districtName = district.Name
+
+							// Tìm phường Bách Khoa
+							for _, ward := range district.Wards {
+								if strings.Contains(ward.Name, "Bách Khoa") {
+									wardName = ward.Name
+									break
+								}
+							}
+							break
+						}
+					}
+					break
+				}
+			}
+		}
+	}
+
+	// Insert Address cho admin với thêm cột ward
 	_, err = pools["api_gateway_db"].Exec(ctx, `
-		INSERT INTO addresses (user_id, recipient_name, phone, street, district, province, postal_code, country, is_default, address_type_id)
-		VALUES ($1, 'Admin User', '+84987654321', 'Số 1 Đại Cồ Việt', 'Hai Bà Trưng', 'Hà Nội', '100000', 'Việt Nam', TRUE, $2)
-		ON CONFLICT DO NOTHING;
-	`, adminID, homeAddressTypeID)
+        INSERT INTO addresses (
+            user_id, recipient_name, phone, street, district, province, postal_code, 
+            country, is_default, address_type_id, ward
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        ON CONFLICT DO NOTHING;
+    `, adminID, "Admin User", "+84987654321", "Số 1 Đại Cồ Việt", districtName,
+		provinceName, "100000", "Việt Nam", true, homeAddressTypeID, wardName)
+
 	if err != nil {
 		log.Printf("Warning: Insert address for admin: %v", err)
 	}
 
 	// Insert Cart cho admin
 	_, err = pools["orders_db"].Exec(ctx, `
-		INSERT INTO carts (user_id)
-		VALUES ($1)
-		ON CONFLICT DO NOTHING;
-	`, adminID)
+        INSERT INTO carts (user_id)
+        VALUES ($1)
+        ON CONFLICT DO NOTHING;
+    `, adminID)
+
 	if err != nil {
 		log.Printf("Warning: Insert cart for admin: %v", err)
 	}
@@ -571,11 +616,12 @@ func seedAdminDependentData(ctx context.Context, pools map[string]*pgxpool.Pool)
 	prefsJSON, _ := json.Marshal(prefs)
 
 	_, err = pools["notifications_db"].Exec(ctx, `
-		INSERT INTO notification_preferences (user_id, email_preferences, in_app_preferences)
-		VALUES ($1, $2, $2)
-		ON CONFLICT (user_id) DO UPDATE
-		SET email_preferences = $2, in_app_preferences = $2;
-	`, adminID, prefsJSON)
+        INSERT INTO notification_preferences (user_id, email_preferences, in_app_preferences)
+        VALUES ($1, $2, $2)
+        ON CONFLICT (user_id) DO UPDATE
+        SET email_preferences = $2, in_app_preferences = $2;
+    `, adminID, prefsJSON)
+
 	if err != nil {
 		log.Printf("Warning: Insert notification preferences for admin: %v", err)
 	}
@@ -848,7 +894,7 @@ func assignDelivererRole(ctx context.Context, db *pgxpool.Pool, delivererUserIDs
 	}
 }
 
-// Cải tiến seedAddressesForUsers để sử dụng dữ liệu địa giới hành chính thực tế
+// Cải tiến seedAddressesForUsers để sử dụng dữ liệu địa giới hành chính từ file JSON và xử lý mảng rỗng
 func seedAddressesForUsers(ctx context.Context, db *pgxpool.Pool, userIDs []int64, adminDivisions []Province) {
 	var homeAddressTypeID int64
 	err := db.QueryRow(ctx, `SELECT id FROM address_types WHERE address_type = $1`, "Home").Scan(&homeAddressTypeID)
@@ -856,44 +902,58 @@ func seedAddressesForUsers(ctx context.Context, db *pgxpool.Pool, userIDs []int6
 		log.Fatal("get home address type:", err)
 	}
 
-	// Dùng dữ liệu địa giới hành chính nếu có
-	var provinces []string
-	var districts map[string][]string
-	var wards map[string]map[string][]string
-
-	if len(adminDivisions) > 0 {
-		provinces = make([]string, 0, len(adminDivisions))
-		districts = make(map[string][]string)
-		wards = make(map[string]map[string][]string)
-
-		for _, province := range adminDivisions {
-			provinces = append(provinces, province.Name)
-			districts[province.Name] = make([]string, 0, len(province.Districts))
-			wards[province.Name] = make(map[string][]string)
-
-			for _, district := range province.Districts {
-				districts[province.Name] = append(districts[province.Name], district.Name)
-				wards[province.Name][district.Name] = make([]string, 0, len(district.Wards))
-
-				for _, ward := range district.Wards {
-					wards[province.Name][district.Name] = append(wards[province.Name][district.Name], ward.Name)
-				}
-			}
-		}
+	// Đọc dữ liệu từ file hanh-chinh-viet-nam.json
+	var provinces []Province
+	data, err := os.ReadFile("hanh-chinh-viet-nam.json")
+	if err != nil {
+		log.Printf("Error reading hanh-chinh-viet-nam.json: %v", err)
+		// Fallback to adminDivisions if file reading fails
+		provinces = adminDivisions
 	} else {
-		// Fallback nếu không có dữ liệu địa giới hành chính
-		provinces = []string{"Hà Nội", "TP Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ", "Nha Trang", "Huế"}
-		districts = map[string][]string{
-			"Hà Nội":         {"Ba Đình", "Hoàn Kiếm", "Tây Hồ", "Long Biên", "Cầu Giấy", "Đống Đa", "Hai Bà Trưng"},
-			"TP Hồ Chí Minh": {"Quận 1", "Quận 3", "Quận 4", "Quận 5", "Quận 7", "Bình Thạnh", "Thủ Đức", "Phú Nhuận"},
-			"Đà Nẵng":        {"Hải Châu", "Thanh Khê", "Sơn Trà", "Ngũ Hành Sơn", "Liên Chiểu"},
-			"Hải Phòng":      {"Hồng Bàng", "Ngô Quyền", "Lê Chân", "Kiến An", "Hải An"},
-			"Cần Thơ":        {"Ninh Kiều", "Bình Thủy", "Cái Răng", "Ô Môn", "Thốt Nốt"},
-			"Nha Trang":      {"Khánh Hòa", "Vĩnh Trường", "Cam Ranh", "Ninh Hòa"},
-			"Huế":            {"Thừa Thiên", "Phú Vang", "Phong Điền", "Quảng Điền"},
+		// Parse JSON data
+		if err := json.Unmarshal(data, &provinces); err != nil {
+			log.Printf("Error parsing hanh-chinh-viet-nam.json: %v", err)
+			// Fallback to adminDivisions if JSON parsing fails
+			provinces = adminDivisions
 		}
 	}
 
+	if len(provinces) == 0 {
+		log.Println("⚠️ No administrative divisions data available, cannot seed addresses properly")
+		return
+	}
+
+	log.Printf("✅ Loaded %d provinces from hanh-chinh-viet-nam.json for address seeding", len(provinces))
+
+	// Lọc ra các tỉnh có ít nhất một quận/huyện, và quận/huyện có ít nhất một phường/xã
+	var validProvinces []Province
+	for _, province := range provinces {
+		if len(province.Districts) == 0 {
+			continue
+		}
+
+		var validDistricts []District
+		for _, district := range province.Districts {
+			if len(district.Wards) == 0 {
+				continue
+			}
+			validDistricts = append(validDistricts, district)
+		}
+
+		if len(validDistricts) > 0 {
+			province.Districts = validDistricts
+			validProvinces = append(validProvinces, province)
+		}
+	}
+
+	if len(validProvinces) == 0 {
+		log.Println("⚠️ No valid administrative divisions data available, cannot seed addresses properly")
+		return
+	}
+
+	log.Printf("✅ Found %d valid provinces with districts and wards", len(validProvinces))
+
+	// Seed addresses in batches
 	batchSize := 1000
 	for i := 0; i < len(userIDs); i += batchSize {
 		end := i + batchSize
@@ -903,50 +963,51 @@ func seedAddressesForUsers(ctx context.Context, db *pgxpool.Pool, userIDs []int6
 		batch := userIDs[i:end]
 
 		var args []interface{}
-		query := `INSERT INTO addresses (user_id, recipient_name, phone, street, district, province, postal_code, country, is_default, address_type_id) VALUES `
-		valueStrings := make([]string, len(batch))
+		query := `INSERT INTO addresses (user_id, recipient_name, phone, street, district, province, postal_code, country, is_default, address_type_id, ward) VALUES `
+		valueStrings := make([]string, 0, len(batch))
+		valsCount := 0
 
-		for j, userID := range batch {
-			idx := j * 10
+		for _, userID := range batch {
+			// Lấy ngẫu nhiên một tỉnh/thành phố
+			provinceIdx := gofakeit.Number(0, len(validProvinces)-1)
+			province := validProvinces[provinceIdx]
+
+			// Lấy ngẫu nhiên một quận/huyện từ tỉnh/thành phố đó
+			districtIdx := gofakeit.Number(0, len(province.Districts)-1)
+			district := province.Districts[districtIdx]
+
+			// Lấy ngẫu nhiên một phường/xã từ quận/huyện đó
+			wardIdx := gofakeit.Number(0, len(district.Wards)-1)
+			ward := district.Wards[wardIdx]
+
 			recipientName := gofakeit.Name()
 			phone := fmt.Sprintf("+84%d", gofakeit.Number(300000000, 999999999))
-
-			// Chọn địa chỉ thực tế và phù hợp
-			province := provinces[gofakeit.Number(0, len(provinces)-1)]
-
-			var district string
-			if provDistricts, ok := districts[province]; ok && len(provDistricts) > 0 {
-				district = provDistricts[gofakeit.Number(0, len(provDistricts)-1)]
-			} else {
-				district = "District " + gofakeit.LetterN(1)
-			}
-
-			var ward string
-			if provWards, ok := wards[province]; ok {
-				if distWards, ok := provWards[district]; ok && len(distWards) > 0 {
-					ward = distWards[gofakeit.Number(0, len(distWards)-1)]
-				}
-			}
-
 			street := fmt.Sprintf("Số %d Đường %s", gofakeit.Number(1, 999), gofakeit.Street())
-			if ward != "" {
-				street += ", " + ward
-			}
-
-			postalCode := fmt.Sprintf("%05d", gofakeit.Number(10000, 99999))
+			postalCode := fmt.Sprintf("%06d", gofakeit.Number(100000, 999999))
 			country := "Việt Nam"
-			isDefault := true // Đặt mặc định là true vì mỗi user chỉ có 1 địa chỉ
+			isDefault := true
 
-			valueStrings[j] = fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)", idx+1, idx+2, idx+3, idx+4, idx+5, idx+6, idx+7, idx+8, idx+9, idx+10)
-			args = append(args, userID, recipientName, phone, street, district, province, postalCode, country, isDefault, homeAddressTypeID)
+			idx := valsCount * 11 // 11 parameters including ward
+			valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d, $%d)",
+				idx+1, idx+2, idx+3, idx+4, idx+5, idx+6, idx+7, idx+8, idx+9, idx+10, idx+11))
+
+			args = append(args, userID, recipientName, phone, street, district.Name, province.Name, postalCode, country, isDefault, homeAddressTypeID, ward.Name)
+			valsCount++
+		}
+
+		// Bỏ qua nếu không có địa chỉ hợp lệ để chèn
+		if len(valueStrings) == 0 {
+			continue
 		}
 
 		query += strings.Join(valueStrings, ",") + " ON CONFLICT DO NOTHING;"
 		_, err := db.Exec(ctx, query, args...)
 		if err != nil {
-			log.Fatal("insert addresses:", err)
+			log.Printf("Error inserting addresses: %v", err)
 		}
 	}
+
+	log.Println("✅ Successfully seeded addresses for users using Vietnam administrative divisions")
 }
 
 // Order Service Seeding

@@ -43,13 +43,19 @@ const userMeService = {
     },
 
     /**
-     * Get user addresses
-     * @returns {Promise} Promise object with user addresses
+     * Get user addresses with pagination
+     * @param {Object} params - Pagination parameters (page, limit)
+     * @returns {Promise} Promise object with user addresses and pagination metadata
      */
-    getAddresses: async () => {
+    getAddresses: async (params = { page: 1, limit: 10 }) => {
         try {
-            const response = await api.get('/users/me/addresses');
-            return response.data.data;
+            const response = await api.get('/users/me/addresses', {
+                params: {
+                    page: params.page,
+                    limit: params.limit
+                }
+            });
+            return response.data;
         } catch (error) {
             throw error;
         }
@@ -113,22 +119,19 @@ const userMeService = {
     },
 
     /**
-     * Upload avatar
-     * @param {File} file - Avatar file to upload
-     * @returns {Promise} Promise object with result
+     * Get all address types
+     * @param {Object} params - Pagination parameters (page, limit)
+     * @returns {Promise} Promise object with address types and pagination metadata
      */
-    uploadAvatar: async (file) => {
+    getAddressTypes: async (params = { page: 1, limit: 100 }) => {
         try {
-            const formData = new FormData();
-            formData.append('avatar', file);
-
-            const response = await api.post('/users/me/avatar', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
-                },
+            const response = await api.get('/address-types', {
+                params: {
+                    page: params.page,
+                    limit: params.limit
+                }
             });
-
-            return response.data.data;
+            return response.data;
         } catch (error) {
             throw error;
         }
@@ -168,7 +171,37 @@ const userMeService = {
         } catch (error) {
             throw error;
         }
-    }
+    },
+
+    // Get all provinces/cities
+    getProvinces: async () => {
+        try {
+            const response = await api.get('/addresses/provinces');
+            return response.data.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // Get districts for a specific province
+    getDistricts: async (provinceID) => {
+        try {
+            const response = await api.get(`/addresses/provinces/${provinceID}/districts`);
+            return response.data.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // Get wards for a specific district in a province
+    getWards: async (provinceID, districtID) => {
+        try {
+            const response = await api.get(`/addresses/provinces/${provinceID}/districts/${districtID}/wards`);
+            return response.data.data;
+        } catch (error) {
+            throw error;
+        }
+    },
 };
 
 export default userMeService;

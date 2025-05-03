@@ -80,6 +80,10 @@ type IUserMeService interface {
 
 	// addresses
 	GetListCurrentAddress(ctx context.Context, data *api_gateway_dto.GetUserAddressRequest, userID int) ([]api_gateway_dto.GetUserAddressResponse, int, int, bool, bool, error)
+	SetDefaultAddressByID(ctx context.Context, addressID, userID int) error
+	CreateNewAddress(ctx context.Context, data *api_gateway_dto.CreateAddressRequest, userID int) error
+	UpdateAddressByID(ctx context.Context, data *api_gateway_dto.UpdateAddressRequest, userID, addressID int) error
+	DeleteAddressByID(ctx context.Context, addressID int) error
 }
 
 type IRoleService interface {
@@ -88,4 +92,11 @@ type IRoleService interface {
 	UpdateRole(ctx context.Context, data *api_gateway_dto.UpdateRoleRequest, roleID int) error
 	DeleteRoleByID(ctx context.Context, roleID int) error
 	GetAllRoles(ctx context.Context) ([]api_gateway_dto.GetRoleResponse, error)
+}
+
+type IAdministrativeDivisionService interface {
+	LoadDataToCache(ctx context.Context) error
+	GetProvinces(ctx context.Context) ([]api_gateway_dto.ProvinceResponse, error)
+	GetDistricts(ctx context.Context, provinceID string) ([]api_gateway_dto.DistrictResponse, error)
+	GetWards(ctx context.Context, provinceID, districtID string) ([]api_gateway_dto.WardResponse, error)
 }

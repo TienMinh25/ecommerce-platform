@@ -314,6 +314,130 @@ const docTemplate = `{
                 }
             }
         },
+        "/addresses/provinces": {
+            "get": {
+                "description": "Get list of all provinces/cities in Vietnam",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "addresses"
+                ],
+                "summary": "Get all provinces/cities",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ProvinceResponseDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/addresses/provinces/{provinceID}/districts": {
+            "get": {
+                "description": "Get list of districts for a specific province/city",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "addresses"
+                ],
+                "summary": "Get districts by province ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Province ID",
+                        "name": "provinceID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.DistrictResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/addresses/provinces/{provinceID}/districts/{districtID}/wards": {
+            "get": {
+                "description": "Get list of wards for a specific district in a province",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "addresses"
+                ],
+                "summary": "Get wards by district ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Province ID",
+                        "name": "provinceID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "District ID",
+                        "name": "districtID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.WardResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/change-password": {
             "post": {
                 "security": [
@@ -2010,6 +2134,293 @@ const docTemplate = `{
                 }
             }
         },
+        "/users/me/addresses": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Lấy danh sách địa chỉ của người dùng",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Lấy danh sách địa chỉ của người dùng",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetListCurrentAddressResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Tạo thêm 1 địa chỉ",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Tạo thêm 1 địa chỉ",
+                "parameters": [
+                    {
+                        "description": "Body gui len",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.CreateAddressRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.CreateAddressResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/addresses/{addressID}": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Xoá địa chỉ",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Xoá địa chỉ",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "address id on path",
+                        "name": "addressID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.DeleteAddressResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật địa chỉ bằng id của địa chỉ",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Cập nhật địa chỉ bằng id của địa chỉ",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "address id on path",
+                        "name": "addressID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "body of data",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateAddressRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateAddressResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/addresses/{addressID}/default": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cập nhật địa chỉ mặc định",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "Cập nhật địa chỉ mặc định",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "address id on path",
+                        "name": "addressID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.SetDefaultAddressResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/users/me/avatars/get-presigned-url": {
             "post": {
                 "security": [
@@ -2348,6 +2759,71 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.CreateAddressRequest": {
+            "type": "object",
+            "required": [
+                "address_type_id",
+                "country",
+                "district",
+                "phone",
+                "province",
+                "recipient_name",
+                "street",
+                "ward"
+            ],
+            "properties": {
+                "address_type_id": {
+                    "type": "integer"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "district": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "lattitude": {
+                    "type": "number"
+                },
+                "longtitude": {
+                    "type": "number"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                },
+                "recipient_name": {
+                    "type": "string"
+                },
+                "street": {
+                    "type": "string"
+                },
+                "ward": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.CreateAddressResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.CreateAddressResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.CreateAddressResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.CreateAddressTypeByAdminRequest": {
             "type": "object",
             "required": [
@@ -2514,6 +2990,20 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.DeleteAddressResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.DeleteAddressResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.DeleteAddressResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.DeleteAddressTypeByAdminResponse": {
             "type": "object"
         },
@@ -2564,6 +3054,31 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.DeleteUserByAdminResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.DistrictResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.DistrictResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.DistrictResponse"
+                    }
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
@@ -2731,6 +3246,20 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.GetListCurrentAddressResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetUserAddressResponse"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
+                }
+            }
+        },
         "api_gateway_dto.GetListModuleResponseDocs": {
             "type": "object",
             "properties": {
@@ -2741,7 +3270,7 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                    "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
                 }
             }
         },
@@ -2859,7 +3388,51 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                    "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
+                }
+            }
+        },
+        "api_gateway_dto.GetUserAddressResponse": {
+            "type": "object",
+            "properties": {
+                "address_type": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "district": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "lattitude": {
+                    "type": "number"
+                },
+                "longtitude": {
+                    "type": "number"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                },
+                "recipient_name": {
+                    "type": "string"
+                },
+                "street": {
+                    "type": "string"
+                },
+                "ward": {
+                    "type": "string"
                 }
             }
         },
@@ -2908,10 +3481,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/api_gateway_dto.GetUserByAdminResponse"
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetUserByAdminResponse"
+                    }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                    "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
                 }
             }
         },
@@ -2925,7 +3501,7 @@ const docTemplate = `{
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                    "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
                 }
             }
         },
@@ -3013,6 +3589,17 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.MetadataWithPagination": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "pagination": {
+                    "$ref": "#/definitions/api_gateway_dto.Pagination"
+                }
+            }
+        },
         "api_gateway_dto.ModulesPermissionsRequest": {
             "type": "object",
             "required": [
@@ -3029,6 +3616,54 @@ const docTemplate = `{
                     "items": {
                         "type": "integer"
                     }
+                }
+            }
+        },
+        "api_gateway_dto.Pagination": {
+            "type": "object",
+            "properties": {
+                "has_next": {
+                    "type": "boolean"
+                },
+                "has_previous": {
+                    "type": "boolean"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total_items": {
+                    "type": "integer"
+                },
+                "total_pages": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.ProvinceResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.ProvinceResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.ProvinceResponse"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
                 }
             }
         },
@@ -3169,6 +3804,20 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.SetDefaultAddressResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.SetDefaultAddressResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.SetDefaultAddressResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.SettingsResponse": {
             "type": "object",
             "properties": {
@@ -3183,6 +3832,71 @@ const docTemplate = `{
                 },
                 "promotion": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateAddressRequest": {
+            "type": "object",
+            "required": [
+                "address_type_id",
+                "country",
+                "district",
+                "phone",
+                "province",
+                "recipient_name",
+                "street",
+                "ward"
+            ],
+            "properties": {
+                "address_type_id": {
+                    "type": "integer"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "district": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "lattitude": {
+                    "type": "number"
+                },
+                "longtitude": {
+                    "type": "number"
+                },
+                "phone": {
+                    "type": "string"
+                },
+                "postal_code": {
+                    "type": "string"
+                },
+                "province": {
+                    "type": "string"
+                },
+                "recipient_name": {
+                    "type": "string"
+                },
+                "street": {
+                    "type": "string"
+                },
+                "ward": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateAddressResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.UpdateAddressResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateAddressResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
                 }
             }
         },
@@ -3506,6 +4220,31 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.VerifyEmailResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.WardResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.WardResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.WardResponse"
+                    }
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"

@@ -73,3 +73,9 @@ type IUserHandler interface {
 	DeleteAddressByID(ctx *gin.Context)
 	SetDefaultAddressForUser(ctx *gin.Context)
 }
+
+type IAdministrativeDivisionHandler interface {
+	GetProvinces(ctx *gin.Context)
+	GetDistricts(ctx *gin.Context)
+	GetWards(ctx *gin.Context)
+}

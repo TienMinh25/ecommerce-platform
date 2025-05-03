@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS addresses (
     street VARCHAR(2000) NOT NULL,
     district VARCHAR(2000) NOT NULL,
     province VARCHAR(2000) NOT NULL,
-    postal_code VARCHAR(20) NOT NULL,
+    postal_code VARCHAR(20),
     country VARCHAR(2000) NOT NULL,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
     address_type VARCHAR(50) NOT NULL,

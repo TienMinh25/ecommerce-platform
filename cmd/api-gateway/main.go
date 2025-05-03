@@ -162,6 +162,7 @@ func main() {
 			api_gateway_handler.NewUserManagementHandler,
 			api_gateway_handler.NewRoleHandler,
 			api_gateway_handler.NewUserHandler,
+			api_gateway_handler.NewAdministrativeDivisionHandler,
 			// service
 			api_gateway_service.NewAdminAddressTypeService,
 			api_gateway_service.NewAuthenticationService,
@@ -173,6 +174,7 @@ func main() {
 			api_gateway_service.NewUserService,
 			api_gateway_service.NewRoleService,
 			api_gateway_service.NewUserMeService,
+			api_gateway_service.NewAdministrativeDivisionService,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
 			api_gateway_repository.NewUserRepository,
@@ -183,6 +185,7 @@ func main() {
 			api_gateway_repository.NewRefreshTokenRepository,
 			api_gateway_repository.NewRoleRepository,
 			api_gateway_repository.NewAddressRepository,
+			api_gateway_repository.NewAdministrativeDivisionRepository,
 			// tracer
 			NewTracerApiGatewayService,
 			// adapter
@@ -192,6 +195,13 @@ func main() {
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),
+		// And add code to initialize data in Redis when the application starts
+		fx.Invoke(func(svc api_gateway_service.IAdministrativeDivisionService) {
+			log.Println("Starting seeding provinces data to cache")
+			if err := svc.LoadDataToCache(context.Background()); err != nil {
+				log.Printf("Error loading administrative divisions data: %v", err)
+			}
+		}),
 	)
 
 	app.Run()

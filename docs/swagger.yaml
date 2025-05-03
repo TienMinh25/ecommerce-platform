@@ -41,6 +41,51 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.CreateAddressRequest:
+    properties:
+      address_type_id:
+        type: integer
+      country:
+        type: string
+      district:
+        type: string
+      is_default:
+        type: boolean
+      lattitude:
+        type: number
+      longtitude:
+        type: number
+      phone:
+        type: string
+      postal_code:
+        type: string
+      province:
+        type: string
+      recipient_name:
+        type: string
+      street:
+        type: string
+      ward:
+        type: string
+    required:
+    - address_type_id
+    - country
+    - district
+    - phone
+    - province
+    - recipient_name
+    - street
+    - ward
+    type: object
+  api_gateway_dto.CreateAddressResponse:
+    type: object
+  api_gateway_dto.CreateAddressResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.CreateAddressResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.CreateAddressTypeByAdminRequest:
     properties:
       address_type:
@@ -151,6 +196,15 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.DeleteAddressResponse:
+    type: object
+  api_gateway_dto.DeleteAddressResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.DeleteAddressResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.DeleteAddressTypeByAdminResponse:
     type: object
   api_gateway_dto.DeleteAddressTypeResponseDocs:
@@ -184,6 +238,22 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.DeleteUserByAdminResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.DistrictResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  api_gateway_dto.DistrictResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.DistrictResponse'
+        type: array
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -291,6 +361,15 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetListCurrentAddressResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetUserAddressResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
+    type: object
   api_gateway_dto.GetListModuleResponseDocs:
     properties:
       data:
@@ -298,7 +377,7 @@ definitions:
           $ref: '#/definitions/api_gateway_dto.GetModuleResponse'
         type: array
       metadata:
-        $ref: '#/definitions/api_gateway_dto.Metadata'
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
     type: object
   api_gateway_dto.GetModuleResponse:
     properties:
@@ -374,7 +453,36 @@ definitions:
           $ref: '#/definitions/api_gateway_dto.GetRoleResponse'
         type: array
       metadata:
-        $ref: '#/definitions/api_gateway_dto.Metadata'
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
+    type: object
+  api_gateway_dto.GetUserAddressResponse:
+    properties:
+      address_type:
+        type: string
+      country:
+        type: string
+      district:
+        type: string
+      id:
+        type: integer
+      is_default:
+        type: boolean
+      lattitude:
+        type: number
+      longtitude:
+        type: number
+      phone:
+        type: string
+      postal_code:
+        type: string
+      province:
+        type: string
+      recipient_name:
+        type: string
+      street:
+        type: string
+      ward:
+        type: string
     type: object
   api_gateway_dto.GetUserByAdminResponse:
     properties:
@@ -406,9 +514,11 @@ definitions:
   api_gateway_dto.GetUserByAdminResponseDocs:
     properties:
       data:
-        $ref: '#/definitions/api_gateway_dto.GetUserByAdminResponse'
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetUserByAdminResponse'
+        type: array
       metadata:
-        $ref: '#/definitions/api_gateway_dto.Metadata'
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
     type: object
   api_gateway_dto.ListAddressTypesResponseDocs:
     properties:
@@ -417,7 +527,7 @@ definitions:
           $ref: '#/definitions/api_gateway_dto.GetAddressTypeQueryResponse'
         type: array
       metadata:
-        $ref: '#/definitions/api_gateway_dto.Metadata'
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
     type: object
   api_gateway_dto.LoginRequest:
     properties:
@@ -474,6 +584,13 @@ definitions:
       code:
         type: integer
     type: object
+  api_gateway_dto.MetadataWithPagination:
+    properties:
+      code:
+        type: integer
+      pagination:
+        $ref: '#/definitions/api_gateway_dto.Pagination'
+    type: object
   api_gateway_dto.ModulesPermissionsRequest:
     properties:
       module_id:
@@ -486,6 +603,37 @@ definitions:
     required:
     - module_id
     - permissions
+    type: object
+  api_gateway_dto.Pagination:
+    properties:
+      has_next:
+        type: boolean
+      has_previous:
+        type: boolean
+      limit:
+        type: integer
+      page:
+        type: integer
+      total_items:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  api_gateway_dto.ProvinceResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  api_gateway_dto.ProvinceResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.ProvinceResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
   api_gateway_dto.RefreshTokenResponse:
     properties:
@@ -578,6 +726,15 @@ definitions:
       name:
         type: string
     type: object
+  api_gateway_dto.SetDefaultAddressResponse:
+    type: object
+  api_gateway_dto.SetDefaultAddressResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.SetDefaultAddressResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.SettingsResponse:
     properties:
       order_status:
@@ -588,6 +745,51 @@ definitions:
         type: boolean
       promotion:
         type: boolean
+    type: object
+  api_gateway_dto.UpdateAddressRequest:
+    properties:
+      address_type_id:
+        type: integer
+      country:
+        type: string
+      district:
+        type: string
+      is_default:
+        type: boolean
+      lattitude:
+        type: number
+      longtitude:
+        type: number
+      phone:
+        type: string
+      postal_code:
+        type: string
+      province:
+        type: string
+      recipient_name:
+        type: string
+      street:
+        type: string
+      ward:
+        type: string
+    required:
+    - address_type_id
+    - country
+    - district
+    - phone
+    - province
+    - recipient_name
+    - street
+    - ward
+    type: object
+  api_gateway_dto.UpdateAddressResponse:
+    type: object
+  api_gateway_dto.UpdateAddressResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateAddressResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
   api_gateway_dto.UpdateAddressTypeBodyRequest:
     properties:
@@ -801,6 +1003,22 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.VerifyEmailResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.WardResponse:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    type: object
+  api_gateway_dto.WardResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.WardResponse'
+        type: array
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -1020,6 +1238,88 @@ paths:
       summary: Update address type by address id
       tags:
       - address-types
+  /addresses/provinces:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all provinces/cities in Vietnam
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ProvinceResponseDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: Get all provinces/cities
+      tags:
+      - addresses
+  /addresses/provinces/{provinceID}/districts:
+    get:
+      consumes:
+      - application/json
+      description: Get list of districts for a specific province/city
+      parameters:
+      - description: Province ID
+        in: path
+        name: provinceID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.DistrictResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: Get districts by province ID
+      tags:
+      - addresses
+  /addresses/provinces/{provinceID}/districts/{districtID}/wards:
+    get:
+      consumes:
+      - application/json
+      description: Get list of wards for a specific district in a province
+      parameters:
+      - description: Province ID
+        in: path
+        name: provinceID
+        required: true
+        type: string
+      - description: District ID
+        in: path
+        name: districtID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.WardResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: Get wards by district ID
+      tags:
+      - addresses
   /auth/change-password:
     post:
       consumes:
@@ -2190,6 +2490,189 @@ paths:
       security:
       - BearerAuth: []
       summary: Cập nhật thông tin cá nhân
+      tags:
+      - me
+  /users/me/addresses:
+    get:
+      consumes:
+      - application/json
+      description: Lấy danh sách địa chỉ của người dùng
+      parameters:
+      - in: query
+        minimum: 1
+        name: limit
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetListCurrentAddressResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Lấy danh sách địa chỉ của người dùng
+      tags:
+      - me
+    post:
+      consumes:
+      - application/json
+      description: Tạo thêm 1 địa chỉ
+      parameters:
+      - description: Body gui len
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.CreateAddressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.CreateAddressResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Tạo thêm 1 địa chỉ
+      tags:
+      - me
+  /users/me/addresses/{addressID}:
+    delete:
+      consumes:
+      - application/json
+      description: Xoá địa chỉ
+      parameters:
+      - description: address id on path
+        in: path
+        name: addressID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.DeleteAddressResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Xoá địa chỉ
+      tags:
+      - me
+    patch:
+      consumes:
+      - application/json
+      description: Cập nhật địa chỉ bằng id của địa chỉ
+      parameters:
+      - description: address id on path
+        in: path
+        name: addressID
+        required: true
+        type: integer
+      - description: body of data
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateAddressRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateAddressResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật địa chỉ bằng id của địa chỉ
+      tags:
+      - me
+  /users/me/addresses/{addressID}/default:
+    patch:
+      consumes:
+      - application/json
+      description: Cập nhật địa chỉ mặc định
+      parameters:
+      - description: address id on path
+        in: path
+        name: addressID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.SetDefaultAddressResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Cập nhật địa chỉ mặc định
       tags:
       - me
   /users/me/avatars/get-presigned-url:

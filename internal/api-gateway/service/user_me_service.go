@@ -253,23 +253,73 @@ func (u *userMeService) GetListCurrentAddress(ctx context.Context, data *api_gat
 	hasNext := data.Page < totalPages
 	hasPrevious := data.Page > 1
 
-	var response []api_gateway_dto.GetRoleResponse
+	response := make([]api_gateway_dto.GetUserAddressResponse, 0)
 
-	for _, role := range res {
-		description := ""
-
-		if role.Description != nil {
-			description = *role.Description
-		}
-
-		response = append(response, api_gateway_dto.GetRoleResponse{
-			ID:          role.ID,
-			Name:        role.RoleName,
-			Description: description,
-			UpdatedAt:   role.UpdatedAt,
-			Permissions: role.ModulePermissions,
+	for _, address := range res {
+		response = append(response, api_gateway_dto.GetUserAddressResponse{
+			ID:            address.ID,
+			RecipientName: address.RecipientName,
+			Phone:         address.Phone,
+			Street:        address.Street,
+			District:      address.District,
+			Province:      address.Province,
+			Ward:          address.Ward,
+			PostalCode:    address.PostalCode,
+			Country:       address.Country,
+			IsDefault:     address.IsDefault,
+			Longtitude:    address.Longtitude,
+			Lattitude:     address.Latitude,
+			AddressTypeID: address.AddressTypeID,
 		})
 	}
 
 	return response, totalItems, totalPages, hasNext, hasPrevious, nil
+}
+
+func (u *userMeService) SetDefaultAddressByID(ctx context.Context, addressID, userID int) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "SetDefaultAddressByID"))
+	defer span.End()
+
+	if err := u.addressRepo.SetDefaultAddressByID(ctx, addressID, userID); err != nil {
+		span.RecordError(err)
+		return err
+	}
+
+	return nil
+}
+
+func (u *userMeService) CreateNewAddress(ctx context.Context, data *api_gateway_dto.CreateAddressRequest, userID int) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CreateNewAddress"))
+	defer span.End()
+
+	if err := u.addressRepo.CreateNewAddress(ctx, data, userID); err != nil {
+		span.RecordError(err)
+		return err
+	}
+
+	return nil
+}
+
+func (u *userMeService) UpdateAddressByID(ctx context.Context, data *api_gateway_dto.UpdateAddressRequest, userID, addressID int) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateAddressByID"))
+	defer span.End()
+
+	if err := u.addressRepo.UpdateAddressByID(ctx, data, userID, addressID); err != nil {
+		span.RecordError(err)
+		return err
+	}
+
+	return nil
+}
+
+func (u *userMeService) DeleteAddressByID(ctx context.Context, addressID int) error {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "DeleteAddressByID"))
+	defer span.End()
+
+	if err := u.addressRepo.DeleteAddressByID(ctx, addressID); err != nil {
+		span.RecordError(err)
+		return err
+	}
+
+	return nil
 }
