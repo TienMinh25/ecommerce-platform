@@ -71,13 +71,17 @@ type ServiceWorkerPoolConfig struct {
 }
 
 type ServerConfig struct {
-	ServerAddresss string `envconfig:"SERVER_ADDRESS"`
-	ConsumeGroup   string `envconfig:"API_GATEWAY_CONSUME_GROUP"`
+	ServerAddress string `envconfig:"SERVER_ADDRESS"`
+	ConsumeGroup  string `envconfig:"API_GATEWAY_CONSUME_GROUP"`
 }
 
 type NotificationServerConfig struct {
-	ServerAddresss string `envconfig:"NOTIFICATION_ADDRESS"`
-	ConsumeGroup   string `envconfig:"NOTIFICATION_CONSUME_GROUP"`
+	ServerAddress string `envconfig:"NOTIFICATION_ADDRESS"`
+	ConsumeGroup  string `envconfig:"NOTIFICATION_CONSUME_GROUP"`
+}
+
+type SupplierAndProductServerConfig struct {
+	ServerAddress string `envconfig:"SUPPLIER_AND_PRODUCT_ADDRESS"`
 }
 
 type GoogleOAuthConfig struct {
@@ -100,19 +104,20 @@ type ClientConfig struct {
 }
 
 type EnvManager struct {
-	ServerConfig             *ServerConfig
-	PostgreSQL               *PostgreSQLConfig
-	Redis                    *RedisConfig
-	Jeager                   *JeagerConfig
-	Mail                     *MailConfig
-	Mongo                    *MongoDBConfig
-	MinioConfig              *MinioConfig
-	Kafka                    *KafkaConfig
-	ServiceWorkerPool        *ServiceWorkerPoolConfig
-	NotificationServerConfig *NotificationServerConfig
-	GoogleOAuth              *GoogleOAuthConfig
-	FacebookOAuth            *FacebookOAuthConfig
-	Client                   *ClientConfig
+	ServerConfig                   *ServerConfig
+	PostgreSQL                     *PostgreSQLConfig
+	Redis                          *RedisConfig
+	Jeager                         *JeagerConfig
+	Mail                           *MailConfig
+	Mongo                          *MongoDBConfig
+	MinioConfig                    *MinioConfig
+	Kafka                          *KafkaConfig
+	ServiceWorkerPool              *ServiceWorkerPoolConfig
+	NotificationServerConfig       *NotificationServerConfig
+	SupplierAndProductServerConfig *SupplierAndProductServerConfig
+	GoogleOAuth                    *GoogleOAuthConfig
+	FacebookOAuth                  *FacebookOAuthConfig
+	Client                         *ClientConfig
 
 	RedirectURI string `envconfig:"REDIRECT_URI"`
 

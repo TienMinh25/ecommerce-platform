@@ -105,3 +105,7 @@ type IAdministrativeDivisionService interface {
 	GetDistricts(ctx context.Context, provinceID string) ([]api_gateway_dto.DistrictResponse, error)
 	GetWards(ctx context.Context, provinceID, districtID string) ([]api_gateway_dto.WardResponse, error)
 }
+
+type ICategoryService interface {
+	GetCategories(ctx context.Context, parentID *int64) ([]api_gateway_dto.GetCategoriesResponse, error)
+}

@@ -1,6 +1,5 @@
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import {
-  AspectRatio,
   Box,
   Button,
   Container,
@@ -9,19 +8,19 @@ import {
   GridItem,
   Heading,
   IconButton,
-  Image,
   Stack,
   Text,
-  useBreakpointValue,
   VStack
 } from '@chakra-ui/react';
 import { useRef, useState } from 'react';
 import { FaArrowRight } from 'react-icons/fa';
 import { Link as RouterLink } from 'react-router-dom';
 import ProductCard from '../components/products/ProductCard';
-import slideImage from '../assets/images/sale.png'
-import freeshipImage from '../assets/images/freeship.png'
-import newCollectionImage from '../assets/images/new_collection.png'
+
+import slideImage from '../assets/images/sale.png';
+import freeshipImage from '../assets/images/freeship.png';
+import newCollectionImage from '../assets/images/new_collection.png';
+import CategorySlider from "../components/category/CategorySlider.jsx";
 
 const Home = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -48,45 +47,7 @@ const Home = () => {
     },
   ];
 
-  const featuredCategories = [
-    {
-      id: 1,
-      name: 'Thời trang nam',
-      image: 'https://via.placeholder.com/300x300?text=Men',
-      link: '/category/men',
-    },
-    {
-      id: 2,
-      name: 'Thời trang nữ',
-      image: 'https://via.placeholder.com/300x300?text=Women',
-      link: '/category/women',
-    },
-    {
-      id: 3,
-      name: 'Đồng hồ',
-      image: 'https://via.placeholder.com/300x300?text=Watches',
-      link: '/category/watches',
-    },
-    {
-      id: 4,
-      name: 'Giày dép',
-      image: 'https://via.placeholder.com/300x300?text=Shoes',
-      link: '/category/shoes',
-    },
-    {
-      id: 5,
-      name: 'Túi xách',
-      image: 'https://via.placeholder.com/300x300?text=Bags',
-      link: '/category/bags',
-    },
-    {
-      id: 6,
-      name: 'Phụ kiện',
-      image: 'https://via.placeholder.com/300x300?text=Accessories',
-      link: '/category/accessories',
-    },
-  ];
-
+  // Extended popular products to 16 items
   const popularProducts = [
     {
       id: 1,
@@ -160,6 +121,78 @@ const Home = () => {
       rating: 4.2,
       reviewCount: 65,
     },
+    {
+      id: 9,
+      name: 'Áo khoác denim nữ',
+      image: 'https://via.placeholder.com/300x300?text=Jacket',
+      price: 799000,
+      originalPrice: 999000,
+      rating: 4.7,
+      reviewCount: 143,
+    },
+    {
+      id: 10,
+      name: 'Quần short nam thể thao',
+      image: 'https://via.placeholder.com/300x300?text=Shorts',
+      price: 259000,
+      originalPrice: 350000,
+      rating: 4.4,
+      reviewCount: 92,
+    },
+    {
+      id: 11,
+      name: 'Áo sơ mi nam dài tay',
+      image: 'https://via.placeholder.com/300x300?text=Shirt',
+      price: 429000,
+      originalPrice: 529000,
+      rating: 4.6,
+      reviewCount: 178,
+    },
+    {
+      id: 12,
+      name: 'Dép nữ đi trong nhà',
+      image: 'https://via.placeholder.com/300x300?text=Slippers',
+      price: 129000,
+      originalPrice: 179000,
+      rating: 4.3,
+      reviewCount: 146,
+    },
+    {
+      id: 13,
+      name: 'Váy đầm dự tiệc',
+      image: 'https://via.placeholder.com/300x300?text=PartyDress',
+      price: 850000,
+      originalPrice: 1100000,
+      rating: 4.8,
+      reviewCount: 87,
+    },
+    {
+      id: 14,
+      name: 'Balo laptop thời trang',
+      image: 'https://via.placeholder.com/300x300?text=Backpack',
+      price: 590000,
+      originalPrice: 790000,
+      rating: 4.7,
+      reviewCount: 124,
+    },
+    {
+      id: 15,
+      name: 'Khăn quàng cổ len',
+      image: 'https://via.placeholder.com/300x300?text=Scarf',
+      price: 199000,
+      originalPrice: 280000,
+      rating: 4.5,
+      reviewCount: 58,
+    },
+    {
+      id: 16,
+      name: 'Găng tay da nam',
+      image: 'https://via.placeholder.com/300x300?text=Gloves',
+      price: 399000,
+      originalPrice: 499000,
+      rating: 4.6,
+      reviewCount: 42,
+    },
   ];
 
   const prevSlide = () => {
@@ -169,8 +202,6 @@ const Home = () => {
   const nextSlide = () => {
     setCurrentSlide((s) => (s === slides.length - 1 ? 0 : s + 1));
   };
-
-  const columns = useBreakpointValue({ base: 2, md: 3, lg: 4 });
 
   return (
       <Box>
@@ -239,10 +270,10 @@ const Home = () => {
               borderRadius='full'
               onClick={prevSlide}
               bg='white'
-              color='black' // Thêm màu cho icon
-              boxShadow='md' // Thêm shadow để nổi bật hơn
+              color='black'
+              boxShadow='md'
               opacity='0.8'
-              _hover={{ opacity: 1, bg: 'white' }} // Đảm bảo hover vẫn giữ màu trắng
+              _hover={{ opacity: 1, bg: 'white' }}
               zIndex='1'
           />
 
@@ -256,88 +287,19 @@ const Home = () => {
               borderRadius='full'
               onClick={nextSlide}
               bg='white'
-              color='black' // Thêm màu cho icon
-              boxShadow='md' // Thêm shadow để nổi bật hơn
+              color='black'
+              boxShadow='md'
               opacity='0.8'
-              _hover={{ opacity: 1, bg: 'white' }} // Đảm bảo hover vẫn giữ màu trắng
+              _hover={{ opacity: 1, bg: 'white' }}
               zIndex='1'
           />
         </Box>
 
         <Container maxW='container.xl' py={8}>
-          {/* Featured Categories */}
-          <Box mb={16}>
-            <Flex justify='space-between' align='center' mb={8}>
-              <Heading as='h2' size='lg'>
-                Danh mục nổi bật
-              </Heading>
-              <Button
-                  as={RouterLink}
-                  to='/categories'
-                  variant='link'
-                  colorScheme='brand'
-                  rightIcon={<FaArrowRight />}
-              >
-                Xem tất cả
-              </Button>
-            </Flex>
+          {/* Categories Slider - Using the updated component with API service */}
+          <CategorySlider />
 
-            <Grid
-                templateColumns={{
-                  base: 'repeat(2, 1fr)',
-                  md: 'repeat(3, 1fr)',
-                  lg: 'repeat(6, 1fr)',
-                }}
-                gap={6}
-            >
-              {featuredCategories.map((category) => (
-                  <GridItem key={category.id} w='100%'>
-                    <Box
-                        as={RouterLink}
-                        to={category.link}
-                        position='relative'
-                        borderRadius='lg'
-                        overflow='hidden'
-                        transition='transform 0.3s'
-                        _hover={{ transform: 'translateY(-5px)' }}
-                        w='100%'
-                        h='100%'
-                    >
-                      <AspectRatio ratio={1} w='100%'>
-                        <Image
-                            src={category.image}
-                            alt={category.name}
-                            objectFit='cover'
-                            w='100%'
-                            h='100%'
-                        />
-                      </AspectRatio>
-                      <Box
-                          position='absolute'
-                          bottom='0'
-                          left='0'
-                          right='0'
-                          bg='rgba(0,0,0,0.7)'
-                          p={3}
-                          textAlign='center'
-                      >
-                        <Text
-                            color='white'
-                            fontWeight='semibold'
-                            fontSize={{ base: 'sm', md: 'md' }}
-                            isTruncated
-                        >
-                          {category.name}
-                        </Text>
-                      </Box>
-                    </Box>
-                  </GridItem>
-              ))}
-            </Grid>
-          </Box>
-
-          {/* Rest of the component remains the same */}
-          {/* Popular Products */}
+          {/* Popular Products - 16 products */}
           <Box mb={16}>
             <Flex justify='space-between' align='center' mb={8}>
               <Heading as='h2' size='lg'>

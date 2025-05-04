@@ -339,6 +339,24 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetCategoriesResponse:
+    properties:
+      id:
+        type: integer
+      image_url:
+        type: string
+      name:
+        type: string
+      parent_id:
+        type: integer
+    type: object
+  api_gateway_dto.GetCategoriesResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetCategoriesResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.GetCurrentUserResponse:
     properties:
       avatar_url:
@@ -1706,6 +1724,36 @@ paths:
       summary: verify email register
       tags:
       - auth
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Get categories
+      parameters:
+      - description: get sub cate and parent cate if parent_id is passed
+        in: query
+        name: parent_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetCategoriesResponseDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get categories
+      tags:
+      - categories
   /modules:
     get:
       consumes:

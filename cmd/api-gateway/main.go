@@ -8,6 +8,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
+	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/kafka"
 	"github.com/TienMinh25/ecommerce-platform/third_party/s3"
@@ -51,7 +52,7 @@ func NewGrpcNotificationClient(env *env.EnvManager) notification_proto_gen.Notif
 
 	otps = append(otps, grpc.WithInsecure())
 
-	conn, err := grpc.NewClient(env.NotificationServerConfig.ServerAddresss, otps...)
+	conn, err := grpc.NewClient(env.NotificationServerConfig.ServerAddress, otps...)
 
 	if err != nil {
 		log.Fatalf("NewGrpcNotificationClient err: %v", err)
@@ -62,15 +63,31 @@ func NewGrpcNotificationClient(env *env.EnvManager) notification_proto_gen.Notif
 	return client
 }
 
+func NewGrpcSupplierAndProductClient(env *env.EnvManager) partner_proto_gen.PartnerServiceClient {
+	var otps []grpc.DialOption
+
+	otps = append(otps, grpc.WithInsecure())
+
+	conn, err := grpc.NewClient(env.SupplierAndProductServerConfig.ServerAddress, otps...)
+
+	if err != nil {
+		log.Fatalf("NewGrpcSupplierAndProductClient err: %v", err)
+	}
+
+	client := partner_proto_gen.NewPartnerServiceClient(conn)
+
+	return client
+}
+
 func StartServer(lifecycle fx.Lifecycle, r *api_gateway_router.Router, env *env.EnvManager) {
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go func() {
-				if err := r.Router.Run(env.ServerConfig.ServerAddresss); err != nil {
+				if err := r.Router.Run(env.ServerConfig.ServerAddress); err != nil {
 					log.Fatal(err)
 				}
 
-				log.Println("Server is running on " + env.ServerConfig.ServerAddresss)
+				log.Println("Server is running on " + env.ServerConfig.ServerAddress)
 			}()
 
 			return nil
@@ -163,6 +180,7 @@ func main() {
 			api_gateway_handler.NewRoleHandler,
 			api_gateway_handler.NewUserHandler,
 			api_gateway_handler.NewAdministrativeDivisionHandler,
+			api_gateway_handler.NewCategoryHandler,
 			// service
 			api_gateway_service.NewAdminAddressTypeService,
 			api_gateway_service.NewAuthenticationService,
@@ -175,6 +193,7 @@ func main() {
 			api_gateway_service.NewRoleService,
 			api_gateway_service.NewUserMeService,
 			api_gateway_service.NewAdministrativeDivisionService,
+			api_gateway_service.NewCategoryService,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
 			api_gateway_repository.NewUserRepository,
@@ -192,6 +211,7 @@ func main() {
 			httpclient.NewHTTPClient,
 			// client grpc
 			NewGrpcNotificationClient,
+			NewGrpcSupplierAndProductClient,
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),

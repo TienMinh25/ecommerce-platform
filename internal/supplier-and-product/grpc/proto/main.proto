@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option go_package = "./partner_proto_gen";
+
+import 'category.proto';
+
+service PartnerService {
+  rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
+}

@@ -84,3 +84,7 @@ type IAdministrativeDivisionHandler interface {
 	GetDistricts(ctx *gin.Context)
 	GetWards(ctx *gin.Context)
 }
+
+type ICategoryHandler interface {
+	GetCategories(ctx *gin.Context)
+}

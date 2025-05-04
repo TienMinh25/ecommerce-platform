@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "./partner_proto_gen";
+
+message GetCategoriesResponse {
+    repeated CategoryResponse categories = 1;
+}
+
+message CategoryResponse {
+  int64 category_id = 1;
+  string name = 2;
+  string image_url = 3;
+  optional int64 parent_id = 4;
+}
+
+message GetCategoriesRequest {
+  optional int64 parent_id = 1;
+}

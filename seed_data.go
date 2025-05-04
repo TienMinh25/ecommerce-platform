@@ -4,7 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"io"
 	"log"
 	"math"
@@ -13,12 +18,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/TienMinh25/ecommerce-platform/internal/common"
-	"github.com/TienMinh25/ecommerce-platform/internal/utils"
-	"github.com/brianvoe/gofakeit/v7"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PermissionDetail struct {
@@ -49,16 +48,418 @@ type Ward struct {
 	Name string `json:"Name"`
 }
 
-// Cấu trúc sản phẩm từ Shopee (dùng để crawl dữ liệu)
-type ShopeeProduct struct {
-	Name        string   `json:"name"`
-	Price       float64  `json:"price"`
-	Description string   `json:"description"`
-	Images      []string `json:"images"`
-	Categories  []string `json:"categories"`
+// Danh sách các APIs hỗ trợ dữ liệu địa giới hành chính Việt Nam
+var vietnamGeoAPIs = []string{
+	"https://provinces.open-api.vn/api/?depth=3", // API với đầy đủ phường/xã
+	"https://vietnam-administrative-divisions.vercel.app/api/",
+	"https://vapi.vnappmob.com/api/province/",
 }
 
-// Danh sách attribute cho sản phẩm theo danh mục
+// Mở rộng danh sách tên sản phẩm mẫu theo danh mục
+var categoryProductNames = map[string][]string{
+	"Điện thoại thông minh": {
+		"iPhone 13 Pro Max", "iPhone 14", "Samsung Galaxy S22 Ultra", "Samsung Galaxy Z Fold 4",
+		"Xiaomi Redmi Note 11", "Xiaomi 12T Pro", "OPPO Reno8 Pro", "OPPO Find X5 Pro",
+		"Vivo V25 Pro", "Realme GT Neo 3", "Nokia G21", "Huawei Nova 10",
+		"iPhone 15 Pro", "Samsung Galaxy S23", "Google Pixel 7", "OnePlus 11",
+		"Xiaomi 13", "Nothing Phone", "Sony Xperia 5 IV", "Asus ROG Phone 7",
+	},
+	"Máy tính xách tay": {
+		"MacBook Air M2", "MacBook Pro 14", "Dell XPS 13", "Dell Inspiron 15",
+		"HP Spectre x360", "HP Pavilion 15", "Lenovo ThinkPad X1 Carbon", "Lenovo Yoga 7i",
+		"Asus ZenBook 14", "Asus ROG Zephyrus G14", "Acer Swift 5", "MSI Prestige 14",
+		"Microsoft Surface Laptop 5", "Razer Blade 15", "LG Gram 17", "Gigabyte Aero 16",
+		"Framework Laptop", "Huawei MateBook X Pro", "Samsung Galaxy Book 3", "Alienware m18",
+	},
+	"Thời trang nam": {
+		"Áo sơ mi nam dài tay", "Áo thun nam cổ tròn", "Áo thun polo nam", "Áo khoác denim nam",
+		"Áo khoác bomber nam", "Quần jeans nam slim fit", "Quần kaki nam", "Quần short nam",
+		"Bộ vest nam công sở", "Áo len nam cổ tròn", "Áo hoodie nam", "Quần tây nam công sở",
+		"Áo phông nam cổ V", "Áo khoác gió nam", "Áo blazer nam", "Quần jogger nam",
+		"Áo gile nam", "Quần shorts thể thao nam", "Áo thun nam oversize", "Áo sơ mi nam caro",
+	},
+	"Thời trang nữ": {
+		"Áo sơ mi nữ công sở", "Áo blouse nữ", "Áo thun nữ cổ tròn", "Áo khoác denim nữ",
+		"Đầm suông nữ", "Đầm ôm body nữ", "Chân váy chữ A", "Chân váy tennis",
+		"Quần jeans nữ ống rộng", "Quần culottes nữ", "Áo cardigan nữ", "Set đồ nữ hai mảnh",
+		"Áo croptop nữ", "Áo kiểu nữ", "Đầm maxi nữ", "Quần short nữ",
+		"Áo thun oversize nữ", "Quần baggy nữ", "Áo khoác blazer nữ", "Chân váy midi",
+	},
+	"Đồ gia dụng": {
+		"Nồi cơm điện", "Máy xay sinh tố", "Bếp từ đơn", "Bếp gas đôi",
+		"Lò vi sóng", "Ấm đun nước siêu tốc", "Máy lọc không khí", "Quạt điều hòa",
+		"Máy hút bụi", "Bàn ủi hơi nước", "Nồi chiên không dầu", "Máy rửa chén",
+		"Máy lọc nước", "Máy ép trái cây", "Máy sấy tóc", "Nồi áp suất điện",
+		"Máy đánh trứng", "Bàn là hơi nước đứng", "Máy xay thịt", "Máy làm sữa hạt",
+	},
+	"Sách": {
+		"Nhà Giả Kim", "Đắc Nhân Tâm", "Cà Phê Cùng Tony", "Người Giàu Có Nhất Thành Babylon",
+		"Hai Số Phận", "Điều Kỳ Diệu Của Tiệm Tạp Hóa Namiya", "Bước Chậm Lại Giữa Thế Gian Vội Vã", "Tuổi Trẻ Đáng Giá Bao Nhiêu",
+		"Chúng Ta Rồi Sẽ Hạnh Phúc, Theo Những Cách Khác Nhau", "Khéo Ăn Nói Sẽ Có Được Thiên Hạ", "Tôi Tài Giỏi, Bạn Cũng Thế", "Dám Nghĩ Lớn",
+		"Atomic Habits", "Sapiens", "Thinking Fast and Slow", "Đàn Ông Sao Hỏa Đàn Bà Sao Kim",
+		"Tiểu thuyết Sherlock Holmes", "Harry Potter", "Nhật ký Anne Frank", "Nghệ thuật tinh tế của việc đếch quan tâm",
+	},
+	"Thể thao": {
+		"Tạ tay 5kg", "Thảm tập yoga", "Dây nhảy thể dục", "Máy chạy bộ điện",
+		"Xe đạp tập thể dục", "Găng tay tập gym", "Ghế tập bụng đa năng", "Bóng đá size 5",
+		"Vợt cầu lông", "Vợt tennis", "Bộ cờ vua quốc tế", "Bàn bóng bàn",
+		"Xe đạp địa hình", "Gậy golf", "Áo bơi nam", "Áo bơi nữ",
+		"Giày chạy bộ", "Bóng rổ", "Dụng cụ bơi lội", "Máy tập thể dục đa năng",
+	},
+	"Máy tính bảng": {
+		"iPad Pro 12.9", "iPad Mini", "Samsung Galaxy Tab S8 Ultra", "Samsung Galaxy Tab A8",
+		"Xiaomi Pad 5", "Lenovo Tab P11 Pro", "Huawei MatePad Pro", "Amazon Fire HD 10",
+		"Microsoft Surface Pro 9", "Realme Pad", "Nokia T20", "OnePlus Pad",
+		"iPad Air", "Redmi Pad", "Vivo Pad", "TCL NXTPAPER 11",
+	},
+	"Máy tính để bàn": {
+		"iMac 24", "Mac Mini M2", "Dell OptiPlex", "HP Pavilion Desktop",
+		"Lenovo ThinkCentre", "Asus ProArt", "Acer Aspire TC", "MSI MAG Infinite",
+		"HP All-in-One", "Lenovo IdeaCentre AIO", "Microsoft Surface Studio", "Dell XPS Desktop",
+		"ASUS ROG Strix", "Corsair One", "Alienware Aurora", "HP Omen",
+	},
+	"Tai nghe & Loa": {
+		"AirPods Pro", "Sony WH-1000XM5", "JBL Flip 6", "Bose QuietComfort Earbuds",
+		"Samsung Galaxy Buds Pro", "Harman Kardon Onyx Studio", "Marshall Emberton", "Anker Soundcore",
+		"Beats Studio Buds", "Jabra Elite 7 Pro", "Logitech G Pro X", "Sennheiser HD 660S",
+		"UE Wonderboom", "Bose SoundLink Revolve+", "Edifier R1280DB", "Audio-Technica ATH-M50x",
+	},
+	"Máy ảnh & Máy quay": {
+		"Sony Alpha A7 IV", "Canon EOS R6", "Nikon Z6 II", "Fujifilm X-T4",
+		"GoPro HERO11 Black", "DJI Pocket 2", "Canon EOS 90D", "Sony ZV-1",
+		"Panasonic Lumix GH6", "Olympus OM-D E-M10", "Leica Q2", "Ricoh GR III",
+		"Canon EOS R5", "Sony A6600", "Nikon Z9", "Fujifilm X100V",
+	},
+	"Thời trang trẻ em": {
+		"Bộ quần áo trẻ em hình thú", "Áo thun bé trai họa tiết siêu nhân", "Váy công chúa bé gái", "Đồ bộ thể thao trẻ em", "Đồ bơi trẻ em", "Áo khoác trẻ em",
+		"Quần jeans bé trai", "Giày thể thao trẻ em", "Đầm dự tiệc bé gái", "Quần áo sơ sinh",
+		"Áo len trẻ em", "Quần short bé trai", "Váy denim bé gái", "Áo phông trẻ em họa tiết hoạt hình",
+		"Bộ đồ ngủ trẻ em", "Mũ bảo hiểm trẻ em", "Túi đeo chéo trẻ em", "Giày sandal trẻ em",
+	},
+	"Giày dép": {
+		"Giày thể thao nam", "Giày cao gót nữ", "Giày tây nam", "Giày sandal nữ",
+		"Dép quai hậu nam", "Giày búp bê nữ", "Giày lười nam", "Giày boot nữ",
+		"Giày thể thao nữ", "Giày đế xuồng nữ", "Dép tông nam", "Giày oxford nam",
+		"Giày sneaker nữ", "Dép lê nam", "Giày mọi nữ", "Giày vải nam",
+	},
+	"Túi xách": {
+		"Túi xách tay nữ", "Túi đeo chéo nữ", "Balo nam", "Balo nữ",
+		"Túi đeo hông nam", "Túi clutch nữ", "Túi laptop", "Túi du lịch",
+		"Ví nam", "Ví nữ", "Túi tote nữ", "Túi đeo chéo nam",
+		"Túi xách công sở nữ", "Túi chống sốc laptop", "Túi đựng mỹ phẩm", "Balo du lịch",
+	},
+	"Đồng hồ & Trang sức": {
+		"Đồng hồ nam", "Đồng hồ nữ", "Nhẫn bạc nữ", "Vòng tay nam",
+		"Dây chuyền bạc nữ", "Khuyên tai nữ", "Nhẫn cưới", "Vòng cổ nam",
+		"Đồng hồ thông minh", "Lắc tay nữ", "Mặt dây chuyền phật", "Đồng hồ đôi",
+		"Nhẫn nam", "Vòng cổ choker", "Bông tai nam", "Nhẫn đính hôn",
+	},
+	"Đồ dùng nhà bếp": {
+		"Bộ nồi inox", "Chảo chống dính", "Dao làm bếp", "Thớt gỗ",
+		"Hộp đựng thực phẩm", "Bình giữ nhiệt", "Bát đĩa", "Đũa thìa inox",
+		"Máy xay cà phê", "Cây đánh trứng", "Ly thủy tinh", "Nồi lẩu điện",
+		"Dao gọt hoa quả", "Ấm trà", "Đồ lọc cà phê", "Dụng cụ làm bánh",
+	},
+	"Đồ dùng phòng ngủ": {
+		"Bộ ga gối đệm", "Chăn lông cừu", "Nệm cao su", "Gối ôm",
+		"Gối tựa đầu", "Đệm bông ép", "Vỏ chăn", "Gối latex",
+		"Đèn ngủ", "Màn chống muỗi", "Đồng hồ báo thức", "Nệm lò xo",
+		"Gối mềm", "Tủ đầu giường", "Rèm cửa phòng ngủ", "Thảm trải sàn",
+	},
+	"Đồ dùng phòng tắm": {
+		"Khăn tắm", "Rèm nhà tắm", "Gương phòng tắm", "Vòi sen",
+		"Giá treo khăn", "Thảm chân nhà tắm", "Kệ góc nhà tắm", "Bộ phụ kiện nhà tắm",
+		"Bồn rửa mặt", "Vòi rửa mặt", "Máy sấy tóc", "Hộp đựng xà phòng",
+		"Giá treo đồ", "Bồn tắm", "Khăn mặt", "Giấy vệ sinh",
+	},
+	"Văn phòng phẩm": {
+		"Bút bi", "Bút gel", "Sổ tay", "Giấy note",
+		"Kẹp giấy", "Máy tính cầm tay", "Bút highlight", "Thước kẻ",
+		"Hộp bút", "Bút chì", "Gôm tẩy", "Ghim bấm",
+		"Kéo văn phòng", "Máy bấm kim", "Giá đỡ tài liệu", "Dập ghim",
+	},
+	"Sách giáo khoa": {
+		"Sách tiếng Việt lớp 1", "Sách Toán lớp 5", "Sách Tiếng Anh lớp 9", "Sách Vật lý lớp 12",
+		"Sách Hóa học lớp 11", "Sách Sinh học lớp 10", "Sách Lịch sử lớp 7", "Sách Địa lý lớp 8",
+		"Sách Giáo dục công dân", "Sách Tin học", "Sách ôn thi THPT Quốc gia", "Sách ôn thi đại học",
+		"Sách tham khảo Toán", "Sách tham khảo Ngữ văn", "Từ điển Anh-Việt", "Sách giáo trình đại học",
+	},
+	"Tạp chí & Báo": {
+		"Tạp chí Thời trang", "Báo Thanh niên", "Tạp chí Đẹp", "Báo Tuổi trẻ",
+		"Tạp chí Kinh tế", "Báo Nhân dân", "Tạp chí Sức khỏe", "Báo Pháp luật",
+		"Tạp chí Du lịch", "Báo Hà Nội mới", "Tạp chí Kiến trúc", "Báo Tiền phong",
+		"Tạp chí Ẩm thực", "Báo Lao động", "Tạp chí Khoa học", "Báo Đầu tư",
+	},
+	"Dụng cụ thể thao": {
+		"Quả bóng đá", "Vợt cầu lông", "Bóng rổ", "Quả bóng chuyền",
+		"Gậy golf", "Vợt tennis", "Bàn cờ vua", "Túi đựng đồ thể thao",
+		"Túi đựng vợt", "Găng tay tập gym", "Băng đô thể thao", "Khăn lau mồ hôi",
+		"Găng tay golf", "Balo thể thao", "Băng bảo vệ cổ tay", "Giàn tập tạ",
+	},
+	"Vali & Túi du lịch": {
+		"Vali kéo 20 inch", "Vali kéo 24 inch", "Vali kéo 28 inch", "Balo du lịch",
+		"Túi du lịch", "Túi đựng đồ cá nhân", "Túi đựng giày", "Túi đựng mỹ phẩm",
+		"Vali kéo trẻ em", "Balo máy ảnh", "Túi chống nước", "Gói hành lý",
+		"Khóa vali", "Thẻ hành lý", "Gối cổ du lịch", "Túi treo quần áo",
+	},
+	"Thiết bị cắm trại": {
+		"Lều cắm trại", "Túi ngủ", "Đèn cắm trại", "Bếp dã ngoại",
+		"Ghế xếp", "Bàn xếp", "Dao đa năng", "Thảm picnic",
+		"Túi giữ lạnh", "Bình nước", "Võng dã ngoại", "Bếp cồn",
+		"Mũ cắm trại", "Áo mưa", "Dụng cụ nấu ăn cắm trại", "Đèn pin",
+	},
+	"Xe đạp & Phụ kiện": {
+		"Xe đạp đường phố", "Xe đạp thể thao", "Xe đạp trẻ em", "Xe đạp điện",
+		"Mũ bảo hiểm xe đạp", "Găng tay xe đạp", "Đèn xe đạp", "Bơm xe đạp",
+		"Khóa xe đạp", "Túi treo xe đạp", "Chuông xe đạp", "Gương xe đạp",
+		"Kính xe đạp", "Giỏ xe đạp", "Bình nước xe đạp", "Găng tay xe đạp",
+	},
+	"Đồ dùng cho bé": {
+		"Tã dán", "Tã quần", "Sữa bột", "Bình sữa",
+		"Núm ti", "Ghế ăn dặm", "Xe tập đi", "Nôi em bé",
+		"Xe đẩy em bé", "Miếng lót thấm sữa", "Máy hâm sữa", "Máy tiệt trùng bình sữa",
+		"Khăn ướt", "Phấn rôm", "Dầu gội em bé", "Sữa tắm em bé",
+	},
+	"Đồ chơi cho bé": {
+		"Đồ chơi xếp hình", "Thú nhồi bông", "Đồ chơi gỗ", "Đồ chơi âm nhạc",
+		"Đồ chơi nhà tắm", "Xe ô tô đồ chơi", "Búp bê", "Đồ chơi giáo dục",
+		"Đồ chơi ngoài trời", "Đồ chơi nấu ăn", "Đồ chơi bác sĩ", "Lego",
+		"Đồ chơi cát", "Đồ chơi câu cá", "Đồ chơi nhà bếp", "Đồ chơi vận động",
+	},
+	"Thời trang cho bé": {
+		"Bộ bodysuit", "Áo sơ sinh", "Quần sơ sinh", "Mũ sơ sinh",
+		"Áo thun bé trai", "Áo thun bé gái", "Quần jeans bé trai", "Váy bé gái",
+		"Bộ đồ ngủ bé trai", "Bộ đồ ngủ bé gái", "Giày tập đi", "Tất em bé",
+		"Giày cho bé", "Đồ bơi bé trai", "Đồ bơi bé gái", "Mũ lưỡi trai trẻ em",
+	},
+	"Đồ dùng cho mẹ": {
+		"Áo cho con bú", "Máy hút sữa", "Túi trữ sữa", "Đai đỡ bụng bầu",
+		"Kem chống rạn da", "Sữa rửa mặt cho bà bầu", "Gối bầu", "Quần bầu",
+		"Áo bầu", "Túi đựng đồ cho mẹ và bé", "Ghế massage cho bà bầu", "Vitamin cho bà bầu",
+		"Sữa bầu", "Túi giữ nhiệt sữa", "Kem nứt đầu ti", "Áo lót cho con bú",
+	},
+	"Mỹ phẩm": {
+		"Son môi", "Phấn má hồng", "Kem nền", "Mascara",
+		"Phấn phủ", "Kẻ mắt", "Phấn mắt", "Kem lót",
+		"Tẩy trang", "Sữa rửa mặt", "Kem chống nắng", "Xịt khoáng",
+		"Kem dưỡng ẩm", "Mặt nạ dưỡng da", "Serum dưỡng da", "Nước hoa",
+	},
+	"Chăm sóc da": {
+		"Sữa rửa mặt", "Toner", "Serum", "Kem dưỡng ẩm",
+		"Kem chống nắng", "Mặt nạ giấy", "Mặt nạ ngủ", "Tẩy tế bào chết",
+		"Kem mắt", "Kem trị mụn", "Kem trị thâm", "Kem dưỡng body",
+		"Sữa tắm", "Dầu gội", "Dầu xả", "Kem tẩy lông",
+	},
+	"Chăm sóc tóc": {
+		"Dầu gội", "Dầu xả", "Kem ủ tóc", "Serum dưỡng tóc",
+		"Dầu dưỡng tóc", "Xịt dưỡng tóc", "Thuốc nhuộm tóc", "Máy sấy tóc",
+		"Máy duỗi tóc", "Máy uốn tóc", "Lược chải tóc", "Kẹp tóc",
+		"Mũ trùm tóc", "Khăn quấn tóc", "Dầu gội khô", "Wax tóc",
+	},
+	"Thực phẩm chức năng": {
+		"Viên uống vitamin C", "Viên uống collagen", "Viên uống sáng da", "Viên uống chống nắng",
+		"Viên uống giảm cân", "Viên uống bổ gan", "Viên uống canxi", "Viên uống omega 3",
+		"Viên uống vitamin tổng hợp", "Viên uống probiotics", "Viên uống sữa ong chúa", "Viên uống tăng cường miễn dịch",
+		"Viên uống mọc tóc", "Viên uống ngừa nám", "Viên uống bổ mắt", "Viên uống tăng chiều cao",
+	},
+	"Thiết bị y tế": {
+		"Máy đo huyết áp", "Máy đo đường huyết", "Máy massage", "Nhiệt kế",
+		"Máy xông mũi họng", "Máy hút mũi", "Dụng cụ rửa mũi", "Hộp đựng thuốc",
+		"Băng gạc y tế", "Cồn y tế", "Bông gòn y tế", "Dung dịch sát khuẩn",
+		"Khẩu trang y tế", "Ống nghe y tế", "Máy đo nồng độ oxy", "Găng tay y tế",
+	},
+	"Thực phẩm khô": {
+		"Gạo", "Mì gói", "Hạt nêm", "Dầu ăn",
+		"Nước mắm", "Nước tương", "Đường", "Muối",
+		"Bột ngọt", "Hạt tiêu", "Bột canh", "Tương ớt",
+		"Cà phê hòa tan", "Trà túi lọc", "Thực phẩm ăn liền", "Ngũ cốc ăn sáng",
+	},
+	"Thực phẩm tươi sống": {
+		"Rau xanh", "Trái cây", "Thịt heo", "Thịt bò",
+		"Thịt gà", "Cá", "Tôm", "Mực",
+		"Trứng gà", "Sữa tươi", "Phô mai", "Bơ",
+		"Nấm", "Đậu hũ", "Rau củ quả", "Hải sản tươi sống",
+	},
+	"Đồ uống": {
+		"Nước khoáng", "Nước ngọt", "Trà xanh", "Cà phê",
+		"Sữa tươi", "Sữa chua", "Nước ép trái cây", "Bia",
+		"Rượu vang", "Rượu mạnh", "Sinh tố", "Nước detox",
+		"Nước tăng lực", "Trà sữa", "Nước uống collagen", "Sữa hạt",
+	},
+	"Bánh kẹo & Đồ ăn vặt": {
+		"Bánh quy", "Bánh gạo", "Kẹo", "Chocolate",
+		"Snack khoai tây", "Hạt các loại", "Mứt", "Trái cây sấy",
+		"Bánh trung thu", "Bánh mì", "Xúc xích", "Pate",
+		"Mì ăn liền", "Cháo ăn liền", "Thịt khô", "Chà bông",
+	},
+}
+
+// Mở rộng danh sách mô tả sản phẩm mẫu theo danh mục
+var categoryProductDescriptions = map[string][]string{
+	"Điện thoại thông minh": {
+		"Sản phẩm công nghệ hiện đại với màn hình Retina sắc nét, camera độ phân giải cao và thời lượng pin dài.",
+		"Thiết kế sang trọng với cấu hình mạnh mẽ, camera AI thông minh và khả năng chống nước IP68.",
+		"Smartphone cao cấp với chip xử lý mới nhất, màn hình AMOLED 120Hz và sạc nhanh 65W.",
+		"Điện thoại thông minh với camera chuyên nghiệp, khả năng quay video 4K và bộ nhớ lớn.",
+		"Thiết bị di động mỏng nhẹ, màn hình rộng với tần số quét cao và hỗ trợ công nghệ 5G mới nhất.",
+		"Điện thoại thông minh cao cấp với khả năng chụp ảnh đẹp dưới mọi điều kiện ánh sáng và pin siêu bền.",
+		"Smartphone thiết kế gập độc đáo với màn hình linh hoạt, hiệu năng mạnh mẽ và khả năng đa nhiệm tuyệt vời.",
+		"Điện thoại cao cấp với màn hình tràn viền, cảm biến vân tay dưới màn hình và camera selfie ẩn dưới màn hình.",
+	},
+	"Máy tính xách tay": {
+		"Laptop mỏng nhẹ với hiệu suất mạnh mẽ, thời lượng pin cả ngày và màn hình Retina sắc nét.",
+		"Máy tính xách tay cao cấp dành cho công việc sáng tạo, đồ họa với card màn hình rời và SSD tốc độ cao.",
+		"Laptop chuyên gaming với card đồ họa mạnh mẽ, tản nhiệt hiệu quả và bàn phím RGB.",
+		"Máy tính 2-in-1 linh hoạt với màn hình cảm ứng, bút stylus và thiết kế gập xoay 360 độ.",
+		"Laptop siêu mỏng nhẹ, thiết kế tinh tế với hiệu năng ổn định, phù hợp cho công việc và giải trí hàng ngày.",
+		"Máy tính xách tay với màn hình HDR sắc nét, âm thanh vòm sống động và thời lượng pin suốt cả ngày.",
+		"Laptop chuyên đồ họa với màn hình hiển thị màu chuẩn, cấu hình mạnh mẽ và nhiều cổng kết nối.",
+		"Máy tính xách tay business cao cấp với tính năng bảo mật toàn diện, bền bỉ và hiệu năng ổn định.",
+	},
+	"Thời trang nam": {
+		"Áo thời trang nam phong cách Hàn Quốc, chất liệu cao cấp thoáng mát và thấm hút mồ hôi tốt.",
+		"Quần nam thiết kế hiện đại, form dáng vừa vặn tôn dáng người mặc và dễ phối đồ.",
+		"Sản phẩm thời trang dành cho nam giới công sở với thiết kế lịch lãm, tinh tế và sang trọng.",
+		"Trang phục nam thiết kế theo phong cách đường phố, cá tính và năng động dành cho giới trẻ.",
+		"Áo nam chất liệu cotton organic cao cấp, không gây kích ứng da, thiết kế basic dễ phối đồ.",
+		"Quần nam form slimfit, chất liệu co giãn thoải mái, phù hợp cho cả môi trường công sở và dạo phố.",
+		"Áo khoác nam thiết kế thời thượng, chống thấm nước nhẹ và giữ ấm tốt trong mùa lạnh.",
+		"Vest nam may đo tỉ mỉ từ chất liệu cao cấp, cắt may tinh tế tôn dáng người mặc.",
+	},
+	"Thời trang nữ": {
+		"Thời trang nữ thiết kế theo xu hướng mới nhất, tôn dáng người mặc và phù hợp nhiều hoàn cảnh.",
+		"Trang phục nữ phong cách Hàn Quốc với chất liệu cao cấp, thoáng mát và thấm hút tốt.",
+		"Quần áo nữ thiết kế tinh tế với họa tiết độc đáo, phù hợp cho công sở và dạo phố.",
+		"Đầm nữ thiết kế sang trọng, quyến rũ phù hợp cho các buổi tiệc và sự kiện quan trọng.",
+		"Trang phục nữ phong cách tối giản, thanh lịch với đường may tinh tế và chất liệu bền đẹp.",
+		"Đầm nữ thiết kế hiện đại, cut-out tinh tế, tôn dáng và phù hợp với nhiều vóc dáng khác nhau.",
+		"Áo nữ thiết kế theo xu hướng Y2K, mang đậm phong cách retro nhưng vẫn hiện đại và trẻ trung.",
+		"Quần nữ cạp cao, ôm dáng vừa phải, tôn lên đường cong cơ thể một cách tinh tế và thanh lịch.",
+	},
+	"Đồ gia dụng": {
+		"Thiết bị gia dụng cao cấp với công nghệ hiện đại, tiết kiệm điện và dễ dàng sử dụng.",
+		"Sản phẩm gia dụng thông minh với khả năng kết nối điện thoại và điều khiển từ xa.",
+		"Thiết bị nhà bếp đa năng với nhiều chức năng, giúp việc nấu nướng trở nên đơn giản và nhanh chóng.",
+		"Sản phẩm gia dụng bền bỉ với chất liệu cao cấp và chế độ bảo hành dài hạn.",
+		"Thiết bị gia dụng thiết kế nhỏ gọn, tiết kiệm không gian nhưng vẫn đảm bảo đầy đủ tính năng cần thiết.",
+		"Sản phẩm gia dụng an toàn với trẻ em, có chế độ tự ngắt khi quá nhiệt và bảo vệ điện áp.",
+		"Thiết bị gia dụng cao cấp với thiết kế sang trọng, là điểm nhấn tô điểm cho không gian sống hiện đại.",
+		"Đồ gia dụng thông minh với khả năng học hỏi thói quen sử dụng và tự động điều chỉnh cho phù hợp.",
+	},
+	"Sách": {
+		"Cuốn sách best-seller với nội dung sâu sắc, đem lại nhiều bài học giá trị cho người đọc.",
+		"Tác phẩm nổi tiếng của tác giả được yêu thích, đã được dịch ra nhiều thứ tiếng trên thế giới.",
+		"Sách hay với nội dung bổ ích, ngôn từ cuốn hút và thông điệp ý nghĩa.",
+		"Cuốn sách giúp bạn thay đổi tư duy, phát triển bản thân và đạt được thành công trong cuộc sống.",
+		"Tác phẩm văn học kinh điển đã được tái bản nhiều lần với bản dịch mới mang tính học thuật cao.",
+		"Sách phát triển bản thân với phương pháp thực tế, dễ áp dụng và mang lại hiệu quả rõ rệt.",
+		"Tiểu thuyết lãng mạn với cốt truyện cuốn hút, nhân vật sống động và thông điệp nhân văn sâu sắc.",
+		"Sách chuyên ngành với nội dung chuyên sâu, cập nhật kiến thức mới nhất trong lĩnh vực.",
+	},
+	"Thể thao": {
+		"Thiết bị tập thể thao cao cấp với chất liệu bền bỉ, an toàn và hiệu quả cao.",
+		"Dụng cụ thể thao đa năng giúp bạn tập luyện nhiều nhóm cơ khác nhau.",
+		"Sản phẩm thể thao chuyên nghiệp được thiết kế bởi các chuyên gia hàng đầu.",
+		"Thiết bị tập luyện tại nhà tiện lợi, tiết kiệm không gian và dễ dàng cất gọn.",
+		"Dụng cụ thể thao chuyên nghiệp được sử dụng bởi các vận động viên Olympic và các giải đấu lớn.",
+		"Thiết bị tập luyện thông minh với khả năng theo dõi tiến trình, nhịp tim và lượng calo tiêu thụ.",
+		"Dụng cụ thể thao ngoài trời bền bỉ trong mọi điều kiện thời tiết, dễ dàng mang theo khi đi du lịch.",
+		"Thiết bị thể thao hiện đại, thiết kế tinh tế và công năng vượt trội so với các sản phẩm thông thường.",
+		"Dụng cụ tập luyện phù hợp cho mọi đối tượng từ người mới bắt đầu đến vận động viên chuyên nghiệp.",
+	},
+	"Máy tính bảng": {
+		"Máy tính bảng hiện đại với màn hình Retina sắc nét, hiệu năng mạnh mẽ và thời lượng pin dài.",
+		"Thiết bị di động đa năng phù hợp cho giải trí, làm việc và học tập với màn hình lớn.",
+		"Máy tính bảng cao cấp hỗ trợ bút cảm ứng, phù hợp với các công việc thiết kế và ghi chú.",
+		"Thiết bị di động mỏng nhẹ, màn hình sắc nét, âm thanh sống động phù hợp cho giải trí di động.",
+		"Máy tính bảng với màn hình hiển thị True Tone, tần số quét cao và khả năng chống chói vượt trội.",
+		"Thiết bị di động linh hoạt với khả năng biến đổi thành laptop khi kết nối với bàn phím chuyên dụng.",
+		"Máy tính bảng siêu nhẹ, thiết kế tinh tế với khả năng xử lý đa nhiệm mạnh mẽ và ổn định.",
+		"Thiết bị giải trí di động cao cấp với màn hình AMOLED, loa stereo và hỗ trợ các ứng dụng giải trí.",
+	},
+	"Máy tính để bàn": {
+		"Máy tính để bàn hiệu năng cao với bộ vi xử lý mới nhất, dung lượng RAM lớn, phù hợp cho gaming và đồ họa.",
+		"PC văn phòng nhỏ gọn, thiết kế tối giản với hiệu năng ổn định cho công việc hằng ngày.",
+		"Máy tính All-in-One tiện lợi, tiết kiệm không gian với màn hình lớn và âm thanh chất lượng.",
+		"PC gaming cao cấp với card đồ họa mạnh mẽ, tản nhiệt hiệu quả và hệ thống LED RGB đẹp mắt.",
+		"Máy tính để bàn chuyên dụng cho công việc đồ họa, render video với hiệu năng mạnh mẽ và độ ổn định cao.",
+		"PC workstation chuyên nghiệp với khả năng nâng cấp linh hoạt và hiệu năng xử lý đa nhân vượt trội.",
+		"Máy tính để bàn mini nhỏ gọn, tiết kiệm không gian nhưng vẫn đảm bảo hiệu năng cho công việc văn phòng.",
+		"PC gaming đa nhiệm với khả năng vừa chơi game vừa livestream mượt mà không giật lag.",
+	},
+	"Tai nghe & Loa": {
+		"Tai nghe không dây với công nghệ chống ồn chủ động, âm thanh HD và thời lượng pin lên đến 30 giờ.",
+		"Loa bluetooth di động chống nước, âm thanh mạnh mẽ và pin sử dụng liên tục suốt 24 giờ.",
+		"Tai nghe gaming với âm thanh vòm 7.1, micro khử tiếng ồn và đèn LED RGB tùy chỉnh.",
+		"Loa soundbar cao cấp kết nối không dây, âm thanh vòm Dolby Atmos và thiết kế sang trọng.",
+		"Tai nghe true wireless với kết nối Bluetooth 5.2, chống nước IPX7 và hộp sạc không dây tiện lợi.",
+		"Loa thông minh tích hợp trợ lý ảo, âm thanh 360 độ và khả năng điều khiển thiết bị nhà thông minh.",
+		"Tai nghe audiophile với driver planar magnetic, tái tạo âm thanh chi tiết và không gian âm rộng.",
+		"Loa bookshelf cao cấp với củ loa tweeter mềm, âm trầm mạnh mẽ và dải tần số rộng.",
+	},
+	"Máy ảnh & Máy quay": {
+		"Máy ảnh mirrorless full-frame với cảm biến độ phân giải cao, chống rung trong thân máy và khả năng quay video 4K.",
+		"Máy quay phim chuyên nghiệp với cảm biến lớn, khả năng quay slow-motion và hệ thống lấy nét nhanh chính xác.",
+		"Máy ảnh compact cao cấp nhỏ gọn với zoom quang học lớn, cảm biến 1 inch và khả năng chụp RAW.",
+		"Action camera chống nước, chống rung điện tử và khả năng quay video 5.3K với góc nhìn siêu rộng.",
+		"Máy ảnh DSLR chuyên nghiệp với hệ thống lấy nét tiên tiến, tốc độ chụp liên tiếp cao và dải ISO rộng.",
+		"Máy quay Gimbal tích hợp với khả năng chống rung 3 trục, theo dõi chủ thể và tính năng timelapse.",
+		"Máy ảnh medium format với cảm biến lớn, tái tạo màu sắc chính xác và dải tương phản động cao.",
+		"Drone quay phim với camera gimbal 3 trục, quay video 4K HDR và khả năng bay ổn định trong nhiều điều kiện.",
+	},
+	"Phụ tùng ô tô": {
+		"Lốp xe ô tô cao cấp với độ bám đường tốt, chống ồn và tuổi thọ cao.",
+		"Dầu nhớt động cơ tổng hợp hoàn toàn, bảo vệ động cơ tối ưu và kéo dài thời gian thay dầu.",
+		"Ắc quy khô không bảo dưỡng, khởi động mạnh mẽ và tuổi thọ cao trong mọi điều kiện thời tiết.",
+		"Bộ lọc không khí, dầu và xăng chính hãng, đảm bảo hiệu suất tối ưu cho động cơ.",
+		"Phanh đĩa và má phanh cao cấp với khả năng phanh mạnh mẽ, ổn định và ít tiếng ồn.",
+		"Đèn pha LED siêu sáng với tuổi thọ cao và tiêu thụ điện năng thấp.",
+		"Phụ tùng điện tử chính hãng với độ bền cao và tương thích hoàn hảo với xe.",
+		"Bộ phụ kiện nâng cấp hiệu suất với khả năng tăng mã lực và tiết kiệm nhiên liệu.",
+	},
+	"Tủ lạnh & Tủ đông": {
+		"Tủ lạnh Side-by-Side với ngăn đá lớn, công nghệ làm lạnh đa chiều và tính năng lấy nước, đá tự động.",
+		"Tủ lạnh Inverter tiết kiệm điện, vận hành êm ái và duy trì nhiệt độ ổn định.",
+		"Tủ lạnh mini nhỏ gọn, phù hợp cho phòng ngủ, văn phòng và những không gian hạn chế.",
+		"Tủ đông dung tích lớn với khả năng làm đông nhanh, tiết kiệm điện năng và hoạt động ổn định.",
+		"Tủ lạnh French Door sang trọng với ngăn chuyển đổi nhiệt độ linh hoạt và hệ thống khử mùi.",
+		"Tủ lạnh thông minh kết nối Wi-Fi, quản lý thực phẩm và điều khiển từ xa qua smartphone.",
+		"Tủ đông đứng với nhiều ngăn kéo tiện lợi, dễ dàng sắp xếp và tìm kiếm thực phẩm.",
+		"Tủ mát trưng bày đồ uống với cửa kính trong suốt và hệ thống đèn LED trang trí bắt mắt.",
+	},
+	"Máy giặt & Máy sấy": {
+		"Máy giặt cửa trước với công nghệ giặt hơi nước, diệt khuẩn và làm mềm vải hiệu quả.",
+		"Máy giặt Inverter tiết kiệm điện, nước với khả năng cân chỉnh tự động lượng nước và chất tẩy.",
+		"Máy sấy tụ hơi thông minh với nhiều chương trình sấy chuyên biệt cho từng loại vải.",
+		"Máy giặt sấy kết hợp tiết kiệm không gian với công nghệ sấy bằng bơm nhiệt tiết kiệm điện.",
+		"Máy giặt cửa trên dung tích lớn phù hợp cho gia đình đông người với khả năng giặt mạnh mẽ.",
+		"Máy sấy thông minh với cảm biến độ ẩm, tự động điều chỉnh thời gian sấy phù hợp.",
+		"Máy giặt mini nhỏ gọn phù hợp cho căn hộ, nhà trọ với khả năng tiết kiệm điện, nước hiệu quả.",
+		"Bộ đôi máy giặt và máy sấy cùng thương hiệu với thiết kế đồng bộ và khả năng kết nối thông minh.",
+	},
+	"Nội thất phòng khách": {
+		"Sofa da cao cấp với khung gỗ tự nhiên, đệm mút D40 êm ái và kiểu dáng hiện đại, sang trọng.",
+		"Bàn trà gỗ tự nhiên thiết kế tinh tế, bề mặt chống trầy xước và chân bàn chắc chắn.",
+		"Kệ tivi gỗ công nghiệp phủ melamine chống xước, chống ẩm với nhiều ngăn chứa đồ tiện lợi.",
+		"Thảm trang trí lông ngắn mềm mại, họa tiết hiện đại và dễ dàng vệ sinh, làm sạch.",
+		"Sofa góc L rộng rãi bọc vải cao cấp kháng bẩn, kháng nước và dễ dàng tháo lắp vệ sinh.",
+		"Bàn console trang trí phong cách Bắc Âu với thiết kế tối giản và tinh tế.",
+		"Ghế bành thư giãn có tính năng ngả lưng và gác chân, bọc da công nghiệp bền đẹp.",
+		"Kệ trang trí đa năng với nhiều ngăn kệ phù hợp trưng bày đồ trang trí và sách.",
+	},
+	"Vật tư nông nghiệp": {
+		"Phân bón NPK cân đối dinh dưỡng, tăng cường năng suất cây trồng và cải thiện chất lượng đất.",
+		"Hạt giống rau sạch nhập khẩu với tỷ lệ nảy mầm cao và khả năng kháng bệnh tốt.",
+		"Thuốc bảo vệ thực vật an toàn, hiệu quả với đa dạng công dụng diệt trừ sâu bệnh.",
+		"Màng phủ nông nghiệp chất lượng cao, chống UV, giữ ẩm và kiểm soát cỏ dại hiệu quả.",
+		"Hệ thống tưới nhỏ giọt tiết kiệm nước, tưới đúng chỗ và dễ dàng lắp đặt.",
+		"Giá thể trồng cây không đất sạch sẽ, thoáng khí và giàu dinh dưỡng cho cây phát triển tốt.",
+		"Vật tư làm vườn đồng bộ từ chậu, đất, phân bón đến dụng cụ chăm sóc cây.",
+		"Hệ thống nhà kính mini phù hợp cho sân thượng, ban công với khả năng lắp đặt dễ dàng.",
+	},
+}
+
+// Mở rộng danh sách attribute cho các danh mục mới
 var categoryAttributes = map[string]map[string][]string{
 	"Điện thoại thông minh": {
 		"Màu sắc":          {"Đen", "Trắng", "Xanh", "Đỏ", "Hồng", "Vàng", "Bạc", "Xám"},
@@ -114,98 +515,92 @@ var categoryAttributes = map[string]map[string][]string{
 		"Xuất xứ":       {"Việt Nam", "Trung Quốc", "Mỹ", "Đức", "Nhật Bản", "Thái Lan"},
 		"Loại thiết bị": {"Tập lực", "Tập cardio", "Đồ bảo hộ", "Phụ kiện", "Quần áo tập"},
 	},
-}
-
-// Danh sách tên sản phẩm mẫu theo danh mục
-var categoryProductNames = map[string][]string{
-	"Điện thoại thông minh": {
-		"iPhone 13 Pro Max", "iPhone 14", "Samsung Galaxy S22 Ultra", "Samsung Galaxy Z Fold 4",
-		"Xiaomi Redmi Note 11", "Xiaomi 12T Pro", "OPPO Reno8 Pro", "OPPO Find X5 Pro",
-		"Vivo V25 Pro", "Realme GT Neo 3", "Nokia G21", "Huawei Nova 10",
+	// Thêm attribute cho các danh mục mới
+	"Máy tính bảng": {
+		"Màu sắc":      {"Đen", "Trắng", "Bạc", "Xám", "Vàng Hồng", "Xanh", "Tím"},
+		"Dung lượng":   {"32GB", "64GB", "128GB", "256GB", "512GB", "1TB"},
+		"Kết nối":      {"WiFi", "4G/LTE", "5G", "WiFi + Cellular"},
+		"Kích thước":   {"7.9 inch", "8.3 inch", "10.2 inch", "10.9 inch", "11 inch", "12.9 inch"},
+		"Hệ điều hành": {"iPadOS", "Android", "Windows", "HarmonyOS"},
 	},
-	"Máy tính xách tay": {
-		"MacBook Air M2", "MacBook Pro 14", "Dell XPS 13", "Dell Inspiron 15",
-		"HP Spectre x360", "HP Pavilion 15", "Lenovo ThinkPad X1 Carbon", "Lenovo Yoga 7i",
-		"Asus ZenBook 14", "Asus ROG Zephyrus G14", "Acer Swift 5", "MSI Prestige 14",
+	"Máy tính để bàn": {
+		"CPU":          {"Intel Core i3", "Intel Core i5", "Intel Core i7", "Intel Core i9", "AMD Ryzen 5", "AMD Ryzen 7", "AMD Ryzen 9", "AMD Threadripper"},
+		"RAM":          {"4GB", "8GB", "16GB", "32GB", "64GB", "128GB"},
+		"Ổ cứng":       {"256GB SSD", "512GB SSD", "1TB SSD", "2TB SSD", "1TB HDD", "2TB HDD", "SSD + HDD"},
+		"Card đồ họa":  {"NVIDIA GTX 1650", "NVIDIA RTX 3060", "NVIDIA RTX 3070", "NVIDIA RTX 4080", "AMD Radeon RX 6600", "AMD Radeon RX 6800", "Intel Arc"},
+		"Hệ điều hành": {"Windows 11", "Windows 10", "macOS", "Linux"},
 	},
-	"Thời trang nam": {
-		"Áo sơ mi nam dài tay", "Áo thun nam cổ tròn", "Áo thun polo nam", "Áo khoác denim nam",
-		"Áo khoác bomber nam", "Quần jeans nam slim fit", "Quần kaki nam", "Quần short nam",
-		"Bộ vest nam công sở", "Áo len nam cổ tròn", "Áo hoodie nam", "Quần tây nam công sở",
+	"Tai nghe & Loa": {
+		"Loại kết nối":   {"Có dây", "Bluetooth", "Wireless 2.4GHz", "Type-C"},
+		"Kiểu đeo":       {"Over-ear", "On-ear", "In-ear", "True Wireless"},
+		"Tính năng":      {"Chống ồn chủ động", "Chống nước", "Micro đàm thoại", "Âm thanh vòm"},
+		"Thời lượng pin": {"8 giờ", "15 giờ", "24 giờ", "30 giờ", "40 giờ", "50 giờ"},
+		"Công suất":      {"5W", "10W", "20W", "30W", "50W", "100W", "300W"},
 	},
-	"Thời trang nữ": {
-		"Áo sơ mi nữ công sở", "Áo blouse nữ", "Áo thun nữ cổ tròn", "Áo khoác denim nữ",
-		"Đầm suông nữ", "Đầm ôm body nữ", "Chân váy chữ A", "Chân váy tennis",
-		"Quần jeans nữ ống rộng", "Quần culottes nữ", "Áo cardigan nữ", "Set đồ nữ hai mảnh",
+	"Máy ảnh & Máy quay": {
+		"Độ phân giải":        {"12MP", "20MP", "24MP", "32MP", "45MP", "61MP"},
+		"Cảm biến":            {"MFT", "APS-C", "Full Frame", "Medium Format"},
+		"Khả năng quay video": {"Full HD", "4K/30p", "4K/60p", "8K/30p", "RAW Video"},
+		"Hãng sản xuất":       {"Sony", "Canon", "Nikon", "Fujifilm", "Panasonic", "Leica", "Olympus"},
+		"Loại máy":            {"DSLR", "Mirrorless", "Compact", "Action Camera", "Cinema Camera"},
 	},
-	"Đồ gia dụng": {
-		"Nồi cơm điện", "Máy xay sinh tố", "Bếp từ đơn", "Bếp gas đôi",
-		"Lò vi sóng", "Ấm đun nước siêu tốc", "Máy lọc không khí", "Quạt điều hòa",
-		"Máy hút bụi", "Bàn ủi hơi nước", "Nồi chiên không dầu", "Máy rửa chén",
+	"Nội thất phòng khách": {
+		"Chất liệu khung": {"Gỗ tự nhiên", "Gỗ công nghiệp", "Kim loại", "Nhựa cao cấp", "Kết hợp"},
+		"Chất liệu bọc":   {"Da thật", "Da công nghiệp", "Vải", "Nỉ", "Nhung", "Canvas"},
+		"Phong cách":      {"Hiện đại", "Tân cổ điển", "Cổ điển", "Scandinavian", "Industrial", "Minimalist"},
+		"Màu sắc":         {"Đen", "Trắng", "Xám", "Nâu", "Be", "Xanh dương", "Xanh lá", "Đỏ"},
+		"Kích thước":      {"Nhỏ (1-2 người)", "Vừa (3-4 người)", "Lớn (5-7 người)", "Rất lớn (8+ người)"},
 	},
-	"Sách": {
-		"Nhà Giả Kim", "Đắc Nhân Tâm", "Cà Phê Cùng Tony", "Người Giàu Có Nhất Thành Babylon",
-		"Hai Số Phận", "Điều Kỳ Diệu Của Tiệm Tạp Hóa Namiya", "Bước Chậm Lại Giữa Thế Gian Vội Vã", "Tuổi Trẻ Đáng Giá Bao Nhiêu",
-		"Chúng Ta Rồi Sẽ Hạnh Phúc, Theo Những Cách Khác Nhau", "Khéo Ăn Nói Sẽ Có Được Thiên Hạ", "Tôi Tài Giỏi, Bạn Cũng Thế", "Dám Nghĩ Lớn",
+	"Đồ chơi trẻ em": {
+		"Độ tuổi phù hợp": {"0-12 tháng", "1-3 tuổi", "3-5 tuổi", "6-9 tuổi", "10-14 tuổi"},
+		"Chất liệu":       {"Nhựa an toàn", "Gỗ tự nhiên", "Vải", "Silicone", "Bông"},
+		"Loại đồ chơi":    {"Đồ chơi giáo dục", "Đồ chơi vận động", "Đồ chơi sáng tạo", "Đồ chơi nhập vai", "Đồ chơi xây dựng"},
+		"Thương hiệu":     {"Lego", "Fisher-Price", "Barbie", "Hot Wheels", "Nerf", "Vtech", "Melissa & Doug"},
+		"Xuất xứ":         {"Việt Nam", "Trung Quốc", "Nhật Bản", "Mỹ", "Đức", "Đan Mạch"},
 	},
-	"Thể thao": {
-		"Tạ tay 5kg", "Thảm tập yoga", "Dây nhảy thể dục", "Máy chạy bộ điện",
-		"Xe đạp tập thể dục", "Găng tay tập gym", "Ghế tập bụng đa năng", "Bóng đá size 5",
-		"Vợt cầu lông", "Vợt tennis", "Bộ cờ vua quốc tế", "Bàn bóng bàn",
+	"Mỹ phẩm": {
+		"Loại da":          {"Da dầu", "Da khô", "Da hỗn hợp", "Da nhạy cảm", "Da thường"},
+		"Chứng nhận":       {"Organic", "Cruelty-free", "Vegan", "Không paraben", "Hypoallergenic"},
+		"Xuất xứ":          {"Hàn Quốc", "Nhật Bản", "Pháp", "Mỹ", "Việt Nam", "Thái Lan"},
+		"Hiệu quả":         {"Dưỡng ẩm", "Chống lão hóa", "Trị mụn", "Sáng da", "Chống nắng"},
+		"Thành phần chính": {"Vitamin C", "Retinol", "Hyaluronic Acid", "Niacinamide", "AHA/BHA", "Centella Asiatica"},
 	},
-}
-
-// Danh sách mô tả sản phẩm mẫu theo danh mục
-var categoryProductDescriptions = map[string][]string{
-	"Điện thoại thông minh": {
-		"Sản phẩm công nghệ hiện đại với màn hình Retina sắc nét, camera độ phân giải cao và thời lượng pin dài.",
-		"Thiết kế sang trọng với cấu hình mạnh mẽ, camera AI thông minh và khả năng chống nước IP68.",
-		"Smartphone cao cấp với chip xử lý mới nhất, màn hình AMOLED 120Hz và sạc nhanh 65W.",
-		"Điện thoại thông minh với camera chuyên nghiệp, khả năng quay video 4K và bộ nhớ lớn.",
+	"Thực phẩm khô": {
+		"Hạn sử dụng":          {"3 tháng", "6 tháng", "1 năm", "2 năm", "3 năm"},
+		"Xuất xứ":              {"Việt Nam", "Thái Lan", "Nhật Bản", "Hàn Quốc", "Trung Quốc", "Đài Loan"},
+		"Quy cách đóng gói":    {"100g", "250g", "500g", "1kg", "5kg", "Hộp", "Túi", "Lon"},
+		"Phương pháp chế biến": {"Sấy khô", "Đông lạnh", "Đóng hộp", "Lên men", "Ướp muối"},
+		"Chứng nhận":           {"Organic", "Non-GMO", "Fair Trade", "Halal", "Kosher", "HACCP"},
 	},
-	"Máy tính xách tay": {
-		"Laptop mỏng nhẹ với hiệu suất mạnh mẽ, thời lượng pin cả ngày và màn hình Retina sắc nét.",
-		"Máy tính xách tay cao cấp dành cho công việc sáng tạo, đồ họa với card màn hình rời và SSD tốc độ cao.",
-		"Laptop chuyên gaming với card đồ họa mạnh mẽ, tản nhiệt hiệu quả và bàn phím RGB.",
-		"Máy tính 2-in-1 linh hoạt với màn hình cảm ứng, bút stylus và thiết kế gập xoay 360 độ.",
+	"Đồ uống": {
+		"Loại đồ uống": {"Nước khoáng", "Nước ngọt", "Cà phê", "Trà", "Nước ép", "Sữa", "Bia", "Rượu"},
+		"Dung tích":    {"250ml", "330ml", "500ml", "1L", "1.5L", "2L", "5L"},
+		"Vị":           {"Truyền thống", "Trái cây", "Sữa", "Socola", "Vani", "Caramel", "Không đường"},
+		"Đóng gói":     {"Chai", "Lon", "Hộp", "Bịch", "Thùng"},
+		"Độ cồn":       {"0%", "4.5%", "5%", "12%", "14%", "40%"},
+		"Xuất xứ":      {"Việt Nam", "Thái Lan", "Hàn Quốc", "Nhật Bản", "Pháp", "Ý", "Mỹ"},
 	},
-	"Thời trang nam": {
-		"Áo thời trang nam phong cách Hàn Quốc, chất liệu cao cấp thoáng mát và thấm hút mồ hôi tốt.",
-		"Quần nam thiết kế hiện đại, form dáng vừa vặn tôn dáng người mặc và dễ phối đồ.",
-		"Sản phẩm thời trang dành cho nam giới công sở với thiết kế lịch lãm, tinh tế và sang trọng.",
-		"Trang phục nam thiết kế theo phong cách đường phố, cá tính và năng động dành cho giới trẻ.",
+	"Túi xách": {
+		"Chất liệu":  {"Da thật", "Da PU", "Vải Canvas", "Vải Oxford", "Nylon", "Nhựa", "Kim loại"},
+		"Kích thước": {"Mini", "Nhỏ", "Trung bình", "Lớn", "Rất lớn"},
+		"Màu sắc":    {"Đen", "Trắng", "Nâu", "Be", "Đỏ", "Xanh", "Hồng", "Vàng", "Bạc", "Đa màu"},
+		"Phong cách": {"Casual", "Business", "Party", "Vintage", "Sporty", "Minimalist"},
+		"Kiểu dáng":  {"Tote", "Crossbody", "Backpack", "Clutch", "Hobo", "Bucket", "Satchel"},
 	},
-	"Thời trang nữ": {
-		"Thời trang nữ thiết kế theo xu hướng mới nhất, tôn dáng người mặc và phù hợp nhiều hoàn cảnh.",
-		"Trang phục nữ phong cách Hàn Quốc với chất liệu cao cấp, thoáng mát và thấm hút tốt.",
-		"Quần áo nữ thiết kế tinh tế với họa tiết độc đáo, phù hợp cho công sở và dạo phố.",
-		"Đầm nữ thiết kế sang trọng, quyến rũ phù hợp cho các buổi tiệc và sự kiện quan trọng.",
+	"Nội thất phòng ngủ": {
+		"Chất liệu":         {"Gỗ tự nhiên", "Gỗ công nghiệp", "Kim loại", "Da", "Vải", "Nhựa"},
+		"Kích thước giường": {"1.2m x 2m", "1.5m x 2m", "1.6m x 2m", "1.8m x 2m", "2m x 2.2m"},
+		"Độ cứng nệm":       {"Cứng", "Trung bình", "Mềm", "Siêu mềm"},
+		"Phong cách":        {"Hiện đại", "Cổ điển", "Tân cổ điển", "Vintage", "Minimalist", "Rustic"},
+		"Màu sắc":           {"Trắng", "Đen", "Xám", "Nâu", "Be", "Xanh", "Hồng", "Tím"},
 	},
-	"Đồ gia dụng": {
-		"Thiết bị gia dụng cao cấp với công nghệ hiện đại, tiết kiệm điện và dễ dàng sử dụng.",
-		"Sản phẩm gia dụng thông minh với khả năng kết nối điện thoại và điều khiển từ xa.",
-		"Thiết bị nhà bếp đa năng với nhiều chức năng, giúp việc nấu nướng trở nên đơn giản và nhanh chóng.",
-		"Sản phẩm gia dụng bền bỉ với chất liệu cao cấp và chế độ bảo hành dài hạn.",
+	"Cây cảnh & Hoa": {
+		"Loại cây":       {"Cây để bàn", "Cây sàn", "Cây treo", "Cây thủy sinh", "Cây nội thất", "Cây ăn quả mini", "Hoa"},
+		"Điều kiện sống": {"Ít ánh sáng", "Ánh sáng vừa", "Nhiều ánh sáng", "Ít nước", "Nhiều nước", "Ẩm cao"},
+		"Kích thước":     {"Nhỏ (<30cm)", "Trung bình (30-80cm)", "Lớn (80-150cm)", "Rất lớn (>150cm)"},
+		"Chậu cây":       {"Nhựa", "Gốm sứ", "Đất nung", "Gỗ", "Kim loại", "Thủy tinh"},
+		"Công dụng":      {"Trang trí", "Lọc không khí", "Phong thủy", "Ăn quả", "Làm thuốc"},
 	},
-	"Sách": {
-		"Cuốn sách best-seller với nội dung sâu sắc, đem lại nhiều bài học giá trị cho người đọc.",
-		"Tác phẩm nổi tiếng của tác giả được yêu thích, đã được dịch ra nhiều thứ tiếng trên thế giới.",
-		"Sách hay với nội dung bổ ích, ngôn từ cuốn hút và thông điệp ý nghĩa.",
-		"Cuốn sách giúp bạn thay đổi tư duy, phát triển bản thân và đạt được thành công trong cuộc sống.",
-	},
-	"Thể thao": {
-		"Thiết bị tập thể thao cao cấp với chất liệu bền bỉ, an toàn và hiệu quả cao.",
-		"Dụng cụ thể thao đa năng giúp bạn tập luyện nhiều nhóm cơ khác nhau.",
-		"Sản phẩm thể thao chuyên nghiệp được thiết kế bởi các chuyên gia hàng đầu.",
-		"Thiết bị tập luyện tại nhà tiện lợi, tiết kiệm không gian và dễ dàng cất gọn.",
-	},
-}
-
-// Danh sách các APIs hỗ trợ dữ liệu địa giới hành chính Việt Nam
-var vietnamGeoAPIs = []string{
-	"https://provinces.open-api.vn/api/?depth=3", // API với đầy đủ phường/xã
-	"https://vietnam-administrative-divisions.vercel.app/api/",
-	"https://vapi.vnappmob.com/api/province/",
 }
 
 func main() {
@@ -1194,11 +1589,10 @@ func seedPartnersIndependentTables(ctx context.Context, db *pgxpool.Pool) {
 	seedAttributeDefinitions(ctx, db)
 }
 
+// Cập nhật hàm seedCategories để thêm nhiều danh mục cha và con hơn
 func seedCategories(ctx context.Context, db *pgxpool.Pool) {
-	// Danh mục chính
-	mainCategories := []struct {
-		name, desc, imageUrl string
-	}{
+	// Danh mục chính (mở rộng từ 5 lên hơn 10)
+	mainCategories := []struct{ name, desc, imageUrl string }{
 		{
 			"Điện tử & Công nghệ",
 			"Các sản phẩm điện tử và công nghệ hiện đại",
@@ -1224,24 +1618,63 @@ func seedCategories(ctx context.Context, db *pgxpool.Pool) {
 			"Dụng cụ thể thao và đồ dùng du lịch",
 			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
 		},
+		// Thêm các danh mục chính mới
+		{
+			"Mẹ & Bé",
+			"Sản phẩm dành cho mẹ và trẻ em",
+			"https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Làm đẹp & Sức khỏe",
+			"Mỹ phẩm, chăm sóc cá nhân và sức khỏe",
+			"https://images.unsplash.com/photo-1571875257727-256c39da42af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+		},
+		{
+			"Thực phẩm & Đồ uống",
+			"Thực phẩm, đồ uống và nguyên liệu nấu ăn",
+			"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Ô tô & Xe máy",
+			"Phụ tùng, phụ kiện và sản phẩm chăm sóc xe",
+			"https://images.unsplash.com/photo-1577278689329-1914b6814d58?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Điện gia dụng",
+			"Các thiết bị điện tử gia dụng và nhà bếp",
+			"https://images.unsplash.com/photo-1556911220-bda9f7f8677e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Nội thất & Trang trí",
+			"Đồ nội thất và trang trí không gian sống",
+			"https://images.unsplash.com/photo-1565183928294-7063f23ce0f8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Đồ chơi & Sở thích",
+			"Đồ chơi, game và sản phẩm cho sở thích",
+			"https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Thiết bị công nghiệp",
+			"Máy móc, thiết bị và vật tư công nghiệp",
+			"https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Nông nghiệp & Vườn tược",
+			"Thiết bị, phân bón và sản phẩm nông nghiệp",
+			"https://images.unsplash.com/photo-1486328228599-85db4443971f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
 	}
 
-	// Tiến hành seed categories - Sửa để bỏ ON CONFLICT
 	mainCategoryIDs := make(map[string]int64)
 	for _, cat := range mainCategories {
-		// Trước tiên kiểm tra xem danh mục đã tồn tại chưa
 		var id int64
-		err := db.QueryRow(ctx, `
-            SELECT id FROM categories WHERE name = $1
-        `, cat.name).Scan(&id)
+		err := db.QueryRow(ctx, `SELECT id FROM categories WHERE name = $1`, cat.name).Scan(&id)
 
 		if err != nil {
-			// Nếu không tìm thấy hoặc lỗi khác, thêm mới
-			err = db.QueryRow(ctx, `
-                INSERT INTO categories (name, description, image_url, is_active)
+			err = db.QueryRow(ctx, `INSERT INTO categories (name, description, image_url, is_active)
                 VALUES ($1, $2, $3, TRUE)
-                RETURNING id;
-            `, cat.name, cat.desc, cat.imageUrl).Scan(&id)
+                RETURNING id;`, cat.name, cat.desc, cat.imageUrl).Scan(&id)
 
 			if err != nil {
 				log.Printf("Error inserting main category: %v", err)
@@ -1252,10 +1685,8 @@ func seedCategories(ctx context.Context, db *pgxpool.Pool) {
 		mainCategoryIDs[cat.name] = id
 	}
 
-	// Seed danh mục con - cũng sửa để bỏ ON CONFLICT
-	subCategories := []struct {
-		name, desc, parent, imageUrl string
-	}{
+	// Seed danh mục con - mở rộng danh sách con
+	subCategories := []struct{ name, desc, parent, imageUrl string }{
 		{
 			"Điện thoại thông minh",
 			"Điện thoại thông minh từ các thương hiệu nổi tiếng",
@@ -1298,6 +1729,342 @@ func seedCategories(ctx context.Context, db *pgxpool.Pool) {
 			"Thể thao & Du lịch",
 			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
 		},
+		{
+			"Máy tính bảng",
+			"Máy tính bảng và phụ kiện",
+			"Điện tử & Công nghệ",
+			"https://images.unsplash.com/photo-1589739900843-a2120b1d8e92?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
+		},
+		{
+			"Máy tính để bàn",
+			"Máy tính để bàn và linh kiện",
+			"Điện tử & Công nghệ",
+			"https://images.unsplash.com/photo-1593640408182-31c70c8268f5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1142&q=80",
+		},
+		{
+			"Tai nghe & Loa",
+			"Tai nghe, loa và thiết bị âm thanh",
+			"Điện tử & Công nghệ",
+			"https://images.unsplash.com/photo-1546435770-a3e426bf472b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1165&q=80",
+		},
+		{
+			"Máy ảnh & Máy quay",
+			"Máy ảnh, máy quay và phụ kiện",
+			"Điện tử & Công nghệ",
+			"https://images.unsplash.com/photo-1516724562728-afc824a36e84?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+		},
+		{
+			"Thời trang trẻ em",
+			"Quần áo và phụ kiện cho trẻ em",
+			"Thời trang",
+			"https://images.unsplash.com/photo-1519457431-44ccd64a579b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Giày dép",
+			"Giày dép các loại cho nam và nữ",
+			"Thời trang",
+			"https://images.unsplash.com/photo-1600269452121-4f2416e55c28?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1965&q=80",
+		},
+		{
+			"Túi xách",
+			"Túi xách, ví và balo thời trang",
+			"Thời trang",
+			"https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Đồng hồ & Trang sức",
+			"Đồng hồ, nhẫn, dây chuyền và trang sức",
+			"Thời trang",
+			"https://images.unsplash.com/photo-1619946794135-5bc917a27793?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1654&q=80",
+		},
+		{
+			"Đồ dùng nhà bếp",
+			"Dụng cụ nấu ăn và đồ dùng nhà bếp",
+			"Nhà cửa & Đời sống",
+			"https://images.unsplash.com/photo-1556911261-6bd341186b2f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Đồ dùng phòng ngủ",
+			"Chăn, ga, gối, đệm và đồ dùng phòng ngủ",
+			"Nhà cửa & Đời sống",
+			"https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+		},
+		{
+			"Đồ dùng phòng tắm",
+			"Khăn tắm, rèm và đồ dùng phòng tắm",
+			"Nhà cửa & Đời sống",
+			"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Văn phòng phẩm",
+			"Bút, giấy và dụng cụ văn phòng",
+			"Sách & Văn phòng phẩm",
+			"https://images.unsplash.com/photo-1574359411659-11a4b689bc48?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1122&q=80",
+		},
+		{
+			"Sách giáo khoa",
+			"Sách giáo khoa và tài liệu học tập",
+			"Sách & Văn phòng phẩm",
+			"https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1122&q=80",
+		},
+		{
+			"Tạp chí & Báo",
+			"Tạp chí, báo và ấn phẩm định kỳ",
+			"Sách & Văn phòng phẩm",
+			"https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
+		},
+		{
+			"Dụng cụ thể thao",
+			"Dụng cụ, thiết bị và quần áo thể thao",
+			"Thể thao & Du lịch",
+			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Vali & Túi du lịch",
+			"Vali, túi du lịch và phụ kiện",
+			"Thể thao & Du lịch",
+			"https://images.unsplash.com/photo-1581553680321-4fffae59fccd?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Thiết bị cắm trại",
+			"Lều, túi ngủ và thiết bị cắm trại",
+			"Thể thao & Du lịch",
+			"https://images.unsplash.com/photo-1504851149312-7a075b496cc7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Xe đạp & Phụ kiện",
+			"Xe đạp, phụ tùng và phụ kiện",
+			"Thể thao & Du lịch",
+			"https://images.unsplash.com/photo-1541625602330-2277a4c46182?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Đồ dùng cho bé",
+			"Bỉm, sữa và đồ dùng cho bé",
+			"Mẹ & Bé",
+			"https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1175&q=80",
+		},
+		{
+			"Đồ chơi cho bé",
+			"Đồ chơi giáo dục và giải trí cho bé",
+			"Mẹ & Bé",
+			"https://images.unsplash.com/photo-1566140967404-b8b3932483f5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Thời trang cho bé",
+			"Quần áo, giày dép cho bé",
+			"Mẹ & Bé",
+			"https://images.unsplash.com/photo-1611042553365-9b101441c135?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Đồ dùng cho mẹ",
+			"Sản phẩm dành cho mẹ bầu và sau sinh",
+			"Mẹ & Bé",
+			"https://images.unsplash.com/photo-1519710164239-da123dc03ef4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+		},
+		{
+			"Mỹ phẩm",
+			"Mỹ phẩm và trang điểm",
+			"Làm đẹp & Sức khỏe",
+			"https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
+		},
+		{
+			"Chăm sóc da",
+			"Sản phẩm chăm sóc da mặt và cơ thể",
+			"Làm đẹp & Sức khỏe",
+			"https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Chăm sóc tóc",
+			"Sản phẩm chăm sóc và tạo kiểu tóc",
+			"Làm đẹp & Sức khỏe",
+			"https://images.unsplash.com/photo-1562157873-818bc0726f68?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
+		},
+		{
+			"Thực phẩm chức năng",
+			"Vitamin, thực phẩm bổ sung và thảo dược",
+			"Làm đẹp & Sức khỏe",
+			"https://images.unsplash.com/photo-1577174881658-0f30ed549adc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Thiết bị y tế",
+			"Máy đo đường huyết, huyết áp và thiết bị y tế gia đình",
+			"Làm đẹp & Sức khỏe",
+			"https://images.unsplash.com/photo-1581595219361-c2a3858daa21?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
+		},
+		{
+			"Thực phẩm khô",
+			"Gạo, mì, ngũ cốc và thực phẩm khô",
+			"Thực phẩm & Đồ uống",
+			"https://images.unsplash.com/photo-1558961363-fa8fdf82db35?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1065&q=80",
+		},
+		{
+			"Thực phẩm tươi sống",
+			"Rau củ, trái cây, thịt và thực phẩm tươi sống",
+			"Thực phẩm & Đồ uống",
+			"https://images.unsplash.com/photo-1488459716781-31db52582fe9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Đồ uống",
+			"Nước giải khát, bia, rượu và đồ uống",
+			"Thực phẩm & Đồ uống",
+			"https://images.unsplash.com/photo-1581349485608-9469926a8e5e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=764&q=80",
+		},
+		{
+			"Bánh kẹo & Đồ ăn vặt",
+			"Bánh kẹo, snack và đồ ăn vặt",
+			"Thực phẩm & Đồ uống",
+			"https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+		},
+		{
+			"Phụ tùng ô tô",
+			"Phụ tùng, linh kiện và phụ kiện ô tô",
+			"Ô tô & Xe máy",
+			"https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1172&q=80",
+		},
+		{
+			"Phụ tùng xe máy",
+			"Phụ tùng, linh kiện và phụ kiện xe máy",
+			"Ô tô & Xe máy",
+			"https://images.unsplash.com/photo-1558981001-792f6c0d5068?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Chăm sóc xe",
+			"Sản phẩm chăm sóc, vệ sinh và bảo dưỡng xe",
+			"Ô tô & Xe máy",
+			"https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+		},
+		{
+			"Thiết bị định vị & Điện tử ô tô",
+			"Thiết bị GPS, camera hành trình và điện tử ô tô",
+			"Ô tô & Xe máy",
+			"https://images.unsplash.com/photo-1619538419737-edebb2e4af83?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Tủ lạnh & Tủ đông",
+			"Tủ lạnh, tủ đông và tủ mát",
+			"Điện gia dụng",
+			"https://images.unsplash.com/photo-1588854337221-4cf9fa96059c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Máy giặt & Máy sấy",
+			"Máy giặt, máy sấy và thiết bị giặt ủi",
+			"Điện gia dụng",
+			"https://images.unsplash.com/photo-1626806787461-102c1a7d1155?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+		},
+		{
+			"Điều hòa & Quạt",
+			"Điều hòa không khí, quạt và thiết bị làm mát",
+			"Điện gia dụng",
+			"https://images.unsplash.com/photo-1553776590-89774c09baeb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+		},
+		{
+			"Thiết bị nhà bếp",
+			"Lò vi sóng, lò nướng và thiết bị nhà bếp",
+			"Điện gia dụng",
+			"https://images.unsplash.com/photo-1630459065645-55f3669a92ed?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
+		},
+		{
+			"Nội thất phòng khách",
+			"Sofa, bàn trà và nội thất phòng khách",
+			"Nội thất & Trang trí",
+			"https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+		},
+		{
+			"Nội thất phòng ngủ",
+			"Giường, tủ quần áo và nội thất phòng ngủ",
+			"Nội thất & Trang trí",
+			"https://images.unsplash.com/photo-1617325247661-675ab4b64ae2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+		},
+		{
+			"Nội thất phòng ăn",
+			"Bàn ăn, ghế và nội thất phòng ăn",
+			"Nội thất & Trang trí",
+			"https://images.unsplash.com/photo-1617806118233-18e1de247200?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
+		},
+		{
+			"Đèn & Thiết bị chiếu sáng",
+			"Đèn trần, đèn bàn và thiết bị chiếu sáng",
+			"Nội thất & Trang trí",
+			"https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+
+		// Thêm danh mục con cho "Đồ chơi & Sở thích"
+		{
+			"Đồ chơi trẻ em",
+			"Đồ chơi và trò chơi cho trẻ em",
+			"Đồ chơi & Sở thích",
+			"https://images.unsplash.com/photo-1558060370-8c436e9e5d76?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1176&q=80",
+		},
+		{
+			"Mô hình & Đồ sưu tầm",
+			"Mô hình, đồ sưu tầm và đồ chơi cao cấp",
+			"Đồ chơi & Sở thích",
+			"https://images.unsplash.com/photo-1516562309708-05f3b2b2c238?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
+		},
+		{
+			"Nhạc cụ",
+			"Đàn guitar, piano và nhạc cụ",
+			"Đồ chơi & Sở thích",
+			"https://images.unsplash.com/photo-1511192336575-5a79af67a629?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1632&q=80",
+		},
+		{
+			"Đồ thủ công & Mỹ nghệ",
+			"Vật liệu thủ công và mỹ nghệ",
+			"Đồ chơi & Sở thích",
+			"https://images.unsplash.com/photo-1499744349893-0c6de53516e6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1136&q=80",
+		},
+
+		// Thêm danh mục con cho "Thiết bị công nghiệp"
+		{
+			"Máy móc công nghiệp",
+			"Máy móc và thiết bị công nghiệp",
+			"Thiết bị công nghiệp",
+			"https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Dụng cụ điện",
+			"Máy khoan, máy cắt và dụng cụ điện",
+			"Thiết bị công nghiệp",
+			"https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Thiết bị an toàn",
+			"Mũ bảo hiểm, găng tay và thiết bị an toàn lao động",
+			"Thiết bị công nghiệp",
+			"https://images.unsplash.com/photo-1601171903232-8663ec287c2e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Thiết bị đo lường",
+			"Thước, máy đo và thiết bị đo lường",
+			"Thiết bị công nghiệp",
+			"https://images.unsplash.com/photo-1572372783017-2b80336200d5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+
+		// Thêm danh mục con cho "Nông nghiệp & Vườn tược"
+		{
+			"Vật tư nông nghiệp",
+			"Phân bón, hạt giống và vật tư nông nghiệp",
+			"Nông nghiệp & Vườn tược",
+			"https://images.unsplash.com/photo-1589923188651-268a357A047E?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Máy móc nông nghiệp",
+			"Máy cắt cỏ, máy bơm và máy móc nông nghiệp",
+			"Nông nghiệp & Vườn tược",
+			"https://images.unsplash.com/photo-1575379573116-bd5e9c629046?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		{
+			"Cây cảnh & Hoa",
+			"Cây cảnh, hạt giống hoa và phụ kiện",
+			"Nông nghiệp & Vườn tược",
+			"https://images.unsplash.com/photo-1501004318641-b39e6451bec6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80",
+		},
+		{
+			"Dụng cụ làm vườn",
+			"Xẻng, kéo cắt cành và dụng cụ làm vườn",
+			"Nông nghiệp & Vườn tược",
+			"https://images.unsplash.com/photo-1598902468171-0f50e32f3e57?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
 	}
 
 	for _, subCat := range subCategories {
@@ -1309,16 +2076,14 @@ func seedCategories(ctx context.Context, db *pgxpool.Pool) {
 
 		// Kiểm tra xem danh mục con đã tồn tại chưa
 		var existingID int64
-		err := db.QueryRow(ctx, `
-            SELECT id FROM categories WHERE name = $1
-        `, subCat.name).Scan(&existingID)
+		err := db.QueryRow(ctx, `SELECT id FROM categories WHERE name = $1`, subCat.name).Scan(&existingID)
 
 		if err != nil {
 			// Nếu không tìm thấy hoặc lỗi khác, thêm mới
 			_, err = db.Exec(ctx, `
-                INSERT INTO categories (name, description, parent_id, image_url, is_active)
-                VALUES ($1, $2, $3, $4, TRUE);
-            `, subCat.name, subCat.desc, parentID, subCat.imageUrl)
+				INSERT INTO categories (name, description, parent_id, image_url, is_active)
+				VALUES ($1, $2, $3, $4, TRUE);
+			`, subCat.name, subCat.desc, parentID, subCat.imageUrl)
 
 			if err != nil {
 				log.Printf("Error inserting sub category: %v", err)
@@ -1326,10 +2091,10 @@ func seedCategories(ctx context.Context, db *pgxpool.Pool) {
 		} else {
 			// Nếu đã tồn tại, cập nhật
 			_, err = db.Exec(ctx, `
-                UPDATE categories 
-                SET description = $1, parent_id = $2, image_url = $3, is_active = TRUE
-                WHERE id = $4;
-            `, subCat.desc, parentID, subCat.imageUrl, existingID)
+				UPDATE categories
+				SET description = $1, parent_id = $2, image_url = $3, is_active = TRUE
+				WHERE id = $4;
+			`, subCat.desc, parentID, subCat.imageUrl, existingID)
 
 			if err != nil {
 				log.Printf("Error updating sub category: %v", err)
@@ -1378,6 +2143,7 @@ func seedAttributeDefinitions(ctx context.Context, db *pgxpool.Pool) {
 		name, desc, inputType    string
 		isFilterable, isRequired bool
 	}{
+		// Thuộc tính hiện có
 		{"Màu sắc", "Màu sắc của sản phẩm", "select", true, true},
 		{"Kích thước", "Kích thước của sản phẩm", "select", true, true},
 		{"Chất liệu", "Chất liệu của sản phẩm", "select", true, false},
@@ -1400,8 +2166,40 @@ func seedAttributeDefinitions(ctx context.Context, db *pgxpool.Pool) {
 		{"Phong cách", "Phong cách thời trang", "select", true, false},
 		{"Loại thiết bị", "Loại thiết bị thể thao", "select", true, false},
 		{"Hệ điều hành", "Hệ điều hành thiết bị", "select", true, false},
-		// Add the missing attribute
 		{"Kích cỡ màn hình", "Kích thước màn hình hiển thị", "select", true, false},
+
+		// Thêm các thuộc tính mới ở đây
+		{"Loại kết nối", "Loại kết nối của thiết bị", "select", true, false},
+		{"Kiểu đeo", "Kiểu đeo tai nghe", "select", true, false},
+		{"Thời lượng pin", "Thời lượng pin của thiết bị", "select", true, false},
+		{"Độ phân giải", "Độ phân giải của camera", "select", true, false},
+		{"Cảm biến", "Loại cảm biến của camera", "select", true, false},
+		{"Khả năng quay video", "Khả năng quay video của camera", "select", true, false},
+		{"Loại da", "Loại da phù hợp với sản phẩm", "select", true, false},
+		{"Chứng nhận", "Chứng nhận của sản phẩm", "select", false, false},
+		{"Hiệu quả", "Công dụng và hiệu quả của sản phẩm", "select", true, false},
+		{"Thành phần chính", "Thành phần chính của sản phẩm", "select", true, false},
+		{"Hạn sử dụng", "Thời hạn sử dụng sản phẩm", "select", true, false},
+		{"Quy cách đóng gói", "Quy cách đóng gói sản phẩm", "select", true, false},
+		{"Phương pháp chế biến", "Phương pháp chế biến sản phẩm", "select", false, false},
+		{"Loại đồ uống", "Loại đồ uống", "select", true, false},
+		{"Dung tích", "Dung tích của sản phẩm", "select", true, false},
+		{"Vị", "Hương vị sản phẩm", "select", true, false},
+		{"Đóng gói", "Cách đóng gói sản phẩm", "select", false, false},
+		{"Độ cồn", "Độ cồn trong đồ uống", "select", true, false},
+		{"Chất liệu khung", "Chất liệu khung của sản phẩm", "select", true, false},
+		{"Chất liệu bọc", "Chất liệu bọc của sản phẩm", "select", true, false},
+		{"Độ tuổi phù hợp", "Độ tuổi phù hợp với sản phẩm", "select", true, false},
+		{"Loại cây", "Loại cây cảnh", "select", true, false},
+		{"Điều kiện sống", "Điều kiện sống của cây", "select", true, false},
+		{"Chậu cây", "Loại chậu cây", "select", true, false},
+		{"Công dụng", "Công dụng của cây cảnh", "select", true, false},
+		{"Kích thước giường", "Kích thước giường", "select", true, false},
+		{"Độ cứng nệm", "Độ cứng của nệm", "select", true, false},
+		{"Card đồ họa", "Loại card đồ họa", "select", true, false},
+		{"Kết nối", "Loại kết nối của thiết bị", "select", true, false},
+		{"Loại máy", "Loại máy ảnh", "select", true, false},
+		{"Loại đồ chơi", "Loại đồ chơi", "select", true, false},
 	}
 
 	// Seed attribute definitions
@@ -1615,41 +2413,68 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 			"https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
 			"https://images.unsplash.com/photo-1541807084-5c52b6b3adef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
 		},
-		"Thời trang nam": {
-			"https://images.unsplash.com/photo-1617137968427-85924c800a22?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1287&q=80",
-			"https://images.unsplash.com/photo-1516257984-b1b4d707412e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-			"https://images.unsplash.com/photo-1553143820-3c5ea7ec8c4e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1611312449408-fcece27cdbb7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
-			"https://images.unsplash.com/photo-1496345875659-11f7dd282d1d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		// Thêm hình ảnh cho các danh mục mới
+		"Máy tính bảng": {
+			"https://images.unsplash.com/photo-1561154464-82e9adf32764?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1587&q=80",
+			"https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1473&q=80",
+			"https://images.unsplash.com/photo-1590739293931-a28819f0c43c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1587&q=80",
+			"https://images.unsplash.com/photo-1623126908029-58c695a1b40c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1528&q=80",
 		},
-		"Thời trang nữ": {
-			"https://images.unsplash.com/photo-1552874869-5c39ec9288dc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-			"https://images.unsplash.com/photo-1566206091558-7f218b696731?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=764&q=80",
-			"https://images.unsplash.com/photo-1577900232427-18219b9166a0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=735&q=80",
-			"https://images.unsplash.com/photo-1554412933-514a83d2f3c8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1172&q=80",
+		"Tai nghe & Loa": {
+			"https://images.unsplash.com/photo-1546435770-a3e426bf472b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1165&q=80",
+			"https://images.unsplash.com/photo-1563330232-57114bb0823c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1550009158-9ebf69173e03?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1201&q=80",
+			"https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1173&q=80",
 		},
-		"Đồ gia dụng": {
-			"https://images.unsplash.com/photo-1587316205943-b15dc52a12e0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=678&q=80",
-			"https://images.unsplash.com/photo-1594225513563-c9eecb233345?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=764&q=80",
-			"https://images.unsplash.com/photo-1565065524861-0be4646f450b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
-			"https://images.unsplash.com/photo-1625575499389-0a2003624731?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
-			"https://images.unsplash.com/photo-1556911220-bda9f7f8677e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		"Máy ảnh & Máy quay": {
+			"https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1164&q=80",
+			"https://images.unsplash.com/photo-1510127034890-ba27508e9f1c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1607462109225-6b64ae2dd3cb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
+			"https://images.unsplash.com/photo-1533425242057-ddf38d16d8c0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
 		},
-		"Sách": {
-			"https://images.unsplash.com/photo-1589998059171-988d887df646?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1176&q=80",
-			"https://images.unsplash.com/photo-1541963463532-d68292c34b19?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
-			"https://images.unsplash.com/photo-1544947950-fa07a98d237f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-			"https://images.unsplash.com/photo-1512820790803-83ca734da794?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1198&q=80",
-			"https://images.unsplash.com/photo-1543002588-bfa74002ed7e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+		"Tủ lạnh & Tủ đông": {
+			"https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1586455122341-cb7c5a37590a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1575554665850-51de472e3094?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1601599561213-832382fd07ba?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1164&q=80",
 		},
-		"Thể thao": {
-			"https://images.unsplash.com/photo-1574680096145-d05b474e2155?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
-			"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1591311630200-ffa9120a540f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		"Nội thất phòng khách": {
+			"https://images.unsplash.com/photo-1484101403633-562f891dc89a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1174&q=80",
+			"https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1560448204-603b3fc33ddc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1618220179428-22790b485390?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1227&q=80",
 		},
+		"Thời trang trẻ em": {
+			"https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
+			"https://images.unsplash.com/photo-1519457431-44ccd64a579b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1530653333484-8e3c8a2b5ea8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1607453998774-d533f65dac99?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+		},
+		"Mỹ phẩm": {
+			"https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
+			"https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
+			"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1187&q=80",
+			"https://images.unsplash.com/photo-1591375275635-11868ce1f9c3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1167&q=80",
+		},
+		"Thực phẩm khô": {
+			"https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
+			"https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=987&q=80",
+			"https://images.unsplash.com/photo-1621939514649-280e2ee25f60?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1558961363-fa8fdf82db35?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1065&q=80",
+		},
+	}
+
+	// Đảm bảo thêm hình ảnh cho các danh mục khác
+	for categoryName := range categories {
+		if _, exists := productImages[categoryName]; !exists {
+			// Nếu không có hình ảnh cụ thể cho danh mục, dùng hình ảnh mặc định
+			productImages[categoryName] = []string{
+				"https://images.unsplash.com/photo-1523275335684-37898b6bab30?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1099&q=80",
+				"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+				"https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+				"https://images.unsplash.com/photo-1553456558-aff63285bdd1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+			}
+		}
 	}
 
 	// Số lượng sản phẩm đã tạo
@@ -1660,28 +2485,44 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 		// Check for product names & descriptions
 		productNames, ok := categoryProductNames[categoryName]
 		if !ok {
-			log.Printf("No product names found for category: %s", categoryName)
-			continue
+			// Nếu không có tên sản phẩm cụ thể cho danh mục, dùng tên mặc định
+			productNames = []string{
+				fmt.Sprintf("Sản phẩm %s 1", categoryName),
+				fmt.Sprintf("Sản phẩm %s 2", categoryName),
+				fmt.Sprintf("Sản phẩm %s cao cấp", categoryName),
+				fmt.Sprintf("Sản phẩm %s tiết kiệm", categoryName),
+				fmt.Sprintf("Sản phẩm %s đặc biệt", categoryName),
+			}
 		}
 
 		productDescriptions, ok := categoryProductDescriptions[categoryName]
 		if !ok {
-			log.Printf("No product descriptions found for category: %s", categoryName)
-			continue
+			// Nếu không có mô tả cụ thể cho danh mục, dùng mô tả mặc định
+			productDescriptions = []string{
+				"Sản phẩm chất lượng cao, thiết kế hiện đại và công năng vượt trội.",
+				"Sản phẩm tiết kiệm, bền bỉ với giá thành hợp lý cho mọi gia đình.",
+				"Sản phẩm cao cấp với thiết kế tinh tế, chất lượng vượt trội và nhiều tính năng đặc biệt.",
+				"Sản phẩm đáng tin cậy với chất lượng ổn định và dịch vụ hậu mãi chu đáo.",
+			}
 		}
 
 		// Check for images
 		images, ok := productImages[categoryName]
 		if !ok {
-			log.Printf("No product images found for category: %s", categoryName)
+			// Đã xử lý ở trên, nhưng kiểm tra lại để đảm bảo
 			continue
 		}
 
 		// Check for attributes
 		categoryAttrs, ok := categoryAttributes[categoryName]
 		if !ok {
-			log.Printf("No category attributes found for category: %s", categoryName)
-			continue
+			// Nếu không có thuộc tính cụ thể cho danh mục, dùng thuộc tính mặc định
+			categoryAttrs = map[string][]string{
+				"Màu sắc":    {"Đen", "Trắng", "Xám", "Xanh", "Đỏ", "Vàng", "Nâu", "Bạc"},
+				"Kích thước": {"Nhỏ", "Vừa", "Lớn", "XL", "XXL", "Freesize"},
+				"Xuất xứ":    {"Việt Nam", "Trung Quốc", "Nhật Bản", "Hàn Quốc", "Thái Lan", "Mỹ", "Đức"},
+				"Chất liệu":  {"Nhựa", "Kim loại", "Vải", "Gỗ", "Da", "Thủy tinh", "Cao su"},
+			}
 		}
 
 		// Tạo sản phẩm cho mỗi nhà cung cấp
