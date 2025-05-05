@@ -84,7 +84,7 @@ const productService = {
         }
 
         // Sử dụng Axios trực tiếp để giữ đúng định dạng query string
-        return axios.get(`${api.defaults.baseURL}/products`, {
+        return api.get(`${api.defaults.baseURL}/products`, {
             params,
             paramsSerializer: params => params.toString(),
             headers: api.defaults.headers
