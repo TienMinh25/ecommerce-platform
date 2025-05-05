@@ -3,7 +3,7 @@ syntax = "proto3";
 option go_package = "./notification_proto_gen";
 
 import "google/protobuf/timestamp.proto";
-import "metadata.proto";
+import "notification_metadata.proto";
 import "update_notification_preferences.proto";
 import "get_notification_preferences.proto";
 
@@ -79,7 +79,7 @@ message GetUserNotificationsRequest {
 
 message GetUserNotificationsResponse {
   repeated Notification data = 1;
-  Metadata metadata = 2;
+  NotificationMetadata metadata = 2;
   int64 unread_count = 3;
 }
 

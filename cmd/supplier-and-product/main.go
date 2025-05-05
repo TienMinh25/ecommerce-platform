@@ -41,7 +41,7 @@ func NewTracerSupplierAndProductService(env *env.EnvManager, lifecycle fx.Lifecy
 	return tracer, err
 }
 
-func StartServer(lifecycle fx.Lifecycle, env *env.EnvManager, categoryHandler *handler.CategoryHandler) {
+func StartServer(lifecycle fx.Lifecycle, env *env.EnvManager, partnerHandler *handler.PartnerHandler) {
 	server := grpc.NewServer()
 
 	lifecycle.Append(fx.Hook{
@@ -52,7 +52,7 @@ func StartServer(lifecycle fx.Lifecycle, env *env.EnvManager, categoryHandler *h
 				log.Fatalf("Failed to listen: %v", err)
 			}
 
-			partner_proto_gen.RegisterPartnerServiceServer(server, categoryHandler)
+			partner_proto_gen.RegisterPartnerServiceServer(server, partnerHandler)
 
 			go func() {
 				log.Printf("Starting gRPC server supplier and product: %v", env.SupplierAndProductServerConfig.ServerAddress)
@@ -114,11 +114,13 @@ func main() {
 			// database,
 			NewDatabase,
 			// router and handler
-			handler.NewCategoryHandler,
+			handler.NewPartnerHandler,
 			// service
 			service.NewCategoryService,
+			service.NewProductService,
 			// repository
 			repository.NewCategoryRepository,
+			repository.NewProductRepository,
 			// tracer
 			NewTracerSupplierAndProductService,
 			// kafka,

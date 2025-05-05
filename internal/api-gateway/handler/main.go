@@ -88,3 +88,7 @@ type IAdministrativeDivisionHandler interface {
 type ICategoryHandler interface {
 	GetCategories(ctx *gin.Context)
 }
+
+type IProductHandler interface {
+	GetProducts(ctx *gin.Context)
+}

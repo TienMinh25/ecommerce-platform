@@ -20,11 +20,11 @@ func NewCategoryService(tracer pkg.Tracer, repo repository.ICategoryRepository) 
 	}
 }
 
-func (c *categoryService) GetCategories(ctx context.Context, parentID *int64) (*partner_proto_gen.GetCategoriesResponse, error) {
+func (c *categoryService) GetCategories(ctx context.Context, data *partner_proto_gen.GetCategoriesRequest) (*partner_proto_gen.GetCategoriesResponse, error) {
 	ctx, span := c.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetCategories"))
 	defer span.End()
 
-	categories, err := c.repo.GetCategories(ctx, parentID)
+	categories, err := c.repo.GetCategories(ctx, data)
 
 	if err != nil {
 		return nil, err
@@ -33,12 +33,22 @@ func (c *categoryService) GetCategories(ctx context.Context, parentID *int64) (*
 	categoriesRes := make([]*partner_proto_gen.CategoryResponse, 0)
 
 	for _, category := range categories {
-		categoriesRes = append(categoriesRes, &partner_proto_gen.CategoryResponse{
+		categoryRes := &partner_proto_gen.CategoryResponse{
 			CategoryId: category.ID,
 			Name:       category.Name,
 			ImageUrl:   category.ImageURL,
 			ParentId:   category.ParentID,
-		})
+		}
+
+		if category.Selected != nil {
+			categoryRes.Selected = category.Selected
+		}
+
+		if category.ProductCount != nil {
+			categoryRes.ProductCount = category.ProductCount
+		}
+
+		categoriesRes = append(categoriesRes, categoryRes)
 	}
 
 	return &partner_proto_gen.GetCategoriesResponse{

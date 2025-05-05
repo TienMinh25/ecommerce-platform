@@ -345,9 +345,13 @@ definitions:
         type: integer
       image_url:
         type: string
+      is_selected:
+        type: boolean
       name:
         type: string
       parent_id:
+        type: integer
+      product_count:
         type: integer
     type: object
   api_gateway_dto.GetCategoriesResponseDocs:
@@ -478,6 +482,36 @@ definitions:
         type: array
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetProductsResponse:
+    properties:
+      product_average_rating:
+        type: number
+      product_category_id:
+        type: integer
+      product_currency:
+        type: string
+      product_discount_price:
+        type: number
+      product_id:
+        type: string
+      product_name:
+        type: string
+      product_price:
+        type: number
+      product_thumbnail:
+        type: string
+      product_total_reviews:
+        type: integer
+    type: object
+  api_gateway_dto.GetProductsResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetProductsResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
     type: object
   api_gateway_dto.GetRoleResponse:
     properties:
@@ -2134,6 +2168,57 @@ paths:
       summary: Update a permission by ID
       tags:
       - permissions
+  /products:
+    get:
+      consumes:
+      - application/json
+      description: Get products
+      parameters:
+      - collectionFormat: csv
+        in: query
+        items:
+          type: integer
+        name: category_ids
+        type: array
+      - in: query
+        name: keyword
+        type: string
+      - in: query
+        minimum: 1
+        name: limit
+        type: integer
+      - in: query
+        minimum: 1
+        name: min_rating
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetProductsResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get products
+      tags:
+      - products
   /roles:
     get:
       consumes:

@@ -2,8 +2,10 @@ import React, { useRef, useState, useEffect } from 'react';
 import { Box, Flex, Text, Image, IconButton, useBreakpointValue, Heading } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import categoryService from '../../services/categoryService';
+import { useNavigate } from "react-router-dom";
 
 const CategorySlider = () => {
+    const navigate = useNavigate();
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -16,7 +18,7 @@ const CategorySlider = () => {
         const fetchCategories = async () => {
             try {
                 setLoading(true);
-                // Sử dụng service để gọi API
+                // Use service to call API
                 const response = await categoryService.getAllCategories();
                 if (response.data && response.data.data) {
                     setCategories(response.data.data);
@@ -90,7 +92,16 @@ const CategorySlider = () => {
         );
     }
 
-    // Placeholder categories nếu API chưa hoạt động hoặc không có dữ liệu
+    const handleCategoryClick = (category) => {
+        // Navigate to ProductListing and pass category info through state
+        navigate('/products', {
+            state: { selectedCategory: category },
+            // Preserve URL param for bookmarkability
+            search: `?category_ids=${category.id}`
+        });
+    };
+
+    // Placeholder categories if API isn't working or has no data
     const placeholderCategories = [
         {
             id: 1,
@@ -119,7 +130,7 @@ const CategorySlider = () => {
         }
     ];
 
-    // Sử dụng dữ liệu từ API hoặc placeholder nếu không có dữ liệu
+    // Use data from API or placeholders if no data
     const displayCategories = categories.length > 0 ? categories : placeholderCategories;
 
     return (
@@ -162,8 +173,7 @@ const CategorySlider = () => {
                         {displayCategories.map((category) => (
                             <Box
                                 key={category.id}
-                                as="a"
-                                href={`/products?categoryID=${category.id}`}
+                                onClick={() => handleCategoryClick(category)}
                                 minW={itemWidth}
                                 maxW={itemWidth}
                                 textAlign="center"
@@ -173,6 +183,7 @@ const CategorySlider = () => {
                                 overflow="hidden"
                                 boxShadow="sm"
                                 height="auto"
+                                cursor="pointer"
                             >
                                 <Box
                                     overflow="hidden"
@@ -190,7 +201,7 @@ const CategorySlider = () => {
                                     />
                                 </Box>
 
-                                {/* Phần tên danh mục với nền xanh */}
+                                {/* Category name with blue background */}
                                 <Box
                                     p={3}
                                     bg="blue.500"

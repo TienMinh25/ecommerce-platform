@@ -12,4 +12,8 @@ type Category struct {
 	ImageURL    string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+
+	// used for response API
+	ProductCount *int64
+	Selected     *bool
 }

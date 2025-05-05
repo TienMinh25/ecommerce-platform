@@ -181,6 +181,7 @@ func main() {
 			api_gateway_handler.NewUserHandler,
 			api_gateway_handler.NewAdministrativeDivisionHandler,
 			api_gateway_handler.NewCategoryHandler,
+			api_gateway_handler.NewProductHandler,
 			// service
 			api_gateway_service.NewAdminAddressTypeService,
 			api_gateway_service.NewAuthenticationService,
@@ -194,6 +195,7 @@ func main() {
 			api_gateway_service.NewUserMeService,
 			api_gateway_service.NewAdministrativeDivisionService,
 			api_gateway_service.NewCategoryService,
+			api_gateway_service.NewProductService,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
 			api_gateway_repository.NewUserRepository,

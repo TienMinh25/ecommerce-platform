@@ -6,5 +6,9 @@ import (
 )
 
 type ICategoryService interface {
-	GetCategories(ctx context.Context, parentID *int64) (*partner_proto_gen.GetCategoriesResponse, error)
+	GetCategories(ctx context.Context, data *partner_proto_gen.GetCategoriesRequest) (*partner_proto_gen.GetCategoriesResponse, error)
+}
+
+type IProductService interface {
+	GetProducts(ctx context.Context, data *partner_proto_gen.GetProductsRequest) (*partner_proto_gen.GetProductsResponse, error)
 }

@@ -58,6 +58,9 @@ const AppRoutes = () => {
                         <Route path='orders' element={<UserOrders />} />
                         <Route path='notifications/see' element={<UserNotifications />} />
                     </Route>
+
+                    <Route path='/products' element={<ProductListing />} />
+                    <Route path='/products/:id' element={<ProductDetail />} />
                 </Route>
                 <Route path='/dashboard' element={<DashboardLayout />}>
                     {/* Main dashboard */}
@@ -72,16 +75,6 @@ const AppRoutes = () => {
                     {/*
                       <Route path='onboarding/suppliers' element={<DashboardComponent />} />
                       <Route path='onboarding/deliverers' element={<DashboardComponent />} /> */}
-                </Route>
-            </Route>
-
-
-
-            {/* Private Routes */}
-            <Route element={<PrivateRoute />}>
-                <Route element={<MainLayout />}>
-                    <Route path='/products' element={<ProductListing />} />
-                    <Route path='/products/:id' element={<ProductDetail />} />
                 </Route>
             </Route>
 

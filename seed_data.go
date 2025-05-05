@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
@@ -1642,7 +1643,7 @@ func seedCategories(ctx context.Context, db *pgxpool.Pool) {
 		{
 			"Điện gia dụng",
 			"Các thiết bị điện tử gia dụng và nhà bếp",
-			"https://images.unsplash.com/photo-1556911220-bda9f7f8677e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://png.pngtree.com/template/20220330/ourmid/pngtree-electrical-appliances-renewal-season-small-appliances-promotion-poster-image_907595.jpg",
 		},
 		{
 			"Nội thất & Trang trí",
@@ -2110,25 +2111,26 @@ func seedTags(ctx context.Context, db *pgxpool.Pool) {
 		"Chính hãng", "Chất lượng cao", "Hàng hiệu", "Thương hiệu", "Nhập khẩu",
 		"Xu hướng", "Thịnh hành", "Ưu đãi", "Miễn phí vận chuyển", "Khuyến mãi",
 		"Phân phối chính thức", "Hàng độc quyền", "Phiên bản giới hạn",
+		"Bộ sản phẩm", "Combo", // Thêm hai tag mới cho sản phẩm cha
 	}
 
 	for _, tag := range tags {
-		// Check if the tag already exists
-		var tagExists bool
+		// Kiểm tra xem tag đã tồn tại chưa
+		var count int
 		err := db.QueryRow(ctx, `
-            SELECT EXISTS (SELECT 1 FROM tags WHERE name = $1)
-        `, tag).Scan(&tagExists)
+			SELECT COUNT(*) FROM tags WHERE name = $1
+		`, tag).Scan(&count)
 
 		if err != nil {
 			log.Printf("Error checking tag existence: %v", err)
 			continue
 		}
 
-		if !tagExists {
+		if count == 0 {
 			_, err := db.Exec(ctx, `
-                INSERT INTO tags (name)
-                VALUES ($1);
-            `, tag)
+				INSERT INTO tags (name)
+				VALUES ($1);
+			`, tag)
 
 			if err != nil {
 				log.Printf("Error inserting tag: %v", err)
@@ -2136,104 +2138,6 @@ func seedTags(ctx context.Context, db *pgxpool.Pool) {
 		}
 	}
 	log.Println("✅ Tags seeded successfully")
-}
-
-func seedAttributeDefinitions(ctx context.Context, db *pgxpool.Pool) {
-	attributes := []struct {
-		name, desc, inputType    string
-		isFilterable, isRequired bool
-	}{
-		// Thuộc tính hiện có
-		{"Màu sắc", "Màu sắc của sản phẩm", "select", true, true},
-		{"Kích thước", "Kích thước của sản phẩm", "select", true, true},
-		{"Chất liệu", "Chất liệu của sản phẩm", "select", true, false},
-		{"Dung lượng", "Dung lượng lưu trữ", "select", true, false},
-		{"RAM", "Dung lượng RAM", "select", true, false},
-		{"CPU", "Loại CPU", "select", true, false},
-		{"Ổ cứng", "Loại và dung lượng ổ cứng", "select", true, false},
-		{"Màn hình", "Kích thước màn hình", "select", true, false},
-		{"Kiểu dáng", "Kiểu dáng sản phẩm", "select", true, false},
-		{"Thương hiệu", "Thương hiệu sản phẩm", "select", true, false},
-		{"Xuất xứ", "Quốc gia xuất xứ", "select", false, false},
-		{"Công suất", "Công suất thiết bị", "select", false, false},
-		{"Bảo hành", "Thời gian bảo hành", "select", false, false},
-		{"Thể loại", "Thể loại sách", "select", true, false},
-		{"Ngôn ngữ", "Ngôn ngữ sách", "select", true, false},
-		{"Tác giả", "Tác giả sách", "select", true, false},
-		{"Nhà xuất bản", "Nhà xuất bản sách", "select", false, false},
-		{"Bìa sách", "Loại bìa sách", "select", false, false},
-		{"Mùa", "Mùa phù hợp", "select", false, false},
-		{"Phong cách", "Phong cách thời trang", "select", true, false},
-		{"Loại thiết bị", "Loại thiết bị thể thao", "select", true, false},
-		{"Hệ điều hành", "Hệ điều hành thiết bị", "select", true, false},
-		{"Kích cỡ màn hình", "Kích thước màn hình hiển thị", "select", true, false},
-
-		// Thêm các thuộc tính mới ở đây
-		{"Loại kết nối", "Loại kết nối của thiết bị", "select", true, false},
-		{"Kiểu đeo", "Kiểu đeo tai nghe", "select", true, false},
-		{"Thời lượng pin", "Thời lượng pin của thiết bị", "select", true, false},
-		{"Độ phân giải", "Độ phân giải của camera", "select", true, false},
-		{"Cảm biến", "Loại cảm biến của camera", "select", true, false},
-		{"Khả năng quay video", "Khả năng quay video của camera", "select", true, false},
-		{"Loại da", "Loại da phù hợp với sản phẩm", "select", true, false},
-		{"Chứng nhận", "Chứng nhận của sản phẩm", "select", false, false},
-		{"Hiệu quả", "Công dụng và hiệu quả của sản phẩm", "select", true, false},
-		{"Thành phần chính", "Thành phần chính của sản phẩm", "select", true, false},
-		{"Hạn sử dụng", "Thời hạn sử dụng sản phẩm", "select", true, false},
-		{"Quy cách đóng gói", "Quy cách đóng gói sản phẩm", "select", true, false},
-		{"Phương pháp chế biến", "Phương pháp chế biến sản phẩm", "select", false, false},
-		{"Loại đồ uống", "Loại đồ uống", "select", true, false},
-		{"Dung tích", "Dung tích của sản phẩm", "select", true, false},
-		{"Vị", "Hương vị sản phẩm", "select", true, false},
-		{"Đóng gói", "Cách đóng gói sản phẩm", "select", false, false},
-		{"Độ cồn", "Độ cồn trong đồ uống", "select", true, false},
-		{"Chất liệu khung", "Chất liệu khung của sản phẩm", "select", true, false},
-		{"Chất liệu bọc", "Chất liệu bọc của sản phẩm", "select", true, false},
-		{"Độ tuổi phù hợp", "Độ tuổi phù hợp với sản phẩm", "select", true, false},
-		{"Loại cây", "Loại cây cảnh", "select", true, false},
-		{"Điều kiện sống", "Điều kiện sống của cây", "select", true, false},
-		{"Chậu cây", "Loại chậu cây", "select", true, false},
-		{"Công dụng", "Công dụng của cây cảnh", "select", true, false},
-		{"Kích thước giường", "Kích thước giường", "select", true, false},
-		{"Độ cứng nệm", "Độ cứng của nệm", "select", true, false},
-		{"Card đồ họa", "Loại card đồ họa", "select", true, false},
-		{"Kết nối", "Loại kết nối của thiết bị", "select", true, false},
-		{"Loại máy", "Loại máy ảnh", "select", true, false},
-		{"Loại đồ chơi", "Loại đồ chơi", "select", true, false},
-	}
-
-	// Seed attribute definitions
-	for _, attr := range attributes {
-		var attrID int
-		err := db.QueryRow(ctx, `
-			INSERT INTO attribute_definitions (name, description, input_type, is_filterable, is_required)
-			VALUES ($1, $2, $3, $4, $5)
-			ON CONFLICT (name) DO UPDATE
-			SET description = $2, input_type = $3, is_filterable = $4, is_required = $5
-			RETURNING id;
-		`, attr.name, attr.desc, attr.inputType, attr.isFilterable, attr.isRequired).Scan(&attrID)
-
-		if err != nil {
-			log.Printf("Error inserting attribute definition: %v", err)
-			continue
-		}
-
-		// Seed attribute options based on category_attributes map
-		if options, exists := getAttributeOptions(attr.name); exists {
-			for _, option := range options {
-				_, err := db.Exec(ctx, `
-					INSERT INTO attribute_options (attribute_definition_id, option_value)
-					VALUES ($1, $2)
-					ON CONFLICT (attribute_definition_id, option_value) DO NOTHING;
-				`, attrID, option)
-
-				if err != nil {
-					log.Printf("Error inserting attribute option: %v", err)
-				}
-			}
-		}
-	}
-	log.Println("✅ Attribute definitions and options seeded successfully")
 }
 
 func getAttributeOptions(attrName string) ([]string, bool) {
@@ -2357,16 +2261,21 @@ func seedSupplierProfiles(ctx context.Context, apiDb, partnerDb *pgxpool.Pool, s
 	return supplierIDs
 }
 
+// Cải tiến seedEnhancedProducts để đảm bảo seedTags được gọi trước khi thêm sản phẩm
 func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []int64) {
+	// Đảm bảo tags và attributes đã được tạo trước
+	seedTags(ctx, db)
+	seedAttributeDefinitions(ctx, db)
+
 	// Check if product_variants table exists
 	var exists bool
 	err := db.QueryRow(ctx, `
-        SELECT EXISTS (
-            SELECT FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_name = 'product_variants'
-        )
-    `).Scan(&exists)
+		SELECT EXISTS (
+			SELECT FROM information_schema.tables 
+			WHERE table_schema = 'public' 
+			AND table_name = 'product_variants'
+		)
+	`).Scan(&exists)
 
 	if err != nil {
 		log.Printf("Error checking if product_variants table exists: %v", err)
@@ -2379,21 +2288,45 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 	}
 
 	// Lấy danh sách categories
-	categories := make(map[string]int64)
-	rows, err := db.Query(ctx, `SELECT id, name FROM categories WHERE parent_id IS NOT NULL`)
+	type CategoryInfo struct {
+		id       int64
+		name     string
+		parentID sql.NullInt64
+	}
+	categories := make(map[int64]CategoryInfo) // id -> CategoryInfo
+	categoryNameToID := make(map[string]int64) // name -> id
+
+	rows, err := db.Query(ctx, `SELECT id, name, parent_id FROM categories`)
 	if err != nil {
 		log.Fatalf("Error getting categories: %v", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var id int64
-		var name string
-		if err := rows.Scan(&id, &name); err != nil {
+		var category CategoryInfo
+		if err := rows.Scan(&category.id, &category.name, &category.parentID); err != nil {
 			log.Printf("Error scanning category: %v", err)
 			continue
 		}
-		categories[name] = id
+		categories[category.id] = category
+		categoryNameToID[category.name] = category.id
+	}
+
+	// Tổ chức categories thành parent -> []children
+	parentToChildren := make(map[int64][]int64)
+	parentCategories := make(map[int64]CategoryInfo)
+	childCategories := make(map[int64]CategoryInfo)
+
+	for id, category := range categories {
+		if !category.parentID.Valid {
+			// Đây là category cha
+			parentCategories[id] = category
+		} else {
+			// Đây là category con
+			childCategories[id] = category
+			parentID := category.parentID.Int64
+			parentToChildren[parentID] = append(parentToChildren[parentID], id)
+		}
 	}
 
 	// Danh sách ảnh sản phẩm chất lượng cao từ Unsplash theo danh mục
@@ -2403,76 +2336,105 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 			"https://images.unsplash.com/photo-1598327105666-5b89351aff97?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2227&q=80",
 			"https://images.unsplash.com/photo-1529653762956-b0a27278529c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
 			"https://images.unsplash.com/photo-1605236453806-6ff36851218e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1589492477829-5e65395b66cc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-			"https://images.unsplash.com/photo-1616348436168-de43ad0db179?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=781&q=80",
 		},
 		"Máy tính xách tay": {
 			"https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
 			"https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1332&q=80",
 			"https://images.unsplash.com/photo-1603302576837-37561b2e2302?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1168&q=80",
-			"https://images.unsplash.com/photo-1611186871348-b1ce696e52c9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1541807084-5c52b6b3adef?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
 		},
-		// Thêm hình ảnh cho các danh mục mới
 		"Máy tính bảng": {
 			"https://images.unsplash.com/photo-1561154464-82e9adf32764?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1587&q=80",
 			"https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1473&q=80",
-			"https://images.unsplash.com/photo-1590739293931-a28819f0c43c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1587&q=80",
-			"https://images.unsplash.com/photo-1623126908029-58c695a1b40c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1528&q=80",
 		},
 		"Tai nghe & Loa": {
 			"https://images.unsplash.com/photo-1546435770-a3e426bf472b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1165&q=80",
 			"https://images.unsplash.com/photo-1563330232-57114bb0823c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1550009158-9ebf69173e03?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1201&q=80",
-			"https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1173&q=80",
 		},
 		"Máy ảnh & Máy quay": {
 			"https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1164&q=80",
 			"https://images.unsplash.com/photo-1510127034890-ba27508e9f1c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1607462109225-6b64ae2dd3cb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-			"https://images.unsplash.com/photo-1533425242057-ddf38d16d8c0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
 		},
 		"Tủ lạnh & Tủ đông": {
 			"https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
 			"https://images.unsplash.com/photo-1586455122341-cb7c5a37590a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1575554665850-51de472e3094?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1601599561213-832382fd07ba?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1164&q=80",
 		},
-		"Nội thất phòng khách": {
-			"https://images.unsplash.com/photo-1484101403633-562f891dc89a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1174&q=80",
-			"https://images.unsplash.com/photo-1585412727339-54e4bae3bbf9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1560448204-603b3fc33ddc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1618220179428-22790b485390?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1227&q=80",
+		"Thời trang nam": {
+			"https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+			"https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
 		},
-		"Thời trang trẻ em": {
-			"https://images.unsplash.com/photo-1471286174890-9c112ffca5b4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
-			"https://images.unsplash.com/photo-1519457431-44ccd64a579b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1530653333484-8e3c8a2b5ea8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1607453998774-d533f65dac99?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+		"Thời trang nữ": {
+			"https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
 		},
-		"Mỹ phẩm": {
-			"https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
-			"https://images.unsplash.com/photo-1571781926291-c477ebfd024b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
-			"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1187&q=80",
-			"https://images.unsplash.com/photo-1591375275635-11868ce1f9c3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1167&q=80",
+		"Đồ gia dụng": {
+			"https://images.unsplash.com/photo-1556909172-54557c7e4fb7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
 		},
-		"Thực phẩm khô": {
-			"https://images.unsplash.com/photo-1542990253-0d0f5be5f0ed?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-			"https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=987&q=80",
-			"https://images.unsplash.com/photo-1621939514649-280e2ee25f60?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1558961363-fa8fdf82db35?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1065&q=80",
+		"Sách": {
+			"https://images.unsplash.com/photo-1495446815901-a7297e633e8d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+		},
+		"Thể thao": {
+			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1547919307-1ecb10702e6f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
 		},
 	}
 
-	// Đảm bảo thêm hình ảnh cho các danh mục khác
-	for categoryName := range categories {
-		if _, exists := productImages[categoryName]; !exists {
-			// Nếu không có hình ảnh cụ thể cho danh mục, dùng hình ảnh mặc định
-			productImages[categoryName] = []string{
-				"https://images.unsplash.com/photo-1523275335684-37898b6bab30?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1099&q=80",
-				"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-				"https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-				"https://images.unsplash.com/photo-1553456558-aff63285bdd1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+	// Images cho parent categories
+	parentCategoryImages := map[string][]string{
+		"Điện tử & Công nghệ": {
+			"https://images.unsplash.com/photo-1468495244123-6c6c332eeece?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1021&q=80",
+			"https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		"Thời trang": {
+			"https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+			"https://images.unsplash.com/photo-1589182337642-35f6e9ccbf8d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+		},
+		"Nhà cửa & Đời sống": {
+			"https://images.unsplash.com/photo-1484101403633-562f891dc89a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1174&q=80",
+			"https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		"Sách & Văn phòng phẩm": {
+			"https://images.unsplash.com/photo-1526243741027-444d633d7365?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+			"https://images.unsplash.com/photo-1512903989781-40c28368bd5d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		"Thể thao & Du lịch": {
+			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1530266451970-40ded5a4d66a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		"Mẹ & Bé": {
+			"https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1554684652-57e82094ad77?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		"Làm đẹp & Sức khỏe": {
+			"https://images.unsplash.com/photo-1571875257727-256c39da42af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+			"https://images.unsplash.com/photo-1526947425960-945c6e72858f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		},
+		"Thực phẩm & Đồ uống": {
+			"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1540914124281-342587941389?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
+		},
+	}
+
+	// Default images cho các category chưa có ảnh chuyên biệt
+	defaultImages := []string{
+		"https://images.unsplash.com/photo-1523275335684-37898b6bab30?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1099&q=80",
+		"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		"https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		"https://images.unsplash.com/photo-1553456558-aff63285bdd1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
+	}
+
+	// Đảm bảo mỗi category đều có ảnh
+	for _, category := range categories {
+		// Kiểm tra danh mục con
+		if _, exists := productImages[category.name]; !exists {
+			productImages[category.name] = defaultImages
+		}
+
+		// Kiểm tra danh mục cha
+		if !category.parentID.Valid {
+			if _, exists := parentCategoryImages[category.name]; !exists {
+				parentCategoryImages[category.name] = defaultImages
 			}
 		}
 	}
@@ -2480,8 +2442,239 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 	// Số lượng sản phẩm đã tạo
 	totalProducts := 0
 
-	// Tạo sản phẩm cho mỗi danh mục
-	for categoryName, categoryID := range categories {
+	// PHẦN 1: TẠO SẢN PHẨM CHO CATEGORY CHA
+	log.Println("Creating products for parent categories...")
+
+	// Tạo thêm tên và mô tả cho sản phẩm của danh mục cha
+	parentProductNames := map[string][]string{
+		"Điện tử & Công nghệ": {
+			"Bộ sản phẩm Điện tử cao cấp",
+			"Combo Thiết bị Công nghệ hiện đại",
+			"Bộ sưu tập Gadget mới nhất",
+			"Tech Premium Bundle",
+			"Smart Home Combo",
+		},
+		"Thời trang": {
+			"Bộ sưu tập Thời trang cao cấp",
+			"Fashion Collection 2024",
+			"Combo Quần áo & Phụ kiện",
+			"Seasonal Fashion Bundle",
+			"Style Essentials Pack",
+		},
+		"Nhà cửa & Đời sống": {
+			"Bộ sản phẩm Gia đình đa năng",
+			"Home Essentials Pack",
+			"Combo Nội thất & Gia dụng",
+			"Living Space Collection",
+			"Home Improvement Bundle",
+		},
+		"Sách & Văn phòng phẩm": {
+			"Bộ sách Bestseller",
+			"Combo Văn phòng tiện lợi",
+			"Bộ sưu tập Sách & Stationery",
+			"Office Essentials Pack",
+			"Literature & Craft Bundle",
+		},
+		"Thể thao & Du lịch": {
+			"Bộ dụng cụ Thể thao đa năng",
+			"Combo Du lịch tiện ích",
+			"Travel & Sport Collection",
+			"Fitness Essentials Pack",
+			"Adventure Gear Bundle",
+		},
+	}
+
+	// Thêm mô tả cho sản phẩm danh mục cha
+	parentProductDescriptions := map[string][]string{
+		"Điện tử & Công nghệ": {
+			"Bộ sản phẩm điện tử cao cấp với những tính năng hiện đại nhất, kết nối liền mạch và trải nghiệm người dùng tuyệt vời.",
+			"Combo thiết bị công nghệ hiện đại mang lại trải nghiệm số hoá toàn diện cho ngôi nhà thông minh của bạn.",
+			"Bộ sưu tập gadget mới nhất với thiết kế tinh tế, chức năng vượt trội và công nghệ tiên tiến.",
+			"Tech Premium Bundle sẽ nâng tầm trải nghiệm công nghệ của bạn với các sản phẩm chất lượng cao và tích hợp thông minh.",
+			"Smart Home Combo giúp biến ngôi nhà của bạn thành không gian sống thông minh, tiện nghi và tiết kiệm năng lượng.",
+		},
+		"Thời trang": {
+			"Bộ sưu tập thời trang cao cấp từ các thương hiệu hàng đầu, mang đến phong cách độc đáo và đẳng cấp.",
+			"Fashion Collection 2024 với những thiết kế mới nhất, theo xu hướng thời trang quốc tế và chất liệu cao cấp.",
+			"Combo quần áo & phụ kiện giúp bạn tạo nên phong cách riêng, hài hòa và thời thượng cho mọi dịp.",
+			"Seasonal Fashion Bundle mang đến những món đồ thời trang phù hợp với mùa, dễ phối và trendy.",
+			"Style Essentials Pack với những món đồ cơ bản không thể thiếu, dễ kết hợp và luôn thời trang.",
+		},
+	}
+
+	// Tạo mô tả mặc định cho những danh mục chưa có mô tả cụ thể
+	defaultParentDescriptions := []string{
+		"Bộ sản phẩm cao cấp với thiết kế hiện đại, chất lượng vượt trội và đa dạng công năng sử dụng.",
+		"Combo sản phẩm chính hãng với đầy đủ phụ kiện và chế độ bảo hành tốt nhất trên thị trường.",
+		"Bộ sưu tập mới nhất với thiết kế độc đáo, công nghệ tiên tiến và trải nghiệm người dùng vượt trội.",
+		"Bộ sản phẩm đa năng phù hợp cho mọi nhu cầu sử dụng, tiết kiệm chi phí và không gian.",
+		"Combo tiết kiệm với giá cả hợp lý, chất lượng đảm bảo và đa dạng tính năng.",
+	}
+
+	for parentID, parentCategory := range parentCategories {
+		// Lấy tên và mô tả phù hợp cho danh mục cha này
+		var names []string
+		var descriptions []string
+
+		if specificNames, ok := parentProductNames[parentCategory.name]; ok {
+			names = specificNames
+		} else {
+			// Tạo tên mặc định nếu không có tên cụ thể
+			names = []string{
+				fmt.Sprintf("Bộ sản phẩm %s cao cấp", parentCategory.name),
+				fmt.Sprintf("Combo %s chính hãng", parentCategory.name),
+				fmt.Sprintf("Bộ sưu tập %s mới nhất", parentCategory.name),
+				fmt.Sprintf("Bộ %s đa năng", parentCategory.name),
+				fmt.Sprintf("Combo %s tiết kiệm", parentCategory.name),
+			}
+		}
+
+		if specificDescs, ok := parentProductDescriptions[parentCategory.name]; ok {
+			descriptions = specificDescs
+		} else {
+			descriptions = defaultParentDescriptions
+		}
+
+		// Lấy ảnh cho danh mục cha
+		var parentImages []string
+		if images, ok := parentCategoryImages[parentCategory.name]; ok {
+			parentImages = images
+		} else {
+			parentImages = defaultImages
+		}
+
+		// Mỗi nhà cung cấp tạo ít nhất 1-2 sản phẩm cho mỗi danh mục cha
+		for _, supplierID := range supplierIDs {
+			numProducts := gofakeit.Number(1, 2)
+
+			for i := 0; i < numProducts; i++ {
+				// Chọn ngẫu nhiên tên sản phẩm và mô tả
+				productName := names[gofakeit.Number(0, len(names)-1)]
+				productDesc := descriptions[gofakeit.Number(0, len(descriptions)-1)]
+
+				// Chọn ngẫu nhiên ảnh sản phẩm
+				productImage := parentImages[gofakeit.Number(0, len(parentImages)-1)]
+
+				// Tạo SKU prefix
+				skuPrefix := strings.ToUpper(string([]rune(parentCategory.name)[0])) +
+					strings.ToUpper(string([]rune(productName)[0])) +
+					fmt.Sprintf("%03d", gofakeit.Number(100, 999))
+
+				// Kiểm tra xem sản phẩm đã tồn tại chưa
+				var existingID string
+				err := db.QueryRow(ctx, `
+					SELECT id FROM products WHERE name = $1 AND supplier_id = $2 AND category_id = $3
+				`, productName, supplierID, parentID).Scan(&existingID)
+
+				var productID string
+				if err != nil && err != pgx.ErrNoRows {
+					log.Printf("Error checking product existence: %v", err)
+					continue
+				}
+
+				if err == pgx.ErrNoRows {
+					// Nếu chưa tồn tại, tạo mới
+					err := db.QueryRow(ctx, `
+						INSERT INTO products (
+							supplier_id, category_id, name, description, image_url,
+							status, featured, tax_class, sku_prefix, average_rating
+						)
+						VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+						RETURNING id;
+					`,
+						supplierID, parentID, productName, productDesc, productImage,
+						"active", gofakeit.Bool(), "standard", skuPrefix, float32(gofakeit.Float32Range(3.5, 5)),
+					).Scan(&productID)
+
+					if err != nil {
+						log.Printf("Error inserting parent category product: %v", err)
+						continue
+					}
+				} else {
+					productID = existingID
+					// Cập nhật sản phẩm đã tồn tại nếu cần
+					_, err := db.Exec(ctx, `
+						UPDATE products SET
+						description = $1, image_url = $2, status = 'active',
+						tax_class = 'standard', sku_prefix = $3
+						WHERE id = $4
+					`, productDesc, productImage, skuPrefix, productID)
+
+					if err != nil {
+						log.Printf("Error updating parent category product: %v", err)
+						continue
+					}
+				}
+
+				// Thêm tags cho sản phẩm của danh mục cha
+				numTags := gofakeit.Number(1, 3)
+				tagNames := []string{"Mới nhất", "Bán chạy", "Chính hãng", "Giảm giá", "Chất lượng cao", "Cao cấp", "Bộ sản phẩm", "Combo"}
+
+				for j := 0; j < numTags; j++ {
+					randomTag := tagNames[gofakeit.Number(0, len(tagNames)-1)]
+
+					// Lấy tag ID
+					var tagID string
+					err := db.QueryRow(ctx, `
+						SELECT id FROM tags WHERE name = $1
+					`, randomTag).Scan(&tagID)
+
+					if err != nil {
+						log.Printf("Error getting tag ID: %v", err)
+						continue
+					}
+
+					// Kiểm tra xem liên kết product-tag đã tồn tại chưa
+					var relationExists bool
+					err = db.QueryRow(ctx, `
+						SELECT EXISTS (
+							SELECT 1 FROM products_tags
+							WHERE product_id = $1 AND tag_id = $2
+						)
+					`, productID, tagID).Scan(&relationExists)
+
+					if err != nil {
+						log.Printf("Error checking product_tag existence: %v", err)
+						continue
+					}
+
+					if !relationExists {
+						_, err := db.Exec(ctx, `
+							INSERT INTO products_tags (product_id, tag_id)
+							VALUES ($1, $2);
+						`, productID, tagID)
+
+						if err != nil {
+							log.Printf("Error inserting product_tag: %v", err)
+						}
+					}
+				}
+
+				// Tạo thuộc tính mặc định cho sản phẩm cha
+				defaultAttrs := map[string][]string{
+					"Màu sắc":   {"Đen", "Trắng", "Bạc", "Xanh", "Đỏ", "Vàng", "Nâu"},
+					"Chất liệu": {"Cao cấp", "Nhựa", "Kim loại", "Composite", "Hợp kim", "Vải", "Gỗ"},
+					"Xuất xứ":   {"Việt Nam", "Trung Quốc", "Nhật Bản", "Hàn Quốc", "Thái Lan", "Mỹ", "Đức"},
+				}
+
+				// Kiểm tra xem bảng product_variants đã tồn tại chưa
+				if exists {
+					// Tạo biến thể sản phẩm cho sản phẩm cha
+					createProductVariants(ctx, db, productID, skuPrefix, defaultAttrs, productImage)
+				}
+
+				totalProducts++
+			}
+		}
+	}
+
+	// PHẦN 2: TẠO SẢN PHẨM CHO CATEGORY CON
+	log.Println("Creating products for child categories...")
+
+	// Tạo sản phẩm cho mỗi danh mục con
+	for catID, category := range childCategories {
+		categoryName := category.name
+
 		// Check for product names & descriptions
 		productNames, ok := categoryProductNames[categoryName]
 		if !ok {
@@ -2510,7 +2703,7 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 		images, ok := productImages[categoryName]
 		if !ok {
 			// Đã xử lý ở trên, nhưng kiểm tra lại để đảm bảo
-			continue
+			images = defaultImages
 		}
 
 		// Check for attributes
@@ -2548,8 +2741,8 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 				// Kiểm tra xem sản phẩm đã tồn tại chưa
 				var existingID string
 				err := db.QueryRow(ctx, `
-                    SELECT id FROM products WHERE name = $1 AND supplier_id = $2
-                `, productName, supplierID).Scan(&existingID)
+                    SELECT id FROM products WHERE name = $1 AND supplier_id = $2 AND category_id = $3
+                `, productName, supplierID, catID).Scan(&existingID)
 
 				var productID string
 				if err != nil && err != pgx.ErrNoRows {
@@ -2567,7 +2760,7 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
                         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                         RETURNING id;
                     `,
-						supplierID, categoryID, productName, productDesc, productImage,
+						supplierID, catID, productName, productDesc, productImage,
 						"active", gofakeit.Bool(), "standard", skuPrefix, float32(gofakeit.Float32Range(3.5, 5)),
 					).Scan(&productID)
 
@@ -2635,19 +2828,6 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 				}
 
 				// Now check if product_variants table exists before trying to create variants
-				err = db.QueryRow(ctx, `
-                    SELECT EXISTS (
-                        SELECT FROM information_schema.tables 
-                        WHERE table_schema = 'public' 
-                        AND table_name = 'product_variants'
-                    )
-                `).Scan(&exists)
-
-				if err != nil {
-					log.Printf("Error checking product_variants table: %v", err)
-					continue
-				}
-
 				if exists {
 					// Create product variants
 					createProductVariants(ctx, db, productID, skuPrefix, categoryAttrs, productImage)
@@ -2663,6 +2843,149 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 	log.Printf("✅ Created %d products with variants", totalProducts)
 }
 
+// Cải tiến seedAttributeDefinitions để đảm bảo rằng các thuộc tính được tạo đúng
+func seedAttributeDefinitions(ctx context.Context, db *pgxpool.Pool) {
+	attributes := []struct {
+		name, desc, inputType    string
+		isFilterable, isRequired bool
+	}{
+		// Thuộc tính hiện có
+		{"Màu sắc", "Màu sắc của sản phẩm", "select", true, true},
+		{"Kích thước", "Kích thước của sản phẩm", "select", true, true},
+		{"Chất liệu", "Chất liệu của sản phẩm", "select", true, false},
+		{"Dung lượng", "Dung lượng lưu trữ", "select", true, false},
+		{"RAM", "Dung lượng RAM", "select", true, false},
+		{"CPU", "Loại CPU", "select", true, false},
+		{"Ổ cứng", "Loại và dung lượng ổ cứng", "select", true, false},
+		{"Màn hình", "Kích thước màn hình", "select", true, false},
+		{"Kiểu dáng", "Kiểu dáng sản phẩm", "select", true, false},
+		{"Thương hiệu", "Thương hiệu sản phẩm", "select", true, false},
+		{"Xuất xứ", "Quốc gia xuất xứ", "select", false, false},
+		{"Công suất", "Công suất thiết bị", "select", false, false},
+		{"Bảo hành", "Thời gian bảo hành", "select", false, false},
+		{"Thể loại", "Thể loại sách", "select", true, false},
+		{"Ngôn ngữ", "Ngôn ngữ sách", "select", true, false},
+		{"Tác giả", "Tác giả sách", "select", true, false},
+		{"Nhà xuất bản", "Nhà xuất bản sách", "select", false, false},
+		{"Bìa sách", "Loại bìa sách", "select", false, false},
+		{"Mùa", "Mùa phù hợp", "select", false, false},
+		{"Phong cách", "Phong cách thời trang", "select", true, false},
+		{"Loại thiết bị", "Loại thiết bị thể thao", "select", true, false},
+		{"Hệ điều hành", "Hệ điều hành thiết bị", "select", true, false},
+		{"Kích cỡ màn hình", "Kích thước màn hình hiển thị", "select", true, false},
+
+		// Thêm các thuộc tính mới ở đây
+		{"Loại kết nối", "Loại kết nối của thiết bị", "select", true, false},
+		{"Kiểu đeo", "Kiểu đeo tai nghe", "select", true, false},
+		{"Thời lượng pin", "Thời lượng pin của thiết bị", "select", true, false},
+		{"Độ phân giải", "Độ phân giải của camera", "select", true, false},
+		{"Cảm biến", "Loại cảm biến của camera", "select", true, false},
+		{"Khả năng quay video", "Khả năng quay video của camera", "select", true, false},
+		{"Loại da", "Loại da phù hợp với sản phẩm", "select", true, false},
+		{"Chứng nhận", "Chứng nhận của sản phẩm", "select", false, false},
+		{"Hiệu quả", "Công dụng và hiệu quả của sản phẩm", "select", true, false},
+		{"Thành phần chính", "Thành phần chính của sản phẩm", "select", true, false},
+		{"Hạn sử dụng", "Thời hạn sử dụng sản phẩm", "select", true, false},
+		{"Quy cách đóng gói", "Quy cách đóng gói sản phẩm", "select", true, false},
+		{"Phương pháp chế biến", "Phương pháp chế biến sản phẩm", "select", false, false},
+		{"Loại đồ uống", "Loại đồ uống", "select", true, false},
+		{"Dung tích", "Dung tích của sản phẩm", "select", true, false},
+		{"Vị", "Hương vị sản phẩm", "select", true, false},
+		{"Đóng gói", "Cách đóng gói sản phẩm", "select", false, false},
+		{"Độ cồn", "Độ cồn trong đồ uống", "select", true, false},
+		{"Chất liệu khung", "Chất liệu khung của sản phẩm", "select", true, false},
+		{"Chất liệu bọc", "Chất liệu bọc của sản phẩm", "select", true, false},
+		{"Độ tuổi phù hợp", "Độ tuổi phù hợp với sản phẩm", "select", true, false},
+		{"Loại cây", "Loại cây cảnh", "select", true, false},
+		{"Điều kiện sống", "Điều kiện sống của cây", "select", true, false},
+		{"Chậu cây", "Loại chậu cây", "select", true, false},
+		{"Công dụng", "Công dụng của cây cảnh", "select", true, false},
+		{"Kích thước giường", "Kích thước giường", "select", true, false},
+		{"Độ cứng nệm", "Độ cứng của nệm", "select", true, false},
+		{"Card đồ họa", "Loại card đồ họa", "select", true, false},
+		{"Kết nối", "Loại kết nối của thiết bị", "select", true, false},
+		{"Loại máy", "Loại máy ảnh", "select", true, false},
+		{"Loại đồ chơi", "Loại đồ chơi", "select", true, false},
+	}
+
+	// Seed attribute definitions
+	for _, attr := range attributes {
+		// Kiểm tra xem thuộc tính đã tồn tại chưa
+		var count int
+		err := db.QueryRow(ctx, `
+			SELECT COUNT(*) FROM attribute_definitions WHERE name = $1
+		`, attr.name).Scan(&count)
+
+		if err != nil {
+			log.Printf("Error checking attribute existence: %v", err)
+			continue
+		}
+
+		var attrID int
+		if count == 0 {
+			// Nếu không tồn tại, thêm mới
+			err := db.QueryRow(ctx, `
+				INSERT INTO attribute_definitions (name, description, input_type, is_filterable, is_required)
+				VALUES ($1, $2, $3, $4, $5)
+				RETURNING id;
+			`, attr.name, attr.desc, attr.inputType, attr.isFilterable, attr.isRequired).Scan(&attrID)
+
+			if err != nil {
+				log.Printf("Error inserting attribute definition: %v", err)
+				continue
+			}
+		} else {
+			// Nếu đã tồn tại, lấy ID
+			err := db.QueryRow(ctx, `
+				SELECT id FROM attribute_definitions WHERE name = $1
+			`, attr.name).Scan(&attrID)
+
+			if err != nil {
+				log.Printf("Error getting attribute ID: %v", err)
+				continue
+			}
+		}
+
+		// Seed attribute options based on category_attributes map
+		if options, exists := getAttributeOptions(attr.name); exists {
+			for _, option := range options {
+				// Kiểm tra xem option đã tồn tại chưa
+				var optionCount int
+				err := db.QueryRow(ctx, `
+					SELECT COUNT(*) FROM attribute_options 
+					WHERE attribute_definition_id = $1 AND option_value = $2
+				`, attrID, option).Scan(&optionCount)
+
+				if err != nil {
+					log.Printf("Error checking option existence: %v", err)
+					continue
+				}
+
+				if optionCount == 0 {
+					_, err := db.Exec(ctx, `
+						INSERT INTO attribute_options (attribute_definition_id, option_value)
+						VALUES ($1, $2);
+					`, attrID, option)
+
+					if err != nil {
+						log.Printf("Error inserting attribute option: %v", err)
+					}
+				}
+			}
+		}
+	}
+	log.Println("✅ Attribute definitions and options seeded successfully")
+}
+
+// Hàm helper để lấy min
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Cải tiến createProductVariants để giải quyết các lỗi
 func createProductVariants(
 	ctx context.Context,
 	db *pgxpool.Pool,
@@ -2671,9 +2994,65 @@ func createProductVariants(
 	categoryAttrs map[string][]string,
 	productImage string,
 ) {
+	// Kiểm tra xem có thuộc tính nào đã tồn tại trong database không
+	var validAttrNames []string
+	for attrName := range categoryAttrs {
+		var exists bool
+		err := db.QueryRow(ctx, `
+			SELECT EXISTS (
+				SELECT 1 FROM attribute_definitions WHERE name = $1
+			)
+		`, attrName).Scan(&exists)
+
+		if err != nil {
+			log.Printf("Error checking attribute existence: %v", err)
+			continue
+		}
+
+		if exists {
+			validAttrNames = append(validAttrNames, attrName)
+		}
+	}
+
+	// Nếu không có thuộc tính hợp lệ, tạo một mặc định
+	if len(validAttrNames) == 0 {
+		// Tạo thuộc tính mặc định "Kích thước"
+		var attrID int
+		err := db.QueryRow(ctx, `
+			INSERT INTO attribute_definitions 
+			(name, description, input_type, is_filterable, is_required)
+			VALUES ('Kích thước', 'Kích thước sản phẩm', 'select', true, true)
+			ON CONFLICT (name) DO UPDATE
+			SET input_type = 'select', is_filterable = true
+			RETURNING id;
+		`).Scan(&attrID)
+
+		if err != nil {
+			log.Printf("Error creating default attribute: %v", err)
+			return
+		}
+
+		// Thêm các tùy chọn cho kích thước
+		sizeOptions := []string{"S", "M", "L", "XL"}
+		for _, option := range sizeOptions {
+			_, err := db.Exec(ctx, `
+				INSERT INTO attribute_options (attribute_definition_id, option_value)
+				VALUES ($1, $2)
+				ON CONFLICT (attribute_definition_id, option_value) DO NOTHING;
+			`, attrID, option)
+
+			if err != nil {
+				log.Printf("Error inserting attribute option: %v", err)
+			}
+		}
+
+		validAttrNames = append(validAttrNames, "Kích thước")
+		categoryAttrs["Kích thước"] = sizeOptions
+	}
+
 	// Chọn 2 thuộc tính để tạo biến thể
 	var variantAttrs []string
-	for attrName := range categoryAttrs {
+	for _, attrName := range validAttrNames {
 		variantAttrs = append(variantAttrs, attrName)
 		if len(variantAttrs) >= 2 {
 			break
@@ -2694,8 +3073,8 @@ func createProductVariants(
 	for _, attrName := range variantAttrs {
 		var attrID int
 		err := db.QueryRow(ctx, `
-            SELECT id FROM attribute_definitions WHERE name = $1
-        `, attrName).Scan(&attrID)
+			SELECT id FROM attribute_definitions WHERE name = $1
+		`, attrName).Scan(&attrID)
 
 		if err != nil {
 			log.Printf("Error getting attribute definition: %v", err)
@@ -2707,8 +3086,8 @@ func createProductVariants(
 
 		// Lấy các tùy chọn cho thuộc tính này
 		rows, err := db.Query(ctx, `
-            SELECT id, option_value FROM attribute_options WHERE attribute_definition_id = $1
-        `, attrID)
+			SELECT id, option_value FROM attribute_options WHERE attribute_definition_id = $1
+		`, attrID)
 
 		if err != nil {
 			log.Printf("Error getting attribute options: %v", err)
@@ -2726,13 +3105,32 @@ func createProductVariants(
 
 			attributeOptions[attrName][optionValue] = optionID
 		}
+
+		// Nếu không có tùy chọn, tạo tùy chọn mặc định
+		if len(attributeOptions[attrName]) == 0 {
+			for _, optionValue := range categoryAttrs[attrName] {
+				var optionID int
+				err := db.QueryRow(ctx, `
+					INSERT INTO attribute_options (attribute_definition_id, option_value)
+					VALUES ($1, $2)
+					RETURNING id;
+				`, attrID, optionValue).Scan(&optionID)
+
+				if err != nil {
+					log.Printf("Error creating attribute option: %v", err)
+					continue
+				}
+
+				attributeOptions[attrName][optionValue] = optionID
+			}
+		}
 	}
 
 	// Get a list of existing SKUs for this product to avoid duplicates
 	existingSKUs := make(map[string]bool)
 	rows, err := db.Query(ctx, `
-        SELECT sku FROM product_variants WHERE product_id = $1
-    `, productID)
+		SELECT sku FROM product_variants WHERE product_id = $1
+	`, productID)
 
 	if err != nil {
 		log.Printf("Error checking existing SKUs: %v", err)
@@ -2754,12 +3152,24 @@ func createProductVariants(
 	// Tạo biến thể sản phẩm dựa trên thuộc tính đầu tiên
 	attrName := variantAttrs[0]
 	attrValues := categoryAttrs[attrName]
+	variantCount := 0
 
 	for i, attrValue := range attrValues {
-		// Bỏ qua nếu không có option_id cho giá trị này
+		// Check if option exists, create if not
 		optionID, ok := attributeOptions[attrName][attrValue]
 		if !ok {
-			continue
+			// Create the option if it doesn't exist
+			err := db.QueryRow(ctx, `
+				INSERT INTO attribute_options (attribute_definition_id, option_value)
+				VALUES ($1, $2)
+				RETURNING id;
+			`, attributeDefs[attrName], attrValue).Scan(&optionID)
+
+			if err != nil {
+				log.Printf("Error creating attribute option: %v", err)
+				continue
+			}
+			attributeOptions[attrName][attrValue] = optionID
 		}
 
 		// Skip if this attribute option has already been used
@@ -2775,16 +3185,36 @@ func createProductVariants(
 		discountPrice := basePrice
 		hasDiscount := gofakeit.Bool()
 		if hasDiscount {
-			discountPercent := gofakeit.Float32Range(0.05, 0.3) // Giảm 5% - 30%
-			discountPrice = float32(math.Round(float64(basePrice*(1-discountPercent)/1000)) * 1000)
+			// FIX: Đảm bảo discountPrice luôn nhỏ hơn basePrice
+			// Áp dụng mức giảm giá từ 5% đến 25%
+			discountPercent := gofakeit.Float32Range(0.05, 0.25)
+			discountAmount := float32(math.Floor(float64(basePrice*discountPercent)/1000) * 1000)
+			// Đảm bảo giảm ít nhất 5000 VND và giảm giá luôn nhỏ hơn giá gốc
+			if discountAmount < 5000 {
+				discountAmount = 5000
+			}
+			// Nếu mức giảm > 80% giá gốc, giới hạn ở mức 80%
+			if discountAmount > basePrice*0.8 {
+				discountAmount = float32(math.Floor(float64(basePrice*0.8)/1000) * 1000)
+			}
+			discountPrice = basePrice - discountAmount
+
+			// Kiểm tra lại một lần nữa để đảm bảo
+			if discountPrice >= basePrice || discountPrice <= 0 {
+				discountPrice = basePrice * 0.85 // Giảm giá mặc định 15%
+			}
 		}
 
-		// Tạo SKU với một unique identifier để tránh trùng lặp
-		sku := fmt.Sprintf("%s-%03d-%s", skuPrefix, i+1, uuid.New().String()[:4])
+		// FIX: Sửa lỗi UTF-8 trong SKU
+		// Thay vì dùng các ký tự Unicode, dùng string cố định
+		// Tạo một SKU hoàn toàn không chứa ký tự Unicode
+		timestamp := time.Now().UnixNano() % 1000000
+		uniqueSKU := fmt.Sprintf("%s-%d-%d", skuPrefix, i+1, timestamp)
 
-		// Skip if this SKU already exists
-		if existingSKUs[sku] {
-			continue
+		// Đảm bảo SKU độc nhất
+		for existingSKUs[uniqueSKU] {
+			timestamp = time.Now().UnixNano() % 1000000
+			uniqueSKU = fmt.Sprintf("%s-%d-%d", skuPrefix, i+1, timestamp)
 		}
 
 		// Tạo tên biến thể
@@ -2800,15 +3230,15 @@ func createProductVariants(
 		}
 
 		err := db.QueryRow(ctx, `
-            INSERT INTO product_variants (
-                product_id, sku, variant_name, price, discount_price,
-                inventory_quantity, shipping_class, image_url, alt_text, is_default
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id;
-        `,
-			productID, sku, variantName, basePrice, discountPriceParam,
-			gofakeit.Number(5, 100), "standard", productImage, variantName, i == 0,
+			INSERT INTO product_variants (
+				product_id, sku, variant_name, price, discount_price,
+				inventory_quantity, shipping_class, image_url, alt_text, is_default, is_active
+			)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			RETURNING id;
+		`,
+			productID, uniqueSKU, variantName, basePrice, discountPriceParam,
+			gofakeit.Number(5, 100), "standard", productImage, variantName, i == 0, true,
 		).Scan(&variantID)
 
 		if err != nil {
@@ -2818,15 +3248,16 @@ func createProductVariants(
 
 		// Mark this attribute option as used
 		usedAttributeOptions[optionID] = true
+		existingSKUs[uniqueSKU] = true
 
 		// First check if this variant already has this attribute option
 		var attrExists bool
 		err = db.QueryRow(ctx, `
-            SELECT EXISTS (
-                SELECT 1 FROM product_variant_attributes 
-                WHERE product_variant_id = $1 AND attribute_option_id = $2
-            )
-        `, variantID, optionID).Scan(&attrExists)
+			SELECT EXISTS (
+				SELECT 1 FROM product_variant_attributes 
+				WHERE product_variant_id = $1 AND attribute_option_id = $2
+			)
+		`, variantID, optionID).Scan(&attrExists)
 
 		if err != nil {
 			log.Printf("Error checking variant attribute existence: %v", err)
@@ -2849,7 +3280,11 @@ func createProductVariants(
 		if err != nil {
 			log.Printf("Error inserting product variant attribute: %v", err)
 		}
+
+		variantCount++
 	}
+
+	log.Printf("Created %d variants for product %s", variantCount, productID)
 }
 
 func seedDelivererProfiles(ctx context.Context, db *pgxpool.Pool, delivererUserIDs []int64, adminDivisions []Province) {

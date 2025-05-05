@@ -23,13 +23,14 @@ func NewCategoryService(tracer pkg.Tracer, partnerClient partner_proto_gen.Partn
 	}
 }
 
-func (c *categoryService) GetCategories(ctx context.Context, parentID *int64) ([]api_gateway_dto.GetCategoriesResponse, error) {
+func (c *categoryService) GetCategories(ctx context.Context, query api_gateway_dto.GetCategoriesRequest) ([]api_gateway_dto.GetCategoriesResponse, error) {
 	ctx, span := c.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetCategories"))
 	defer span.End()
 
 	// call grpc to get result
 	response, err := c.partnerClient.GetCategories(ctx, &partner_proto_gen.GetCategoriesRequest{
-		ParentId: parentID,
+		ParentId:       query.ParentID,
+		ProductKeyword: query.ProductKeyword,
 	})
 
 	if err != nil {
@@ -43,9 +44,11 @@ func (c *categoryService) GetCategories(ctx context.Context, parentID *int64) ([
 
 	for idx, categoryResponse := range response.Categories {
 		res[idx] = api_gateway_dto.GetCategoriesResponse{
-			ID:       int(categoryResponse.CategoryId),
-			Name:     categoryResponse.Name,
-			ImageURL: categoryResponse.ImageUrl,
+			ID:           int(categoryResponse.CategoryId),
+			Name:         categoryResponse.Name,
+			ImageURL:     categoryResponse.ImageUrl,
+			ProductCount: categoryResponse.ProductCount,
+			IsSelected:   categoryResponse.Selected,
 		}
 	}
 

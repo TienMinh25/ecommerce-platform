@@ -8,13 +8,15 @@ import {
   Icon,
   IconButton,
   useToast,
-  AspectRatio
+  AspectRatio,
+  HStack
 } from '@chakra-ui/react';
-import { FaStar, FaHeart, FaShoppingCart } from 'react-icons/fa';
+import { FaStar, FaRegStar, FaHeart, FaShoppingCart } from 'react-icons/fa';
 import { Link as RouterLink } from 'react-router-dom';
 
 // Format price with VND currency
 const formatPrice = (price) => {
+  if (!price) return '';
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND',
@@ -24,17 +26,58 @@ const formatPrice = (price) => {
 };
 
 // Calculate discount percentage
-const calculateDiscount = (originalPrice, currentPrice) => {
-  if (!originalPrice || !currentPrice || originalPrice <= currentPrice) return null;
-  const discount = Math.round(((originalPrice - currentPrice) / originalPrice) * 100);
+const calculateDiscount = (originalPrice, discountPrice) => {
+  if (!originalPrice || !discountPrice || originalPrice <= discountPrice) return null;
+  const discount = Math.round(((originalPrice - discountPrice) / originalPrice) * 100);
   return discount;
 };
 
 const ProductCard = ({ product }) => {
   const toast = useToast();
 
-  // Calculate discount if available
-  const discountPercentage = calculateDiscount(product.originalPrice, product.price);
+  // Check if product is from API or mock data
+  const isFromApi = !!product.product_id;
+
+  // Extract values based on data source
+  const id = isFromApi ? product.product_id : product.id;
+  const name = isFromApi ? product.product_name : product.name;
+  const image = isFromApi ? product.product_thumbnail : product.image;
+  const rating = isFromApi ? product.product_average_rating : product.rating;
+  const reviewCount = isFromApi ? product.product_total_reviews : product.reviewCount;
+
+  // Price handling
+  let regularPrice, discountPrice, displayPrice;
+
+  if (isFromApi) {
+    // API data
+    regularPrice = product.product_price;
+    discountPrice = product.product_discount_price > 0 ? product.product_discount_price : null;
+    displayPrice = discountPrice || regularPrice;
+  } else {
+    // Mock data
+    regularPrice = product.originalPrice || product.price;
+    discountPrice = product.price < product.originalPrice ? product.price : null;
+    displayPrice = product.price;
+  }
+
+  // Calculate discount percentage
+  const discountPercentage = calculateDiscount(regularPrice, discountPrice);
+
+  // Generate star rating
+  const renderStars = () => {
+    const stars = [];
+    const ratingValue = rating || 0;
+
+    for (let i = 1; i <= 5; i++) {
+      if (i <= ratingValue) {
+        stars.push(<Icon key={i} as={FaStar} color="yellow.400" boxSize={3} />);
+      } else {
+        stars.push(<Icon key={i} as={FaRegStar} color="yellow.400" boxSize={3} />);
+      }
+    }
+
+    return stars;
+  };
 
   // Handle quick actions
   const handleAddToCart = (e) => {
@@ -43,7 +86,7 @@ const ProductCard = ({ product }) => {
 
     toast({
       title: 'Đã thêm vào giỏ hàng',
-      description: `${product.name} đã được thêm vào giỏ hàng của bạn.`,
+      description: `${name} đã được thêm vào giỏ hàng của bạn.`,
       status: 'success',
       duration: 3000,
       isClosable: true,
@@ -56,7 +99,7 @@ const ProductCard = ({ product }) => {
 
     toast({
       title: 'Đã thêm vào danh sách yêu thích',
-      description: `${product.name} đã được thêm vào danh sách yêu thích của bạn.`,
+      description: `${name} đã được thêm vào danh sách yêu thích của bạn.`,
       status: 'success',
       duration: 3000,
       isClosable: true,
@@ -66,7 +109,7 @@ const ProductCard = ({ product }) => {
   return (
       <Box
           as={RouterLink}
-          to={`/products/${product.id}`}
+          to={`/products/${id}`}
           borderWidth="1px"
           borderRadius="lg"
           overflow="hidden"
@@ -137,19 +180,16 @@ const ProductCard = ({ product }) => {
         {/* Product image */}
         <AspectRatio ratio={1} w="100%">
           <Image
-              src={product.image}
-              alt={product.name}
+              src={image}
+              alt={name}
               objectFit="contain"
               bg="gray.50"
+              fallbackSrc="https://via.placeholder.com/300x300?text=Product"
           />
         </AspectRatio>
 
         {/* Product info */}
         <Box p={4} flex="1" display="flex" flexDirection="column">
-          <Text fontSize="sm" color="gray.500" mb={1}>
-            {product.brand || 'Thương hiệu'}
-          </Text>
-
           <Text
               fontWeight="semibold"
               fontSize="md"
@@ -157,37 +197,37 @@ const ProductCard = ({ product }) => {
               noOfLines={2}
               flex="1"
           >
-            {product.name}
+            {name}
           </Text>
 
-          {/* Rating */}
+          {/* Rating with 5 stars */}
           <Flex align="center" mb={2}>
-            <Flex align="center">
-              <Icon as={FaStar} color="yellow.400" mr={1} boxSize={3} />
-              <Text fontSize="sm" fontWeight="medium">
-                {product.rating}
-              </Text>
-            </Flex>
-            <Text fontSize="xs" color="gray.500" ml={1}>
-              ({product.reviewCount} đánh giá)
+            <HStack spacing={0} mr={2}>
+              {renderStars()}
+            </HStack>
+            <Text fontSize="xs" color="gray.500">
+              ({reviewCount || 0})
             </Text>
           </Flex>
 
           {/* Price */}
-          <Flex align="baseline">
-            <Text fontWeight="bold" fontSize="md" color="brand.500">
-              {formatPrice(product.price)}
-            </Text>
-            {product.originalPrice && (
-                <Text
-                    fontSize="sm"
-                    color="gray.500"
-                    textDecoration="line-through"
-                    ml={2}
-                >
-                  {formatPrice(product.originalPrice)}
+          <Flex align="baseline" flexWrap="wrap">
+            {/* Show discount price if available */}
+            {discountPrice && (
+                <Text fontWeight="bold" fontSize="md" color="red.500" mr={2}>
+                  {formatPrice(discountPrice)}
                 </Text>
             )}
+
+            {/* Show regular price - with strikethrough if discounted */}
+            <Text
+                fontWeight={discountPrice ? "normal" : "bold"}
+                fontSize={discountPrice ? "sm" : "md"}
+                color={discountPrice ? "gray.500" : "brand.500"}
+                textDecoration={discountPrice ? "line-through" : "none"}
+            >
+              {formatPrice(regularPrice)}
+            </Text>
           </Flex>
         </Box>
       </Box>

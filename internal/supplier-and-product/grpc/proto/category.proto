@@ -11,8 +11,11 @@ message CategoryResponse {
   string name = 2;
   string image_url = 3;
   optional int64 parent_id = 4;
+  optional int64 product_count = 5;
+  optional bool selected = 6;
 }
 
 message GetCategoriesRequest {
   optional int64 parent_id = 1;
+  optional string product_keyword = 2;
 }

@@ -93,7 +93,7 @@ func (service *notificationService) GetListNotificationHistory(ctx context.Conte
 
 	return &notification_proto_gen.GetUserNotificationsResponse{
 		Data: notificationRes,
-		Metadata: &notification_proto_gen.Metadata{
+		Metadata: &notification_proto_gen.NotificationMetadata{
 			Limit:       limit,
 			Page:        page,
 			HasPrevious: hasPrevious,

@@ -3,7 +3,10 @@ syntax = "proto3";
 option go_package = "./partner_proto_gen";
 
 import 'category.proto';
+import 'product.proto';
 
 service PartnerService {
   rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
+
+  rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
 }

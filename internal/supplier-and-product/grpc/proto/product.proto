@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option go_package = "./partner_proto_gen";
+
+import 'partner_metadata.proto';
+
+message GetProductsRequest {
+  int64 limit = 1;
+  int64 page = 2;
+  optional string keyword = 3;
+  repeated int64 category_ids = 4;
+  optional int64 min_rating = 5;
+}
+
+message GetProductsResponse {
+  repeated ProductResponse products = 1;
+  PartnerMetadata metadata = 2;
+}
+
+message ProductResponse {
+  string product_id = 1;
+  string product_name = 2;
+  string product_thumbnail = 3;
+  float product_average_rating = 4;
+  int64 product_total_reviews = 5;
+  int64 product_category_id = 6;
+  double product_price = 7;
+  double product_discount_price = 8;
+  string product_currency = 9;
+}
