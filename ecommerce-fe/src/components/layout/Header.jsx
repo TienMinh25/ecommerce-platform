@@ -34,7 +34,7 @@ import { useAuth } from '../../hooks/useAuth';
 import Logo from '../ui/Logo';
 import NotificationBell from '../notifications/NotificationBell';
 
-// Định nghĩa constants cho các role
+// Define role constants
 const ROLE_CUSTOMER = 'customer';
 const ROLE_SUPPLIER = 'supplier';
 const ROLE_DELIVERER = 'deliverer';
@@ -48,10 +48,33 @@ const Header = () => {
 
   const isMobile = useBreakpointValue({ base: true, md: false });
 
+  // Handle search in Header component
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery)}`);
+      // Navigate to product listing page with search query
+      navigate({
+        pathname: '/products',
+        search: `?keyword=${encodeURIComponent(searchQuery)}`,
+      });
+
+      // Reset search query after navigation
+      setSearchQuery('');
+
+      // Close mobile drawer if open
+      if (isOpen) {
+        onClose();
+      }
+    }
+  };
+
+  // Handle mobile search
+  const handleMobileSearch = () => {
+    // Implement mobile search functionality
+    if (searchQuery.trim()) {
+      navigate(`/products?keyword=${encodeURIComponent(searchQuery)}`);
+      setSearchQuery('');
+      onClose();
     }
   };
 
@@ -64,7 +87,7 @@ const Header = () => {
     }
   };
 
-  // Sử dụng phương thức hasRole từ class User
+  // Check if user has specific roles
   const isSupplier = user?.hasRole(ROLE_SUPPLIER) || false;
   const isDeliverer = user?.hasRole(ROLE_DELIVERER) || false;
   const isAdmin = user?.hasRole(ROLE_ADMIN) || false;
@@ -131,14 +154,12 @@ const Header = () => {
                   <IconButton
                       aria-label='Search'
                       icon={<SearchIcon />}
-                      onClick={() => {
-                        /* TODO: Open mobile search */
-                      }}
+                      onClick={handleMobileSearch}
                       variant='ghost'
                   />
               )}
 
-              {/* Notification bell - replaced with new component */}
+              {/* Notification bell */}
               <Box display={{ base: 'none', md: 'block' }}>
                 <NotificationBell />
               </Box>
@@ -346,7 +367,7 @@ const Header = () => {
                   </Box>
                 </Box>
 
-                {/* Danh mục sản phẩm */}
+                {/* Product categories */}
                 <Box py={2} px={4} bg="gray.100" fontWeight="bold" color="gray.700">
                   Danh mục
                 </Box>
@@ -411,7 +432,7 @@ const Header = () => {
                   Khuyến mãi
                 </Box>
 
-                {/* Tài khoản */}
+                {/* Account */}
                 <Box py={2} px={4} bg="gray.100" fontWeight="bold" color="gray.700">
                   Tài khoản
                 </Box>

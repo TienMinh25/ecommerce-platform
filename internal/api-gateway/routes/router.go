@@ -32,6 +32,8 @@ func NewRouter(
 	accessTokenMiddleware *middleware.JwtMiddleware,
 	permissionMiddleware *middleware.PermissionMiddleware,
 	administrativeDivisionHandler api_gateway_handler.IAdministrativeDivisionHandler,
+	categoryHandler api_gateway_handler.ICategoryHandler,
+	productHandler api_gateway_handler.IProductHandler,
 ) *Router {
 	apiV1Group := router.Group("/api/v1")
 
@@ -43,6 +45,8 @@ func NewRouter(
 	registerRoleHandler(apiV1Group, permissionMiddleware, accessTokenMiddleware, roleHandler)
 	registerUserMeHandler(apiV1Group, permissionMiddleware, accessTokenMiddleware, userMeHandler)
 	registerAddressDataEndpoint(apiV1Group, accessTokenMiddleware, administrativeDivisionHandler)
+	registerCategoryEndpoint(apiV1Group, accessTokenMiddleware, categoryHandler)
+	registerProductEndpoint(apiV1Group, accessTokenMiddleware, productHandler)
 
 	return &Router{
 		Router: router,
@@ -169,5 +173,21 @@ func registerAddressDataEndpoint(group *gin.RouterGroup, accessTokenMiddleware *
 		addressGroup.GET("/provinces", divisionHandler.GetProvinces)
 		addressGroup.GET("/provinces/:provinceID/districts", divisionHandler.GetDistricts)
 		addressGroup.GET("/provinces/:provinceID/districts/:districtID/wards", divisionHandler.GetWards)
+	}
+}
+
+func registerCategoryEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, categoryHandler api_gateway_handler.ICategoryHandler) {
+	categoryGroup := group.Group("/categories")
+	categoryGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		categoryGroup.GET("", categoryHandler.GetCategories)
+	}
+}
+
+func registerProductEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, productHandler api_gateway_handler.IProductHandler) {
+	productGroup := group.Group("/products")
+	productGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		productGroup.GET("", productHandler.GetProducts)
 	}
 }

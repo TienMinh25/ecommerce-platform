@@ -488,54 +488,42 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 	}
 
 	// build sort order
-	sortClause := "u.id ASC"
+	sortField := "id"
+	sortOrder := "ASC"
+
 	if data.SortBy != nil && data.SortOrder != nil {
-		sortClause = fmt.Sprintf("u.%s %s", *data.SortBy, *data.SortOrder)
+		sortField = *data.SortBy
+		sortOrder = *data.SortOrder
 	}
 
 	// calculate offset
 	offset := (data.Page - 1) * data.Limit
 
-	// create params for total query
+	// Clone params for total query
 	totalParams := make([]interface{}, len(params))
 	copy(totalParams, params)
 
-	// Build query with all conditions in the main WHERE clause
-	sqlData := fmt.Sprintf(`
-        SELECT u.id, u.fullname, u.email, u.avatar_url, u.birthdate, u.phone, 
-               u.email_verified, u.phone_verified, u.status, u.created_at, u.updated_at,
-               r.id as role_id, r.role_name
-        FROM users u 
-        JOIN users_roles ur ON u.id = ur.user_id
-        JOIN roles r ON ur.role_id = r.id
-        WHERE %s
-    `, whereClauseLimit)
+	// Role filter for both queries
+	var roleCondition string
+	var roleConditionTotal string
 
-	// Prepare the WHERE clause for the count query
-	whereSqlCount := whereClauseLimit
-
-	// Add role filter if provided
 	if data.RoleID != nil {
-		sqlData += fmt.Sprintf(" AND ur.role_id = $%d", paramCount)
+		// For the main CTE query, we use EXISTS directly in the WHERE clause
+		roleCondition = fmt.Sprintf(" AND EXISTS (SELECT 1 FROM users_roles ur WHERE ur.user_id = u.id AND ur.role_id = $%d)", paramCount)
 		params = append(params, *data.RoleID)
 		paramCount++
 
-		// Add equivalent condition to count query
-		whereSqlCount += fmt.Sprintf(" AND EXISTS (SELECT 1 FROM users_roles ur WHERE ur.user_id = u.id AND ur.role_id = $%d)", len(totalParams)+1)
+		// For total count query
+		roleConditionTotal = fmt.Sprintf(" AND EXISTS (SELECT 1 FROM users_roles ur WHERE ur.user_id = u.id AND ur.role_id = $%d)", len(totalParams)+1)
 		totalParams = append(totalParams, *data.RoleID)
 	}
-
-	// Add ORDER BY, LIMIT and OFFSET
-	sqlData += fmt.Sprintf(" ORDER BY %s LIMIT $%d OFFSET $%d",
-		sortClause, paramCount, paramCount+1)
-	params = append(params, data.Limit, offset)
 
 	// Build SQL to count totals
 	sqlTotal := fmt.Sprintf(`
         SELECT COUNT(DISTINCT u.id)
         FROM users u 
-        WHERE %s
-    `, whereSqlCount)
+        WHERE %s%s
+    `, whereClauseLimit, roleConditionTotal)
 
 	var total int
 
@@ -547,16 +535,38 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 		}
 	}
 
-	// Query data with limit
-	rows, err := u.db.Query(ctx, sqlData, params...)
+	// Add LIMIT and OFFSET parameters
+	limitParam := paramCount
+	offsetParam := paramCount + 1
+	params = append(params, data.Limit, offset)
 
+	// Xây dựng truy vấn sử dụng CTE - trực tiếp sử dụng sortField và sortOrder
+	sqlData := fmt.Sprintf(`
+        WITH limited_users AS (
+            SELECT DISTINCT u.id, u.%s
+            FROM users u
+            WHERE %s%s
+            ORDER BY u.%s %s
+            LIMIT $%d OFFSET $%d
+        )
+        SELECT u.id, u.fullname, u.email, u.avatar_url, u.birthdate, u.phone,
+               u.email_verified, u.phone_verified, u.status, u.created_at, u.updated_at,
+               r.id as role_id, r.role_name
+        FROM limited_users lu
+        JOIN users u ON lu.id = u.id
+        JOIN users_roles ur ON u.id = ur.user_id
+        JOIN roles r ON ur.role_id = r.id
+        ORDER BY u.%s %s
+    `, sortField, whereClauseLimit, roleCondition, sortField, sortOrder, limitParam, offsetParam, sortField, sortOrder)
+
+	// Query data
+	rows, err := u.db.Query(ctx, sqlData, params...)
 	if err != nil {
 		return nil, 0, utils.TechnicalError{
 			Code:    http.StatusInternalServerError,
 			Message: common.MSG_INTERNAL_ERROR,
 		}
 	}
-
 	defer rows.Close()
 
 	// Slice để duy trì thứ tự người dùng theo truy vấn

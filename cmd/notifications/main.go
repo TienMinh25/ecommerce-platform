@@ -49,7 +49,7 @@ func StartServer(lifecycle fx.Lifecycle, env *env.EnvManager, notificationHandle
 
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
-			lis, err := net.Listen("tcp", env.NotificationServerConfig.ServerAddresss)
+			lis, err := net.Listen("tcp", env.NotificationServerConfig.ServerAddress)
 
 			if err != nil {
 				log.Fatalf("Failed to listen: %v", err)
@@ -58,7 +58,7 @@ func StartServer(lifecycle fx.Lifecycle, env *env.EnvManager, notificationHandle
 			notification_proto_gen.RegisterNotificationServiceServer(server, notificationHandler)
 
 			go func() {
-				log.Printf("Starting gRPC server notification: %v", env.NotificationServerConfig.ServerAddresss)
+				log.Printf("Starting gRPC server notification: %v", env.NotificationServerConfig.ServerAddress)
 				if err = server.Serve(lis); err != nil {
 					log.Fatalf("Failed to serve: %v", err)
 				}

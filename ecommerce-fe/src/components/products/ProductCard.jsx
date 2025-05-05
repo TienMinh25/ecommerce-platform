@@ -1,239 +1,236 @@
-import { StarIcon } from '@chakra-ui/icons';
+import React from 'react';
 import {
-  Badge,
   Box,
-  Flex,
-  HStack,
-  IconButton,
   Image,
   Text,
-  Tooltip,
+  Badge,
+  Flex,
+  Icon,
+  IconButton,
   useToast,
+  AspectRatio,
+  HStack
 } from '@chakra-ui/react';
-import { useState } from 'react';
-import { FaEye, FaHeart, FaRegHeart, FaShoppingCart } from 'react-icons/fa';
+import { FaStar, FaRegStar, FaHeart, FaShoppingCart } from 'react-icons/fa';
 import { Link as RouterLink } from 'react-router-dom';
-import useAuth from '../../hooks/useAuth';
+
+// Format price with VND currency
+const formatPrice = (price) => {
+  if (!price) return '';
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(price);
+};
+
+// Calculate discount percentage
+const calculateDiscount = (originalPrice, discountPrice) => {
+  if (!originalPrice || !discountPrice || originalPrice <= discountPrice) return null;
+  const discount = Math.round(((originalPrice - discountPrice) / originalPrice) * 100);
+  return discount;
+};
 
 const ProductCard = ({ product }) => {
-  const [isLiked, setIsLiked] = useState(false);
   const toast = useToast();
-  const { isAuthenticated } = useAuth();
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-    }).format(price);
+  // Check if product is from API or mock data
+  const isFromApi = !!product.product_id;
+
+  // Extract values based on data source
+  const id = isFromApi ? product.product_id : product.id;
+  const name = isFromApi ? product.product_name : product.name;
+  const image = isFromApi ? product.product_thumbnail : product.image;
+  const rating = isFromApi ? product.product_average_rating : product.rating;
+  const reviewCount = isFromApi ? product.product_total_reviews : product.reviewCount;
+
+  // Price handling
+  let regularPrice, discountPrice, displayPrice;
+
+  if (isFromApi) {
+    // API data
+    regularPrice = product.product_price;
+    discountPrice = product.product_discount_price > 0 ? product.product_discount_price : null;
+    displayPrice = discountPrice || regularPrice;
+  } else {
+    // Mock data
+    regularPrice = product.originalPrice || product.price;
+    discountPrice = product.price < product.originalPrice ? product.price : null;
+    displayPrice = product.price;
+  }
+
+  // Calculate discount percentage
+  const discountPercentage = calculateDiscount(regularPrice, discountPrice);
+
+  // Generate star rating
+  const renderStars = () => {
+    const stars = [];
+    const ratingValue = rating || 0;
+
+    for (let i = 1; i <= 5; i++) {
+      if (i <= ratingValue) {
+        stars.push(<Icon key={i} as={FaStar} color="yellow.400" boxSize={3} />);
+      } else {
+        stars.push(<Icon key={i} as={FaRegStar} color="yellow.400" boxSize={3} />);
+      }
+    }
+
+    return stars;
   };
 
-  const calculateDiscount = (originalPrice, currentPrice) => {
-    if (!originalPrice || originalPrice <= currentPrice) return null;
-    const discount = Math.round(
-      ((originalPrice - currentPrice) / originalPrice) * 100,
-    );
-    return discount > 0 ? `-${discount}%` : null;
-  };
-
+  // Handle quick actions
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // TODO: Add to cart logic
     toast({
-      title: 'Thêm vào giỏ hàng',
-      description: `Đã thêm ${product.name} vào giỏ hàng`,
+      title: 'Đã thêm vào giỏ hàng',
+      description: `${name} đã được thêm vào giỏ hàng của bạn.`,
       status: 'success',
       duration: 3000,
       isClosable: true,
     });
   };
 
-  const handleToggleFavorite = (e) => {
+  const handleAddToWishlist = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!isAuthenticated) {
-      toast({
-        title: 'Yêu cầu đăng nhập',
-        description: 'Vui lòng đăng nhập để lưu sản phẩm yêu thích',
-        status: 'info',
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    setIsLiked(!isLiked);
-
-    // TODO: Add/remove from favorites logic
     toast({
-      title: isLiked ? 'Đã xóa khỏi yêu thích' : 'Đã thêm vào yêu thích',
-      description: isLiked
-        ? `Đã xóa ${product.name} khỏi danh sách yêu thích`
-        : `Đã thêm ${product.name} vào danh sách yêu thích`,
+      title: 'Đã thêm vào danh sách yêu thích',
+      description: `${name} đã được thêm vào danh sách yêu thích của bạn.`,
       status: 'success',
       duration: 3000,
       isClosable: true,
     });
   };
 
-  const discountBadge = calculateDiscount(product.originalPrice, product.price);
-
   return (
-    <Box
-      as={RouterLink}
-      to={`/products/${product.id}`}
-      borderWidth='1px'
-      borderRadius='lg'
-      overflow='hidden'
-      bg='white'
-      transition='transform 0.3s, box-shadow 0.3s'
-      _hover={{
-        transform: 'translateY(-5px)',
-        boxShadow: 'lg',
-        textDecoration: 'none',
-      }}
-      position='relative'
-      h='100%'
-      display='flex'
-      flexDirection='column'
-    >
-      {/* Discount Badge */}
-      {discountBadge && (
-        <Badge
-          position='absolute'
-          top='10px'
-          left='10px'
-          colorScheme='red'
-          variant='solid'
-          borderRadius='md'
-          px={2}
-          py={1}
-          fontSize='xs'
-          zIndex='1'
-        >
-          {discountBadge}
-        </Badge>
-      )}
-
-      {/* Product Image */}
-      <Box position='relative' overflow='hidden'>
-        <Image
-          src={product.image}
-          alt={product.name}
-          h='200px'
-          w='100%'
-          objectFit='cover'
-          transition='transform 0.5s'
-          _groupHover={{ transform: 'scale(1.05)' }}
-        />
-
-        {/* Hover Actions */}
-        <Flex
-          position='absolute'
-          bottom='10px'
-          left='0'
-          right='0'
-          justifyContent='center'
-          opacity='0'
-          transition='opacity 0.3s'
-          _groupHover={{ opacity: 1 }}
-          zIndex='1'
-        >
-          <HStack spacing={2}>
-            <Tooltip label='Thêm vào giỏ hàng' placement='top'>
-              <IconButton
-                aria-label='Add to cart'
-                icon={<FaShoppingCart />}
-                colorScheme='brand'
-                size='sm'
-                borderRadius='full'
-                onClick={handleAddToCart}
-              />
-            </Tooltip>
-
-            <Tooltip
-              label={isLiked ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích'}
-              placement='top'
+      <Box
+          as={RouterLink}
+          to={`/products/${id}`}
+          borderWidth="1px"
+          borderRadius="lg"
+          overflow="hidden"
+          bg="white"
+          transition="transform 0.3s, box-shadow 0.3s"
+          _hover={{
+            transform: 'translateY(-5px)',
+            boxShadow: 'lg',
+          }}
+          position="relative"
+          height="100%"
+          display="flex"
+          flexDirection="column"
+      >
+        {/* Discount badge if available */}
+        {discountPercentage && (
+            <Badge
+                position="absolute"
+                top={2}
+                left={2}
+                colorScheme="red"
+                variant="solid"
+                borderRadius="md"
+                px={2}
+                py={1}
+                fontSize="xs"
+                fontWeight="bold"
+                zIndex={1}
             >
-              <IconButton
-                aria-label='Toggle favorite'
-                icon={isLiked ? <FaHeart /> : <FaRegHeart />}
-                colorScheme={isLiked ? 'red' : 'gray'}
-                size='sm'
-                borderRadius='full'
-                onClick={handleToggleFavorite}
-              />
-            </Tooltip>
+              -{discountPercentage}%
+            </Badge>
+        )}
 
-            <Tooltip label='Xem nhanh' placement='top'>
-              <IconButton
-                as={RouterLink}
-                to={`/products/${product.id}`}
-                aria-label='Quick view'
-                icon={<FaEye />}
-                colorScheme='gray'
-                size='sm'
-                borderRadius='full'
-                onClick={(e) => e.stopPropagation()}
-              />
-            </Tooltip>
-          </HStack>
-        </Flex>
-      </Box>
-
-      {/* Product Info */}
-      <Box p={4} flex='1' display='flex' flexDirection='column'>
-        <Text
-          fontWeight='semibold'
-          as='h3'
-          lineHeight='tight'
-          noOfLines={2}
-          mb={2}
-          flex='1'
+        {/* Quick action buttons */}
+        <Flex
+            position="absolute"
+            top={2}
+            right={2}
+            direction="column"
+            gap={2}
+            zIndex={1}
+            opacity={0}
+            transition="opacity 0.3s"
+            _groupHover={{ opacity: 1 }}
         >
-          {product.name}
-        </Text>
-
-        {/* Rating */}
-        <Flex alignItems='center' mb={2}>
-          <HStack spacing={1}>
-            {Array(5)
-              .fill('')
-              .map((_, i) => (
-                <StarIcon
-                  key={i}
-                  color={
-                    i < Math.floor(product.rating) ? 'yellow.400' : 'gray.300'
-                  }
-                  size='sm'
-                />
-              ))}
-            {product.rating % 1 >= 0.5 && (
-              <StarIcon color='yellow.400' size='sm' />
-            )}
-          </HStack>
-          <Text ml={2} fontSize='sm' color='gray.600'>
-            ({product.reviewCount})
-          </Text>
+          <IconButton
+              icon={<FaHeart />}
+              onClick={handleAddToWishlist}
+              aria-label="Add to wishlist"
+              size="sm"
+              borderRadius="full"
+              colorScheme="pink"
+              variant="solid"
+              boxShadow="md"
+          />
+          <IconButton
+              icon={<FaShoppingCart />}
+              onClick={handleAddToCart}
+              aria-label="Add to cart"
+              size="sm"
+              borderRadius="full"
+              colorScheme="brand"
+              variant="solid"
+              boxShadow="md"
+          />
         </Flex>
 
-        {/* Price */}
-        <Box>
-          <Flex align='baseline'>
-            <Text fontWeight='bold' fontSize='lg' color='brand.500'>
-              {formatPrice(product.price)}
+        {/* Product image */}
+        <AspectRatio ratio={1} w="100%">
+          <Image
+              src={image}
+              alt={name}
+              objectFit="contain"
+              bg="gray.50"
+              fallbackSrc="https://via.placeholder.com/300x300?text=Product"
+          />
+        </AspectRatio>
+
+        {/* Product info */}
+        <Box p={4} flex="1" display="flex" flexDirection="column">
+          <Text
+              fontWeight="semibold"
+              fontSize="md"
+              mb={2}
+              noOfLines={2}
+              flex="1"
+          >
+            {name}
+          </Text>
+
+          {/* Rating with 5 stars */}
+          <Flex align="center" mb={2}>
+            <HStack spacing={0} mr={2}>
+              {renderStars()}
+            </HStack>
+            <Text fontSize="xs" color="gray.500">
+              ({reviewCount || 0})
             </Text>
-            {product.originalPrice && product.originalPrice > product.price && (
-              <Text as='s' color='gray.500' fontSize='sm' ml={2}>
-                {formatPrice(product.originalPrice)}
-              </Text>
+          </Flex>
+
+          {/* Price */}
+          <Flex align="baseline" flexWrap="wrap">
+            {/* Show discount price if available */}
+            {discountPrice && (
+                <Text fontWeight="bold" fontSize="md" color="red.500" mr={2}>
+                  {formatPrice(discountPrice)}
+                </Text>
             )}
+
+            {/* Show regular price - with strikethrough if discounted */}
+            <Text
+                fontWeight={discountPrice ? "normal" : "bold"}
+                fontSize={discountPrice ? "sm" : "md"}
+                color={discountPrice ? "gray.500" : "brand.500"}
+                textDecoration={discountPrice ? "line-through" : "none"}
+            >
+              {formatPrice(regularPrice)}
+            </Text>
           </Flex>
         </Box>
       </Box>
-    </Box>
   );
 };
 
