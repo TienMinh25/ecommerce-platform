@@ -112,4 +112,6 @@ type ICategoryService interface {
 
 type IProductService interface {
 	GetProducts(ctx context.Context, data *api_gateway_dto.GetProductsRequest) ([]api_gateway_dto.GetProductsResponse, int, int, bool, bool, error)
+	GetProductByID(ctx context.Context, productID string) (*api_gateway_dto.GetProductDetailResponse, error)
+	GetProductReviews(ctx context.Context, data api_gateway_dto.GetProductReviewsRequest) ([]api_gateway_dto.GetProductReviewsResponse, int, int, bool, bool, error)
 }

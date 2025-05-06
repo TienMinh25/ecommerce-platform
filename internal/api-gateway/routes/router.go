@@ -189,5 +189,7 @@ func registerProductEndpoint(group *gin.RouterGroup, accessTokenMiddleware *midd
 	productGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
 		productGroup.GET("", productHandler.GetProducts)
+		productGroup.GET("/:productID", productHandler.GetProductByID)
+		productGroup.GET("/:productID/reviews", productHandler.GetProductReviewsByID)
 	}
 }

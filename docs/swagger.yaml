@@ -483,8 +483,89 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetProductDetailResponse:
+    properties:
+      product_average_rating:
+        type: number
+      product_id:
+        type: string
+      product_name:
+        type: string
+      product_tags:
+        items:
+          type: string
+        type: array
+      product_total_reviews:
+        type: integer
+      product_variants:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetProductDetailVariantResponse'
+        type: array
+    type: object
+  api_gateway_dto.GetProductDetailResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetProductDetailResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetProductDetailVariantResponse:
+    properties:
+      alt_text_thumbnail:
+        type: string
+      attribute_name:
+        type: string
+      attribute_value:
+        type: string
+      currency:
+        type: string
+      discount_price:
+        type: number
+      is_default:
+        type: boolean
+      price:
+        type: number
+      product_variant_id:
+        type: string
+      quantity:
+        type: integer
+      shipping_class:
+        type: string
+      sku:
+        type: string
+      thumbnail_url:
+        type: string
+      variant_name:
+        type: string
+    type: object
+  api_gateway_dto.GetProductReviewsResponse:
+    properties:
+      comment:
+        type: string
+      helpful_votes:
+        type: integer
+      rating:
+        type: number
+      user_avatar_url:
+        type: string
+      user_id:
+        type: integer
+      user_name:
+        type: string
+    type: object
+  api_gateway_dto.GetProductReviewsResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetProductReviewsResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
+    type: object
   api_gateway_dto.GetProductsResponse:
     properties:
+      category_name:
+        type: string
       product_average_rating:
         type: number
       product_category_id:
@@ -2217,6 +2298,76 @@ paths:
       security:
       - BearerAuth: []
       summary: Get products
+      tags:
+      - products
+  /products/{productID}:
+    get:
+      consumes:
+      - application/json
+      description: Get product detail by id
+      parameters:
+      - description: ProductID
+        in: path
+        name: productID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetProductDetailResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get product detail by id
+      tags:
+      - products
+  /products/{productID}/reviews:
+    get:
+      consumes:
+      - application/json
+      description: Get product reviews by product id
+      parameters:
+      - description: ProductID
+        in: path
+        name: productID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetProductReviewsResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get product reviews by product id
       tags:
       - products
   /roles:

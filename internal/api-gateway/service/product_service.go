@@ -63,3 +63,17 @@ func (p *productService) GetProducts(ctx context.Context, data *api_gateway_dto.
 	return res, int(products.Metadata.TotalItems), int(products.Metadata.TotalPages), products.Metadata.HasNext,
 		products.Metadata.HasPrevious, nil
 }
+
+func (p *productService) GetProductByID(ctx context.Context, productID string) (*api_gateway_dto.GetProductDetailResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetProductByID"))
+	defer span.End()
+
+	return nil, nil
+}
+
+func (p *productService) GetProductReviews(ctx context.Context, data api_gateway_dto.GetProductReviewsRequest) ([]api_gateway_dto.GetProductReviewsResponse, int, int, bool, bool, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetProductReviews"))
+	defer span.End()
+
+	return nil, 0, 0, false, false, nil
+}
