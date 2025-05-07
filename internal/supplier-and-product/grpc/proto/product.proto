@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "./partner_proto_gen";
 
 import 'partner_metadata.proto';
+import 'google/protobuf/timestamp.proto';
 
 message GetProductsRequest {
   int64 limit = 1;
@@ -29,13 +30,41 @@ message ProductResponse {
   string product_currency = 9;
 }
 
+// product detail
+message GetProductDetailRequest {
+  string product_id = 1;
+}
+
 message GetProductDetailResponse {
   string product_id = 1;
   string product_name = 2;
-  float product_average_rating = 3;
-  int64 product_total_reviews = 4;
-  repeated string product_tags = 5;
-  repeated GetProductDetailVariantResponse product_variants = 6;
+  string product_description = 3;
+  int64 category_id = 4;
+  string category_name = 5;
+  float product_average_rating = 6;
+  int64 product_total_reviews = 7;
+  GetSupplierProductResponse supplier = 8;
+  repeated string product_tags = 9;
+  repeated ProductAttribute attributes = 10;
+  repeated GetProductDetailVariantResponse product_variants = 11;
+}
+
+message ProductAttribute {
+  int64 attribute_id = 1;
+  string name = 2;
+  AttributeOptionValue value = 3;
+}
+
+message AttributeOptionValue {
+  int64 option_id = 1;
+  string value = 2;
+}
+
+message GetSupplierProductResponse {
+  string supplier_id = 1;
+  string company_name = 2;
+  string thumbnail = 3;
+  string contact_phone = 4;
 }
 
 message GetProductDetailVariantResponse {
@@ -49,5 +78,27 @@ message GetProductDetailVariantResponse {
   string shipping_class = 8;
   string thumbnail_url = 9;
   string currency = 10;
-  string attrib
+  repeated VariantAttributePair attribute_values = 11;
 }
+
+message VariantAttributePair {
+  string attribute_name = 1;
+  string attribute_value = 2;
+}
+
+message GetProductReviewsRequest {
+  string product_id = 1;
+  int64 limit = 2;
+  int64 page = 3;
+}
+
+message GetProductReviewsResponse {
+  int64 user_id = 1;
+  string user_name = 2;
+  string user_avatar_url = 3;
+  float rating = 4;
+  string comment = 5;
+  int64 helpful_votes = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+

@@ -9,4 +9,8 @@ service PartnerService {
   rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
 
   rpc GetProducts(GetProductsRequest) returns (GetProductsResponse);
+
+  rpc GetProductByID(GetProductDetailRequest) returns (GetProductDetailResponse);
+
+  rpc GetProductReviewsByID(GetProductReviewsRequest) returns (GetProductReviewsResponse);
 }
