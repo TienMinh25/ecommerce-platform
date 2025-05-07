@@ -28,3 +28,26 @@ message ProductResponse {
   double product_discount_price = 8;
   string product_currency = 9;
 }
+
+message GetProductDetailResponse {
+  string product_id = 1;
+  string product_name = 2;
+  float product_average_rating = 3;
+  int64 product_total_reviews = 4;
+  repeated string product_tags = 5;
+  repeated GetProductDetailVariantResponse product_variants = 6;
+}
+
+message GetProductDetailVariantResponse {
+  string product_variant_id = 1;
+  string sku = 2;
+  string variant_name = 3;
+  double price = 4;
+  double discount_price = 5;
+  int64 quantity = 6;
+  bool is_default = 7;
+  string shipping_class = 8;
+  string thumbnail_url = 9;
+  string currency = 10;
+  string attrib
+}
