@@ -3,10 +3,13 @@ package repository
 import (
 	"context"
 	"fmt"
+	"github.com/Masterminds/squirrel"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/models"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/jackc/pgx/v5"
+	"github.com/pkg/errors"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"strings"
@@ -170,4 +173,102 @@ func (p *productRepository) countProductsByConditions(ctx context.Context, data 
 	}
 
 	return count, nil
+}
+
+func (p *productRepository) GetProductDetail(ctx context.Context, productID string) (*models.Product, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetProductDetail"))
+	defer span.End()
+
+	queryBuilder := squirrel.Select("id", "name", "supplier_id", "category_id",
+		"description", "average_rating", "total_reviews").From("products").
+		Where(squirrel.Eq{"id": productID})
+
+	query, args, err := queryBuilder.ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	var product models.Product
+
+	if err = p.db.QueryRow(ctx, query, args...).Scan(&product.ID, &product.Name, &product.SupplierID,
+		&product.CategoryID, &product.Description, &product.AverageRating, &product.TotalReviews); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, status.Error(codes.NotFound, "Product is not found")
+		}
+
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &product, nil
+}
+
+func (p *productRepository) GetTagsForProduct(ctx context.Context, productID string) ([]*models.Tag, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetTagsForProduct"))
+	defer span.End()
+
+	selectQuery, args, err := squirrel.Select("t.name").
+		From("products_tags pt").
+		InnerJoin("tags t").
+		Where(squirrel.Eq{"t.product_id": productID}).
+		ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	rows, err := p.db.Query(ctx, selectQuery, args...)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	defer rows.Close()
+
+	var tags []*models.Tag
+
+	for rows.Next() {
+		tag := models.Tag{}
+
+		if err = rows.Scan(&tag.Name); err != nil {
+			span.RecordError(err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		tags = append(tags, &tag)
+	}
+
+	return tags, nil
+}
+
+func (p *productRepository) GetProductAttributesForProduct(ctx context.Context, productID string) ([]*models.ProductAttribute, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetProductAttributesForProduct"))
+	defer span.End()
+
+	query := `
+		select pva.attribute_option_id, ad.id, ad.name, ao.option_value
+		from product_variants pv
+        inner join product_variant_attributes pva
+        on pv.id = pva.product_variant_id
+        inner join attribute_definitions ad
+        on pva.attribute_definition_id = ad.id
+        inner join attribute_options ao
+        on ao.id = pva.attribute_option_id
+		where pv.product_id = $1 and pv.is_active = true
+		order by pva.attribute_option_id asc
+	`
+
+	rows, err := p.db.Query(ctx, query, productID)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	defer rows.Close()
+
+	map[int]
 }

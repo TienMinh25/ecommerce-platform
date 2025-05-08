@@ -2,6 +2,7 @@ package models
 
 import "time"
 
+// ProductVariant represents a product variant with its attribute
 type ProductVariant struct {
 	ID                string
 	ProductID         string
@@ -19,4 +20,12 @@ type ProductVariant struct {
 	Currency          string
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
+
+	// attribute
+	AttributeValues []VariantAttributePair
+}
+
+type VariantAttributePair struct {
+	AttributeName  string
+	AttributeValue string
 }

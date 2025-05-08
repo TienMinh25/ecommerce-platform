@@ -121,6 +121,7 @@ func main() {
 			// repository
 			repository.NewCategoryRepository,
 			repository.NewProductRepository,
+			repository.NewSupplierProfileRepository,
 			// tracer
 			NewTracerSupplierAndProductService,
 			// kafka,

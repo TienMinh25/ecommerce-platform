@@ -52,7 +52,7 @@ message GetProductDetailResponse {
 message ProductAttribute {
   int64 attribute_id = 1;
   string name = 2;
-  AttributeOptionValue value = 3;
+  repeated AttributeOptionValue value = 3;
 }
 
 message AttributeOptionValue {
@@ -61,7 +61,7 @@ message AttributeOptionValue {
 }
 
 message GetSupplierProductResponse {
-  string supplier_id = 1;
+  int64 supplier_id = 1;
   string company_name = 2;
   string thumbnail = 3;
   string contact_phone = 4;

@@ -22,8 +22,16 @@ func (p *PartnerHandler) GetProducts(ctx context.Context, data *partner_proto_ge
 func (p *PartnerHandler) GetProductByID(ctx context.Context, data *partner_proto_gen.GetProductDetailRequest) (*partner_proto_gen.GetProductDetailResponse, error) {
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetProductByID"))
 	defer span.End()
+
+	res, err := p.productService.GetProductDetail(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 func (p *PartnerHandler) GetProductReviewsByID(ctx context.Context, data *partner_proto_gen.GetProductReviewsRequest) (*partner_proto_gen.GetProductReviewsResponse, error) {
-
+	return nil, nil
 }
