@@ -18,10 +18,13 @@ type productService struct {
 	supplierRepo repository.ISupplierProfileRepository
 }
 
-func NewProductService(tracer pkg.Tracer, repo repository.IProductRepository) IProductService {
+func NewProductService(tracer pkg.Tracer, repo repository.IProductRepository,
+	categoryRepo repository.ICategoryRepository, supplierRepo repository.ISupplierProfileRepository) IProductService {
 	return &productService{
-		tracer: tracer,
-		repo:   repo,
+		tracer:       tracer,
+		repo:         repo,
+		categoryRepo: categoryRepo,
+		supplierRepo: supplierRepo,
 	}
 }
 
@@ -184,6 +187,7 @@ func (p *productService) GetProductDetail(ctx context.Context, data *partner_pro
 			ShippingClass:    variant.ShippingClass,
 			ThumbnailUrl:     variant.ImageURL,
 			Currency:         variant.Currency,
+			AltText:          variant.ALTText,
 		}
 
 		for _, attrPair := range variant.AttributeValues {
@@ -251,6 +255,14 @@ func (p *productService) getProductAttributes(ctx context.Context, productID str
 }
 
 func (p *productService) getVariantsByProductID(ctx context.Context, productID string) ([]*models.ProductVariant, error) {
-	// used product repo
-	return nil, nil
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "getVariantsByProductID"))
+	defer span.End()
+
+	res, err := p.repo.GetVariantsByProductID(ctx, productID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

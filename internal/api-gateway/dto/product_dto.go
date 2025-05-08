@@ -42,9 +42,9 @@ type GetProductDetailResponse struct {
 }
 
 type ProductAttribute struct {
-	AttributeID int64                `json:"attribute_id"`
-	Name        string               `json:"name"`
-	Values      AttributeOptionValue `json:"values"`
+	AttributeID int64                  `json:"attribute_id"`
+	Name        string                 `json:"name"`
+	Values      []AttributeOptionValue `json:"values"`
 }
 
 type AttributeOptionValue struct {
@@ -73,7 +73,7 @@ type VariantAttributePair struct {
 }
 
 type GetSupplierProductResponse struct {
-	SupplierID   string `json:"supplier_id"`
+	SupplierID   int64  `json:"supplier_id"`
 	CompanyName  string `json:"company_name"`
 	Thumbnail    string `json:"thumbnail"`
 	ContactPhone string `json:"contact_phone"`

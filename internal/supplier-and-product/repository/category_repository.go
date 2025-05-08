@@ -183,7 +183,8 @@ func (r *categoryRepository) GetCategoryForProductDetail(ctx context.Context, ca
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetCategoryForProductDetail"))
 	defer span.End()
 
-	selectQuery, args, err := squirrel.Select("id", "name").From("categories").Where(squirrel.Eq{"id": categoryID}).ToSql()
+	selectQuery, args, err := squirrel.Select("id", "name").From("categories").Where(squirrel.Eq{"id": categoryID}).
+		PlaceholderFormat(squirrel.Dollar).ToSql()
 
 	if err != nil {
 		span.RecordError(err)

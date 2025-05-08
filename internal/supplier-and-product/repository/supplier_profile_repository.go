@@ -29,7 +29,7 @@ func (s *supplierProfileRepository) GetSupplierInfoForProductDetail(ctx context.
 	defer span.End()
 
 	querySelect, args, err := squirrel.Select("id", "company_name", "logo_url", "contact_phone").
-		From("supplier_profiles").Where(squirrel.Eq{"id": supplierID}).ToSql()
+		From("supplier_profiles").Where(squirrel.Eq{"id": supplierID}).PlaceholderFormat(squirrel.Dollar).ToSql()
 
 	if err != nil {
 		span.RecordError(err)

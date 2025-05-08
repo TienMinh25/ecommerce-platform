@@ -181,7 +181,8 @@ func (p *productRepository) GetProductDetail(ctx context.Context, productID stri
 
 	queryBuilder := squirrel.Select("id", "name", "supplier_id", "category_id",
 		"description", "average_rating", "total_reviews").From("products").
-		Where(squirrel.Eq{"id": productID})
+		Where(squirrel.Eq{"id": productID}).
+		PlaceholderFormat(squirrel.Dollar)
 
 	query, args, err := queryBuilder.ToSql()
 
@@ -212,8 +213,9 @@ func (p *productRepository) GetTagsForProduct(ctx context.Context, productID str
 
 	selectQuery, args, err := squirrel.Select("t.name").
 		From("products_tags pt").
-		InnerJoin("tags t").
-		Where(squirrel.Eq{"t.product_id": productID}).
+		InnerJoin("tags t on pt.tag_id = t.id").
+		Where(squirrel.Eq{"pt.product_id": productID}).
+		PlaceholderFormat(squirrel.Dollar).
 		ToSql()
 
 	if err != nil {
@@ -249,20 +251,19 @@ func (p *productRepository) GetProductAttributesForProduct(ctx context.Context, 
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetProductAttributesForProduct"))
 	defer span.End()
 
-	query := `
-		select pva.attribute_option_id, ad.id, ad.name, ao.option_value
-		from product_variants pv
-        inner join product_variant_attributes pva
-        on pv.id = pva.product_variant_id
-        inner join attribute_definitions ad
-        on pva.attribute_definition_id = ad.id
-        inner join attribute_options ao
-        on ao.id = pva.attribute_option_id
-		where pv.product_id = $1 and pv.is_active = true
-		order by pva.attribute_option_id asc
-	`
+	queryBuilder := squirrel.Select("pva.attribute_option_id", "ad.id", "ad.name", "ao.option_value").
+		From("product_variants pv").
+		InnerJoin("product_variant_attributes pva on pv.id = pva.product_variant_id").
+		InnerJoin("attribute_definitions ad on pva.attribute_definition_id = ad.id").
+		InnerJoin("attribute_options ao on ao.id = pva.attribute_option_id").
+		Where(squirrel.Eq{"pv.product_id": productID}).
+		Where(squirrel.Eq{"pv.is_active": true}).
+		OrderBy("ad.id asc").
+		PlaceholderFormat(squirrel.Dollar)
 
-	rows, err := p.db.Query(ctx, query, productID)
+	query, args, err := queryBuilder.ToSql()
+
+	rows, err := p.db.Query(ctx, query, args...)
 
 	if err != nil {
 		span.RecordError(err)
@@ -270,5 +271,142 @@ func (p *productRepository) GetProductAttributesForProduct(ctx context.Context, 
 	}
 	defer rows.Close()
 
-	map[int]
+	mapProdAttr := make(map[int64]*models.ProductAttribute)
+	var orderedAttrIDs []int64
+
+	for rows.Next() {
+		var attrOptionID int64
+		var attrID int64
+		var attrName string
+		var attrOptionValue string
+
+		if err = rows.Scan(&attrOptionID, &attrID, &attrName, &attrOptionValue); err != nil {
+			span.RecordError(err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		v, isExists := mapProdAttr[attrID]
+
+		if isExists {
+			v.Options = append(v.Options, models.AttributeOption{
+				OptionID: attrOptionID,
+				Value:    attrOptionValue,
+			})
+		} else {
+			mapProdAttr[attrID] = &models.ProductAttribute{
+				AttributeID: attrID,
+				Name:        attrName,
+				Options: []models.AttributeOption{
+					{
+						OptionID: attrOptionID,
+						Value:    attrOptionValue,
+					},
+				},
+			}
+			orderedAttrIDs = append(orderedAttrIDs, attrID)
+		}
+	}
+
+	result := make([]*models.ProductAttribute, 0, len(orderedAttrIDs))
+	for _, attrID := range orderedAttrIDs {
+		result = append(result, mapProdAttr[attrID])
+	}
+
+	return result, nil
+}
+
+func (p *productRepository) GetVariantsByProductID(ctx context.Context, productID string) ([]*models.ProductVariant, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetVariantsByProductID"))
+	defer span.End()
+
+	// Một query duy nhất lấy tất cả thông tin cần thiết
+	queryBuilder := squirrel.Select(
+		"pv.id", "pv.sku", "pv.variant_name", "pv.price", "coalesce(pv.discount_price, 0)",
+		"pv.inventory_quantity", "pv.is_default", "pv.shipping_class",
+		"pv.image_url", "pv.alt_text", "pv.currency",
+		"ad.name AS attribute_name", "ao.option_value AS attribute_value",
+	).
+		From("product_variants pv").
+		LeftJoin("product_variant_attributes pva ON pv.id = pva.product_variant_id").
+		LeftJoin("attribute_definitions ad ON pva.attribute_definition_id = ad.id").
+		LeftJoin("attribute_options ao ON pva.attribute_option_id = ao.id").
+		Where(squirrel.Eq{"pv.product_id": productID}).
+		Where(squirrel.Eq{"pv.is_active": true}).
+		OrderBy("pv.is_default DESC, pv.id ASC, ad.name ASC"). // Sắp xếp variant mặc định lên đầu, sau đó theo ID và tên thuộc tính
+		PlaceholderFormat(squirrel.Dollar)
+
+	query, args, err := queryBuilder.ToSql()
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	rows, err := p.db.Query(ctx, query, args...)
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+	defer rows.Close()
+
+	// Map để theo dõi các variant đã xử lý
+	variantsMap := make(map[string]*models.ProductVariant)
+	// Slice để duy trì thứ tự của variants
+	var orderedVariants []*models.ProductVariant
+
+	// Duyệt qua kết quả và nhóm các attribute theo variant
+	for rows.Next() {
+		var (
+			variantID        string
+			sku              string
+			variantName      string
+			price            float64
+			discountPrice    float64
+			quantity         int64
+			isDefault        bool
+			shippingClass    string
+			thumbnailURL     string
+			altTextThumbnail string
+			currency         string
+			attributeName    string
+			attributeValue   string
+		)
+
+		if err = rows.Scan(
+			&variantID, &sku, &variantName, &price, &discountPrice,
+			&quantity, &isDefault, &shippingClass, &thumbnailURL,
+			&altTextThumbnail, &currency, &attributeName, &attributeValue,
+		); err != nil {
+			span.RecordError(err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		// Kiểm tra xem variant đã tồn tại trong map chưa
+		variant, exists := variantsMap[variantID]
+		if !exists {
+			// Tạo variant mới
+			variant = &models.ProductVariant{
+				ID:                variantID,
+				SKU:               sku,
+				VariantName:       variantName,
+				Price:             price,
+				DiscountPrice:     discountPrice,
+				InventoryQuantity: quantity,
+				IsDefault:         isDefault,
+				ShippingClass:     shippingClass,
+				ImageURL:          thumbnailURL,
+				ALTText:           altTextThumbnail,
+				Currency:          currency,
+				AttributeValues:   []models.VariantAttributePair{},
+			}
+			variantsMap[variantID] = variant
+			orderedVariants = append(orderedVariants, variant)
+		}
+
+		variant.AttributeValues = append(variant.AttributeValues, models.VariantAttributePair{
+			AttributeName:  attributeName,
+			AttributeValue: attributeValue,
+		})
+	}
+
+	return orderedVariants, nil
 }

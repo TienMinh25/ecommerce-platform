@@ -78,7 +78,8 @@ message GetProductDetailVariantResponse {
   string shipping_class = 8;
   string thumbnail_url = 9;
   string currency = 10;
-  repeated VariantAttributePair attribute_values = 11;
+  string alt_text = 11;
+  repeated VariantAttributePair attribute_values = 12;
 }
 
 message VariantAttributePair {
