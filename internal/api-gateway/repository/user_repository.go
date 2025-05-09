@@ -3,6 +3,7 @@ package api_gateway_repository
 import (
 	"context"
 	"fmt"
+	"github.com/Masterminds/squirrel"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
@@ -543,7 +544,7 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
 	// Xây dựng truy vấn sử dụng CTE - trực tiếp sử dụng sortField và sortOrder
 	sqlData := fmt.Sprintf(`
         WITH limited_users AS (
-            SELECT DISTINCT u.id, u.%s
+            SELECT u.id
             FROM users u
             WHERE %s%s
             ORDER BY u.%s %s
@@ -557,7 +558,7 @@ func (u *userRepository) GetUserByAdmin(ctx context.Context, data *api_gateway_d
         JOIN users_roles ur ON u.id = ur.user_id
         JOIN roles r ON ur.role_id = r.id
         ORDER BY u.%s %s
-    `, sortField, whereClauseLimit, roleCondition, sortField, sortOrder, limitParam, offsetParam, sortField, sortOrder)
+    `, whereClauseLimit, roleCondition, sortField, sortOrder, limitParam, offsetParam, sortField, sortOrder)
 
 	// Query data
 	rows, err := u.db.Query(ctx, sqlData, params...)
@@ -900,4 +901,47 @@ func (u *userRepository) UpdateCurrentUserInfo(ctx context.Context, userID int, 
 	}
 
 	return &user, nil
+}
+
+func (u *userRepository) GetUserInfoForProdReviews(ctx context.Context, userIDs []int) (map[int]*api_gateway_models.User, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetUserInfoForProdReviews"))
+	defer span.End()
+
+	query, args, err := squirrel.Select("id", "fullname", "avatar_url").
+		From("users").
+		Where(squirrel.Eq{"id": userIDs}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+
+	if err != nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	rows, err := u.db.Query(ctx, query, args...)
+
+	if err != nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	defer rows.Close()
+
+	users := make(map[int]*api_gateway_models.User)
+	for rows.Next() {
+		var user api_gateway_models.User
+		if err = rows.Scan(&user.ID, &user.FullName, &user.AvatarURL); err != nil {
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+		users[user.ID] = &user
+	}
+
+	return users, nil
 }

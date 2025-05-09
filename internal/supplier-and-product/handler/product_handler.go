@@ -33,5 +33,14 @@ func (p *PartnerHandler) GetProductByID(ctx context.Context, data *partner_proto
 }
 
 func (p *PartnerHandler) GetProductReviewsByID(ctx context.Context, data *partner_proto_gen.GetProductReviewsRequest) (*partner_proto_gen.GetProductReviewsResponse, error) {
-	return nil, nil
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetProductReviewsByID"))
+	defer span.End()
+
+	res, err := p.productService.GetProductReviewsByProdID(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }

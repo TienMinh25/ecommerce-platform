@@ -94,12 +94,17 @@ message GetProductReviewsRequest {
 }
 
 message GetProductReviewsResponse {
-  int64 user_id = 1;
-  string user_name = 2;
-  string user_avatar_url = 3;
-  float rating = 4;
+  repeated ProductReviewsResponse product_reviews = 1;
+  PartnerMetadata metadata = 2;
+}
+
+message ProductReviewsResponse {
+  string id = 1;
+  int64 user_id = 2;
+  string product_id = 3;
+  int32 rating = 4;
   string comment = 5;
   int64 helpful_votes = 6;
   google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
 }
-

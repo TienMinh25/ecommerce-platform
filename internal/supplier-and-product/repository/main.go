@@ -17,6 +17,7 @@ type IProductRepository interface {
 	GetTagsForProduct(ctx context.Context, productID string) ([]*models.Tag, error)
 	GetProductAttributesForProduct(ctx context.Context, productID string) ([]*models.ProductAttribute, error)
 	GetVariantsByProductID(ctx context.Context, productID string) ([]*models.ProductVariant, error)
+	GetProductReviewsByProdID(ctx context.Context, productID string, limit, page int64) ([]*models.ProductReview, int64, error)
 }
 
 type ISupplierProfileRepository interface {

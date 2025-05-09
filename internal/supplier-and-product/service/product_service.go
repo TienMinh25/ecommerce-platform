@@ -7,6 +7,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/repository"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"math"
 	"sync"
 )
@@ -265,4 +266,47 @@ func (p *productService) getVariantsByProductID(ctx context.Context, productID s
 	}
 
 	return res, nil
+}
+
+func (p *productService) GetProductReviewsByProdID(ctx context.Context, data *partner_proto_gen.GetProductReviewsRequest) (*partner_proto_gen.GetProductReviewsResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetProductReviewsByProdID"))
+	defer span.End()
+
+	resRepo, totalItems, err := p.repo.GetProductReviewsByProdID(ctx, data.ProductId, data.Limit, data.Page)
+
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := int64(math.Ceil(float64(totalItems) / float64(data.Limit)))
+
+	hasNext := data.Page < totalPages
+	hasPrevious := data.Page > 1
+
+	res := make([]*partner_proto_gen.ProductReviewsResponse, len(resRepo))
+
+	for idx, r := range resRepo {
+		res[idx] = &partner_proto_gen.ProductReviewsResponse{
+			Id:           r.ID,
+			UserId:       r.UserID,
+			ProductId:    r.ProductID,
+			Rating:       r.Rating,
+			Comment:      r.Comment,
+			HelpfulVotes: r.HelpfulVotes,
+			CreatedAt:    timestamppb.New(r.CreatedAt),
+			UpdatedAt:    timestamppb.New(r.UpdatedAt),
+		}
+	}
+
+	return &partner_proto_gen.GetProductReviewsResponse{
+		ProductReviews: res,
+		Metadata: &partner_proto_gen.PartnerMetadata{
+			Limit:       data.Limit,
+			Page:        data.Page,
+			HasNext:     hasNext,
+			HasPrevious: hasPrevious,
+			TotalPages:  totalPages,
+			TotalItems:  totalItems,
+		},
+	}, nil
 }

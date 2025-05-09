@@ -410,3 +410,61 @@ func (p *productRepository) GetVariantsByProductID(ctx context.Context, productI
 
 	return orderedVariants, nil
 }
+
+func (p *productRepository) GetProductReviewsByProdID(ctx context.Context, productID string, limit, page int64) ([]*models.ProductReview, int64, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetProductReviewsByProdID"))
+	defer span.End()
+
+	var totalReviews int64
+	productReviews := make([]*models.ProductReview, 0)
+
+	queryCount, args, err := squirrel.Select("count(*)").
+		From("product_reviews").
+		Where(squirrel.Eq{"product_id": productID}).
+		PlaceholderFormat(squirrel.Dollar).ToSql()
+
+	if err != nil {
+		return nil, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	if err = p.db.QueryRow(ctx, queryCount, args...).Scan(&totalReviews); err != nil {
+		return nil, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	query := `
+			WITH limited_comment AS (
+				SELECT id
+				FROM product_reviews
+				WHERE product_id = $1
+				ORDER BY created_at DESC
+				LIMIT $2 OFFSET $3
+			)
+			SELECT p.id, p.product_id, p.user_id, p.rating, p.comment, p.helpful_votes, p.created_at, p.updated_at
+			FROM product_reviews p
+			INNER JOIN limited_comment c ON p.id = c.id
+			ORDER BY p.created_at DESC
+		`
+
+	args = []interface{}{productID, limit, limit * (page - 1)}
+
+	rows, err := p.db.Query(ctx, query, args...)
+
+	if err != nil {
+		return nil, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var prodReview models.ProductReview
+
+		if err = rows.Scan(&prodReview.ID, &prodReview.ProductID, &prodReview.UserID, &prodReview.Rating,
+			&prodReview.Comment, &prodReview.HelpfulVotes, &prodReview.CreatedAt, &prodReview.UpdatedAt); err != nil {
+			return nil, 0, status.Error(codes.Internal, err.Error())
+		}
+
+		productReviews = append(productReviews, &prodReview)
+	}
+
+	return productReviews, totalReviews, nil
+}

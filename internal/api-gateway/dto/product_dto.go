@@ -86,11 +86,14 @@ type GetProductReviewsRequest struct {
 }
 
 type GetProductReviewsResponse struct {
+	ID            string    `json:"id"`
+	ProductID     string    `json:"product_id"`
 	UserID        int64     `json:"user_id"`
 	UserName      string    `json:"user_name"`
 	UserAvatarURL string    `json:"user_avatar_url"`
-	Rating        float32   `json:"rating"`
+	Rating        int32     `json:"rating"`
 	Comment       string    `json:"comment"`
 	HelpfulVotes  int64     `json:"helpful_votes"`
 	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }

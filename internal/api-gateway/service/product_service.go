@@ -3,6 +3,7 @@ package api_gateway_service
 import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
+	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -17,12 +18,15 @@ import (
 type productService struct {
 	tracer        pkg.Tracer
 	partnerClient partner_proto_gen.PartnerServiceClient
+	userRepo      api_gateway_repository.IUserRepository
 }
 
-func NewProductService(tracer pkg.Tracer, partnerClient partner_proto_gen.PartnerServiceClient) IProductService {
+func NewProductService(tracer pkg.Tracer, partnerClient partner_proto_gen.PartnerServiceClient,
+	userRepo api_gateway_repository.IUserRepository) IProductService {
 	return &productService{
 		tracer:        tracer,
 		partnerClient: partnerClient,
+		userRepo:      userRepo,
 	}
 }
 
@@ -159,5 +163,51 @@ func (p *productService) GetProductReviews(ctx context.Context, data api_gateway
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetProductReviews"))
 	defer span.End()
 
-	return nil, 0, 0, false, false, nil
+	resAdapt, err := p.partnerClient.GetProductReviewsByID(ctx, &partner_proto_gen.GetProductReviewsRequest{
+		ProductId: data.ProductID,
+		Limit:     data.Limit,
+		Page:      data.Page,
+	})
+
+	if err != nil {
+		return nil, 0, 0, false, false, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	userIDs := make([]int, 0)
+
+	for _, review := range resAdapt.ProductReviews {
+		userIDs = append(userIDs, int(review.UserId))
+	}
+
+	mapUserInfo, err := p.userRepo.GetUserInfoForProdReviews(ctx, userIDs)
+
+	if err != nil {
+		return nil, 0, 0, false, false, err
+	}
+
+	res := make([]api_gateway_dto.GetProductReviewsResponse, 0)
+
+	for _, review := range resAdapt.ProductReviews {
+		_, isExists := mapUserInfo[int(review.UserId)]
+
+		if isExists {
+			res = append(res, api_gateway_dto.GetProductReviewsResponse{
+				ID:            review.Id,
+				ProductID:     review.ProductId,
+				UserID:        review.UserId,
+				UserName:      mapUserInfo[int(review.UserId)].FullName,
+				UserAvatarURL: *mapUserInfo[int(review.UserId)].AvatarURL,
+				Rating:        review.Rating,
+				Comment:       review.Comment,
+				HelpfulVotes:  review.HelpfulVotes,
+				CreatedAt:     review.CreatedAt.AsTime(),
+				UpdatedAt:     review.UpdatedAt.AsTime(),
+			})
+		}
+	}
+
+	return res, int(resAdapt.Metadata.TotalItems), int(resAdapt.Metadata.TotalPages), resAdapt.Metadata.HasNext, resAdapt.Metadata.HasPrevious, nil
 }
