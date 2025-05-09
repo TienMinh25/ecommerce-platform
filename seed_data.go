@@ -2660,7 +2660,7 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 				// Kiểm tra xem bảng product_variants đã tồn tại chưa
 				if exists {
 					// Tạo biến thể sản phẩm cho sản phẩm cha
-					createProductVariants(ctx, db, productID, skuPrefix, defaultAttrs, productImage)
+					createProductVariants(ctx, db, productID, skuPrefix, defaultAttrs, parentCategory.name, productImage)
 				}
 
 				totalProducts++
@@ -2830,7 +2830,7 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 				// Now check if product_variants table exists before trying to create variants
 				if exists {
 					// Create product variants
-					createProductVariants(ctx, db, productID, skuPrefix, categoryAttrs, productImage)
+					createProductVariants(ctx, db, productID, skuPrefix, categoryAttrs, category.name, productImage)
 				} else {
 					log.Printf("Skipping variant creation as product_variants table doesn't exist yet")
 				}
@@ -2985,16 +2985,17 @@ func min(a, b int) int {
 	return b
 }
 
-// Cải tiến createProductVariants để giải quyết các lỗi
+// Function to create more realistic product variants with appropriate attributes and images
 func createProductVariants(
 	ctx context.Context,
 	db *pgxpool.Pool,
 	productID string,
 	skuPrefix string,
 	categoryAttrs map[string][]string,
-	productImage string,
+	categoryName string,
+	baseProductImage string,
 ) {
-	// Kiểm tra xem có thuộc tính nào đã tồn tại trong database không
+	// Get all valid attribute names from the category attributes
 	var validAttrNames []string
 	for attrName := range categoryAttrs {
 		var exists bool
@@ -3014,68 +3015,69 @@ func createProductVariants(
 		}
 	}
 
-	// Nếu không có thuộc tính hợp lệ, tạo một mặc định
-	if len(validAttrNames) == 0 {
-		// Tạo thuộc tính mặc định "Kích thước"
-		var attrID int
-		err := db.QueryRow(ctx, `
-			INSERT INTO attribute_definitions 
-			(name, description, input_type, is_filterable, is_required)
-			VALUES ('Kích thước', 'Kích thước sản phẩm', 'select', true, true)
-			ON CONFLICT (name) DO UPDATE
-			SET input_type = 'select', is_filterable = true
-			RETURNING id;
-		`).Scan(&attrID)
+	// Define category-specific primary attributes
+	categoryPrimaryAttributes := map[string][]string{
+		"Thời trang nam":        {"Kích thước", "Màu sắc"},
+		"Thời trang nữ":         {"Kích thước", "Màu sắc"},
+		"Thời trang trẻ em":     {"Kích thước", "Màu sắc"},
+		"Giày dép":              {"Kích thước", "Màu sắc"},
+		"Điện thoại thông minh": {"Màu sắc", "Dung lượng"},
+		"Máy tính xách tay":     {"Màu sắc", "RAM", "Ổ cứng"},
+		"Máy tính bảng":         {"Màu sắc", "Dung lượng", "Kết nối"},
+		"Tai nghe & Loa":        {"Màu sắc", "Kiểu đeo", "Loại kết nối"},
+		"Máy ảnh & Máy quay":    {"Màu sắc", "Độ phân giải", "Cảm biến"},
+		"Đồ gia dụng":           {"Màu sắc", "Công suất", "Chất liệu"},
+		"Tủ lạnh & Tủ đông":     {"Màu sắc", "Dung tích", "Công suất"},
+		"Đồ dùng phòng ngủ":     {"Kích thước giường", "Màu sắc", "Chất liệu"},
+		"Nội thất phòng khách":  {"Chất liệu", "Màu sắc", "Kích thước"},
+	}
 
-		if err != nil {
-			log.Printf("Error creating default attribute: %v", err)
-			return
+	// Choose appropriate attributes for this category
+	var chosenAttributes []string
+	if primaryAttrs, ok := categoryPrimaryAttributes[categoryName]; ok {
+		// Use category-specific attributes if available
+		for _, attr := range primaryAttrs {
+			if stringInSlice(attr, validAttrNames) {
+				chosenAttributes = append(chosenAttributes, attr)
+			}
+			if len(chosenAttributes) >= 2 {
+				break
+			}
 		}
+	}
 
-		// Thêm các tùy chọn cho kích thước
-		sizeOptions := []string{"S", "M", "L", "XL"}
-		for _, option := range sizeOptions {
-			_, err := db.Exec(ctx, `
-				INSERT INTO attribute_options (attribute_definition_id, option_value)
-				VALUES ($1, $2)
-				ON CONFLICT (attribute_definition_id, option_value) DO NOTHING;
-			`, attrID, option)
-
-			if err != nil {
-				log.Printf("Error inserting attribute option: %v", err)
+	// If no specific attributes were chosen, use sensible defaults based on valid attrs
+	if len(chosenAttributes) == 0 {
+		// Try to find common important attributes
+		commonImportantAttrs := []string{"Kích thước", "Màu sắc", "Chất liệu", "Dung lượng"}
+		for _, attr := range commonImportantAttrs {
+			if stringInSlice(attr, validAttrNames) {
+				chosenAttributes = append(chosenAttributes, attr)
+			}
+			if len(chosenAttributes) >= 2 {
+				break
 			}
 		}
 
-		validAttrNames = append(validAttrNames, "Kích thước")
-		categoryAttrs["Kích thước"] = sizeOptions
-	}
-
-	// Chọn 2 thuộc tính để tạo biến thể
-	var variantAttrs []string
-	for _, attrName := range validAttrNames {
-		variantAttrs = append(variantAttrs, attrName)
-		if len(variantAttrs) >= 2 {
-			break
+		// If still no attributes, use first available
+		if len(chosenAttributes) == 0 && len(validAttrNames) > 0 {
+			chosenAttributes = append(chosenAttributes, validAttrNames[0])
 		}
 	}
 
-	// Nếu không đủ thuộc tính, thì bỏ qua
-	if len(variantAttrs) < 1 {
-		log.Printf("Not enough attributes for product: %s", productID)
+	// Ensure we have at least one attribute
+	if len(chosenAttributes) == 0 {
+		log.Printf("No valid attributes found for product: %s in category: %s", productID, categoryName)
 		return
 	}
 
-	// Lấy thông tin định nghĩa thuộc tính và tùy chọn
-	attributeDefs := make(map[string]int)               // name -> id
-	attributeOptions := make(map[string]map[string]int) // attribute name -> option value -> id
+	// Get attribute definitions and options
+	attributeDefs := make(map[string]int)
+	attributeOptions := make(map[string]map[string]int)
 
-	// Lấy định nghĩa thuộc tính
-	for _, attrName := range variantAttrs {
+	for _, attrName := range chosenAttributes {
 		var attrID int
-		err := db.QueryRow(ctx, `
-			SELECT id FROM attribute_definitions WHERE name = $1
-		`, attrName).Scan(&attrID)
-
+		err := db.QueryRow(ctx, `SELECT id FROM attribute_definitions WHERE name = $1`, attrName).Scan(&attrID)
 		if err != nil {
 			log.Printf("Error getting attribute definition: %v", err)
 			continue
@@ -3084,9 +3086,10 @@ func createProductVariants(
 		attributeDefs[attrName] = attrID
 		attributeOptions[attrName] = make(map[string]int)
 
-		// Lấy các tùy chọn cho thuộc tính này
+		// Get options for this attribute
 		rows, err := db.Query(ctx, `
-			SELECT id, option_value FROM attribute_options WHERE attribute_definition_id = $1
+			SELECT id, option_value FROM attribute_options 
+			WHERE attribute_definition_id = $1
 		`, attrID)
 
 		if err != nil {
@@ -3102,125 +3105,106 @@ func createProductVariants(
 				log.Printf("Error scanning attribute option: %v", err)
 				continue
 			}
-
 			attributeOptions[attrName][optionValue] = optionID
 		}
-
-		// Nếu không có tùy chọn, tạo tùy chọn mặc định
-		if len(attributeOptions[attrName]) == 0 {
-			for _, optionValue := range categoryAttrs[attrName] {
-				var optionID int
-				err := db.QueryRow(ctx, `
-					INSERT INTO attribute_options (attribute_definition_id, option_value)
-					VALUES ($1, $2)
-					RETURNING id;
-				`, attrID, optionValue).Scan(&optionID)
-
-				if err != nil {
-					log.Printf("Error creating attribute option: %v", err)
-					continue
-				}
-
-				attributeOptions[attrName][optionValue] = optionID
-			}
-		}
 	}
 
-	// Get a list of existing SKUs for this product to avoid duplicates
-	existingSKUs := make(map[string]bool)
-	rows, err := db.Query(ctx, `
-		SELECT sku FROM product_variants WHERE product_id = $1
-	`, productID)
+	// Generate variant combinations based on chosen attributes
+	variantCombinations := generateVariantCombinations(chosenAttributes, categoryAttrs)
 
-	if err != nil {
-		log.Printf("Error checking existing SKUs: %v", err)
-	} else {
-		defer rows.Close()
-		for rows.Next() {
-			var sku string
-			if err := rows.Scan(&sku); err != nil {
-				log.Printf("Error scanning SKU: %v", err)
-				continue
-			}
-			existingSKUs[sku] = true
-		}
+	// Variant-specific image collection based on product category
+	categorySpecificImageURLs := map[string]map[string]string{
+		"Màu sắc": {
+			"Đen":   "https://images.unsplash.com/photo-1622434641406-a158123450f9?ixlib=rb-4.0.3&q=80&w=1000",
+			"Trắng": "https://images.unsplash.com/photo-1622434641406-a158123450f9?ixlib=rb-4.0.3&q=80&w=1000&auto=format&fit=crop&ixlib=rb-4.0.3",
+			"Xanh":  "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?ixlib=rb-4.0.3&q=80&w=1000&auto=format&fit=crop",
+			"Đỏ":    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&q=80&w=1000&auto=format&fit=crop",
+			"Vàng":  "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?ixlib=rb-4.0.3&q=80&w=1000&auto=format&fit=crop",
+		},
 	}
 
-	// Track used attribute options to avoid duplicate constraint violations
-	usedAttributeOptions := make(map[int]bool)
-
-	// Tạo biến thể sản phẩm dựa trên thuộc tính đầu tiên
-	attrName := variantAttrs[0]
-	attrValues := categoryAttrs[attrName]
-	variantCount := 0
-
-	for i, attrValue := range attrValues {
-		// Check if option exists, create if not
-		optionID, ok := attributeOptions[attrName][attrValue]
-		if !ok {
-			// Create the option if it doesn't exist
-			err := db.QueryRow(ctx, `
-				INSERT INTO attribute_options (attribute_definition_id, option_value)
-				VALUES ($1, $2)
-				RETURNING id;
-			`, attributeDefs[attrName], attrValue).Scan(&optionID)
-
-			if err != nil {
-				log.Printf("Error creating attribute option: %v", err)
-				continue
-			}
-			attributeOptions[attrName][attrValue] = optionID
-		}
-
-		// Skip if this attribute option has already been used
-		if usedAttributeOptions[optionID] {
-			continue
-		}
-
-		// Tính giá và giá giảm
-		basePrice := gofakeit.Float32Range(100000, 5000000) // 100k - 5tr VND
-		// Làm tròn giá theo 1000 đồng
-		basePrice = float32(math.Round(float64(basePrice/1000)) * 1000)
-
-		discountPrice := basePrice
-		hasDiscount := gofakeit.Bool()
-		if hasDiscount {
-			// FIX: Đảm bảo discountPrice luôn nhỏ hơn basePrice
-			// Áp dụng mức giảm giá từ 5% đến 25%
-			discountPercent := gofakeit.Float32Range(0.05, 0.25)
-			discountAmount := float32(math.Floor(float64(basePrice*discountPercent)/1000) * 1000)
-			// Đảm bảo giảm ít nhất 5000 VND và giảm giá luôn nhỏ hơn giá gốc
-			if discountAmount < 5000 {
-				discountAmount = 5000
-			}
-			// Nếu mức giảm > 80% giá gốc, giới hạn ở mức 80%
-			if discountAmount > basePrice*0.8 {
-				discountAmount = float32(math.Floor(float64(basePrice*0.8)/1000) * 1000)
-			}
-			discountPrice = basePrice - discountAmount
-
-			// Kiểm tra lại một lần nữa để đảm bảo
-			if discountPrice >= basePrice || discountPrice <= 0 {
-				discountPrice = basePrice * 0.85 // Giảm giá mặc định 15%
-			}
-		}
-
-		// FIX: Sửa lỗi UTF-8 trong SKU
-		// Thay vì dùng các ký tự Unicode, dùng string cố định
-		// Tạo một SKU hoàn toàn không chứa ký tự Unicode
+	// Create variants for each combination
+	for i, combo := range variantCombinations {
+		// Generate a unique SKU
 		timestamp := time.Now().UnixNano() % 1000000
 		uniqueSKU := fmt.Sprintf("%s-%d-%d", skuPrefix, i+1, timestamp)
 
-		// Đảm bảo SKU độc nhất
-		for existingSKUs[uniqueSKU] {
-			timestamp = time.Now().UnixNano() % 1000000
-			uniqueSKU = fmt.Sprintf("%s-%d-%d", skuPrefix, i+1, timestamp)
+		// Create variant name from combination
+		var variantNameParts []string
+		for attr, value := range combo {
+			variantNameParts = append(variantNameParts, fmt.Sprintf("%s: %s", attr, value))
+		}
+		variantName := strings.Join(variantNameParts, ", ")
+
+		// Select appropriate image for the variant
+		variantImage := baseProductImage
+		// If this is a color variant, try to find a color-specific image
+		if colorValue, ok := combo["Màu sắc"]; ok {
+			if colorImages, ok := categorySpecificImageURLs["Màu sắc"]; ok {
+				if img, ok := colorImages[colorValue]; ok {
+					variantImage = img
+				}
+			}
 		}
 
-		// Tạo tên biến thể
-		variantName := fmt.Sprintf("%s - %s", attrName, attrValue)
+		// Set pricing based on variant attributes
+		basePrice := gofakeit.Float32Range(100000, 5000000) // 100k - 5tr VND
+		// Round price to nearest 1000 VND
+		basePrice = float32(math.Round(float64(basePrice/1000)) * 1000)
 
-		// Tạo biến thể sản phẩm
+		// Size affects price - larger sizes cost more
+		if sizeValue, ok := combo["Kích thước"]; ok {
+			sizeMultipliers := map[string]float32{
+				"S":     0.9,
+				"M":     1.0,
+				"L":     1.1,
+				"XL":    1.2,
+				"XXL":   1.3,
+				"XXXL":  1.4,
+				"4GB":   0.8,
+				"8GB":   1.0,
+				"16GB":  1.3,
+				"32GB":  1.6,
+				"64GB":  1.9,
+				"128GB": 1.2,
+				"256GB": 1.5,
+				"512GB": 1.8,
+				"1TB":   2.0,
+			}
+
+			if multiplier, ok := sizeMultipliers[sizeValue]; ok {
+				basePrice = basePrice * multiplier
+				// Round again after applying multiplier
+				basePrice = float32(math.Round(float64(basePrice/1000)) * 1000)
+			}
+		}
+
+		// Set discount price (for some variants)
+		discountPrice := basePrice
+		hasDiscount := gofakeit.Bool()
+		if hasDiscount {
+			discountPercent := gofakeit.Float32Range(0.05, 0.25)
+			discountAmount := float32(math.Floor(float64(basePrice*discountPercent)/1000) * 1000)
+
+			// Ensure minimum discount is 5000 VND and discount price is lower than base price
+			if discountAmount < 5000 {
+				discountAmount = 5000
+			}
+
+			// Limit maximum discount to 80% of base price
+			if discountAmount > basePrice*0.8 {
+				discountAmount = float32(math.Floor(float64(basePrice*0.8)/1000) * 1000)
+			}
+
+			discountPrice = basePrice - discountAmount
+
+			// Final check to ensure discount price is valid
+			if discountPrice >= basePrice || discountPrice <= 0 {
+				discountPrice = basePrice * 0.85 // Default 15% discount
+			}
+		}
+
+		// Insert variant
 		var variantID string
 		var discountPriceParam interface{}
 		if hasDiscount {
@@ -3238,7 +3222,7 @@ func createProductVariants(
 			RETURNING id;
 		`,
 			productID, uniqueSKU, variantName, basePrice, discountPriceParam,
-			gofakeit.Number(5, 100), "standard", productImage, variantName, i == 0, true,
+			gofakeit.Number(5, 100), "standard", variantImage, variantName, i == 0, true,
 		).Scan(&variantID)
 
 		if err != nil {
@@ -3246,45 +3230,121 @@ func createProductVariants(
 			continue
 		}
 
-		// Mark this attribute option as used
-		usedAttributeOptions[optionID] = true
-		existingSKUs[uniqueSKU] = true
+		// Add attribute associations for this variant
+		for attr, value := range combo {
+			attrID, ok := attributeDefs[attr]
+			if !ok {
+				continue
+			}
 
-		// First check if this variant already has this attribute option
-		var attrExists bool
-		err = db.QueryRow(ctx, `
-			SELECT EXISTS (
-				SELECT 1 FROM product_variant_attributes 
-				WHERE product_variant_id = $1 AND attribute_option_id = $2
-			)
-		`, variantID, optionID).Scan(&attrExists)
+			optionID, ok := attributeOptions[attr][value]
+			if !ok {
+				// Create option if it doesn't exist
+				err := db.QueryRow(ctx, `
+					INSERT INTO attribute_options (attribute_definition_id, option_value)
+					VALUES ($1, $2)
+					RETURNING id;
+				`, attrID, value).Scan(&optionID)
 
-		if err != nil {
-			log.Printf("Error checking variant attribute existence: %v", err)
-			continue
+				if err != nil {
+					log.Printf("Error creating attribute option: %v", err)
+					continue
+				}
+				attributeOptions[attr][value] = optionID
+			}
+
+			// Add the attribute to the variant
+			_, err = db.Exec(ctx, `
+				INSERT INTO product_variant_attributes (
+					product_variant_id, attribute_definition_id, attribute_option_id
+				)
+				VALUES ($1, $2, $3);
+			`, variantID, attrID, optionID)
+
+			if err != nil {
+				log.Printf("Error inserting product variant attribute: %v", err)
+			}
 		}
-
-		// Skip if attribute already exists for this variant
-		if attrExists {
-			continue
-		}
-
-		// Thêm thuộc tính cho biến thể
-		_, err = db.Exec(ctx, `
-			INSERT INTO product_variant_attributes (
-				product_variant_id, attribute_definition_id, attribute_option_id
-			)
-			VALUES ($1, $2, $3);
-		`, variantID, attributeDefs[attrName], optionID)
-
-		if err != nil {
-			log.Printf("Error inserting product variant attribute: %v", err)
-		}
-
-		variantCount++
 	}
 
-	log.Printf("Created %d variants for product %s", variantCount, productID)
+	log.Printf("Created %d variants for product %s", len(variantCombinations), productID)
+}
+
+// Helper function to generate variant combinations
+func generateVariantCombinations(attributes []string, categoryAttrs map[string][]string) []map[string]string {
+	if len(attributes) == 0 {
+		return []map[string]string{make(map[string]string)}
+	}
+
+	// For realistic product catalogs, limit the number of combinations
+	// For example, not every color needs to be available in every size
+	maxCombinations := 6
+
+	var combinations []map[string]string
+
+	// Start with first attribute
+	firstAttr := attributes[0]
+	options := categoryAttrs[firstAttr]
+
+	// Limit options to keep combinations reasonable
+	if len(options) > 4 {
+		// Shuffle and take a subset
+		gofakeit.ShuffleAnySlice(options)
+		options = options[:min(4, len(options))]
+	}
+
+	for _, option := range options {
+		combo := map[string]string{firstAttr: option}
+		combinations = append(combinations, combo)
+	}
+
+	// Add second attribute if available
+	if len(attributes) >= 2 {
+		secondAttr := attributes[1]
+		options = categoryAttrs[secondAttr]
+
+		// Limit options
+		if len(options) > 3 {
+			gofakeit.ShuffleAnySlice(options)
+			options = options[:min(3, len(options))]
+		}
+
+		var newCombinations []map[string]string
+		for _, combo := range combinations {
+			for _, option := range options {
+				newCombo := copyMap(combo)
+				newCombo[secondAttr] = option
+				newCombinations = append(newCombinations, newCombo)
+				if len(newCombinations) >= maxCombinations {
+					break
+				}
+			}
+			if len(newCombinations) >= maxCombinations {
+				break
+			}
+		}
+		combinations = newCombinations
+	}
+
+	return combinations
+}
+
+// Helper function to copy a map
+func copyMap(m map[string]string) map[string]string {
+	result := make(map[string]string)
+	for k, v := range m {
+		result[k] = v
+	}
+	return result
+}
+
+func stringInSlice(needle string, haystack []string) bool {
+	for _, item := range haystack {
+		if item == needle {
+			return true
+		}
+	}
+	return false
 }
 
 func seedDelivererProfiles(ctx context.Context, db *pgxpool.Pool, delivererUserIDs []int64, adminDivisions []Province) {
