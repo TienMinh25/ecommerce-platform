@@ -3,37 +3,6 @@ import axios from 'axios';
 
 const productService = {
     /**
-     * Lấy danh sách sản phẩm với các tùy chọn lọc
-     * @param {Object} options - Các tùy chọn lọc
-     * @returns {Promise} - Promise chứa response từ API
-     */
-    getProducts: (options = {}) => {
-        const {
-            limit = 20,
-            page = 1,
-            keyword = null,
-            categoryIds = null,
-            minRating = null
-        } = options;
-
-        const params = {};
-        params.limit = limit;
-        params.page = page;
-
-        if (keyword) params.keyword = keyword;
-        if (categoryIds) {
-            if (Array.isArray(categoryIds)) {
-                params.category_ids = categoryIds.join(',');
-            } else {
-                params.category_ids = categoryIds;
-            }
-        }
-        if (minRating) params.min_rating = minRating;
-
-        return api.get('/products', { params });
-    },
-
-    /**
      * Lấy danh sách sản phẩm với các tiêu chí cụ thể, sử dụng định dạng API chính xác
      * Hàm này sử dụng format đúng cho category_ids theo yêu cầu API
      * @param {Object} options - Các tùy chọn lọc
@@ -106,43 +75,28 @@ const productService = {
     },
 
     /**
-     * Lấy sản phẩm theo danh mục
-     * @param {Number|Array} categoryIds - ID danh mục hoặc mảng ID danh mục
-     * @param {Number} page - Trang hiện tại
-     * @param {Number} limit - Số lượng sản phẩm mỗi trang
-     * @returns {Promise} - Promise chứa response từ API
-     */
-    getProductsByCategory: (categoryIds, page = 1, limit = 20) => {
-        // Sử dụng hàm getProductsByCriteria để đảm bảo định dạng chính xác
-        return productService.getProductsByCriteria({
-            page,
-            limit,
-            categoryIds
-        });
-    },
-
-    /**
-     * Tìm kiếm sản phẩm theo từ khóa
-     * @param {String} keyword - Từ khóa tìm kiếm
-     * @param {Number} page - Trang hiện tại
-     * @param {Number} limit - Số lượng sản phẩm mỗi trang
-     * @returns {Promise} - Promise chứa response từ API
-     */
-    searchProducts: (keyword, page = 1, limit = 20) => {
-        return productService.getProductsByCriteria({
-            page,
-            limit,
-            keyword
-        });
-    },
-
-    /**
-     * Lấy chi tiết sản phẩm theo ID
-     * @param {String|Number} productId - ID sản phẩm
-     * @returns {Promise} - Promise chứa response từ API
+     * Get product details by ID
+     * @param {String|Number} productId - Product ID
+     * @returns {Promise} - Promise containing API response
      */
     getProductById: (productId) => {
         return api.get(`/products/${productId}`);
+    },
+
+    /**
+     * Get product reviews by product ID
+     * @param {String|Number} productId - Product ID
+     * @param {Number} page - Current page
+     * @param {Number} limit - Reviews per page
+     * @returns {Promise} - Promise containing API response
+     */
+    getProductReviews: (productId, page = 1, limit = 6) => {
+        return api.get(`/products/${productId}/reviews`, {
+            params: {
+                page,
+                limit
+            }
+        });
     }
 };
 
