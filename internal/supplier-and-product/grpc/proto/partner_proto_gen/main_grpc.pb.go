@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PartnerService_GetCategories_FullMethodName = "/PartnerService/GetCategories"
-	PartnerService_GetProducts_FullMethodName   = "/PartnerService/GetProducts"
+	PartnerService_GetCategories_FullMethodName         = "/PartnerService/GetCategories"
+	PartnerService_GetProducts_FullMethodName           = "/PartnerService/GetProducts"
+	PartnerService_GetProductByID_FullMethodName        = "/PartnerService/GetProductByID"
+	PartnerService_GetProductReviewsByID_FullMethodName = "/PartnerService/GetProductReviewsByID"
 )
 
 // PartnerServiceClient is the client API for PartnerService service.
@@ -29,6 +31,8 @@ const (
 type PartnerServiceClient interface {
 	GetCategories(ctx context.Context, in *GetCategoriesRequest, opts ...grpc.CallOption) (*GetCategoriesResponse, error)
 	GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error)
+	GetProductByID(ctx context.Context, in *GetProductDetailRequest, opts ...grpc.CallOption) (*GetProductDetailResponse, error)
+	GetProductReviewsByID(ctx context.Context, in *GetProductReviewsRequest, opts ...grpc.CallOption) (*GetProductReviewsResponse, error)
 }
 
 type partnerServiceClient struct {
@@ -59,12 +63,34 @@ func (c *partnerServiceClient) GetProducts(ctx context.Context, in *GetProductsR
 	return out, nil
 }
 
+func (c *partnerServiceClient) GetProductByID(ctx context.Context, in *GetProductDetailRequest, opts ...grpc.CallOption) (*GetProductDetailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProductDetailResponse)
+	err := c.cc.Invoke(ctx, PartnerService_GetProductByID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *partnerServiceClient) GetProductReviewsByID(ctx context.Context, in *GetProductReviewsRequest, opts ...grpc.CallOption) (*GetProductReviewsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetProductReviewsResponse)
+	err := c.cc.Invoke(ctx, PartnerService_GetProductReviewsByID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PartnerServiceServer is the server API for PartnerService service.
 // All implementations must embed UnimplementedPartnerServiceServer
 // for forward compatibility.
 type PartnerServiceServer interface {
 	GetCategories(context.Context, *GetCategoriesRequest) (*GetCategoriesResponse, error)
 	GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error)
+	GetProductByID(context.Context, *GetProductDetailRequest) (*GetProductDetailResponse, error)
+	GetProductReviewsByID(context.Context, *GetProductReviewsRequest) (*GetProductReviewsResponse, error)
 	mustEmbedUnimplementedPartnerServiceServer()
 }
 
@@ -80,6 +106,12 @@ func (UnimplementedPartnerServiceServer) GetCategories(context.Context, *GetCate
 }
 func (UnimplementedPartnerServiceServer) GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProducts not implemented")
+}
+func (UnimplementedPartnerServiceServer) GetProductByID(context.Context, *GetProductDetailRequest) (*GetProductDetailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProductByID not implemented")
+}
+func (UnimplementedPartnerServiceServer) GetProductReviewsByID(context.Context, *GetProductReviewsRequest) (*GetProductReviewsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProductReviewsByID not implemented")
 }
 func (UnimplementedPartnerServiceServer) mustEmbedUnimplementedPartnerServiceServer() {}
 func (UnimplementedPartnerServiceServer) testEmbeddedByValue()                        {}
@@ -138,6 +170,42 @@ func _PartnerService_GetProducts_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PartnerService_GetProductByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProductDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).GetProductByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_GetProductByID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).GetProductByID(ctx, req.(*GetProductDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PartnerService_GetProductReviewsByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProductReviewsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).GetProductReviewsByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_GetProductReviewsByID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).GetProductReviewsByID(ctx, req.(*GetProductReviewsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PartnerService_ServiceDesc is the grpc.ServiceDesc for PartnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +220,14 @@ var PartnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProducts",
 			Handler:    _PartnerService_GetProducts_Handler,
+		},
+		{
+			MethodName: "GetProductByID",
+			Handler:    _PartnerService_GetProductByID_Handler,
+		},
+		{
+			MethodName: "GetProductReviewsByID",
+			Handler:    _PartnerService_GetProductReviewsByID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

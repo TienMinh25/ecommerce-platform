@@ -1,0 +1,2 @@
+alter table product_reviews
+drop column is_verified_purchase;

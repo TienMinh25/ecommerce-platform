@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"github.com/Masterminds/squirrel"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -176,4 +177,31 @@ func (r *categoryRepository) getCategoriesByProductKeyword(ctx context.Context, 
 	}
 
 	return categories, nil
+}
+
+func (r *categoryRepository) GetCategoryForProductDetail(ctx context.Context, categoryID int64) (*models.Category, error) {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetCategoryForProductDetail"))
+	defer span.End()
+
+	selectQuery, args, err := squirrel.Select("id", "name").From("categories").Where(squirrel.Eq{"id": categoryID}).
+		PlaceholderFormat(squirrel.Dollar).ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	var category models.Category
+
+	if err = r.db.QueryRow(ctx, selectQuery, args...).Scan(&category.ID, &category.Name); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, status.Error(codes.NotFound, "Category for product is not found")
+		}
+
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &category, nil
 }

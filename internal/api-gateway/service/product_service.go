@@ -3,23 +3,30 @@ package api_gateway_service
 import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
+	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"net/http"
 )
 
 type productService struct {
 	tracer        pkg.Tracer
 	partnerClient partner_proto_gen.PartnerServiceClient
+	userRepo      api_gateway_repository.IUserRepository
 }
 
-func NewProductService(tracer pkg.Tracer, partnerClient partner_proto_gen.PartnerServiceClient) IProductService {
+func NewProductService(tracer pkg.Tracer, partnerClient partner_proto_gen.PartnerServiceClient,
+	userRepo api_gateway_repository.IUserRepository) IProductService {
 	return &productService{
 		tracer:        tracer,
 		partnerClient: partnerClient,
+		userRepo:      userRepo,
 	}
 }
 
@@ -62,4 +69,145 @@ func (p *productService) GetProducts(ctx context.Context, data *api_gateway_dto.
 
 	return res, int(products.Metadata.TotalItems), int(products.Metadata.TotalPages), products.Metadata.HasNext,
 		products.Metadata.HasPrevious, nil
+}
+
+func (p *productService) GetProductByID(ctx context.Context, productID string) (*api_gateway_dto.GetProductDetailResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetProductByID"))
+	defer span.End()
+
+	productAdaptRes, err := p.partnerClient.GetProductByID(ctx, &partner_proto_gen.GetProductDetailRequest{
+		ProductId: productID,
+	})
+
+	if err != nil {
+		st, _ := status.FromError(err)
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, utils.BusinessError{
+				Code:      http.StatusNotFound,
+				Message:   "Product not found",
+				ErrorCode: errorcode.NOT_FOUND,
+			}
+		case codes.Internal:
+			return nil, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+	}
+
+	attributes := make([]api_gateway_dto.ProductAttribute, 0, len(productAdaptRes.Attributes))
+	for _, attr := range productAdaptRes.Attributes {
+		values := make([]api_gateway_dto.AttributeOptionValue, 0, len(attr.Value))
+		for _, val := range attr.Value {
+			values = append(values, api_gateway_dto.AttributeOptionValue{
+				OptionID: val.OptionId,
+				Value:    val.Value,
+			})
+		}
+		attributes = append(attributes, api_gateway_dto.ProductAttribute{
+			AttributeID: attr.AttributeId,
+			Name:        attr.Name,
+			Values:      values,
+		})
+	}
+
+	variants := make([]api_gateway_dto.GetProductDetailVariantResponse, 0, len(productAdaptRes.ProductVariants))
+	for _, variant := range productAdaptRes.ProductVariants {
+		attrValues := make([]api_gateway_dto.VariantAttributePair, 0, len(variant.AttributeValues))
+		for _, attrValue := range variant.AttributeValues {
+			attrValues = append(attrValues, api_gateway_dto.VariantAttributePair{
+				AttributeName:  attrValue.AttributeName,
+				AttributeValue: attrValue.AttributeValue,
+			})
+		}
+		variants = append(variants, api_gateway_dto.GetProductDetailVariantResponse{
+			ProductVariantID: variant.ProductVariantId,
+			SKU:              variant.Sku,
+			VariantName:      variant.VariantName,
+			Price:            variant.Price,
+			DiscountPrice:    variant.DiscountPrice,
+			Quantity:         variant.Quantity,
+			IsDefault:        variant.IsDefault,
+			ShippingClass:    variant.ShippingClass,
+			ThumbnailURL:     variant.ThumbnailUrl,
+			AltTextThumbnail: variant.AltText,
+			Currency:         variant.Currency,
+			AttributeValues:  attrValues,
+		})
+	}
+
+	res := &api_gateway_dto.GetProductDetailResponse{
+		ProductID:            productAdaptRes.ProductId,
+		ProductName:          productAdaptRes.ProductName,
+		ProductDescription:   productAdaptRes.ProductDescription,
+		CategoryID:           productAdaptRes.CategoryId,
+		CategoryName:         productAdaptRes.CategoryName,
+		ProductAverageRating: productAdaptRes.ProductAverageRating,
+		ProductTotalReviews:  productAdaptRes.ProductTotalReviews,
+		Supplier: api_gateway_dto.GetSupplierProductResponse{
+			SupplierID:   productAdaptRes.Supplier.SupplierId,
+			CompanyName:  productAdaptRes.Supplier.CompanyName,
+			Thumbnail:    productAdaptRes.Supplier.Thumbnail,
+			ContactPhone: productAdaptRes.Supplier.ContactPhone,
+		},
+		ProductTags:     productAdaptRes.ProductTags,
+		Attributes:      attributes,
+		ProductVariants: variants,
+	}
+
+	return res, nil
+}
+
+func (p *productService) GetProductReviews(ctx context.Context, data api_gateway_dto.GetProductReviewsRequest) ([]api_gateway_dto.GetProductReviewsResponse, int, int, bool, bool, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetProductReviews"))
+	defer span.End()
+
+	resAdapt, err := p.partnerClient.GetProductReviewsByID(ctx, &partner_proto_gen.GetProductReviewsRequest{
+		ProductId: data.ProductID,
+		Limit:     data.Limit,
+		Page:      data.Page,
+	})
+
+	if err != nil {
+		return nil, 0, 0, false, false, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	userIDs := make([]int, 0)
+
+	for _, review := range resAdapt.ProductReviews {
+		userIDs = append(userIDs, int(review.UserId))
+	}
+
+	mapUserInfo, err := p.userRepo.GetUserInfoForProdReviews(ctx, userIDs)
+
+	if err != nil {
+		return nil, 0, 0, false, false, err
+	}
+
+	res := make([]api_gateway_dto.GetProductReviewsResponse, 0)
+
+	for _, review := range resAdapt.ProductReviews {
+		_, isExists := mapUserInfo[int(review.UserId)]
+
+		if isExists {
+			res = append(res, api_gateway_dto.GetProductReviewsResponse{
+				ID:            review.Id,
+				ProductID:     review.ProductId,
+				UserID:        review.UserId,
+				UserName:      mapUserInfo[int(review.UserId)].FullName,
+				UserAvatarURL: *mapUserInfo[int(review.UserId)].AvatarURL,
+				Rating:        review.Rating,
+				Comment:       review.Comment,
+				HelpfulVotes:  review.HelpfulVotes,
+				CreatedAt:     review.CreatedAt.AsTime(),
+				UpdatedAt:     review.UpdatedAt.AsTime(),
+			})
+		}
+	}
+
+	return res, int(resAdapt.Metadata.TotalItems), int(resAdapt.Metadata.TotalPages), resAdapt.Metadata.HasNext, resAdapt.Metadata.HasPrevious, nil
 }

@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "./partner_proto_gen";
 
 import 'partner_metadata.proto';
+import 'google/protobuf/timestamp.proto';
 
 message GetProductsRequest {
   int64 limit = 1;
@@ -27,4 +28,83 @@ message ProductResponse {
   double product_price = 7;
   double product_discount_price = 8;
   string product_currency = 9;
+}
+
+// product detail
+message GetProductDetailRequest {
+  string product_id = 1;
+}
+
+message GetProductDetailResponse {
+  string product_id = 1;
+  string product_name = 2;
+  string product_description = 3;
+  int64 category_id = 4;
+  string category_name = 5;
+  float product_average_rating = 6;
+  int64 product_total_reviews = 7;
+  GetSupplierProductResponse supplier = 8;
+  repeated string product_tags = 9;
+  repeated ProductAttribute attributes = 10;
+  repeated GetProductDetailVariantResponse product_variants = 11;
+}
+
+message ProductAttribute {
+  int64 attribute_id = 1;
+  string name = 2;
+  repeated AttributeOptionValue value = 3;
+}
+
+message AttributeOptionValue {
+  int64 option_id = 1;
+  string value = 2;
+}
+
+message GetSupplierProductResponse {
+  int64 supplier_id = 1;
+  string company_name = 2;
+  string thumbnail = 3;
+  string contact_phone = 4;
+}
+
+message GetProductDetailVariantResponse {
+  string product_variant_id = 1;
+  string sku = 2;
+  string variant_name = 3;
+  double price = 4;
+  double discount_price = 5;
+  int64 quantity = 6;
+  bool is_default = 7;
+  string shipping_class = 8;
+  string thumbnail_url = 9;
+  string currency = 10;
+  string alt_text = 11;
+  repeated VariantAttributePair attribute_values = 12;
+}
+
+message VariantAttributePair {
+  string attribute_name = 1;
+  string attribute_value = 2;
+}
+
+message GetProductReviewsRequest {
+  string product_id = 1;
+  int64 limit = 2;
+  int64 page = 3;
+}
+
+message GetProductReviewsResponse {
+  repeated ProductReviewsResponse product_reviews = 1;
+  PartnerMetadata metadata = 2;
+}
+
+message ProductReviewsResponse {
+  string id = 1;
+  int64 user_id = 2;
+  string product_id = 3;
+  int32 rating = 4;
+  string comment = 5;
+  int64 helpful_votes = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
 }

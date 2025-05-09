@@ -91,4 +91,6 @@ type ICategoryHandler interface {
 
 type IProductHandler interface {
 	GetProducts(ctx *gin.Context)
+	GetProductByID(ctx *gin.Context)
+	GetProductReviewsByID(ctx *gin.Context)
 }
