@@ -6,12 +6,10 @@ import {
   Badge,
   Flex,
   Icon,
-  IconButton,
-  useToast,
   AspectRatio,
   HStack
 } from '@chakra-ui/react';
-import { FaStar, FaRegStar, FaHeart, FaShoppingCart } from 'react-icons/fa';
+import { FaStar, FaRegStar } from 'react-icons/fa';
 import { Link as RouterLink } from 'react-router-dom';
 
 // Format price with VND currency
@@ -33,32 +31,14 @@ const calculateDiscount = (originalPrice, discountPrice) => {
 };
 
 const ProductCard = ({ product }) => {
-  const toast = useToast();
-
-  // Check if product is from API or mock data
-  const isFromApi = !!product.product_id;
-
-  // Extract values based on data source
-  const id = isFromApi ? product.product_id : product.id;
-  const name = isFromApi ? product.product_name : product.name;
-  const image = isFromApi ? product.product_thumbnail : product.image;
-  const rating = isFromApi ? product.product_average_rating : product.rating;
-  const reviewCount = isFromApi ? product.product_total_reviews : product.reviewCount;
-
-  // Price handling
-  let regularPrice, discountPrice, displayPrice;
-
-  if (isFromApi) {
-    // API data
-    regularPrice = product.product_price;
-    discountPrice = product.product_discount_price > 0 ? product.product_discount_price : null;
-    displayPrice = discountPrice || regularPrice;
-  } else {
-    // Mock data
-    regularPrice = product.originalPrice || product.price;
-    discountPrice = product.price < product.originalPrice ? product.price : null;
-    displayPrice = product.price;
-  }
+  // Extract values from API data
+  const id = product.product_id;
+  const name = product.product_name;
+  const image = product.product_thumbnail;
+  const rating = product.product_average_rating;
+  const reviewCount = product.product_total_reviews;
+  const regularPrice = product.product_price;
+  const discountPrice = product.product_discount_price > 0 ? product.product_discount_price : null;
 
   // Calculate discount percentage
   const discountPercentage = calculateDiscount(regularPrice, discountPrice);
@@ -69,7 +49,7 @@ const ProductCard = ({ product }) => {
     const ratingValue = rating || 0;
 
     for (let i = 1; i <= 5; i++) {
-      if (i <= ratingValue) {
+      if (i <= Math.round(ratingValue)) {
         stars.push(<Icon key={i} as={FaStar} color="yellow.400" boxSize={3} />);
       } else {
         stars.push(<Icon key={i} as={FaRegStar} color="yellow.400" boxSize={3} />);
@@ -77,33 +57,6 @@ const ProductCard = ({ product }) => {
     }
 
     return stars;
-  };
-
-  // Handle quick actions
-  const handleAddToCart = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    toast({
-      title: 'Đã thêm vào giỏ hàng',
-      description: `${name} đã được thêm vào giỏ hàng của bạn.`,
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
-  };
-
-  const handleAddToWishlist = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    toast({
-      title: 'Đã thêm vào danh sách yêu thích',
-      description: `${name} đã được thêm vào danh sách yêu thích của bạn.`,
-      status: 'success',
-      duration: 3000,
-      isClosable: true,
-    });
   };
 
   return (
@@ -143,40 +96,6 @@ const ProductCard = ({ product }) => {
             </Badge>
         )}
 
-        {/* Quick action buttons */}
-        <Flex
-            position="absolute"
-            top={2}
-            right={2}
-            direction="column"
-            gap={2}
-            zIndex={1}
-            opacity={0}
-            transition="opacity 0.3s"
-            _groupHover={{ opacity: 1 }}
-        >
-          <IconButton
-              icon={<FaHeart />}
-              onClick={handleAddToWishlist}
-              aria-label="Add to wishlist"
-              size="sm"
-              borderRadius="full"
-              colorScheme="pink"
-              variant="solid"
-              boxShadow="md"
-          />
-          <IconButton
-              icon={<FaShoppingCart />}
-              onClick={handleAddToCart}
-              aria-label="Add to cart"
-              size="sm"
-              borderRadius="full"
-              colorScheme="brand"
-              variant="solid"
-              boxShadow="md"
-          />
-        </Flex>
-
         {/* Product image */}
         <AspectRatio ratio={1} w="100%">
           <Image
@@ -184,7 +103,6 @@ const ProductCard = ({ product }) => {
               alt={name}
               objectFit="contain"
               bg="gray.50"
-              fallbackSrc="https://via.placeholder.com/300x300?text=Product"
           />
         </AspectRatio>
 
@@ -206,7 +124,7 @@ const ProductCard = ({ product }) => {
               {renderStars()}
             </HStack>
             <Text fontSize="xs" color="gray.500">
-              ({reviewCount || 0})
+              {rating ? rating.toFixed(1) : '0'} ({reviewCount || 0})
             </Text>
           </Flex>
 
