@@ -251,7 +251,7 @@ func (p *productRepository) GetProductAttributesForProduct(ctx context.Context, 
 	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetProductAttributesForProduct"))
 	defer span.End()
 
-	queryBuilder := squirrel.Select("pva.attribute_option_id", "ad.id", "ad.name", "ao.option_value").
+	queryBuilder := squirrel.Select("distinct pva.attribute_option_id", "ad.id", "ad.name", "ao.option_value").
 		From("product_variants pv").
 		InnerJoin("product_variant_attributes pva on pv.id = pva.product_variant_id").
 		InnerJoin("attribute_definitions ad on pva.attribute_definition_id = ad.id").

@@ -34,7 +34,7 @@ import {
   Skeleton,
   Center,
 } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   FaExchangeAlt,
   FaInfoCircle,
@@ -64,6 +64,7 @@ const ProductDetail = () => {
   const [error, setError] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
+  const [selectedAttributes, setSelectedAttributes] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const navigate = useNavigate();
   const toast = useToast();
@@ -86,6 +87,54 @@ const ProductDetail = () => {
     if (!originalPrice || !discountPrice || originalPrice <= discountPrice) return 0;
     return Math.round(((originalPrice - discountPrice) / originalPrice) * 100);
   };
+
+  // Tính toán danh sách các combinations có sẵn
+  const availableCombinations = useMemo(() => {
+    if (!product) return {};
+
+    const combinations = {};
+
+    // Lặp qua tất cả variants để xây dựng map các combinations hợp lệ
+    product.product_variants.forEach(variant => {
+      variant.attribute_values.forEach(attrValue => {
+        const attributeName = attrValue.attribute_name;
+        const attributeValue = attrValue.attribute_value;
+
+        if (!combinations[attributeName]) {
+          combinations[attributeName] = {};
+        }
+
+        if (!combinations[attributeName][attributeValue]) {
+          combinations[attributeName][attributeValue] = new Set();
+        }
+
+        // Thêm tất cả các giá trị thuộc tính khác của variant này
+        variant.attribute_values.forEach(otherAttr => {
+          if (otherAttr.attribute_name !== attributeName) {
+            combinations[attributeName][attributeValue].add(
+                `${otherAttr.attribute_name}:${otherAttr.attribute_value}`
+            );
+          }
+        });
+      });
+    });
+
+    return combinations;
+  }, [product]);
+
+  // Cập nhật selectedAttributes khi selectedVariant thay đổi
+  useEffect(() => {
+    if (product && product.product_variants && product.product_variants.length > 0) {
+      const variant = product.product_variants[selectedVariantIndex];
+      const attributes = {};
+
+      variant.attribute_values.forEach(attr => {
+        attributes[attr.attribute_name] = attr.attribute_value;
+      });
+
+      setSelectedAttributes(attributes);
+    }
+  }, [product, selectedVariantIndex]);
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -141,8 +190,67 @@ const ProductDetail = () => {
     }
   };
 
+  // Kiểm tra xem một giá trị thuộc tính có khả dụng không dựa trên các lựa chọn hiện tại
+  const isAttributeValueAvailable = (attributeName, attributeValue) => {
+    // Nếu chưa có lựa chọn nào, tất cả đều khả dụng
+    if (Object.keys(selectedAttributes).length === 0) return true;
+
+    // Nếu đây là thuộc tính đang được xem xét, luôn khả dụng
+    if (selectedAttributes[attributeName] === attributeValue) return true;
+
+    // Kiểm tra xem giá trị này có khả dụng với các lựa chọn khác không
+    for (const [selectedAttrName, selectedAttrValue] of Object.entries(selectedAttributes)) {
+      // Bỏ qua thuộc tính đang xem xét
+      if (selectedAttrName === attributeName) continue;
+
+      // Kiểm tra xem có tồn tại variant nào kết hợp giá trị hiện tại với giá trị đang xem xét không
+      const key = `${attributeName}:${attributeValue}`;
+      if (!availableCombinations[selectedAttrName] ||
+          !availableCombinations[selectedAttrName][selectedAttrValue] ||
+          !availableCombinations[selectedAttrName][selectedAttrValue].has(key)) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  // Tìm variant dựa trên các thuộc tính đã chọn
+  const findVariantByAttributes = (attributes) => {
+    return product.product_variants.findIndex(variant => {
+      // Kiểm tra xem variant này có khớp với tất cả các thuộc tính đã chọn không
+      return Object.entries(attributes).every(([name, value]) => {
+        return variant.attribute_values.some(
+            attr => attr.attribute_name === name && attr.attribute_value === value
+        );
+      });
+    });
+  };
+
+  // Xử lý khi chọn một giá trị thuộc tính
+  const handleAttributeSelect = (attributeName, attributeValue) => {
+    // Cập nhật thuộc tính đã chọn
+    const newSelectedAttributes = {
+      ...selectedAttributes,
+      [attributeName]: attributeValue
+    };
+
+    // Tìm variant phù hợp với các thuộc tính đã chọn
+    const variantIndex = findVariantByAttributes(newSelectedAttributes);
+
+    if (variantIndex !== -1) {
+      setSelectedVariantIndex(variantIndex);
+      // Cập nhật selectedAttributes từ variant mới (để đồng bộ tất cả các thuộc tính)
+      setSelectedAttributes(newSelectedAttributes);
+      // Reset quantity khi đổi variant
+      setQuantity(1);
+    }
+  };
+
   const handleVariantSelect = (index) => {
     setSelectedVariantIndex(index);
+    // Reset quantity khi đổi variant
+    setQuantity(1);
   };
 
   const handleAddToCart = () => {
@@ -307,7 +415,7 @@ const ProductDetail = () => {
                         .fill('')
                         .map((_, i) => (
                             <StarIcon
-                                key={i}
+                                key={`rating-star-${i}`}
                                 color={
                                   i < Math.round(product.average_rating)
                                       ? 'yellow.400'
@@ -357,34 +465,30 @@ const ProductDetail = () => {
                     {product.attributes.map((attribute) => (
                         <Box key={attribute.attribute_id} mb={4}>
                           <Text fontWeight='semibold' mb={2}>
-                            {attribute.name}: {selectedVariant.attribute_values.find(
-                              attr => attr.attribute_name === attribute.name
-                          )?.attribute_value}
+                            {attribute.name}: {selectedAttributes[attribute.name]}
                           </Text>
                           <HStack spacing={2} flexWrap="wrap">
                             {attribute.values.map((value) => {
-                              // Find the variant that has this attribute value
-                              const variantWithValue = product.product_variants.findIndex(
-                                  variant => variant.attribute_values.some(
-                                      attr => attr.attribute_name === attribute.name &&
-                                          attr.attribute_value === value.value
-                                  )
-                              );
+                              // Xác định xem giá trị này có khả dụng không
+                              const isAvailable = isAttributeValueAvailable(attribute.name, value.value);
 
-                              if (variantWithValue === -1) return null;
-
-                              const isSelected = selectedVariant.attribute_values.some(
-                                  attr => attr.attribute_name === attribute.name &&
-                                      attr.attribute_value === value.value
-                              );
+                              // Kiểm tra xem giá trị này có được chọn không
+                              const isSelected = selectedAttributes[attribute.name] === value.value;
 
                               return (
                                   <Button
-                                      key={value.option_id}
+                                      key={`${attribute.attribute_id}-${value.option_id}`}
                                       size='sm'
                                       variant={isSelected ? 'solid' : 'outline'}
                                       colorScheme={isSelected ? 'brand' : 'gray'}
-                                      onClick={() => handleVariantSelect(variantWithValue)}
+                                      onClick={() => isAvailable && handleAttributeSelect(attribute.name, value.value)}
+                                      opacity={isAvailable ? 1 : 0.4}
+                                      cursor={isAvailable ? 'pointer' : 'not-allowed'}
+                                      _hover={{
+                                        bg: isAvailable
+                                            ? (isSelected ? 'brand.600' : 'gray.100')
+                                            : 'transparent',
+                                      }}
                                   >
                                     {value.value}
                                   </Button>
@@ -540,7 +644,7 @@ const ProductDetail = () => {
                         <Heading as="h4" size="sm" mb={3}>Tags:</Heading>
                         <HStack spacing={2} flexWrap="wrap">
                           {product.product_tags.map((tag, index) => (
-                              <Badge key={index} colorScheme="blue" mr={2} px={2} py={1} borderRadius="md">
+                              <Badge key={`product-tag-${index}-${tag}`} colorScheme="blue" mr={2} px={2} py={1} borderRadius="md">
                                 #{tag}
                               </Badge>
                           ))}
@@ -573,7 +677,7 @@ const ProductDetail = () => {
                             .fill('')
                             .map((_, i) => (
                                 <StarIcon
-                                    key={i}
+                                    key={`tab-rating-star-${i}`}
                                     color={i < Math.round(product.average_rating) ? 'yellow.400' : 'gray.300'}
                                 />
                             ))}
@@ -624,7 +728,7 @@ const ProductDetail = () => {
                                         .fill('')
                                         .map((_, i) => (
                                             <StarIcon
-                                                key={i}
+                                                key={`review-${review.id}-star-${i}`}
                                                 size="sm"
                                                 color={i < Math.round(review.rating) ? 'yellow.400' : 'gray.300'}
                                             />
@@ -669,9 +773,9 @@ const ProductDetail = () => {
                 </Box>
               </TabPanel>
             </TabPanels>
-          </Tabs>
-        </Box>
-      </Container>
+        </Tabs>
+      </Box>
+    </Container>
   );
 };
 
