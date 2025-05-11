@@ -77,6 +77,12 @@ type IUserHandler interface {
 	GetListNotificationsHistory(ctx *gin.Context)
 	MarkAllNotificationsRead(ctx *gin.Context)
 	MarkOnlyOneNotificationRead(ctx *gin.Context)
+
+	// management own cart
+	GetCartItems(ctx *gin.Context)
+	AddCartItem(ctx *gin.Context)
+	DeleteCartItems(ctx *gin.Context)
+	UpdateCartItem(ctx *gin.Context)
 }
 
 type IAdministrativeDivisionHandler interface {

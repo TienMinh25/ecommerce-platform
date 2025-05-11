@@ -18,6 +18,8 @@ type IProductRepository interface {
 	GetProductAttributesForProduct(ctx context.Context, productID string) ([]*models.ProductAttribute, error)
 	GetVariantsByProductID(ctx context.Context, productID string) ([]*models.ProductVariant, error)
 	GetProductReviewsByProdID(ctx context.Context, productID string, limit, page int64) ([]*models.ProductReview, int64, error)
+	CheckAvailableProd(ctx context.Context, prodVariantID string, quantity int64) (bool, int64, error)
+	GetProductInfoForCart(ctx context.Context, prodIds []string, prodVariantIds []string) (map[string]models.Product, []models.ProductVariant, error)
 }
 
 type ISupplierProfileRepository interface {

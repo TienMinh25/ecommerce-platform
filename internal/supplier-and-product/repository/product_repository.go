@@ -468,3 +468,125 @@ func (p *productRepository) GetProductReviewsByProdID(ctx context.Context, produ
 
 	return productReviews, totalReviews, nil
 }
+
+func (p *productRepository) CheckAvailableProd(ctx context.Context, prodVariantID string, quantity int64) (bool, int64, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckAvailableProd"))
+	defer span.End()
+
+	sqlSelect, args, err := squirrel.Select("inventory_quantity").From("product_variants").
+		Where(squirrel.Eq{"id": prodVariantID}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return false, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	var inventoryQuantity int64
+
+	if err = p.db.QueryRow(ctx, sqlSelect, args...).Scan(&inventoryQuantity); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, 0, status.Error(codes.NotFound, err.Error())
+		}
+
+		return false, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	if inventoryQuantity < quantity {
+		return false, inventoryQuantity, status.Error(codes.Canceled, "Quantity of product is not enough")
+	}
+
+	return true, inventoryQuantity, nil
+}
+
+func (p *productRepository) GetProductInfoForCart(ctx context.Context, prodIds []string, prodVariantIds []string) (map[string]models.Product, []models.ProductVariant, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetProductInfoForCart"))
+	defer span.End()
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	var err error
+	mapProdInfo := make(map[string]models.Product, 0)
+	prodVariants := make([]models.ProductVariant, 0)
+
+	// select followed prodIds
+	go func(err *error) {
+		defer wg.Done()
+		sqlSelectProd, args, errRes := squirrel.Select("id", "name").From("products").
+			Where(squirrel.Eq{"id": prodIds}).
+			PlaceholderFormat(squirrel.Dollar).
+			ToSql()
+
+		if errRes != nil {
+			*err = status.Error(codes.Internal, errRes.Error())
+			return
+		}
+
+		rows, errRes := p.db.Query(ctx, sqlSelectProd, args...)
+
+		if errRes != nil {
+			span.RecordError(errRes)
+			*err = errRes
+			return
+		}
+
+		defer rows.Close()
+
+		for rows.Next() {
+			var prodInfo models.Product
+			if errRes = rows.Scan(&prodInfo.ID, &prodInfo.Name); errRes != nil {
+				span.RecordError(errRes)
+				*err = errRes
+				return
+			}
+
+			mapProdInfo[prodInfo.ID] = prodInfo
+		}
+	}(&err)
+
+	// select followed prodVariantIds
+	go func(err *error) {
+		defer wg.Done()
+
+		sqlSelectProdVariant, args, errRes := squirrel.Select("id", "product_id", "price", "coalesce(discount_price, 0)",
+			"image_url", "alt_text", "currency", "variant_name").
+			From("product_variants").
+			Where(squirrel.Eq{"id": prodVariantIds}).
+			PlaceholderFormat(squirrel.Dollar).
+			ToSql()
+
+		rows, errRes := p.db.Query(ctx, sqlSelectProdVariant, args...)
+
+		if errRes != nil {
+			*err = errRes
+			span.RecordError(errRes)
+		}
+
+		defer rows.Close()
+
+		for rows.Next() {
+			var prodVariant models.ProductVariant
+
+			if errRes = rows.Scan(&prodVariant.ID, &prodVariant.ProductID, &prodVariant.Price, &prodVariant.DiscountPrice,
+				&prodVariant.ImageURL, &prodVariant.ALTText, &prodVariant.Currency, &prodVariant.VariantName); errRes != nil {
+				span.RecordError(errRes)
+				*err = errRes
+				return
+			}
+
+			prodVariants = append(prodVariants, prodVariant)
+		}
+	}(&err)
+
+	wg.Wait()
+
+	if err != nil {
+		return nil, nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return mapProdInfo, prodVariants, nil
+}

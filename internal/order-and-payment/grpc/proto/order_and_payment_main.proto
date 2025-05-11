@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "./order_proto_gen";
+
+import "cart.proto";
+
+service OrderService {
+  rpc AddItemToCart(AddItemToCartRequest) returns (AddItemToCartResponse);
+
+  rpc GetCart(GetCartRequest) returns (GetCartResponse);
+
+  rpc UpdateCart(UpdateCartItemRequest) returns (UpdateCartItemResponse);
+
+  rpc RemoveCartItem(RemoveCartItemRequest) returns (RemoveCartItemResponse);
+}

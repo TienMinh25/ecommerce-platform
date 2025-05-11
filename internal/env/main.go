@@ -84,6 +84,10 @@ type SupplierAndProductServerConfig struct {
 	ServerAddress string `envconfig:"SUPPLIER_AND_PRODUCT_ADDRESS"`
 }
 
+type OrderAndPaymentServerConfig struct {
+	ServerAddress string `envconfig:"ORDER_AND_PAYMENT_ADDRESS"`
+}
+
 type GoogleOAuthConfig struct {
 	ClientID       string `envconfig:"GOOGLE_CLIENT_ID"`
 	ClientSecret   string `envconfig:"GOOGLE_CLIENT_SECRET"`
@@ -115,6 +119,7 @@ type EnvManager struct {
 	ServiceWorkerPool              *ServiceWorkerPoolConfig
 	NotificationServerConfig       *NotificationServerConfig
 	SupplierAndProductServerConfig *SupplierAndProductServerConfig
+	OrderAndPaymentServerConfig    *OrderAndPaymentServerConfig
 	GoogleOAuth                    *GoogleOAuthConfig
 	FacebookOAuth                  *FacebookOAuthConfig
 	Client                         *ClientConfig

@@ -89,6 +89,12 @@ type IUserMeService interface {
 	GetListNotificationHistory(ctx context.Context, limit, page, userID int) (*api_gateway_dto.GetListNotificationsHistoryResponse, error)
 	MarkRead(ctx context.Context, userID int, notificationID string) error
 	MarkAllRead(ctx context.Context, userID int) error
+
+	// manage carts
+	AddCartItem(ctx context.Context, data api_gateway_dto.AddItemToCartRequest, userID int) error
+	DeleteCartItems(ctx context.Context, cartItemIDs []string, userID int) error
+	UpdateCartItem(ctx context.Context, data api_gateway_dto.UpdateCartItemRequest, cartItemID string, userID int) (*api_gateway_dto.UpdateCartItemResponse, error)
+	GetCartItems(ctx context.Context, userID int) ([]api_gateway_dto.GetCartItemsResponse, error)
 }
 
 type IRoleService interface {

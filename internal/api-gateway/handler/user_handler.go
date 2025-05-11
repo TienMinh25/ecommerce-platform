@@ -569,3 +569,180 @@ func (u *userHandler) MarkOnlyOneNotificationRead(ctx *gin.Context) {
 
 	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.MarkNotificationResponse{})
 }
+
+// GetCartItems godoc
+//
+//	@Summary		update cart item
+//	@Tags			me
+//	@Description	update cart item
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Success		200	{object}	api_gateway_dto.GetCartItemsResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/carts [get]
+func (u *userHandler) GetCartItems(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetCartItems"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	res, err := u.service.GetCartItems(ct, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, res)
+}
+
+// AddCartItem godoc
+//
+//	@Summary		update cart item
+//	@Tags			me
+//	@Description	update cart item
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			req	body		api_gateway_dto.AddItemToCartRequest	true	"info cart item"
+//
+//	@Success		200	{object}	api_gateway_dto.AddItemToCartResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/carts [post]
+func (u *userHandler) AddCartItem(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "AddCartItem"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	var data api_gateway_dto.AddItemToCartRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := u.service.AddCartItem(ct, data, userClaims.UserID); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.AddItemToCartResponse{})
+}
+
+// DeleteCartItems godoc
+//
+//	@Summary		update cart item
+//	@Tags			me
+//	@Description	update cart item
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			req	body		api_gateway_dto.DeleteCartItemRequest	true	"info cart item ids to delete"
+//
+//	@Success		200	{object}	api_gateway_dto.DeleteCartItemResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/carts [delete]
+func (u *userHandler) DeleteCartItems(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "DeleteCartItems"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	var data api_gateway_dto.DeleteCartItemRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := u.service.DeleteCartItems(ct, data.CartItemID, userClaims.UserID); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.DeleteCartItemResponse{
+		CartItemID: data.CartItemID,
+	})
+}
+
+// UpdateCartItem godoc
+//
+//	@Summary		update cart item
+//	@Tags			me
+//	@Description	update cart item
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			req1	path		api_gateway_dto.UpdateCartItemURIRequest	true	"cart item id"
+//
+//	@Param			req2	body		api_gateway_dto.UpdateCartItemRequest		true	"info of prod"
+//
+//	@Success		200		{object}	api_gateway_dto.UpdateCartItemResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/carts/{cartItemID} [patch]
+func (u *userHandler) UpdateCartItem(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateCartItem"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	var data api_gateway_dto.UpdateCartItemRequest
+	var uri api_gateway_dto.UpdateCartItemURIRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	res, err := u.service.UpdateCartItem(ct, data, uri.CartItemID, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, *res)
+}

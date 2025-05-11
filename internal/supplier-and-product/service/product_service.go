@@ -310,3 +310,66 @@ func (p *productService) GetProductReviewsByProdID(ctx context.Context, data *pa
 		},
 	}, nil
 }
+
+func (p *productService) CheckAvailableProd(ctx context.Context, data *partner_proto_gen.CheckAvailableProductRequest) (*partner_proto_gen.CheckAvailableProductResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CheckAvailableProd"))
+	defer span.End()
+
+	isAvailable, quantity, err := p.repo.CheckAvailableProd(ctx, data.ProductVariantId, data.Quantity)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &partner_proto_gen.CheckAvailableProductResponse{
+		IsAvailable: isAvailable,
+		Quantity:    quantity,
+	}, nil
+}
+
+func (p *productService) GetProductInfoForCart(ctx context.Context, data *partner_proto_gen.GetProductInfoCartRequest) (*partner_proto_gen.GetProductInfoCartResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetProductInfoForCart"))
+	defer span.End()
+
+	mapProdIDs := make(map[string]bool, 0)
+	var arrayProdIDs []string
+	var arrayProdVariantIDs []string
+	for _, info := range data.Request {
+		arrayProdVariantIDs = append(arrayProdVariantIDs, info.ProductVariantId)
+
+		_, isExists := mapProdIDs[info.ProductId]
+
+		if isExists {
+			continue
+		}
+
+		mapProdIDs[info.ProductId] = true
+		arrayProdIDs = append(arrayProdIDs, info.ProductId)
+	}
+
+	mapProds, prodVariants, err := p.repo.GetProductInfoForCart(ctx, arrayProdIDs, arrayProdVariantIDs)
+
+	if err != nil {
+		return nil, err
+	}
+
+	res := make([]*partner_proto_gen.ProductInfoCartResponse, 0)
+
+	for _, prodVariant := range prodVariants {
+		res = append(res, &partner_proto_gen.ProductInfoCartResponse{
+			ProductId:               prodVariant.ProductID,
+			ProductVariantId:        prodVariant.ID,
+			ProductName:             mapProds[prodVariant.ProductID].Name,
+			Price:                   prodVariant.Price,
+			DiscountPrice:           prodVariant.DiscountPrice,
+			ProductVariantThumbnail: prodVariant.ImageURL,
+			ProductVariantAlt:       prodVariant.ALTText,
+			Currency:                prodVariant.Currency,
+			VariantName:             prodVariant.VariantName,
+		})
+	}
+
+	return &partner_proto_gen.GetProductInfoCartResponse{
+		ProductInfo: res,
+	}, nil
+}

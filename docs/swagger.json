@@ -1756,6 +1756,18 @@
                         "name": "productID",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2710,6 +2722,225 @@
                 }
             }
         },
+        "/users/me/carts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update cart item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "update cart item",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetCartItemsResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update cart item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "update cart item",
+                "parameters": [
+                    {
+                        "description": "info cart item",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.AddItemToCartRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.AddItemToCartResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update cart item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "update cart item",
+                "parameters": [
+                    {
+                        "description": "info cart item ids to delete",
+                        "name": "req",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.DeleteCartItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.DeleteCartItemResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/carts/{cartItemID}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update cart item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "update cart item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "cartItemID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "info of prod",
+                        "name": "req2",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateCartItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateCartItemResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/users/me/notification-settings": {
             "get": {
                 "security": [
@@ -3091,6 +3322,51 @@
         }
     },
     "definitions": {
+        "api_gateway_dto.AddItemToCartRequest": {
+            "type": "object",
+            "required": [
+                "product_id",
+                "product_variant_id",
+                "quantity"
+            ],
+            "properties": {
+                "product_id": {
+                    "type": "string"
+                },
+                "product_variant_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "api_gateway_dto.AddItemToCartResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.AddItemToCartResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.AddItemToCartResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.AttributeOptionValue": {
+            "type": "object",
+            "properties": {
+                "option_id": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
         "api_gateway_dto.ChangePasswordRequest": {
             "type": "object",
             "required": [
@@ -3411,6 +3687,42 @@
                 }
             }
         },
+        "api_gateway_dto.DeleteCartItemRequest": {
+            "type": "object",
+            "required": [
+                "cart_item_ids"
+            ],
+            "properties": {
+                "cart_item_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api_gateway_dto.DeleteCartItemResponse": {
+            "type": "object",
+            "properties": {
+                "cartItemID": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "api_gateway_dto.DeleteCartItemResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.DeleteCartItemResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.DeletePermissionByPermissionIDURIResponse": {
             "type": "object"
         },
@@ -3599,6 +3911,52 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.GetAvatarPresignedURLResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.GetCartItemsResponse": {
+            "type": "object",
+            "properties": {
+                "cart_item_id": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "discount_price": {
+                    "type": "number"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "product_name": {
+                    "type": "string"
+                },
+                "product_variant_id": {
+                    "type": "string"
+                },
+                "product_variant_thumbnail": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "variant_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetCartItemsResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetCartItemsResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
@@ -3831,13 +4189,28 @@
         "api_gateway_dto.GetProductDetailResponse": {
             "type": "object",
             "properties": {
-                "product_average_rating": {
+                "attributes": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.ProductAttribute"
+                    }
+                },
+                "average_rating": {
                     "type": "number"
                 },
-                "product_id": {
+                "category_id": {
+                    "type": "integer"
+                },
+                "category_name": {
                     "type": "string"
                 },
-                "product_name": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "product_id": {
                     "type": "string"
                 },
                 "product_tags": {
@@ -3846,14 +4219,17 @@
                         "type": "string"
                     }
                 },
-                "product_total_reviews": {
-                    "type": "integer"
-                },
                 "product_variants": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/api_gateway_dto.GetProductDetailVariantResponse"
                     }
+                },
+                "supplier": {
+                    "$ref": "#/definitions/api_gateway_dto.GetSupplierProductResponse"
+                },
+                "total_reviews": {
+                    "type": "integer"
                 }
             }
         },
@@ -3874,11 +4250,11 @@
                 "alt_text_thumbnail": {
                     "type": "string"
                 },
-                "attribute_name": {
-                    "type": "string"
-                },
-                "attribute_value": {
-                    "type": "string"
+                "attribute_values": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.VariantAttributePair"
+                    }
                 },
                 "currency": {
                     "type": "string"
@@ -3918,11 +4294,23 @@
                 "comment": {
                     "type": "string"
                 },
+                "created_at": {
+                    "type": "string"
+                },
                 "helpful_votes": {
                     "type": "integer"
                 },
+                "id": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "type": "string"
+                },
                 "rating": {
-                    "type": "number"
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
                 },
                 "user_avatar_url": {
                     "type": "string"
@@ -4032,6 +4420,23 @@
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
+                }
+            }
+        },
+        "api_gateway_dto.GetSupplierProductResponse": {
+            "type": "object",
+            "properties": {
+                "company_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "supplier_id": {
+                    "type": "integer"
+                },
+                "thumbnail": {
+                    "type": "string"
                 }
             }
         },
@@ -4310,6 +4715,23 @@
                 },
                 "total_pages": {
                     "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.ProductAttribute": {
+            "type": "object",
+            "properties": {
+                "attribute_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "values": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.AttributeOptionValue"
+                    }
                 }
             }
         },
@@ -4596,6 +5018,44 @@
                 }
             }
         },
+        "api_gateway_dto.UpdateCartItemRequest": {
+            "type": "object",
+            "required": [
+                "product_variant_id",
+                "quantity"
+            ],
+            "properties": {
+                "product_variant_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "api_gateway_dto.UpdateCartItemResponse": {
+            "type": "object",
+            "properties": {
+                "cart_item_id": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateCartItemResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateCartItemResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.UpdateCurrentUserRequest": {
             "type": "object",
             "required": [
@@ -4865,6 +5325,17 @@
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.VariantAttributePair": {
+            "type": "object",
+            "properties": {
+                "attribute_name": {
+                    "type": "string"
+                },
+                "attribute_value": {
+                    "type": "string"
                 }
             }
         },

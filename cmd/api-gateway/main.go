@@ -8,6 +8,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
+	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/kafka"
@@ -75,6 +76,22 @@ func NewGrpcSupplierAndProductClient(env *env.EnvManager) partner_proto_gen.Part
 	}
 
 	client := partner_proto_gen.NewPartnerServiceClient(conn)
+
+	return client
+}
+
+func NewGrpcOrderAndPaymentClient(env *env.EnvManager) order_proto_gen.OrderServiceClient {
+	var otps []grpc.DialOption
+
+	otps = append(otps, grpc.WithInsecure())
+
+	conn, err := grpc.NewClient(env.OrderAndPaymentServerConfig.ServerAddress, otps...)
+
+	if err != nil {
+		log.Fatalf("NewGrpcOrderAndPaymentClient err: %v", err)
+	}
+
+	client := order_proto_gen.NewOrderServiceClient(conn)
 
 	return client
 }
@@ -214,6 +231,7 @@ func main() {
 			// client grpc
 			NewGrpcNotificationClient,
 			NewGrpcSupplierAndProductClient,
+			NewGrpcOrderAndPaymentClient,
 		),
 		fx.Invoke(StartServer),
 		fx.Invoke(func(minio pkg.Storage) {}),

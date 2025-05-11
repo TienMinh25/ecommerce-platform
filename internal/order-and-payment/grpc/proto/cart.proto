@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+option go_package = "./order_proto_gen";
+
+message AddItemToCartRequest {
+  int64 user_id = 1;
+  string product_id = 2;
+  string product_variant_id = 3;
+  int64 quantity = 4;
+}
+
+message AddItemToCartResponse {
+}
+
+message GetCartRequest {
+  int64 user_id = 1;
+}
+
+message GetCartResponse {
+  repeated CartResponse cart_response = 1;
+}
+
+message CartResponse {
+  string cart_item_id = 1;
+  string product_id = 2;
+  string product_variant_id = 3;
+  int64 quantity = 4;
+}
+
+message UpdateCartItemRequest {
+  int64 user_id = 1;
+  string cart_item_id = 2;
+  string product_variant_id = 3;
+  int64 quantity = 4;
+}
+
+message UpdateCartItemResponse {
+  string cart_item_id = 1;
+  int64 quantity = 3;
+}
+
+message RemoveCartItemRequest {
+  int64 user_id = 1;
+  repeated string cart_item_ids = 2;
+}
+
+message RemoveCartItemResponse {
+  repeated string cart_item_ids = 1;
+}
