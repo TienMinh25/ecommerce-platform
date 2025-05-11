@@ -4,6 +4,7 @@ option go_package = "./partner_proto_gen";
 
 import 'category.proto';
 import 'product.proto';
+import 'product_variant.proto';
 
 service PartnerService {
   rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
@@ -15,4 +16,6 @@ service PartnerService {
   rpc GetProductReviewsByID(GetProductReviewsRequest) returns (GetProductReviewsResponse);
 
   rpc CheckAvailableProduct(CheckAvailableProductRequest) returns (CheckAvailableProductResponse);
+
+  rpc GetProductInfoCart(GetProductInfoCartRequest) returns (GetProductInfoCartResponse);
 }

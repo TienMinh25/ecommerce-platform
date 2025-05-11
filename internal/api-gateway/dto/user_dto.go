@@ -182,7 +182,7 @@ type MetadataNotification struct {
 type AddItemToCartRequest struct {
 	ProductID        string `json:"product_id" binding:"required"`
 	ProductVariantID string `json:"product_variant_id" binding:"required"`
-	Quantity         int64  `json:"quantity" binding:"required"`
+	Quantity         int64  `json:"quantity" binding:"required,gte=1"`
 }
 
 type AddItemToCartResponse struct{}
@@ -196,7 +196,7 @@ type DeleteCartItemResponse struct {
 }
 
 type UpdateCartItemRequest struct {
-	Quantity         int64  `json:"quantity" binding:"required"`
+	Quantity         int64  `json:"quantity" binding:"omitempty,gte=0"`
 	ProductVariantID string `json:"product_variant_id" binding:"required"`
 }
 
@@ -210,10 +210,7 @@ type UpdateCartItemResponse struct {
 }
 
 type GetCartItemsResponse struct {
-	CartItems CartItemsResponse `json:"cart_items"`
-}
-
-type CartItemsResponse struct {
+	CartItemID              string  `json:"cart_item_id"`
 	ProductName             string  `json:"product_name"`
 	Quantity                int64   `json:"quantity"`
 	Price                   float64 `json:"price"`
@@ -221,4 +218,6 @@ type CartItemsResponse struct {
 	ProductID               string  `json:"product_id"`
 	ProductVariantID        string  `json:"product_variant_id"`
 	ProductVariantThumbnail string  `json:"product_variant_thumbnail"`
+	Currency                string  `json:"currency"`
+	VariantName             string  `json:"variant_name"`
 }

@@ -12,3 +12,27 @@ message CheckAvailableProductVariantResponse {
   string product_variant_id = 3;
 }
 
+message GetProductInfoCartRequest {
+  repeated ProductInfoCart request = 1;
+}
+
+message ProductInfoCart {
+  string product_id = 1;
+  string product_variant_id = 2;
+}
+
+message GetProductInfoCartResponse {
+  repeated ProductInfoCartResponse product_info = 1;
+}
+
+message ProductInfoCartResponse {
+  string product_id = 1;
+  string product_variant_id = 2;
+  string product_name = 3;
+  double price = 5;
+  double discount_price = 6;
+  string product_variant_thumbnail = 7;
+  string product_variant_alt = 8;
+  string currency = 9;
+  string variant_name = 10;
+}

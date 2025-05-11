@@ -602,7 +602,7 @@ func (u *userHandler) GetCartItems(ctx *gin.Context) {
 		return
 	}
 
-	utils.SuccessResponse(ctx, http.StatusOK, *res)
+	utils.SuccessResponse(ctx, http.StatusOK, res)
 }
 
 // AddCartItem godoc

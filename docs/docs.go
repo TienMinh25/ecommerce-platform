@@ -3343,7 +3343,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "quantity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 1
                 }
             }
         },
@@ -3369,32 +3370,6 @@ const docTemplate = `{
                 },
                 "value": {
                     "type": "string"
-                }
-            }
-        },
-        "api_gateway_dto.CartItemsResponse": {
-            "type": "object",
-            "properties": {
-                "discount_price": {
-                    "type": "number"
-                },
-                "price": {
-                    "type": "number"
-                },
-                "product_id": {
-                    "type": "string"
-                },
-                "product_name": {
-                    "type": "string"
-                },
-                "product_variant_id": {
-                    "type": "string"
-                },
-                "product_variant_thumbnail": {
-                    "type": "string"
-                },
-                "quantity": {
-                    "type": "integer"
                 }
             }
         },
@@ -3951,8 +3926,35 @@ const docTemplate = `{
         "api_gateway_dto.GetCartItemsResponse": {
             "type": "object",
             "properties": {
-                "cart_items": {
-                    "$ref": "#/definitions/api_gateway_dto.CartItemsResponse"
+                "cart_item_id": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "discount_price": {
+                    "type": "number"
+                },
+                "price": {
+                    "type": "number"
+                },
+                "product_id": {
+                    "type": "string"
+                },
+                "product_name": {
+                    "type": "string"
+                },
+                "product_variant_id": {
+                    "type": "string"
+                },
+                "product_variant_thumbnail": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "variant_name": {
+                    "type": "string"
                 }
             }
         },
@@ -5033,7 +5035,8 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "quantity": {
-                    "type": "integer"
+                    "type": "integer",
+                    "minimum": 0
                 }
             }
         },

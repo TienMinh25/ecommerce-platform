@@ -7,13 +7,16 @@ import theme from './config/theme';
 import './index.css';
 import { AuthProvider } from './context/AuthProvider';
 import {NotificationProvider} from "./context/NotificationProvider.jsx";
+import {CartProvider} from "./context/CartContext.jsx";
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
         <ChakraProvider theme={theme}>
             <AuthProvider>
                 <NotificationProvider>
-                    <App />
+                    <CartProvider>
+                        <App />
+                    </CartProvider>
                 </NotificationProvider>
             </AuthProvider>
         </ChakraProvider>

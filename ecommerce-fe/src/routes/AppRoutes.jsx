@@ -29,6 +29,7 @@ import UserAddresses from "../components/user/UserAddresses.jsx";
 import NotificationSettings from "../components/user/NotificationSettings.jsx";
 import UserOrders from "../components/user/UserOrders.jsx";
 import UserNotifications from "../components/user/UserNotifications.jsx";
+import CartPage from "../pages/Cart/CartPage.jsx";
 
 const AppRoutes = () => {
     return (
@@ -61,6 +62,7 @@ const AppRoutes = () => {
 
                     <Route path='/products' element={<ProductListing />} />
                     <Route path='/products/:id' element={<ProductDetail />} />
+                    <Route path='carts' element={<CartPage />} />
                 </Route>
                 <Route path='/dashboard' element={<DashboardLayout />}>
                     {/* Main dashboard */}

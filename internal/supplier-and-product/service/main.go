@@ -14,4 +14,5 @@ type IProductService interface {
 	GetProductDetail(ctx context.Context, data *partner_proto_gen.GetProductDetailRequest) (*partner_proto_gen.GetProductDetailResponse, error)
 	GetProductReviewsByProdID(ctx context.Context, data *partner_proto_gen.GetProductReviewsRequest) (*partner_proto_gen.GetProductReviewsResponse, error)
 	CheckAvailableProd(ctx context.Context, data *partner_proto_gen.CheckAvailableProductRequest) (*partner_proto_gen.CheckAvailableProductResponse, error)
+	GetProductInfoForCart(ctx context.Context, data *partner_proto_gen.GetProductInfoCartRequest) (*partner_proto_gen.GetProductInfoCartResponse, error)
 }

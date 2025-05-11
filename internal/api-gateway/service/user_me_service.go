@@ -8,6 +8,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
+	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
@@ -22,24 +23,27 @@ import (
 )
 
 type userMeService struct {
-	tracer      pkg.Tracer
-	userRepo    api_gateway_repository.IUserRepository
-	addressRepo api_gateway_repository.IAddressRepository
-	minio       pkg.Storage
-	client      notification_proto_gen.NotificationServiceClient
-	orderClient order_proto_gen.OrderServiceClient
+	tracer        pkg.Tracer
+	userRepo      api_gateway_repository.IUserRepository
+	addressRepo   api_gateway_repository.IAddressRepository
+	minio         pkg.Storage
+	client        notification_proto_gen.NotificationServiceClient
+	orderClient   order_proto_gen.OrderServiceClient
+	partnerClient partner_proto_gen.PartnerServiceClient
 }
 
 func NewUserMeService(tracer pkg.Tracer, userRepo api_gateway_repository.IUserRepository, minio pkg.Storage,
 	client notification_proto_gen.NotificationServiceClient, addressRepo api_gateway_repository.IAddressRepository,
-	orderClient order_proto_gen.OrderServiceClient) IUserMeService {
+	orderClient order_proto_gen.OrderServiceClient,
+	partnerClient partner_proto_gen.PartnerServiceClient) IUserMeService {
 	return &userMeService{
-		tracer:      tracer,
-		userRepo:    userRepo,
-		minio:       minio,
-		client:      client,
-		addressRepo: addressRepo,
-		orderClient: orderClient,
+		tracer:        tracer,
+		userRepo:      userRepo,
+		minio:         minio,
+		client:        client,
+		addressRepo:   addressRepo,
+		orderClient:   orderClient,
+		partnerClient: partnerClient,
 	}
 }
 
@@ -528,12 +532,12 @@ func (u *userMeService) UpdateCartItem(ctx context.Context, data api_gateway_dto
 	}, nil
 }
 
-func (u *userMeService) GetCartItems(ctx context.Context, userID int) (*api_gateway_dto.GetCartItemsResponse, error) {
+func (u *userMeService) GetCartItems(ctx context.Context, userID int) ([]api_gateway_dto.GetCartItemsResponse, error) {
 	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetCartItems"))
 	defer span.End()
 
 	// call order server to get information about cart item
-	res, err := u.orderClient.GetCart(ctx, &order_proto_gen.GetCartRequest{
+	cartResAdapt, err := u.orderClient.GetCart(ctx, &order_proto_gen.GetCartRequest{
 		UserId: int64(userID),
 	})
 
@@ -545,7 +549,51 @@ func (u *userMeService) GetCartItems(ctx context.Context, userID int) (*api_gate
 		}
 	}
 
-	// call partner to get information about product info of each cart item
+	if len(cartResAdapt.CartResponse) == 0 {
+		return []api_gateway_dto.GetCartItemsResponse{}, nil
+	}
 
-	return nil, nil
+	mapCartItem := make(map[string]int, 0)
+	// call partner to get information about product info of each cart item
+	in := make([]*partner_proto_gen.ProductInfoCart, 0)
+
+	for idx, cartItem := range cartResAdapt.CartResponse {
+		in = append(in, &partner_proto_gen.ProductInfoCart{
+			ProductId:        cartItem.ProductId,
+			ProductVariantId: cartItem.ProductVariantId,
+		})
+		mapCartItem[cartItem.ProductVariantId] = idx
+	}
+
+	partnerProdCart, err := u.partnerClient.GetProductInfoCart(ctx, &partner_proto_gen.GetProductInfoCartRequest{
+		Request: in,
+	})
+
+	if partnerProdCart == nil {
+		return nil, utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	result := make([]api_gateway_dto.GetCartItemsResponse, len(cartResAdapt.CartResponse))
+
+	for _, partnerProd := range partnerProdCart.ProductInfo {
+		idx := mapCartItem[partnerProd.ProductVariantId]
+
+		result[idx] = api_gateway_dto.GetCartItemsResponse{
+			CartItemID:              cartResAdapt.CartResponse[idx].CartItemId,
+			ProductName:             partnerProd.ProductName,
+			Quantity:                cartResAdapt.CartResponse[idx].Quantity,
+			Price:                   partnerProd.Price,
+			DiscountPrice:           partnerProd.DiscountPrice,
+			ProductID:               partnerProd.ProductId,
+			ProductVariantID:        partnerProd.ProductVariantId,
+			ProductVariantThumbnail: partnerProd.ProductVariantThumbnail,
+			Currency:                partnerProd.Currency,
+			VariantName:             partnerProd.VariantName,
+		}
+	}
+
+	return result, nil
 }

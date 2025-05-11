@@ -33,6 +33,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Logo from '../ui/Logo';
 import NotificationBell from '../notifications/NotificationBell';
+import {useCart} from "../../context/CartContext.jsx";
 
 // Define role constants
 const ROLE_CUSTOMER = 'customer';
@@ -45,6 +46,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { cartCount } = useCart();
 
   const isMobile = useBreakpointValue({ base: true, md: false });
 
@@ -168,21 +170,23 @@ const Header = () => {
               <Box position='relative'>
                 <IconButton
                     as={RouterLink}
-                    to='/cart'
+                    to='/carts'
                     aria-label='Shopping Cart'
                     icon={<FaShoppingCart />}
                     variant='ghost'
                 />
-                <Badge
-                    position='absolute'
-                    top='-2px'
-                    right='-2px'
-                    colorScheme='brand'
-                    borderRadius='full'
-                    size='xs'
-                >
-                  2
-                </Badge>
+                {cartCount > 0 && (
+                    <Badge
+                        position='absolute'
+                        top='-2px'
+                        right='-2px'
+                        colorScheme='brand'
+                        borderRadius='full'
+                        size='xs'
+                    >
+                      {cartCount}
+                    </Badge>
+                )}
               </Box>
 
               {/* User menu */}
@@ -479,7 +483,7 @@ const Header = () => {
                     fontWeight="medium"
                     w="full"
                 >
-                  Giỏ hàng
+                  Giỏ hàng {cartCount > 0 && `(${cartCount})`}
                 </Box>
 
                 <Box

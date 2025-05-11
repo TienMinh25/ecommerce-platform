@@ -47,22 +47,24 @@ func (c *cartRepository) AddItemToCart(ctx context.Context, data *order_proto_ge
 		// check available prod to add item to cart
 		if err != nil {
 			if !errors.Is(err, redis.Nil) {
-				// check available prod if not exists in redis
-				availableRes, err := c.partnerClient.CheckAvailableProduct(ctx, &partner_proto_gen.CheckAvailableProductRequest{
-					ProductVariantId: data.ProductVariantId,
-					Quantity:         data.Quantity,
-				})
+				return status.Error(codes.Internal, err.Error())
+			}
 
-				if err != nil {
-					return err
-				}
+			// check available prod if not exists in redis
+			availableRes, errAvailable := c.partnerClient.CheckAvailableProduct(ctx, &partner_proto_gen.CheckAvailableProductRequest{
+				ProductVariantId: data.ProductVariantId,
+				Quantity:         data.Quantity,
+			})
 
-				quantityInventory = availableRes.Quantity
+			if errAvailable != nil {
+				return errAvailable
+			}
 
-				if err = c.redis.Set(ctx, fmt.Sprintf("product_variant:%v", data.ProductVariantId), availableRes.Quantity, time.Minute*10); err != nil {
-					span.RecordError(err)
-					return status.Error(codes.Internal, err.Error())
-				}
+			quantityInventory = availableRes.Quantity
+
+			if errAvailable = c.redis.Set(ctx, fmt.Sprintf("product_variant:%v", data.ProductVariantId), availableRes.Quantity, time.Minute*10); errAvailable != nil {
+				span.RecordError(errAvailable)
+				return status.Error(codes.Internal, errAvailable.Error())
 			}
 		} else {
 			quantityInt, _ := strconv.Atoi(quantityStr)
@@ -204,7 +206,7 @@ func (c *cartRepository) GetCart(ctx context.Context, userID int64) ([]*models.C
 	for rows.Next() {
 		var cartItem models.CartItem
 
-		if err = rows.Scan(&cartItem.CartID, &cartItem.ProductID, &cartItem.Quantity, &cartItem.ProductVariantID); err != nil {
+		if err = rows.Scan(&cartItem.ID, &cartItem.ProductID, &cartItem.Quantity, &cartItem.ProductVariantID); err != nil {
 			span.RecordError(err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -261,23 +263,25 @@ func (c *cartRepository) UpdateCartItem(ctx context.Context, data *order_proto_g
 
 	if err != nil {
 		if !errors.Is(err, redis.Nil) {
-			// check available prod if not exists in redis
-			availableRes, err := c.partnerClient.CheckAvailableProduct(ctx, &partner_proto_gen.CheckAvailableProductRequest{
-				ProductVariantId: data.ProductVariantId,
-				Quantity:         data.Quantity,
-			})
+			return nil, status.Error(codes.Internal, err.Error())
+		}
 
-			if err != nil {
-				span.RecordError(err)
-				return nil, err
-			}
+		// check available prod if not exists in redis
+		availableRes, err := c.partnerClient.CheckAvailableProduct(ctx, &partner_proto_gen.CheckAvailableProductRequest{
+			ProductVariantId: data.ProductVariantId,
+			Quantity:         data.Quantity,
+		})
 
-			inventoryQuantityProd = availableRes.Quantity
+		if err != nil {
+			span.RecordError(err)
+			return nil, err
+		}
 
-			if err = c.redis.Set(ctx, fmt.Sprintf("product_variant:%v", data.ProductVariantId), inventoryQuantityProd, time.Minute*10); err != nil {
-				span.RecordError(err)
-				return nil, status.Error(codes.Internal, err.Error())
-			}
+		inventoryQuantityProd = availableRes.Quantity
+
+		if err = c.redis.Set(ctx, fmt.Sprintf("product_variant:%v", data.ProductVariantId), inventoryQuantityProd, time.Minute*10); err != nil {
+			span.RecordError(err)
+			return nil, status.Error(codes.Internal, err.Error())
 		}
 	} else {
 		quantityInt, _ := strconv.Atoi(quantityStr)

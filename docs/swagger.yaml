@@ -7,6 +7,7 @@ definitions:
       product_variant_id:
         type: string
       quantity:
+        minimum: 1
         type: integer
     required:
     - product_id
@@ -28,23 +29,6 @@ definitions:
         type: integer
       value:
         type: string
-    type: object
-  api_gateway_dto.CartItemsResponse:
-    properties:
-      discount_price:
-        type: number
-      price:
-        type: number
-      product_id:
-        type: string
-      product_name:
-        type: string
-      product_variant_id:
-        type: string
-      product_variant_thumbnail:
-        type: string
-      quantity:
-        type: integer
     type: object
   api_gateway_dto.ChangePasswordRequest:
     properties:
@@ -410,8 +394,26 @@ definitions:
     type: object
   api_gateway_dto.GetCartItemsResponse:
     properties:
-      cart_items:
-        $ref: '#/definitions/api_gateway_dto.CartItemsResponse'
+      cart_item_id:
+        type: string
+      currency:
+        type: string
+      discount_price:
+        type: number
+      price:
+        type: number
+      product_id:
+        type: string
+      product_name:
+        type: string
+      product_variant_id:
+        type: string
+      product_variant_thumbnail:
+        type: string
+      quantity:
+        type: integer
+      variant_name:
+        type: string
     type: object
   api_gateway_dto.GetCartItemsResponseDocs:
     properties:
@@ -1116,6 +1118,7 @@ definitions:
       product_variant_id:
         type: string
       quantity:
+        minimum: 0
         type: integer
     required:
     - product_variant_id

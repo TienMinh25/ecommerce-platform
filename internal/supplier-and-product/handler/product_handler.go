@@ -57,3 +57,16 @@ func (p *PartnerHandler) CheckAvailableProduct(ctx context.Context, data *partne
 
 	return res, nil
 }
+
+func (p *PartnerHandler) GetProductInfoCart(ctx context.Context, data *partner_proto_gen.GetProductInfoCartRequest) (*partner_proto_gen.GetProductInfoCartResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetProductInfoCart"))
+	defer span.End()
+
+	res, err := p.productService.GetProductInfoForCart(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

@@ -47,7 +47,7 @@ import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import productService from '../services/productService';
 import PageTitle from "./PageTitle.jsx";
-import ProductReviews from "../components/products/ProductReviews.jsx";
+import AddToCartButton from "../components/cart/AddToCartButton.jsx";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -528,21 +528,29 @@ const ProductDetail = () => {
 
               {/* Actions */}
               <HStack spacing={4} pt={4}>
-                <Button
-                    leftIcon={<FaShoppingCart />}
-                    colorScheme='brand'
-                    variant='outline'
-                    size='lg'
-                    flex='1'
-                    onClick={handleAddToCart}
+                <AddToCartButton
+                    productId={product.product_id}
+                    variantId={selectedVariant.product_variant_id}
+                    quantity={quantity}
+                    colorScheme="brand"
+                    variant="outline"
+                    size="lg"
+                    flex="1"
                     isDisabled={selectedVariant.quantity <= 0}
+                    onSuccess={() => toast({
+                      title: 'Thêm vào giỏ hàng',
+                      description: `Đã thêm ${quantity} ${product.name} vào giỏ hàng`,
+                      status: 'success',
+                      duration: 3000,
+                      isClosable: true,
+                    })}
                 >
                   Thêm vào giỏ
-                </Button>
+                </AddToCartButton>
                 <Button
-                    colorScheme='brand'
-                    size='lg'
-                    flex='1'
+                    colorScheme="brand"
+                    size="lg"
+                    flex="1"
                     onClick={handleBuyNow}
                     isDisabled={selectedVariant.quantity <= 0}
                 >
