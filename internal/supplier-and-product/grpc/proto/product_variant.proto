@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+option go_package = "./partner_proto_gen";
+
+message CheckAvailableProductVariantRequest {
+  string product_variant_id = 1;
+}
+
+message CheckAvailableProductVariantResponse {
+  bool is_available = 1;
+  int64 inventory_quantity = 2;
+  string product_variant_id = 3;
+}
+

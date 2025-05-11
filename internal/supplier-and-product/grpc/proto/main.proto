@@ -13,4 +13,6 @@ service PartnerService {
   rpc GetProductByID(GetProductDetailRequest) returns (GetProductDetailResponse);
 
   rpc GetProductReviewsByID(GetProductReviewsRequest) returns (GetProductReviewsResponse);
+
+  rpc CheckAvailableProductVariant(CheckAvailableProductVariantRequest) returns (CheckAvailableProductVariantResponse);
 }
