@@ -117,8 +117,8 @@ func (p *productHandler) GetProductByID(ctx *gin.Context) {
 //	@Security		BearerAuth
 //
 //	@Param			productID	path	string	true	"ProductID"
-//	@Param			limit	query	int	false	"Limit"
-//	@Param			page	query	int	false	"page"
+//	@Param			limit		query	int		false	"Limit"
+//	@Param			page		query	int		false	"page"
 //
 //	@Produce		json
 //	@Success		200	{object}	api_gateway_dto.GetProductReviewsResponseDocs

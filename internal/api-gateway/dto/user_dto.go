@@ -178,3 +178,47 @@ type MetadataNotification struct {
 	Pagination Pagination `json:"pagination"`
 	Unread     int        `json:"unread"`
 }
+
+type AddItemToCartRequest struct {
+	ProductID        string `json:"product_id" binding:"required"`
+	ProductVariantID string `json:"product_variant_id" binding:"required"`
+	Quantity         int64  `json:"quantity" binding:"required"`
+}
+
+type AddItemToCartResponse struct{}
+
+type DeleteCartItemRequest struct {
+	CartItemID []string `json:"cart_item_ids" binding:"required"`
+}
+
+type DeleteCartItemResponse struct {
+	CartItemID []string
+}
+
+type UpdateCartItemRequest struct {
+	Quantity         int64  `json:"quantity" binding:"required"`
+	ProductVariantID string `json:"product_variant_id" binding:"required"`
+}
+
+type UpdateCartItemURIRequest struct {
+	CartItemID string `uri:"cartItemID" binding:"required"`
+}
+
+type UpdateCartItemResponse struct {
+	CartItemID string `json:"cart_item_id"`
+	Quantity   int64  `json:"quantity"`
+}
+
+type GetCartItemsResponse struct {
+	CartItems CartItemsResponse `json:"cart_items"`
+}
+
+type CartItemsResponse struct {
+	ProductName             string  `json:"product_name"`
+	Quantity                int64   `json:"quantity"`
+	Price                   float64 `json:"price"`
+	DiscountPrice           float64 `json:"discount_price"`
+	ProductID               string  `json:"product_id"`
+	ProductVariantID        string  `json:"product_variant_id"`
+	ProductVariantThumbnail string  `json:"product_variant_thumbnail"`
+}

@@ -1,5 +1,51 @@
 basePath: /api/v1
 definitions:
+  api_gateway_dto.AddItemToCartRequest:
+    properties:
+      product_id:
+        type: string
+      product_variant_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - product_id
+    - product_variant_id
+    - quantity
+    type: object
+  api_gateway_dto.AddItemToCartResponse:
+    type: object
+  api_gateway_dto.AddItemToCartResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.AddItemToCartResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.AttributeOptionValue:
+    properties:
+      option_id:
+        type: integer
+      value:
+        type: string
+    type: object
+  api_gateway_dto.CartItemsResponse:
+    properties:
+      discount_price:
+        type: number
+      price:
+        type: number
+      product_id:
+        type: string
+      product_name:
+        type: string
+      product_variant_id:
+        type: string
+      product_variant_thumbnail:
+        type: string
+      quantity:
+        type: integer
+    type: object
   api_gateway_dto.ChangePasswordRequest:
     properties:
       new_password:
@@ -214,6 +260,29 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.DeleteCartItemRequest:
+    properties:
+      cart_item_ids:
+        items:
+          type: string
+        type: array
+    required:
+    - cart_item_ids
+    type: object
+  api_gateway_dto.DeleteCartItemResponse:
+    properties:
+      cartItemID:
+        items:
+          type: string
+        type: array
+    type: object
+  api_gateway_dto.DeleteCartItemResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.DeleteCartItemResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.DeletePermissionByPermissionIDURIResponse:
     type: object
   api_gateway_dto.DeletePermissionByPermissionIDURIResponseDocs:
@@ -336,6 +405,18 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.GetAvatarPresignedURLResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetCartItemsResponse:
+    properties:
+      cart_items:
+        $ref: '#/definitions/api_gateway_dto.CartItemsResponse'
+    type: object
+  api_gateway_dto.GetCartItemsResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetCartItemsResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -485,22 +566,34 @@ definitions:
     type: object
   api_gateway_dto.GetProductDetailResponse:
     properties:
-      product_average_rating:
+      attributes:
+        items:
+          $ref: '#/definitions/api_gateway_dto.ProductAttribute'
+        type: array
+      average_rating:
         type: number
-      product_id:
+      category_id:
+        type: integer
+      category_name:
         type: string
-      product_name:
+      description:
+        type: string
+      name:
+        type: string
+      product_id:
         type: string
       product_tags:
         items:
           type: string
         type: array
-      product_total_reviews:
-        type: integer
       product_variants:
         items:
           $ref: '#/definitions/api_gateway_dto.GetProductDetailVariantResponse'
         type: array
+      supplier:
+        $ref: '#/definitions/api_gateway_dto.GetSupplierProductResponse'
+      total_reviews:
+        type: integer
     type: object
   api_gateway_dto.GetProductDetailResponseDocs:
     properties:
@@ -513,10 +606,10 @@ definitions:
     properties:
       alt_text_thumbnail:
         type: string
-      attribute_name:
-        type: string
-      attribute_value:
-        type: string
+      attribute_values:
+        items:
+          $ref: '#/definitions/api_gateway_dto.VariantAttributePair'
+        type: array
       currency:
         type: string
       discount_price:
@@ -542,10 +635,18 @@ definitions:
     properties:
       comment:
         type: string
+      created_at:
+        type: string
       helpful_votes:
         type: integer
+      id:
+        type: string
+      product_id:
+        type: string
       rating:
-        type: number
+        type: integer
+      updated_at:
+        type: string
       user_avatar_url:
         type: string
       user_id:
@@ -617,6 +718,17 @@ definitions:
         type: array
       metadata:
         $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
+    type: object
+  api_gateway_dto.GetSupplierProductResponse:
+    properties:
+      company_name:
+        type: string
+      contact_phone:
+        type: string
+      supplier_id:
+        type: integer
+      thumbnail:
+        type: string
     type: object
   api_gateway_dto.GetUserAddressResponse:
     properties:
@@ -799,6 +911,17 @@ definitions:
         type: integer
       total_pages:
         type: integer
+    type: object
+  api_gateway_dto.ProductAttribute:
+    properties:
+      attribute_id:
+        type: integer
+      name:
+        type: string
+      values:
+        items:
+          $ref: '#/definitions/api_gateway_dto.AttributeOptionValue'
+        type: array
     type: object
   api_gateway_dto.ProvinceResponse:
     properties:
@@ -988,6 +1111,30 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.UpdateCartItemRequest:
+    properties:
+      product_variant_id:
+        type: string
+      quantity:
+        type: integer
+    required:
+    - product_variant_id
+    - quantity
+    type: object
+  api_gateway_dto.UpdateCartItemResponse:
+    properties:
+      cart_item_id:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  api_gateway_dto.UpdateCartItemResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateCartItemResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.UpdateCurrentUserRequest:
     properties:
       avatar_url:
@@ -1167,6 +1314,13 @@ definitions:
         $ref: '#/definitions/api_gateway_dto.UpdateUserByAdminResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.VariantAttributePair:
+    properties:
+      attribute_name:
+        type: string
+      attribute_value:
+        type: string
     type: object
   api_gateway_dto.VerifyEmailRequest:
     properties:
@@ -2346,6 +2500,14 @@ paths:
         name: productID
         required: true
         type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: page
+        in: query
+        name: page
+        type: integer
       produces:
       - application/json
       responses:
@@ -3041,6 +3203,145 @@ paths:
       security:
       - BearerAuth: []
       summary: lấy presigned url để upload ảnh
+      tags:
+      - me
+  /users/me/carts:
+    delete:
+      consumes:
+      - application/json
+      description: update cart item
+      parameters:
+      - description: info cart item ids to delete
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.DeleteCartItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.DeleteCartItemResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: update cart item
+      tags:
+      - me
+    get:
+      consumes:
+      - application/json
+      description: update cart item
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetCartItemsResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: update cart item
+      tags:
+      - me
+    post:
+      consumes:
+      - application/json
+      description: update cart item
+      parameters:
+      - description: info cart item
+        in: body
+        name: req
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.AddItemToCartRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.AddItemToCartResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: update cart item
+      tags:
+      - me
+  /users/me/carts/{cartItemID}:
+    patch:
+      consumes:
+      - application/json
+      description: update cart item
+      parameters:
+      - in: path
+        name: cartItemID
+        required: true
+        type: string
+      - description: info of prod
+        in: body
+        name: req2
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateCartItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateCartItemResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: update cart item
       tags:
       - me
   /users/me/notification-settings:

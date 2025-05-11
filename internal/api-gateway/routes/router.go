@@ -163,6 +163,12 @@ func registerUserMeHandler(group *gin.RouterGroup, permissionMiddleware *middlew
 		userMeGroup.GET("/notifications", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetListNotificationsHistory)
 		userMeGroup.POST("/notifications/mark-all-read", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.MarkAllNotificationsRead)
 		userMeGroup.POST("/notifications/:notificationID/mark-read", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.MarkOnlyOneNotificationRead)
+
+		// cart
+		userMeGroup.GET("/carts", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Read), handler.GetCartItems)
+		userMeGroup.POST("/carts", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Create), handler.AddCartItem)
+		userMeGroup.PATCH("/carts/:cartItemID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateCartItem)
+		userMeGroup.DELETE("/carts", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Delete), handler.DeleteCartItems)
 	}
 }
 
