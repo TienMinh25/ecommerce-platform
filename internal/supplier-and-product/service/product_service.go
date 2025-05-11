@@ -310,3 +310,19 @@ func (p *productService) GetProductReviewsByProdID(ctx context.Context, data *pa
 		},
 	}, nil
 }
+
+func (p *productService) CheckAvailableProd(ctx context.Context, data *partner_proto_gen.CheckAvailableProductRequest) (*partner_proto_gen.CheckAvailableProductResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CheckAvailableProd"))
+	defer span.End()
+
+	isAvailable, quantity, err := p.repo.CheckAvailableProd(ctx, data.ProductVariantId, data.Quantity)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &partner_proto_gen.CheckAvailableProductResponse{
+		IsAvailable: isAvailable,
+		Quantity:    quantity,
+	}, nil
+}

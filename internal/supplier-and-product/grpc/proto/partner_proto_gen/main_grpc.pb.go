@@ -23,6 +23,7 @@ const (
 	PartnerService_GetProducts_FullMethodName           = "/PartnerService/GetProducts"
 	PartnerService_GetProductByID_FullMethodName        = "/PartnerService/GetProductByID"
 	PartnerService_GetProductReviewsByID_FullMethodName = "/PartnerService/GetProductReviewsByID"
+	PartnerService_CheckAvailableProduct_FullMethodName = "/PartnerService/CheckAvailableProduct"
 )
 
 // PartnerServiceClient is the client API for PartnerService service.
@@ -33,6 +34,7 @@ type PartnerServiceClient interface {
 	GetProducts(ctx context.Context, in *GetProductsRequest, opts ...grpc.CallOption) (*GetProductsResponse, error)
 	GetProductByID(ctx context.Context, in *GetProductDetailRequest, opts ...grpc.CallOption) (*GetProductDetailResponse, error)
 	GetProductReviewsByID(ctx context.Context, in *GetProductReviewsRequest, opts ...grpc.CallOption) (*GetProductReviewsResponse, error)
+	CheckAvailableProduct(ctx context.Context, in *CheckAvailableProductRequest, opts ...grpc.CallOption) (*CheckAvailableProductResponse, error)
 }
 
 type partnerServiceClient struct {
@@ -83,6 +85,16 @@ func (c *partnerServiceClient) GetProductReviewsByID(ctx context.Context, in *Ge
 	return out, nil
 }
 
+func (c *partnerServiceClient) CheckAvailableProduct(ctx context.Context, in *CheckAvailableProductRequest, opts ...grpc.CallOption) (*CheckAvailableProductResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckAvailableProductResponse)
+	err := c.cc.Invoke(ctx, PartnerService_CheckAvailableProduct_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PartnerServiceServer is the server API for PartnerService service.
 // All implementations must embed UnimplementedPartnerServiceServer
 // for forward compatibility.
@@ -91,6 +103,7 @@ type PartnerServiceServer interface {
 	GetProducts(context.Context, *GetProductsRequest) (*GetProductsResponse, error)
 	GetProductByID(context.Context, *GetProductDetailRequest) (*GetProductDetailResponse, error)
 	GetProductReviewsByID(context.Context, *GetProductReviewsRequest) (*GetProductReviewsResponse, error)
+	CheckAvailableProduct(context.Context, *CheckAvailableProductRequest) (*CheckAvailableProductResponse, error)
 	mustEmbedUnimplementedPartnerServiceServer()
 }
 
@@ -112,6 +125,9 @@ func (UnimplementedPartnerServiceServer) GetProductByID(context.Context, *GetPro
 }
 func (UnimplementedPartnerServiceServer) GetProductReviewsByID(context.Context, *GetProductReviewsRequest) (*GetProductReviewsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProductReviewsByID not implemented")
+}
+func (UnimplementedPartnerServiceServer) CheckAvailableProduct(context.Context, *CheckAvailableProductRequest) (*CheckAvailableProductResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckAvailableProduct not implemented")
 }
 func (UnimplementedPartnerServiceServer) mustEmbedUnimplementedPartnerServiceServer() {}
 func (UnimplementedPartnerServiceServer) testEmbeddedByValue()                        {}
@@ -206,6 +222,24 @@ func _PartnerService_GetProductReviewsByID_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PartnerService_CheckAvailableProduct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckAvailableProductRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).CheckAvailableProduct(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_CheckAvailableProduct_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).CheckAvailableProduct(ctx, req.(*CheckAvailableProductRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PartnerService_ServiceDesc is the grpc.ServiceDesc for PartnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +262,10 @@ var PartnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProductReviewsByID",
 			Handler:    _PartnerService_GetProductReviewsByID_Handler,
+		},
+		{
+			MethodName: "CheckAvailableProduct",
+			Handler:    _PartnerService_CheckAvailableProduct_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

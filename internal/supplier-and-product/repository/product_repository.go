@@ -468,3 +468,36 @@ func (p *productRepository) GetProductReviewsByProdID(ctx context.Context, produ
 
 	return productReviews, totalReviews, nil
 }
+
+func (p *productRepository) CheckAvailableProd(ctx context.Context, prodVariantID string, quantity int64) (bool, int64, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CheckAvailableProd"))
+	defer span.End()
+
+	sqlSelect, args, err := squirrel.Select("inventory_quantity").From("product_variants").
+		Where(squirrel.Eq{"id": prodVariantID}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return false, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	var inventoryQuantity int64
+
+	if err = p.db.QueryRow(ctx, sqlSelect, args...).Scan(&inventoryQuantity); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return false, 0, status.Error(codes.NotFound, err.Error())
+		}
+
+		return false, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	if inventoryQuantity < quantity {
+		return false, inventoryQuantity, status.Error(codes.Canceled, "Quantity of product is not enough")
+	}
+
+	return true, inventoryQuantity, nil
+}

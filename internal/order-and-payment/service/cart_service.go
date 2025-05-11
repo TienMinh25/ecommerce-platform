@@ -6,6 +6,8 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/repository"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type cartService struct {
@@ -68,9 +70,8 @@ func (s *cartService) UpdateCart(ctx context.Context, data *order_proto_gen.Upda
 	}
 
 	return &order_proto_gen.UpdateCartItemResponse{
-		CartItemId:       updatedItem.ID,
-		ProductVariantId: updatedItem.ProductVariantID,
-		Quantity:         updatedItem.Quantity,
+		CartItemId: updatedItem.ID,
+		Quantity:   updatedItem.Quantity,
 	}, nil
 }
 
@@ -78,7 +79,11 @@ func (s *cartService) RemoveCartItem(ctx context.Context, data *order_proto_gen.
 	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "RemoveCartItem"))
 	defer span.End()
 
-	if err := s.cartRepo.DeleteCartItem(ctx, data.CartItemIds); err != nil {
+	if len(data.CartItemIds) == 0 {
+		return nil, status.Error(codes.InvalidArgument, "No cart item IDs provided")
+	}
+
+	if err := s.cartRepo.DeleteCartItem(ctx, data.CartItemIds, data.UserId); err != nil {
 		return nil, err
 	}
 

@@ -44,3 +44,16 @@ func (p *PartnerHandler) GetProductReviewsByID(ctx context.Context, data *partne
 
 	return res, nil
 }
+
+func (p *PartnerHandler) CheckAvailableProduct(ctx context.Context, data *partner_proto_gen.CheckAvailableProductRequest) (*partner_proto_gen.CheckAvailableProductResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "CheckAvailableProduct"))
+	defer span.End()
+
+	res, err := p.productService.CheckAvailableProd(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

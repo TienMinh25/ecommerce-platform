@@ -28,19 +28,20 @@ message CartResponse {
 }
 
 message UpdateCartItemRequest {
-  string cart_item_id = 1;
-  string product_variant_id = 2;
-  int64 quantity = 3;
+  int64 user_id = 1;
+  string cart_item_id = 2;
+  string product_variant_id = 3;
+  int64 quantity = 4;
 }
 
 message UpdateCartItemResponse {
   string cart_item_id = 1;
-  string product_variant_id = 2;
   int64 quantity = 3;
 }
 
 message RemoveCartItemRequest {
-  repeated string cart_item_ids = 1;
+  int64 user_id = 1;
+  repeated string cart_item_ids = 2;
 }
 
 message RemoveCartItemResponse {

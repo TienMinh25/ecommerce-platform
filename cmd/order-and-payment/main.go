@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/TienMinh25/ecommerce-platform/infrastructure"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
@@ -138,8 +139,8 @@ func main() {
 			repository.NewCartRepository,
 			// tracer
 			NewTracerOrderAndPaymentService,
-			// kafka,
-
+			// infrastructure,
+			infrastructure.NewRedisCache,
 			// adapter
 			NewGrpcSupplierAndProductClient,
 		),

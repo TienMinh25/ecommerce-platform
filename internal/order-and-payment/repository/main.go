@@ -10,5 +10,5 @@ type ICartRepository interface {
 	AddItemToCart(ctx context.Context, data *order_proto_gen.AddItemToCartRequest) error
 	GetCart(ctx context.Context, userID int64) ([]*models.CartItem, error)
 	UpdateCartItem(ctx context.Context, data *order_proto_gen.UpdateCartItemRequest) (*models.CartItem, error)
-	DeleteCartItem(ctx context.Context, cartItemIds []string) error
+	DeleteCartItem(ctx context.Context, cartItemIds []string, userID int64) error
 }
