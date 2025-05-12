@@ -71,10 +71,6 @@ func (c *cartRepository) AddItemToCart(ctx context.Context, data *order_proto_ge
 			quantityInventory = int64(quantityInt)
 		}
 
-		if quantityInventory < data.Quantity {
-			return status.Error(codes.Canceled, "Quantity of product is not enough")
-		}
-
 		// get cart id
 		selectCartID, args, err := squirrel.Select("id").From("carts").
 			Where(squirrel.Eq{"user_id": data.UserId}).
@@ -109,6 +105,10 @@ func (c *cartRepository) AddItemToCart(ctx context.Context, data *order_proto_ge
 
 		if err = c.db.QueryRow(ctx, sqlGet, args...).Scan(&oldQuantity); err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
+				if quantityInventory < data.Quantity {
+					return status.Error(codes.Canceled, "Quantity of product is not enough")
+				}
+
 				// insert new record
 				sqlInsert, args, err := squirrel.Insert("cart_items").Columns("cart_id", "product_id",
 					"quantity", "product_variant_id").
@@ -131,6 +131,10 @@ func (c *cartRepository) AddItemToCart(ctx context.Context, data *order_proto_ge
 
 			span.RecordError(err)
 			return status.Error(codes.Internal, err.Error())
+		}
+
+		if quantityInventory < data.Quantity+oldQuantity {
+			return status.Error(codes.Canceled, "Quantity of product is not enough")
 		}
 
 		// update previous cart if exists record in cart items
