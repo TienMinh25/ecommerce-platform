@@ -11,3 +11,6 @@ type ICartService interface {
 	UpdateCart(ctx context.Context, data *order_proto_gen.UpdateCartItemRequest) (*order_proto_gen.UpdateCartItemResponse, error)
 	RemoveCartItem(ctx context.Context, data *order_proto_gen.RemoveCartItemRequest) (*order_proto_gen.RemoveCartItemResponse, error)
 }
+
+type ICouponService interface {
+}

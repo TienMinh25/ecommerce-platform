@@ -12,3 +12,6 @@ type ICartRepository interface {
 	UpdateCartItem(ctx context.Context, data *order_proto_gen.UpdateCartItemRequest) (*models.CartItem, error)
 	DeleteCartItem(ctx context.Context, cartItemIds []string, userID int64) error
 }
+
+type ICouponRepository interface {
+}
