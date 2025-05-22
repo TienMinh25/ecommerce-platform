@@ -53,6 +53,7 @@ func (c *couponService) GetCoupons(ctx context.Context, data *order_proto_gen.Ge
 			UsageCount:            coupon.UsageCount,
 			UsageLimit:            coupon.UsageLimit,
 			Currency:              coupon.Currency,
+			IsActive:              coupon.IsActive,
 		})
 	}
 
@@ -152,6 +153,7 @@ func (c *couponService) GetCouponsByClient(ctx context.Context, data *order_prot
 			UsageCount:            coupon.UsageCount,
 			UsageLimit:            coupon.UsageLimit,
 			Currency:              coupon.Currency,
+			IsActive:              coupon.IsActive,
 		})
 	}
 

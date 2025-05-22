@@ -25,6 +25,7 @@ type GetCouponsResponse struct {
 	Currency              string    `json:"currency"`
 	StartDate             time.Time `json:"start_date"`
 	EndDate               time.Time `json:"end_date"`
+	IsActive              bool      `json:"is_active"`
 }
 
 type GetCouponsByClientRequest struct {
@@ -57,7 +58,6 @@ type GetDetailCouponResponse struct {
 }
 
 type UpdateCouponRequest struct {
-	ID                    string    `uri:"couponID" binding:"required"`
 	Name                  string    `json:"name" binding:"omitempty"`
 	Description           string    `json:"description" binding:"omitempty"`
 	DiscountType          string    `json:"discount_type" binding:"omitempty,oneof=percentage fixed_amount"`
@@ -68,6 +68,10 @@ type UpdateCouponRequest struct {
 	EndDate               time.Time `json:"end_date" binding:"omitempty"`
 	UsageLimit            int64     `json:"usage_limit" binding:"omitempty"`
 	IsActive              bool      `json:"is_active" binding:"omitempty"`
+}
+
+type UpdateCouponUriRequest struct {
+	ID string `uri:"couponID" binding:"required"`
 }
 
 type UpdateCouponResponse struct{}

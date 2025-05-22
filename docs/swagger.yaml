@@ -513,6 +513,8 @@ definitions:
         type: string
       id:
         type: string
+      is_active:
+        type: boolean
       maximum_discount_amount:
         type: number
       minimum_order_amount:
@@ -1283,8 +1285,6 @@ definitions:
         type: number
       end_date:
         type: string
-      id:
-        type: string
       is_active:
         type: boolean
       maximum_discount_amount:
@@ -1297,8 +1297,6 @@ definitions:
         type: string
       usage_limit:
         type: integer
-    required:
-    - id
     type: object
   api_gateway_dto.UpdateCouponResponse:
     type: object
@@ -2350,8 +2348,7 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/api_gateway_dto.UpdateCouponRequest'
-      - description: couponID
-        in: path
+      - in: path
         name: couponID
         required: true
         type: string

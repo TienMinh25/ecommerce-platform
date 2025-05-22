@@ -194,8 +194,8 @@ func (couponHandler *couponHandler) GetDetailCouponByID(ctx *gin.Context) {
 //
 //	@Security		BearerAuth
 //
-//	@Param			data		body	api_gateway_dto.UpdateCouponRequest	true	"id"
-//	@Param			couponID	path	string								true "couponID"
+//	@Param			data	body	api_gateway_dto.UpdateCouponRequest		true	"id"
+//	@Param			data2	path	api_gateway_dto.UpdateCouponUriRequest	true	"couponID"
 //	@Produce		json
 //	@Success		200	{object}	api_gateway_dto.UpdateCouponResponseDocs
 //	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
@@ -208,6 +208,7 @@ func (couponHandler *couponHandler) UpdateCoupon(ctx *gin.Context) {
 	defer span.End()
 
 	var data api_gateway_dto.UpdateCouponRequest
+	var uri api_gateway_dto.UpdateCouponUriRequest
 
 	if err := ctx.ShouldBindJSON(&data); err != nil {
 		span.RecordError(err)
@@ -215,13 +216,13 @@ func (couponHandler *couponHandler) UpdateCoupon(ctx *gin.Context) {
 		return
 	}
 
-	if err := ctx.ShouldBindUri(&data); err != nil {
+	if err := ctx.ShouldBindUri(&uri); err != nil {
 		span.RecordError(err)
 		utils.HandleValidateData(ctx, err)
 		return
 	}
 
-	if err := couponHandler.couponService.UpdateCoupon(ct, &data); err != nil {
+	if err := couponHandler.couponService.UpdateCoupon(ct, &data, uri.ID); err != nil {
 		span.RecordError(err)
 		utils.HandleErrorResponse(ctx, err)
 		return

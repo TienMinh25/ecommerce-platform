@@ -1322,7 +1322,6 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "couponID",
                         "name": "couponID",
                         "in": "path",
                         "required": true
@@ -4445,6 +4444,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "is_active": {
+                    "type": "boolean"
+                },
                 "maximum_discount_amount": {
                     "type": "number"
                 },
@@ -5603,9 +5605,6 @@ const docTemplate = `{
         },
         "api_gateway_dto.UpdateCouponRequest": {
             "type": "object",
-            "required": [
-                "id"
-            ],
             "properties": {
                 "description": {
                     "type": "string"
@@ -5621,9 +5620,6 @@ const docTemplate = `{
                     "type": "number"
                 },
                 "end_date": {
-                    "type": "string"
-                },
-                "id": {
                     "type": "string"
                 },
                 "is_active": {

@@ -75,6 +75,7 @@ func (service *couponService) GetCoupons(ctx context.Context, data *api_gateway_
 			Currency:              coupon.Currency,
 			StartDate:             coupon.StartDate.AsTime(),
 			EndDate:               coupon.EndDate.AsTime(),
+			IsActive:              coupon.IsActive,
 		})
 	}
 
@@ -114,6 +115,7 @@ func (service *couponService) GetCouponByClient(ctx context.Context, data *api_g
 			Currency:              coupon.Currency,
 			StartDate:             coupon.StartDate.AsTime(),
 			EndDate:               coupon.EndDate.AsTime(),
+			IsActive:              coupon.IsActive,
 		})
 	}
 
@@ -193,12 +195,12 @@ func (service *couponService) GetDetailCouponByID(ctx context.Context, couponID 
 	}, nil
 }
 
-func (service *couponService) UpdateCoupon(ctx context.Context, data *api_gateway_dto.UpdateCouponRequest) error {
+func (service *couponService) UpdateCoupon(ctx context.Context, data *api_gateway_dto.UpdateCouponRequest, couponID string) error {
 	ctx, span := service.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateCoupon"))
 	defer span.End()
 
 	_, err := service.orderClient.UpdateCoupon(ctx, &order_proto_gen.UpdateCouponRequest{
-		Id:                    data.ID,
+		Id:                    couponID,
 		Name:                  data.Name,
 		Description:           data.Description,
 		DiscountType:          data.DiscountType,

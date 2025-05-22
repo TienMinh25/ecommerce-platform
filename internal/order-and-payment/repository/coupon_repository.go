@@ -33,7 +33,7 @@ func (repo *couponRepository) GetCoupons(ctx context.Context, data *order_proto_
 
 	queryBuilder := squirrel.Select("id", "code", "name", "discount_type", "discount_value",
 		"start_date", "end_date", "minimum_order_amount", "maximum_discount_amount",
-		"usage_count", "usage_limit", "currency").From("coupons")
+		"usage_count", "usage_limit", "currency", "is_active").From("coupons")
 
 	if data.Code != nil {
 		queryBuilder = queryBuilder.Where(squirrel.Eq{"code": *data.Code})
@@ -101,7 +101,7 @@ func (repo *couponRepository) GetCoupons(ctx context.Context, data *order_proto_
 
 		if err = rows.Scan(&coupon.ID, &coupon.Code, &coupon.Name, &coupon.DiscountType, &coupon.DiscountValue,
 			&coupon.StartDate, &coupon.EndDate, &coupon.MinimumOrderAmount, &coupon.MaximumDiscountAmount,
-			&coupon.UsageLimit, &coupon.UsageCount, &coupon.Currency); err != nil {
+			&coupon.UsageLimit, &coupon.UsageCount, &coupon.Currency, &coupon.IsActive); err != nil {
 			return nil, 0, status.Error(codes.Internal, err.Error())
 		}
 
@@ -199,7 +199,7 @@ func (repo *couponRepository) GetCouponsByClient(ctx context.Context, data *orde
 
 	queryBuilder := squirrel.Select("id", "code", "name", "discount_type", "discount_value",
 		"start_date", "end_date", "minimum_order_amount", "maximum_discount_amount",
-		"usage_count", "usage_limit", "currency").From("coupons").
+		"usage_count", "usage_limit", "currency", "is_active").From("coupons").
 		Where(squirrel.And{
 			squirrel.LtOrEq{"start_date": data.CurrentDate.AsTime()},
 			squirrel.GtOrEq{"end_date": data.CurrentDate.AsTime()},
@@ -249,7 +249,7 @@ func (repo *couponRepository) GetCouponsByClient(ctx context.Context, data *orde
 
 		if err = rows.Scan(&coupon.ID, &coupon.Code, &coupon.Name, &coupon.DiscountType, &coupon.DiscountValue,
 			&coupon.StartDate, &coupon.EndDate, &coupon.MinimumOrderAmount, &coupon.MaximumDiscountAmount,
-			&coupon.UsageLimit, &coupon.UsageCount, &coupon.Currency); err != nil {
+			&coupon.UsageLimit, &coupon.UsageCount, &coupon.Currency, &coupon.IsActive); err != nil {
 			return nil, 0, status.Error(codes.Internal, err.Error())
 		}
 

@@ -30,6 +30,7 @@ import NotificationSettings from "../components/user/NotificationSettings.jsx";
 import UserOrders from "../components/user/UserOrders.jsx";
 import UserNotifications from "../components/user/UserNotifications.jsx";
 import CartPage from "../pages/Cart/CartPage.jsx";
+import CouponManagementComponent from "../components/dashboard/admin/coupon-management/CouponManagementComponent.jsx";
 
 const AppRoutes = () => {
     return (
@@ -74,6 +75,7 @@ const AppRoutes = () => {
                     <Route path='permissions' element={<PermissionManagementComponent />} />
                     <Route path='modules' element={<ModuleManagementComponent />} />
                     <Route path='address-types' element={<AddressTypesManagementComponent />} />
+                    <Route path='coupons' element={<CouponManagementComponent />} />
                     {/*
                       <Route path='onboarding/suppliers' element={<DashboardComponent />} />
                       <Route path='onboarding/deliverers' element={<DashboardComponent />} /> */}

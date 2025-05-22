@@ -39,6 +39,7 @@ message CouponResponse {
   int64 usage_limit = 10;
   int64 usage_count = 11;
   string currency = 12;
+  bool is_active = 13;
 }
 
 message GetDetailCouponRequest {
