@@ -28,7 +28,8 @@ import {
 import { FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import PageTitle from "../PageTitle.jsx";
-import {useCart} from "../../context/CartContext.jsx";
+import { useCart } from "../../context/CartContext.jsx";
+import VoucherSelector from "../../components/cart/VoucherSelector.jsx";
 
 const CartPage = () => {
     const {
@@ -44,8 +45,34 @@ const CartPage = () => {
     } = useCart();
 
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [selectedVoucher, setSelectedVoucher] = useState(null);
     const { isOpen, onOpen, onClose } = useDisclosure();
     const navigate = useNavigate();
+
+    // Calculate cart total for selected items
+    const cartTotal = calculateTotal();
+
+    // Calculate discount from voucher
+    const calculateVoucherDiscount = () => {
+        if (!selectedVoucher || cartTotal === 0) return 0;
+
+        let discount = 0;
+        if (selectedVoucher.discount_type === 'percentage') {
+            discount = (cartTotal * selectedVoucher.discount_value) / 100;
+        } else {
+            discount = selectedVoucher.discount_value;
+        }
+
+        // Apply maximum discount limit
+        if (selectedVoucher.maximum_discount_amount) {
+            discount = Math.min(discount, selectedVoucher.maximum_discount_amount);
+        }
+
+        return discount;
+    };
+
+    // Calculate final total after voucher discount
+    const finalTotal = cartTotal - calculateVoucherDiscount();
 
     const openDeleteConfirmation = (cartItemId, productName) => {
         setItemToDelete({ id: cartItemId, name: productName });
@@ -63,11 +90,22 @@ const CartPage = () => {
         await deleteCartItems(selectedItems);
     };
 
+    const handleVoucherSelect = (voucher) => {
+        setSelectedVoucher(voucher);
+    };
+
     const handleCheckout = () => {
         if (selectedItems.length === 0) {
             return;
         }
-        navigate('/checkout');
+        // Pass voucher data to checkout if needed
+        navigate('/checkout', {
+            state: {
+                selectedVoucher,
+                voucherDiscount: calculateVoucherDiscount(),
+                finalTotal
+            }
+        });
     };
 
     // Loading skeleton
@@ -275,7 +313,6 @@ const CartPage = () => {
                                     borderRadius="md"
                                     colorScheme="blue"
                                     variant="outline"
-                                    // Allow decreasing even when quantity is 1
                                     onClick={() => updateCartItem(item.cart_item_id, {
                                         product_variant_id: item.product_variant_id,
                                         quantity: item.quantity - 1
@@ -366,7 +403,6 @@ const CartPage = () => {
                                             borderRadius="md"
                                             colorScheme="blue"
                                             variant="outline"
-                                            // Allow decreasing even when quantity is 1
                                             onClick={() => updateCartItem(item.cart_item_id, {
                                                 product_variant_id: item.product_variant_id,
                                                 quantity: item.quantity - 1
@@ -466,26 +502,54 @@ const CartPage = () => {
                     </Button>
                 </HStack>
 
-                <HStack spacing={6} mt={{ base: 4, md: 0 }}>
-                    <Box textAlign={{ base: 'center', md: 'right' }}>
-                        <Text>
-                            Tổng thanh toán ({selectedItems.length} Sản phẩm):
-                            <Text as="span" fontWeight="bold" color="red.500" fontSize="xl" ml={2}>
-                                {formatPrice(calculateTotal())}
-                            </Text>
-                        </Text>
+                <VStack spacing={3} align={{ base: 'stretch', md: 'flex-end' }} mt={{ base: 4, md: 0 }}>
+                    {/* Voucher Section - Always visible */}
+                    <Box w={{ base: '100%', md: '400px' }}>
+                        <VoucherSelector
+                            selectedVoucher={selectedVoucher}
+                            onVoucherSelect={handleVoucherSelect}
+                            cartTotal={cartTotal}
+                        />
                     </Box>
 
-                    <Button
-                        colorScheme="red"
-                        size="lg"
-                        isDisabled={selectedItems.length === 0}
-                        onClick={handleCheckout}
-                        px={8}
-                    >
-                        Mua Hàng
-                    </Button>
-                </HStack>
+                    {/* Show voucher discount if applied */}
+                    {selectedVoucher && calculateVoucherDiscount() > 0 && (
+                        <HStack spacing={2} justify={{ base: 'space-between', md: 'flex-end' }} w="100%">
+                            <Text fontSize="sm" color="gray.600">
+                                Voucher giảm:
+                            </Text>
+                            <Text fontSize="sm" color="green.600" fontWeight="medium">
+                                -{formatPrice(calculateVoucherDiscount())}
+                            </Text>
+                        </HStack>
+                    )}
+
+                    <HStack spacing={6} w="100%" justify={{ base: 'space-between', md: 'flex-end' }}>
+                        <Box textAlign={{ base: 'left', md: 'right' }}>
+                            <Text>
+                                Tổng thanh toán ({selectedItems.length} Sản phẩm):
+                                <Text as="span" fontWeight="bold" color="red.500" fontSize="xl" ml={2}>
+                                    {formatPrice(finalTotal)}
+                                </Text>
+                            </Text>
+                            {selectedVoucher && calculateVoucherDiscount() > 0 && (
+                                <Text fontSize="sm" color="gray.500" as="s">
+                                    {formatPrice(cartTotal)}
+                                </Text>
+                            )}
+                        </Box>
+
+                        <Button
+                            colorScheme="red"
+                            size="lg"
+                            isDisabled={selectedItems.length === 0}
+                            onClick={handleCheckout}
+                            px={8}
+                        >
+                            Mua Hàng
+                        </Button>
+                    </HStack>
+                </VStack>
             </Flex>
 
             {/* Delete Confirmation Modal */}
