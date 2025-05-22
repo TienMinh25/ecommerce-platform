@@ -52,4 +52,5 @@ const (
 	Onboarding            ModuleName = "Onboarding"
 	AddressTypeManagement ModuleName = "Address Type Management"
 	ModuleManagement      ModuleName = "Module Management"
+	CouponManagement      ModuleName = "Coupon Management"
 )

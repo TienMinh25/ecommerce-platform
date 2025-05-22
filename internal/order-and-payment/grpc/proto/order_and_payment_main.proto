@@ -3,6 +3,7 @@ syntax = "proto3";
 option go_package = "./order_proto_gen";
 
 import "cart.proto";
+import "coupon.proto";
 
 service OrderService {
   rpc AddItemToCart(AddItemToCartRequest) returns (AddItemToCartResponse);
@@ -12,4 +13,16 @@ service OrderService {
   rpc UpdateCart(UpdateCartItemRequest) returns (UpdateCartItemResponse);
 
   rpc RemoveCartItem(RemoveCartItemRequest) returns (RemoveCartItemResponse);
+
+  rpc GetCoupons(GetCouponRequest) returns (GetCouponResponse);
+
+  rpc CreateCoupon(CreateCouponRequest) returns (CreateCouponResponse);
+
+  rpc GetCouponsByClient(GetCouponByClientRequest) returns (GetCouponResponse);
+
+  rpc GetDetailCoupon(GetDetailCouponRequest) returns (GetDetailCouponResponse);
+
+  rpc UpdateCoupon(UpdateCouponRequest) returns (UpdateCouponResponse);
+
+  rpc DeleteCoupon(DeleteCouponRequest) returns (DeleteCouponResponse);
 }

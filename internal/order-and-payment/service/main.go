@@ -11,3 +11,12 @@ type ICartService interface {
 	UpdateCart(ctx context.Context, data *order_proto_gen.UpdateCartItemRequest) (*order_proto_gen.UpdateCartItemResponse, error)
 	RemoveCartItem(ctx context.Context, data *order_proto_gen.RemoveCartItemRequest) (*order_proto_gen.RemoveCartItemResponse, error)
 }
+
+type ICouponService interface {
+	GetCoupons(ctx context.Context, data *order_proto_gen.GetCouponRequest) (*order_proto_gen.GetCouponResponse, error)
+	GetDetailCoupon(ctx context.Context, id string) (*order_proto_gen.GetDetailCouponResponse, error)
+	UpdateCoupon(ctx context.Context, data *order_proto_gen.UpdateCouponRequest) error
+	DeleteCoupon(ctx context.Context, id string) error
+	GetCouponsByClient(ctx context.Context, data *order_proto_gen.GetCouponByClientRequest) (*order_proto_gen.GetCouponResponse, error)
+	CreateCoupon(ctx context.Context, data *order_proto_gen.CreateCouponRequest) error
+}

@@ -135,8 +135,10 @@ func main() {
 			handler.NewOrderHandler,
 			// service
 			service.NewCartService,
+			service.NewCouponService,
 			// repository
 			repository.NewCartRepository,
+			repository.NewCouponRepository,
 			// tracer
 			NewTracerOrderAndPaymentService,
 			// infrastructure,

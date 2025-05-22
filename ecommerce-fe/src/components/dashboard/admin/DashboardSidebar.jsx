@@ -21,7 +21,7 @@ import {
   FiChevronsLeft,
   FiChevronsRight,
   FiLayers,
-  FiMapPin,
+  FiMapPin, FiTag,
 } from 'react-icons/fi';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useSidebar } from '../../layout/DashboardLayout.jsx';
@@ -90,6 +90,7 @@ const DashboardSidebar = ({ onStateChange }) => {
     { icon: FiKey, label: 'Quản lý quyền', path: '/dashboard/permissions' },
     { icon: FiLayers, label: 'Quản lý modules', path: '/dashboard/modules' },
     { icon: FiMapPin, label: 'Quản lý kiểu địa chỉ', path: '/dashboard/address-types' },
+    { icon: FiTag, label: 'Quản lý mã khuyến mãi', path: '/dashboard/coupons' },
     { icon: FiPackage, label: 'Quản lý nhà cung cấp', path: '/dashboard/onboarding/suppliers' },
     { icon: FiTruck, label: 'Quản lý người giao hàng', path: '/dashboard/onboarding/deliverers' },
   ];

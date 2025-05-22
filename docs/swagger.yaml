@@ -132,6 +132,52 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.CreateCouponRequest:
+    properties:
+      currency:
+        type: string
+      description:
+        type: string
+      discount_type:
+        enum:
+        - percentage
+        - fixed_amount
+        type: string
+      discount_value:
+        type: number
+      end_date:
+        type: string
+      maximum_discount_amount:
+        type: number
+      minimum_order_amount:
+        minimum: 0
+        type: number
+      name:
+        type: string
+      start_date:
+        type: string
+      usage_limit:
+        type: integer
+    required:
+    - currency
+    - discount_type
+    - discount_value
+    - end_date
+    - maximum_discount_amount
+    - minimum_order_amount
+    - name
+    - start_date
+    - usage_limit
+    type: object
+  api_gateway_dto.CreateCouponResponse:
+    type: object
+  api_gateway_dto.CreateCouponResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.CreateCouponResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.CreateModuleRequest:
     properties:
       name:
@@ -264,6 +310,15 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.DeleteCartItemResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.DeleteCouponResponse:
+    type: object
+  api_gateway_dto.DeleteCouponResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.DeleteCouponResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -444,6 +499,44 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetCouponsResponse:
+    properties:
+      code:
+        type: string
+      currency:
+        type: string
+      discount_type:
+        type: string
+      discount_value:
+        type: number
+      end_date:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      maximum_discount_amount:
+        type: number
+      minimum_order_amount:
+        type: number
+      name:
+        type: string
+      start_date:
+        type: string
+      usage_count:
+        type: integer
+      usage_limit:
+        type: integer
+    type: object
+  api_gateway_dto.GetCouponsResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetCouponsResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
+    type: object
   api_gateway_dto.GetCurrentUserResponse:
     properties:
       avatar_url:
@@ -463,6 +556,48 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.GetCurrentUserResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetDetailCouponResponse:
+    properties:
+      code:
+        type: string
+      created_at:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      discount_type:
+        type: string
+      discount_value:
+        type: number
+      end_date:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      maximum_discount_amount:
+        type: number
+      minimum_order_amount:
+        type: number
+      name:
+        type: string
+      start_date:
+        type: string
+      updated_at:
+        type: string
+      usage_count:
+        type: integer
+      usage_limit:
+        type: integer
+    type: object
+  api_gateway_dto.GetDetailCouponResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetDetailCouponResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -1122,7 +1257,6 @@ definitions:
         type: integer
     required:
     - product_variant_id
-    - quantity
     type: object
   api_gateway_dto.UpdateCartItemResponse:
     properties:
@@ -1135,6 +1269,41 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.UpdateCartItemResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.UpdateCouponRequest:
+    properties:
+      description:
+        type: string
+      discount_type:
+        enum:
+        - percentage
+        - fixed_amount
+        type: string
+      discount_value:
+        type: number
+      end_date:
+        type: string
+      is_active:
+        type: boolean
+      maximum_discount_amount:
+        type: number
+      minimum_order_amount:
+        type: number
+      name:
+        type: string
+      start_date:
+        type: string
+      usage_limit:
+        type: integer
+    type: object
+  api_gateway_dto.UpdateCouponResponse:
+    type: object
+  api_gateway_dto.UpdateCouponResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateCouponResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -2026,6 +2195,221 @@ paths:
       summary: Get categories
       tags:
       - categories
+  /coupons:
+    get:
+      consumes:
+      - application/json
+      description: Get coupons by admin
+      parameters:
+      - in: query
+        name: code
+        type: string
+      - enum:
+        - percentage
+        - fixed_amount
+        in: query
+        name: discount_type
+        type: string
+      - in: query
+        name: end_date
+        type: string
+      - in: query
+        name: is_active
+        type: boolean
+      - in: query
+        minimum: 1
+        name: limit
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - in: query
+        name: start_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetCouponsResponseDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get coupons by admin
+      tags:
+      - coupons
+    post:
+      consumes:
+      - application/json
+      description: Create coupon
+      parameters:
+      - description: data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.CreateCouponRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.CreateCouponResponseDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Create coupon
+      tags:
+      - coupons
+  /coupons/{couponID}:
+    delete:
+      consumes:
+      - application/json
+      description: update coupon
+      parameters:
+      - in: path
+        name: couponID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.DeleteCouponResponseDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: update coupon
+      tags:
+      - coupons
+    get:
+      consumes:
+      - application/json
+      description: get detail coupon by id
+      parameters:
+      - in: path
+        name: couponID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetDetailCouponResponseDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: get detail coupon by id
+      tags:
+      - coupons
+    patch:
+      consumes:
+      - application/json
+      description: update coupon
+      parameters:
+      - description: id
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateCouponRequest'
+      - in: path
+        name: couponID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateCouponResponseDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: update coupon
+      tags:
+      - coupons
+  /coupons/client:
+    get:
+      consumes:
+      - application/json
+      description: Get coupons by client
+      parameters:
+      - in: query
+        name: current_date
+        required: true
+        type: string
+      - in: query
+        minimum: 1
+        name: limit
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetCouponsResponseDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get coupons by client
+      tags:
+      - coupons
   /modules:
     get:
       consumes:
