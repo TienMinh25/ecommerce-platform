@@ -19,15 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_AddItemToCart_FullMethodName   = "/OrderService/AddItemToCart"
-	OrderService_GetCart_FullMethodName         = "/OrderService/GetCart"
-	OrderService_UpdateCart_FullMethodName      = "/OrderService/UpdateCart"
-	OrderService_RemoveCartItem_FullMethodName  = "/OrderService/RemoveCartItem"
-	OrderService_GetAllCoupons_FullMethodName   = "/OrderService/GetAllCoupons"
-	OrderService_GetCoupons_FullMethodName      = "/OrderService/GetCoupons"
-	OrderService_GetDetailCoupon_FullMethodName = "/OrderService/GetDetailCoupon"
-	OrderService_UpdateCoupon_FullMethodName    = "/OrderService/UpdateCoupon"
-	OrderService_DeleteCoupon_FullMethodName    = "/OrderService/DeleteCoupon"
+	OrderService_AddItemToCart_FullMethodName      = "/OrderService/AddItemToCart"
+	OrderService_GetCart_FullMethodName            = "/OrderService/GetCart"
+	OrderService_UpdateCart_FullMethodName         = "/OrderService/UpdateCart"
+	OrderService_RemoveCartItem_FullMethodName     = "/OrderService/RemoveCartItem"
+	OrderService_GetCoupons_FullMethodName         = "/OrderService/GetCoupons"
+	OrderService_CreateCoupon_FullMethodName       = "/OrderService/CreateCoupon"
+	OrderService_GetCouponsByClient_FullMethodName = "/OrderService/GetCouponsByClient"
+	OrderService_GetDetailCoupon_FullMethodName    = "/OrderService/GetDetailCoupon"
+	OrderService_UpdateCoupon_FullMethodName       = "/OrderService/UpdateCoupon"
+	OrderService_DeleteCoupon_FullMethodName       = "/OrderService/DeleteCoupon"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -38,8 +39,9 @@ type OrderServiceClient interface {
 	GetCart(ctx context.Context, in *GetCartRequest, opts ...grpc.CallOption) (*GetCartResponse, error)
 	UpdateCart(ctx context.Context, in *UpdateCartItemRequest, opts ...grpc.CallOption) (*UpdateCartItemResponse, error)
 	RemoveCartItem(ctx context.Context, in *RemoveCartItemRequest, opts ...grpc.CallOption) (*RemoveCartItemResponse, error)
-	GetAllCoupons(ctx context.Context, in *GetAllCouponRequest, opts ...grpc.CallOption) (*GetAllCouponResponse, error)
 	GetCoupons(ctx context.Context, in *GetCouponRequest, opts ...grpc.CallOption) (*GetCouponResponse, error)
+	CreateCoupon(ctx context.Context, in *CreateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error)
+	GetCouponsByClient(ctx context.Context, in *GetCouponByClientRequest, opts ...grpc.CallOption) (*GetCouponResponse, error)
 	GetDetailCoupon(ctx context.Context, in *GetDetailCouponRequest, opts ...grpc.CallOption) (*GetDetailCouponResponse, error)
 	UpdateCoupon(ctx context.Context, in *UpdateCouponRequest, opts ...grpc.CallOption) (*UpdateCouponResponse, error)
 	DeleteCoupon(ctx context.Context, in *DeleteCouponRequest, opts ...grpc.CallOption) (*DeleteCouponResponse, error)
@@ -93,20 +95,30 @@ func (c *orderServiceClient) RemoveCartItem(ctx context.Context, in *RemoveCartI
 	return out, nil
 }
 
-func (c *orderServiceClient) GetAllCoupons(ctx context.Context, in *GetAllCouponRequest, opts ...grpc.CallOption) (*GetAllCouponResponse, error) {
+func (c *orderServiceClient) GetCoupons(ctx context.Context, in *GetCouponRequest, opts ...grpc.CallOption) (*GetCouponResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetAllCouponResponse)
-	err := c.cc.Invoke(ctx, OrderService_GetAllCoupons_FullMethodName, in, out, cOpts...)
+	out := new(GetCouponResponse)
+	err := c.cc.Invoke(ctx, OrderService_GetCoupons_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *orderServiceClient) GetCoupons(ctx context.Context, in *GetCouponRequest, opts ...grpc.CallOption) (*GetCouponResponse, error) {
+func (c *orderServiceClient) CreateCoupon(ctx context.Context, in *CreateCouponRequest, opts ...grpc.CallOption) (*CreateCouponResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateCouponResponse)
+	err := c.cc.Invoke(ctx, OrderService_CreateCoupon_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *orderServiceClient) GetCouponsByClient(ctx context.Context, in *GetCouponByClientRequest, opts ...grpc.CallOption) (*GetCouponResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetCouponResponse)
-	err := c.cc.Invoke(ctx, OrderService_GetCoupons_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, OrderService_GetCouponsByClient_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -151,8 +163,9 @@ type OrderServiceServer interface {
 	GetCart(context.Context, *GetCartRequest) (*GetCartResponse, error)
 	UpdateCart(context.Context, *UpdateCartItemRequest) (*UpdateCartItemResponse, error)
 	RemoveCartItem(context.Context, *RemoveCartItemRequest) (*RemoveCartItemResponse, error)
-	GetAllCoupons(context.Context, *GetAllCouponRequest) (*GetAllCouponResponse, error)
 	GetCoupons(context.Context, *GetCouponRequest) (*GetCouponResponse, error)
+	CreateCoupon(context.Context, *CreateCouponRequest) (*CreateCouponResponse, error)
+	GetCouponsByClient(context.Context, *GetCouponByClientRequest) (*GetCouponResponse, error)
 	GetDetailCoupon(context.Context, *GetDetailCouponRequest) (*GetDetailCouponResponse, error)
 	UpdateCoupon(context.Context, *UpdateCouponRequest) (*UpdateCouponResponse, error)
 	DeleteCoupon(context.Context, *DeleteCouponRequest) (*DeleteCouponResponse, error)
@@ -178,11 +191,14 @@ func (UnimplementedOrderServiceServer) UpdateCart(context.Context, *UpdateCartIt
 func (UnimplementedOrderServiceServer) RemoveCartItem(context.Context, *RemoveCartItemRequest) (*RemoveCartItemResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveCartItem not implemented")
 }
-func (UnimplementedOrderServiceServer) GetAllCoupons(context.Context, *GetAllCouponRequest) (*GetAllCouponResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetAllCoupons not implemented")
-}
 func (UnimplementedOrderServiceServer) GetCoupons(context.Context, *GetCouponRequest) (*GetCouponResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCoupons not implemented")
+}
+func (UnimplementedOrderServiceServer) CreateCoupon(context.Context, *CreateCouponRequest) (*CreateCouponResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateCoupon not implemented")
+}
+func (UnimplementedOrderServiceServer) GetCouponsByClient(context.Context, *GetCouponByClientRequest) (*GetCouponResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCouponsByClient not implemented")
 }
 func (UnimplementedOrderServiceServer) GetDetailCoupon(context.Context, *GetDetailCouponRequest) (*GetDetailCouponResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetDetailCoupon not implemented")
@@ -286,24 +302,6 @@ func _OrderService_RemoveCartItem_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OrderService_GetAllCoupons_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetAllCouponRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(OrderServiceServer).GetAllCoupons(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: OrderService_GetAllCoupons_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrderServiceServer).GetAllCoupons(ctx, req.(*GetAllCouponRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _OrderService_GetCoupons_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetCouponRequest)
 	if err := dec(in); err != nil {
@@ -318,6 +316,42 @@ func _OrderService_GetCoupons_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(OrderServiceServer).GetCoupons(ctx, req.(*GetCouponRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OrderService_CreateCoupon_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCouponRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).CreateCoupon(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_CreateCoupon_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).CreateCoupon(ctx, req.(*CreateCouponRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OrderService_GetCouponsByClient_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCouponByClientRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetCouponsByClient(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetCouponsByClient_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetCouponsByClient(ctx, req.(*GetCouponByClientRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -400,12 +434,16 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _OrderService_RemoveCartItem_Handler,
 		},
 		{
-			MethodName: "GetAllCoupons",
-			Handler:    _OrderService_GetAllCoupons_Handler,
-		},
-		{
 			MethodName: "GetCoupons",
 			Handler:    _OrderService_GetCoupons_Handler,
+		},
+		{
+			MethodName: "CreateCoupon",
+			Handler:    _OrderService_CreateCoupon_Handler,
+		},
+		{
+			MethodName: "GetCouponsByClient",
+			Handler:    _OrderService_GetCouponsByClient_Handler,
 		},
 		{
 			MethodName: "GetDetailCoupon",

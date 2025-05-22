@@ -100,3 +100,12 @@ type IProductHandler interface {
 	GetProductByID(ctx *gin.Context)
 	GetProductReviewsByID(ctx *gin.Context)
 }
+
+type ICouponHandler interface {
+	GetCoupons(ctx *gin.Context)
+	GetCouponByClient(ctx *gin.Context)
+	CreateCoupon(ctx *gin.Context)
+	GetDetailCouponByID(ctx *gin.Context)
+	UpdateCoupon(ctx *gin.Context)
+	DeleteCouponByID(ctx *gin.Context)
+}

@@ -182,6 +182,7 @@ func (m *moduleService) getAllModulesFromRedis(ctx context.Context) (map[string]
 		common.Onboarding,
 		common.AddressTypeManagement,
 		common.ModuleManagement,
+		common.CouponManagement,
 	}
 	res := make(map[string]int, len(moduleName))
 

@@ -5,24 +5,6 @@ option go_package = "./order_proto_gen";
 import 'google/protobuf/timestamp.proto';
 import 'order_metadata.proto';
 
-message GetAllCouponRequest {}
-
-message GetAllCouponResponse {
-  repeated GetAllCoupon data = 1;
-}
-
-message GetAllCoupon {
-  string id = 1;
-  string code = 2;
-  string name = 3;
-  double minimum_order_amount = 4;
-  double maximum_discount_amount = 5;
-  double discount_value = 6;
-  google.protobuf.Timestamp end_date = 7;
-  int64 usage_limit = 8;
-  int64 usage_count = 9;
-}
-
 message GetCouponRequest {
   int64 limit = 1;
   int64 page = 2;
@@ -31,6 +13,12 @@ message GetCouponRequest {
   optional google.protobuf.Timestamp start_date = 5;
   optional google.protobuf.Timestamp end_date = 6;
   optional bool is_active = 7;
+}
+
+message GetCouponByClientRequest {
+  int64 limit = 1;
+  int64 page = 2;
+  google.protobuf.Timestamp current_date = 3;
 }
 
 message GetCouponResponse {
@@ -46,6 +34,11 @@ message CouponResponse {
   double discount_value = 5;
   google.protobuf.Timestamp start_date = 6;
   google.protobuf.Timestamp end_date = 7;
+  double minimum_order_amount = 8;
+  double maximum_discount_amount = 9;
+  int64 usage_limit = 10;
+  int64 usage_count = 11;
+  string currency = 12;
 }
 
 message GetDetailCouponRequest {
@@ -60,7 +53,7 @@ message GetDetailCouponResponse {
   string discount_type = 5;
   double discount_value = 6;
   double maximum_discount_amount = 7;
-  double maximum_order_amount = 8;
+  double minimum_order_amount = 8;
   string currency = 9;
   google.protobuf.Timestamp start_date = 10;
   google.protobuf.Timestamp end_date = 11;
@@ -78,7 +71,7 @@ message UpdateCouponRequest {
   string discount_type = 4;
   double discount_value = 5;
   double maximum_discount_amount = 6;
-  double maximum_order_amount = 7;
+  double minimum_order_amount = 7;
   google.protobuf.Timestamp start_date = 8;
   google.protobuf.Timestamp end_date = 9;
   int64 usage_limit = 10;
@@ -92,3 +85,18 @@ message DeleteCouponRequest {
 }
 
 message DeleteCouponResponse{}
+
+message CreateCouponRequest {
+  string name = 1;
+  string description = 2;
+  string discount_type = 3;
+  double discount_value = 4;
+  double maximum_discount_amount = 5;
+  double minimum_order_amount = 6;
+  string currency = 7;
+  google.protobuf.Timestamp start_date = 8;
+  google.protobuf.Timestamp end_date = 9;
+  int64 usage_limit = 10;
+}
+
+message CreateCouponResponse{}

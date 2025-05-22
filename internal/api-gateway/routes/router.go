@@ -34,6 +34,7 @@ func NewRouter(
 	administrativeDivisionHandler api_gateway_handler.IAdministrativeDivisionHandler,
 	categoryHandler api_gateway_handler.ICategoryHandler,
 	productHandler api_gateway_handler.IProductHandler,
+	couponHandler api_gateway_handler.ICouponHandler,
 ) *Router {
 	apiV1Group := router.Group("/api/v1")
 
@@ -47,6 +48,7 @@ func NewRouter(
 	registerAddressDataEndpoint(apiV1Group, accessTokenMiddleware, administrativeDivisionHandler)
 	registerCategoryEndpoint(apiV1Group, accessTokenMiddleware, categoryHandler)
 	registerProductEndpoint(apiV1Group, accessTokenMiddleware, productHandler)
+	registerCouponEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, couponHandler)
 
 	return &Router{
 		Router: router,
@@ -197,5 +199,18 @@ func registerProductEndpoint(group *gin.RouterGroup, accessTokenMiddleware *midd
 		productGroup.GET("", productHandler.GetProducts)
 		productGroup.GET("/:productID", productHandler.GetProductByID)
 		productGroup.GET("/:productID/reviews", productHandler.GetProductReviewsByID)
+	}
+}
+
+func registerCouponEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, permissionMiddleware *middleware.PermissionMiddleware, couponHandler api_gateway_handler.ICouponHandler) {
+	couponGroup := group.Group("/coupons")
+	couponGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		couponGroup.GET("/client", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.CouponManagement, common.Read), couponHandler.GetCouponByClient)
+		couponGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.CouponManagement, common.Read), couponHandler.GetCoupons)
+		couponGroup.POST("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.CouponManagement, common.Create), couponHandler.CreateCoupon)
+		couponGroup.GET("/:couponID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.CouponManagement, common.Read), couponHandler.GetDetailCouponByID)
+		couponGroup.PATCH("/:couponID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.CouponManagement, common.Update), couponHandler.UpdateCoupon)
+		couponGroup.DELETE("/:couponID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.CouponManagement, common.Delete), couponHandler.DeleteCouponByID)
 	}
 }

@@ -14,9 +14,11 @@ service OrderService {
 
   rpc RemoveCartItem(RemoveCartItemRequest) returns (RemoveCartItemResponse);
 
-  rpc GetAllCoupons(GetAllCouponRequest) returns (GetAllCouponResponse);
-
   rpc GetCoupons(GetCouponRequest) returns (GetCouponResponse);
+
+  rpc CreateCoupon(CreateCouponRequest) returns (CreateCouponResponse);
+
+  rpc GetCouponsByClient(GetCouponByClientRequest) returns (GetCouponResponse);
 
   rpc GetDetailCoupon(GetDetailCouponRequest) returns (GetDetailCouponResponse);
 

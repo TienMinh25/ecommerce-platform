@@ -121,3 +121,12 @@ type IProductService interface {
 	GetProductByID(ctx context.Context, productID string) (*api_gateway_dto.GetProductDetailResponse, error)
 	GetProductReviews(ctx context.Context, data api_gateway_dto.GetProductReviewsRequest) ([]api_gateway_dto.GetProductReviewsResponse, int, int, bool, bool, error)
 }
+
+type ICouponService interface {
+	GetCoupons(ctx context.Context, data *api_gateway_dto.GetCouponsRequest) ([]api_gateway_dto.GetCouponsResponse, int, int, bool, bool, error)
+	GetCouponByClient(ctx context.Context, data *api_gateway_dto.GetCouponsByClientRequest) ([]api_gateway_dto.GetCouponsResponse, int, int, bool, bool, error)
+	CreateCoupon(ctx context.Context, data *api_gateway_dto.CreateCouponRequest) error
+	GetDetailCouponByID(ctx context.Context, couponID string) (*api_gateway_dto.GetDetailCouponResponse, error)
+	UpdateCoupon(ctx context.Context, data *api_gateway_dto.UpdateCouponRequest) error
+	DeleteCouponByID(ctx context.Context, couponID string) error
+}

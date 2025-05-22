@@ -14,4 +14,10 @@ type ICartRepository interface {
 }
 
 type ICouponRepository interface {
+	GetCoupons(ctx context.Context, data *order_proto_gen.GetCouponRequest) ([]*models.Coupon, int64, error)
+	GetDetailCouponByID(ctx context.Context, id string) (*models.Coupon, error)
+	UpdateCoupon(ctx context.Context, data *order_proto_gen.UpdateCouponRequest) error
+	DeleteCouponByID(ctx context.Context, id string) error
+	GetCouponsByClient(ctx context.Context, data *order_proto_gen.GetCouponByClientRequest) ([]*models.Coupon, int64, error)
+	CreateCoupon(ctx context.Context, data *order_proto_gen.CreateCouponRequest) error
 }

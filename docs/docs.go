@@ -1008,6 +1008,348 @@ const docTemplate = `{
                 }
             }
         },
+        "/coupons": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get coupons by admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Get coupons by admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "code",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "percentage",
+                            "fixed_amount"
+                        ],
+                        "type": "string",
+                        "name": "discount_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "end_date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "name": "is_active",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "start_date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetCouponsResponseDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Create coupon",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Create coupon",
+                "parameters": [
+                    {
+                        "description": "data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.CreateCouponRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.CreateCouponResponseDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/coupons/client": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get coupons by client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "Get coupons by client",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "current_date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetCouponsResponseDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/coupons/{couponID}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "get detail coupon by id",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "get detail coupon by id",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "couponID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetDetailCouponResponseDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update coupon",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "update coupon",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "couponID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.DeleteCouponResponseDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update coupon",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "coupons"
+                ],
+                "summary": "update coupon",
+                "parameters": [
+                    {
+                        "description": "id",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateCouponRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "description": "couponID",
+                        "name": "couponID",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateCouponResponseDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/modules": {
             "get": {
                 "security": [
@@ -3524,6 +3866,71 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.CreateCouponRequest": {
+            "type": "object",
+            "required": [
+                "currency",
+                "discount_type",
+                "discount_value",
+                "end_date",
+                "maximum_discount_amount",
+                "minimum_order_amount",
+                "name",
+                "start_date",
+                "usage_limit"
+            ],
+            "properties": {
+                "currency": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "string",
+                    "enum": [
+                        "percentage",
+                        "fixed_amount"
+                    ]
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "maximum_discount_amount": {
+                    "type": "number"
+                },
+                "minimum_order_amount": {
+                    "type": "number",
+                    "minimum": 0
+                },
+                "name": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "usage_limit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.CreateCouponResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.CreateCouponResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.CreateCouponResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.CreateModuleRequest": {
             "type": "object",
             "required": [
@@ -3723,6 +4130,20 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.DeleteCartItemResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.DeleteCouponResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.DeleteCouponResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.DeleteCouponResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
@@ -4003,6 +4424,61 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.GetCouponsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "string"
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "maximum_discount_amount": {
+                    "type": "number"
+                },
+                "minimum_order_amount": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "usage_count": {
+                    "type": "integer"
+                },
+                "usage_limit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.GetCouponsResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetCouponsResponse"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
+                }
+            }
+        },
         "api_gateway_dto.GetCurrentUserResponse": {
             "type": "object",
             "properties": {
@@ -4031,6 +4507,70 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.GetCurrentUserResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.GetDetailCouponResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "string"
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "maximum_discount_amount": {
+                    "type": "number"
+                },
+                "minimum_order_amount": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "usage_count": {
+                    "type": "integer"
+                },
+                "usage_limit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.GetDetailCouponResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetDetailCouponResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
@@ -5027,8 +5567,7 @@ const docTemplate = `{
         "api_gateway_dto.UpdateCartItemRequest": {
             "type": "object",
             "required": [
-                "product_variant_id",
-                "quantity"
+                "product_variant_id"
             ],
             "properties": {
                 "product_variant_id": {
@@ -5056,6 +5595,65 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.UpdateCartItemResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateCouponRequest": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "discount_type": {
+                    "type": "string",
+                    "enum": [
+                        "percentage",
+                        "fixed_amount"
+                    ]
+                },
+                "discount_value": {
+                    "type": "number"
+                },
+                "end_date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "maximum_discount_amount": {
+                    "type": "number"
+                },
+                "minimum_order_amount": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "start_date": {
+                    "type": "string"
+                },
+                "usage_limit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateCouponResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.UpdateCouponResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateCouponResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
