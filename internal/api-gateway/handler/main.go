@@ -109,3 +109,7 @@ type ICouponHandler interface {
 	UpdateCoupon(ctx *gin.Context)
 	DeleteCouponByID(ctx *gin.Context)
 }
+
+type IPaymentHandler interface {
+	GetPaymentMethods(ctx *gin.Context)
+}

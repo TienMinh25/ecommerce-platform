@@ -23,6 +23,21 @@ const couponService = {
         }
     },
 
+    getCouponsForClient: async (params = {}) => {
+        try {
+            // Add current date as required parameter
+            const clientParams = {
+                current_date: new Date().toISOString(),
+                ...params
+            };
+            const response = await api.get('/coupons/client', { params: clientParams });
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching client coupons:', error);
+            throw error;
+        }
+    },
+
     // Create new coupon
     createCoupon: async (couponData) => {
         try {

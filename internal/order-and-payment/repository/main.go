@@ -21,3 +21,7 @@ type ICouponRepository interface {
 	GetCouponsByClient(ctx context.Context, data *order_proto_gen.GetCouponByClientRequest) ([]*models.Coupon, int64, error)
 	CreateCoupon(ctx context.Context, data *order_proto_gen.CreateCouponRequest) error
 }
+
+type IPaymentRepository interface {
+	GetPaymentMethods(ctx context.Context) ([]*models.PaymentMethod, error)
+}
