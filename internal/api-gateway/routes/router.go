@@ -35,6 +35,7 @@ func NewRouter(
 	categoryHandler api_gateway_handler.ICategoryHandler,
 	productHandler api_gateway_handler.IProductHandler,
 	couponHandler api_gateway_handler.ICouponHandler,
+	paymentHandler api_gateway_handler.IPaymentHandler,
 ) *Router {
 	apiV1Group := router.Group("/api/v1")
 
@@ -49,6 +50,7 @@ func NewRouter(
 	registerCategoryEndpoint(apiV1Group, accessTokenMiddleware, categoryHandler)
 	registerProductEndpoint(apiV1Group, accessTokenMiddleware, productHandler)
 	registerCouponEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, couponHandler)
+	registerPaymentEndpoint(apiV1Group, accessTokenMiddleware, paymentHandler)
 
 	return &Router{
 		Router: router,
@@ -212,5 +214,13 @@ func registerCouponEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middl
 		couponGroup.GET("/:couponID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.CouponManagement, common.Read), couponHandler.GetDetailCouponByID)
 		couponGroup.PATCH("/:couponID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.CouponManagement, common.Update), couponHandler.UpdateCoupon)
 		couponGroup.DELETE("/:couponID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.CouponManagement, common.Delete), couponHandler.DeleteCouponByID)
+	}
+}
+
+func registerPaymentEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, paymentHandler api_gateway_handler.IPaymentHandler) {
+	paymentGroup := group.Group("/payments")
+	paymentGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		paymentGroup.GET("/payment-methods", paymentHandler.GetPaymentMethods)
 	}
 }

@@ -42,6 +42,7 @@ import {
   FaShoppingCart,
   FaStore,
   FaTruck,
+  FaThumbsUp,
 } from 'react-icons/fa';
 import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -263,9 +264,43 @@ const ProductDetail = () => {
     });
   };
 
+  // Updated Buy Now handler to navigate to checkout
   const handleBuyNow = () => {
-    handleAddToCart();
-    navigate('/checkout');
+    if (!product || !selectedVariant) {
+      toast({
+        title: 'Lỗi',
+        description: 'Không thể xác định sản phẩm',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    // Create order item from current selection
+    const orderItem = {
+      cart_item_id: `temp_${Date.now()}`, // Temporary ID for direct purchase
+      product_id: product.product_id,
+      product_name: product.name,
+      product_variant_id: selectedVariant.product_variant_id,
+      product_variant_thumbnail: selectedVariant.thumbnail_url,
+      variant_name: selectedVariant.variant_name,
+      price: selectedVariant.price,
+      discount_price: selectedVariant.discount_price || 0,
+      quantity: quantity,
+      attribute_values: selectedVariant.attribute_values || []
+    };
+
+    // Navigate to checkout with product data
+    navigate('/checkout', {
+      state: {
+        cartItems: [orderItem],
+        fromProductDetail: true,
+        selectedVoucher: null,
+        voucherDiscount: 0,
+        finalTotal: (selectedVariant.discount_price > 0 ? selectedVariant.discount_price : selectedVariant.price) * quantity
+      }
+    });
   };
 
   // Loading skeleton for product details
@@ -761,12 +796,28 @@ const ProductDetail = () => {
 
                         {/* Pagination */}
                         {reviewMetadata && reviewMetadata.total_pages > 1 && (
-                            <Box mt={6} display="flex" justifyContent="center">
-                              <Pagination
-                                  currentPage={reviewMetadata.page}
-                                  totalPages={reviewMetadata.total_pages}
-                                  onPageChange={handleReviewPageChange}
-                              />
+                            <Box mt={6} display="flex" justifyContent="center" alignItems="center">
+                              <Button
+                                  variant="outline"
+                                  onClick={() => handleReviewPageChange(reviewMetadata.page - 1)}
+                                  isDisabled={reviewMetadata.page <= 1}
+                                  mr={2}
+                                  size="sm"
+                              >
+                                Trang trước
+                              </Button>
+                              <Text mx={4} fontSize="sm" color="gray.600">
+                                Trang {reviewMetadata.page} / {reviewMetadata.total_pages}
+                              </Text>
+                              <Button
+                                  variant="outline"
+                                  onClick={() => handleReviewPageChange(reviewMetadata.page + 1)}
+                                  isDisabled={reviewMetadata.page >= reviewMetadata.total_pages}
+                                  ml={2}
+                                  size="sm"
+                              >
+                                Trang sau
+                              </Button>
                             </Box>
                         )}
                       </VStack>
@@ -781,9 +832,9 @@ const ProductDetail = () => {
                 </Box>
               </TabPanel>
             </TabPanels>
-        </Tabs>
-      </Box>
-    </Container>
+          </Tabs>
+        </Box>
+      </Container>
   );
 };
 

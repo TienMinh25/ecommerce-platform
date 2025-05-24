@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+option go_package = "./order_proto_gen";
+
+message GetPaymentMethodsRequest {}
+
+message GetPaymentMethodsResponse {
+  repeated PaymentMethodsResponse payment_methods = 1;
+}
+
+message PaymentMethodsResponse {
+  int64 id = 1;
+  string name = 2;
+  string code = 3;
+}

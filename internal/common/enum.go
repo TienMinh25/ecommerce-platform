@@ -54,3 +54,10 @@ const (
 	ModuleManagement      ModuleName = "Module Management"
 	CouponManagement      ModuleName = "Coupon Management"
 )
+
+type MethodType string
+
+const (
+	Momo MethodType = "momo"
+	Cod  MethodType = "cod"
+)

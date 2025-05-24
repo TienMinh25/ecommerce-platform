@@ -94,16 +94,39 @@ const CartPage = () => {
         setSelectedVoucher(voucher);
     };
 
+    // Updated checkout handler to pass data to checkout page
     const handleCheckout = () => {
         if (selectedItems.length === 0) {
             return;
         }
-        // Pass voucher data to checkout if needed
+
+        // Get selected cart items
+        const selectedCartItems = cartItems.filter(item =>
+            selectedItems.includes(item.cart_item_id)
+        );
+
+        // Transform cart items to checkout format
+        const checkoutItems = selectedCartItems.map(item => ({
+            cart_item_id: item.cart_item_id,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            product_variant_id: item.product_variant_id,
+            product_variant_thumbnail: item.product_variant_thumbnail,
+            variant_name: item.variant_name,
+            price: item.price,
+            discount_price: item.discount_price || 0,
+            quantity: item.quantity,
+            attribute_values: item.attribute_values || []
+        }));
+
+        // Navigate to checkout with cart data and voucher
         navigate('/checkout', {
             state: {
+                cartItems: checkoutItems,
                 selectedVoucher,
                 voucherDiscount: calculateVoucherDiscount(),
-                finalTotal
+                finalTotal,
+                fromCart: true
             }
         });
     };

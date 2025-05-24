@@ -3553,11 +3553,11 @@ func seedProductReviews(ctx context.Context, db *pgxpool.Pool, userIDs []int64) 
 			// Thêm review
 			_, err := db.Exec(ctx, `
 				INSERT INTO product_reviews (
-					product_id, user_id, rating, comment, is_verified_purchase, helpful_votes
+					product_id, user_id, rating, comment, helpful_votes
 				)
-				VALUES ($1, $2, $3, $4, $5, $6)
+				VALUES ($1, $2, $3, $4, $5)
 				ON CONFLICT DO NOTHING;
-			`, product.id, userID, rating, comment, gofakeit.Bool(), gofakeit.Number(0, 20))
+			`, product.id, userID, rating, comment, gofakeit.Number(0, 20))
 
 			if err != nil {
 				log.Printf("Error inserting product review: %v", err)
@@ -3574,10 +3574,10 @@ func seedCoupons(ctx context.Context, db *pgxpool.Pool) {
 	currentTime := time.Now()
 
 	coupons := []struct {
-		code, name, desc, discountType, appliesTo string
-		discountValue, maxDiscount, minOrder      float32
-		startDate, endDate                        time.Time
-		usageLimit                                int
+		code, name, desc, discountType       string
+		discountValue, maxDiscount, minOrder float32
+		startDate, endDate                   time.Time
+		usageLimit                           int
 	}{
 		{
 			code:          "WELCOME10",
@@ -3587,7 +3587,6 @@ func seedCoupons(ctx context.Context, db *pgxpool.Pool) {
 			discountValue: 10,
 			maxDiscount:   100000,
 			minOrder:      0,
-			appliesTo:     "order",
 			startDate:     currentTime.AddDate(0, -1, 0),
 			endDate:       currentTime.AddDate(0, 2, 0),
 			usageLimit:    1000,
@@ -3600,7 +3599,6 @@ func seedCoupons(ctx context.Context, db *pgxpool.Pool) {
 			discountValue: 50000,
 			maxDiscount:   50000,
 			minOrder:      500000,
-			appliesTo:     "order",
 			startDate:     currentTime.AddDate(0, 0, -15),
 			endDate:       currentTime.AddDate(0, 1, 15),
 			usageLimit:    500,
@@ -3613,7 +3611,6 @@ func seedCoupons(ctx context.Context, db *pgxpool.Pool) {
 			discountValue: 30000,
 			maxDiscount:   30000,
 			minOrder:      300000,
-			appliesTo:     "order",
 			startDate:     currentTime.AddDate(0, 0, -30),
 			endDate:       currentTime.AddDate(0, 3, 0),
 			usageLimit:    2000,
@@ -3626,7 +3623,6 @@ func seedCoupons(ctx context.Context, db *pgxpool.Pool) {
 			discountValue: 15,
 			maxDiscount:   200000,
 			minOrder:      1000000,
-			appliesTo:     "category",
 			startDate:     currentTime.AddDate(0, 0, -5),
 			endDate:       currentTime.AddDate(0, 1, 0),
 			usageLimit:    300,
@@ -3639,7 +3635,6 @@ func seedCoupons(ctx context.Context, db *pgxpool.Pool) {
 			discountValue: 50,
 			maxDiscount:   500000,
 			minOrder:      100000,
-			appliesTo:     "order",
 			startDate:     currentTime,
 			endDate:       currentTime.AddDate(0, 0, 2),
 			usageLimit:    50,
@@ -3651,17 +3646,17 @@ func seedCoupons(ctx context.Context, db *pgxpool.Pool) {
 			INSERT INTO coupons (
 				code, name, description, discount_type, discount_value,
 				maximum_discount_amount, minimum_order_amount, currency,
-				start_date, end_date, usage_limit, is_active, applies_to
+				start_date, end_date, usage_limit, is_active
 			)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, 'VND', $8, $9, $10, TRUE, $11)
 			ON CONFLICT (code) DO UPDATE
 			SET name = $2, description = $3, discount_type = $4, discount_value = $5,
 				maximum_discount_amount = $6, minimum_order_amount = $7,
-				start_date = $8, end_date = $9, usage_limit = $10, applies_to = $11;
+				start_date = $8, end_date = $9, usage_limit = $10;
 		`,
 			coupon.code, coupon.name, coupon.desc, coupon.discountType, coupon.discountValue,
 			coupon.maxDiscount, coupon.minOrder, coupon.startDate, coupon.endDate,
-			coupon.usageLimit, coupon.appliesTo)
+			coupon.usageLimit)
 
 		if err != nil {
 			log.Printf("Error inserting coupon: %v", err)
