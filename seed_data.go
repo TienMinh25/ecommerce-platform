@@ -3648,7 +3648,7 @@ func seedCoupons(ctx context.Context, db *pgxpool.Pool) {
 				maximum_discount_amount, minimum_order_amount, currency,
 				start_date, end_date, usage_limit, is_active
 			)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, 'VND', $8, $9, $10, TRUE, $11)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, 'VND', $8, $9, $10, TRUE)
 			ON CONFLICT (code) DO UPDATE
 			SET name = $2, description = $3, discount_type = $4, discount_value = $5,
 				maximum_discount_amount = $6, minimum_order_amount = $7,

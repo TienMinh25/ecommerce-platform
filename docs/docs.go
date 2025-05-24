@@ -4991,6 +4991,9 @@ const docTemplate = `{
         "api_gateway_dto.GetUserAddressResponse": {
             "type": "object",
             "properties": {
+                "address_type": {
+                    "type": "string"
+                },
                 "address_type_id": {
                     "type": "integer"
                 },

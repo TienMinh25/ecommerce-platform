@@ -40,7 +40,7 @@ const CheckoutPage = () => {
         cartItems: passedCartItems
     } = location.state || {};
 
-    // Mock cart items if not passed from previous page
+    // Mock cart items with shipping fee per item
     const [orderItems] = useState(passedCartItems || [
         {
             cart_item_id: 1,
@@ -50,6 +50,9 @@ const CheckoutPage = () => {
             price: 1189000,
             discount_price: 0,
             quantity: 1,
+            shipping_fee: 18300, // Shipping fee per item
+            weight: 2.5, // kg - for shipping calculation
+            supplier_id: 1,
             attribute_values: [
                 { attribute_name: "Màu sắc", attribute_value: "Bạc" },
                 { attribute_name: "Chất liệu", attribute_value: "Kim loại" }
@@ -89,13 +92,107 @@ const CheckoutPage = () => {
         }).format(price);
     };
 
+    // Format date for shipping
+    const formatShippingDate = (date) => {
+        return date.toLocaleDateString('vi-VN', {
+            day: 'numeric',
+            month: 'long'
+        });
+    };
+
+    // Calculate shipping dates (today + 2 days to today + 5 days)
+    const getShippingDates = () => {
+        const today = new Date();
+        const deliveryStart = new Date();
+        const deliveryEnd = new Date();
+
+        deliveryStart.setDate(today.getDate() + 2); // Ngày hôm nay + 2 ngày
+        deliveryEnd.setDate(today.getDate() + 5);   // Ngày hôm nay + 5 ngày
+
+        return {
+            startDate: formatShippingDate(deliveryStart),
+            endDate: formatShippingDate(deliveryEnd),
+            guaranteeDate: formatShippingDate(deliveryEnd)
+        };
+    };
+
+    const shippingDates = getShippingDates();
+
+    // Calculate dynamic shipping fee for individual item
+    const calculateItemShippingFee = (item) => {
+        const baseShippingFee = 18300; // Base shipping fee
+        const itemValue = item.discount_price > 0 ? item.discount_price : item.price;
+
+        // Quantity discount: More items = lower shipping per item
+        let quantityMultiplier = 1;
+        if (item.quantity >= 5) {
+            quantityMultiplier = 0.6; // 40% off for 5+ items
+        } else if (item.quantity >= 3) {
+            quantityMultiplier = 0.7; // 30% off for 3+ items
+        } else if (item.quantity >= 2) {
+            quantityMultiplier = 0.8; // 20% off for 2+ items
+        }
+
+        // Value-based discount: Higher value items = lower shipping rate
+        let valueMultiplier = 1;
+        if (itemValue >= 1000000) { // 1M+
+            valueMultiplier = 0.5; // 50% off shipping for expensive items
+        } else if (itemValue >= 500000) { // 500k+
+            valueMultiplier = 0.7; // 30% off shipping
+        } else if (itemValue >= 200000) { // 200k+
+            valueMultiplier = 0.85; // 15% off shipping
+        }
+
+        // Calculate final shipping fee per item
+        const discountedShippingPerItem = baseShippingFee * quantityMultiplier * valueMultiplier;
+
+        // Total shipping for this item (with quantity)
+        return Math.round(discountedShippingPerItem * item.quantity);
+    };
+
+    // Calculate total shipping fee based on all items
+    const calculateShippingFee = () => {
+        // Calculate subtotal to check for free shipping
+        const subtotal = orderItems.reduce((total, item) => {
+            const price = item.discount_price > 0 ? item.discount_price : item.price;
+            return total + (price * item.quantity);
+        }, 0);
+
+        // Free shipping for orders over 500k
+        if (subtotal >= 500000) {
+            return 0;
+        }
+
+        // Sum individual item shipping fees
+        return orderItems.reduce((total, item) => {
+            return total + calculateItemShippingFee(item);
+        }, 0);
+    };
+
+    // Get individual item shipping fee (considering free shipping)
+    const getItemShippingFee = (item) => {
+        if (isFreeShipping) {
+            return 0;
+        }
+        return calculateItemShippingFee(item);
+    };
+
+    // Get shipping fee per unit for display
+    const getItemShippingFeePerUnit = (item) => {
+        if (isFreeShipping) {
+            return 0;
+        }
+        return Math.round(calculateItemShippingFee(item) / item.quantity);
+    };
+
     // Calculate totals
     const subtotal = orderItems.reduce((total, item) => {
         const price = item.discount_price > 0 ? item.discount_price : item.price;
         return total + (price * item.quantity);
     }, 0);
 
-    const shippingFee = 18300; // Fixed shipping fee as shown in image
+    const shippingFee = calculateShippingFee();
+    const isFreeShipping = subtotal >= 500000;
 
     const calculateVoucherDiscount = () => {
         if (!selectedVoucher || subtotal === 0) return 0;
@@ -152,7 +249,8 @@ const CheckoutPage = () => {
                 subtotal: subtotal,
                 shipping_fee: shippingFee,
                 voucher_discount: voucherDiscountAmount,
-                total_amount: totalAmount
+                total_amount: totalAmount,
+                is_free_shipping: isFreeShipping
             };
 
             // Call API to create order
@@ -212,67 +310,120 @@ const CheckoutPage = () => {
                             />
                         </Box>
 
-                        {/* Products Section */}
-                        <Box bg="white" p={4} borderRadius="md" borderWidth="1px">
-                            <Text fontWeight="semibold" mb={4}>
-                                Sản phẩm
-                            </Text>
+                        {/* Products Section - Separated by Items */}
+                        {orderItems.map((item, index) => (
+                            <Box key={item.cart_item_id} bg="white" p={4} borderRadius="md" borderWidth="1px">
+                                {/* Product Info */}
+                                <VStack spacing={4} align="stretch">
+                                    <Flex align="center" spacing={4}>
+                                        <Image
+                                            src={item.product_variant_thumbnail}
+                                            alt={item.product_name}
+                                            boxSize="80px"
+                                            objectFit="cover"
+                                            borderRadius="md"
+                                            mr={4}
+                                        />
 
-                            <VStack spacing={4} align="stretch">
-                                {orderItems.map((item) => (
-                                    <Box key={item.cart_item_id}>
-                                        <Flex align="center" spacing={4}>
-                                            <Image
-                                                src={item.product_variant_thumbnail}
-                                                alt={item.product_name}
-                                                boxSize="80px"
-                                                objectFit="cover"
-                                                borderRadius="md"
-                                                mr={4}
-                                            />
-
-                                            <VStack align="start" spacing={1} flex="1">
-                                                <Text fontWeight="medium" noOfLines={2}>
-                                                    {item.product_name}
-                                                </Text>
-                                                <Text fontSize="sm" color="gray.500">
-                                                    Phân Loại Hàng: {item.variant_name ||
-                                                    (item.attribute_values?.map(attr => attr.attribute_value).join(', ') || 'Mặc định')
-                                                }
-                                                </Text>
-                                                <Text fontSize="sm" color="gray.600">
-                                                    x{item.quantity}
-                                                </Text>
-                                            </VStack>
-
-                                            <VStack align="end" spacing={1}>
-                                                {item.discount_price > 0 ? (
-                                                    <>
-                                                        <Text as="s" color="gray.500" fontSize="sm">
-                                                            {formatPrice(item.price)}
+                                        <VStack align="start" spacing={1} flex="1">
+                                            <Text fontWeight="medium" noOfLines={2}>
+                                                {item.product_name}
+                                            </Text>
+                                            <Text fontSize="sm" color="gray.500">
+                                                Phân Loại Hàng: {item.variant_name ||
+                                                (item.attribute_values?.map(attr => attr.attribute_value).join(', ') || 'Mặc định')
+                                            }
+                                            </Text>
+                                            <Text fontSize="sm" color="gray.600">
+                                                x{item.quantity}
+                                            </Text>
+                                            {/* Show shipping discount info */}
+                                            {!isFreeShipping && (
+                                                <Text fontSize="xs" color="blue.600">
+                                                    Ship: {formatPrice(getItemShippingFeePerUnit(item))}/sp
+                                                    {item.quantity >= 2 && (
+                                                        <Text as="span" color="green.600" ml={1}>
+                                                            (Giảm {item.quantity >= 5 ? '40%' : item.quantity >= 3 ? '30%' : '20%'})
                                                         </Text>
-                                                        <Text fontWeight="medium" color="red.500">
-                                                            {formatPrice(item.discount_price)}
+                                                    )}
+                                                    {((item.discount_price > 0 ? item.discount_price : item.price) >= 200000) && (
+                                                        <Text as="span" color="purple.600" ml={1}>
+                                                            (VIP giảm)
                                                         </Text>
-                                                    </>
-                                                ) : (
-                                                    <Text fontWeight="medium">
+                                                    )}
+                                                </Text>
+                                            )}
+                                        </VStack>
+
+                                        <VStack align="end" spacing={1}>
+                                            {item.discount_price > 0 ? (
+                                                <>
+                                                    <Text as="s" color="gray.500" fontSize="sm">
                                                         {formatPrice(item.price)}
                                                     </Text>
-                                                )}
-                                            </VStack>
-                                        </Flex>
+                                                    <Text fontWeight="medium" color="red.500">
+                                                        {formatPrice(item.discount_price)}
+                                                    </Text>
+                                                </>
+                                            ) : (
+                                                <Text fontWeight="medium">
+                                                    {formatPrice(item.price)}
+                                                </Text>
+                                            )}
+                                        </VStack>
+                                    </Flex>
 
-                                        {orderItems.indexOf(item) < orderItems.length - 1 && (
-                                            <Divider mt={4} />
-                                        )}
+                                    <Divider />
+
+                                    {/* Individual Shipping Method for this item */}
+                                    <Box>
+                                        <HStack justify="space-between" mb={2}>
+                                            <HStack>
+                                                <Icon as={FiTruck} color="blue.500" />
+                                                <Text fontWeight="medium">Phương thức vận chuyển:</Text>
+                                            </HStack>
+                                        </HStack>
+
+                                        <Box p={3} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
+                                            <Flex justify="space-between" align="center">
+                                                <VStack align="start" spacing={1}>
+                                                    <Text fontWeight="medium">Nhanh</Text>
+                                                    <Text fontSize="xs" color="gray.600">
+                                                        Đảm bảo nhận hàng từ {shippingDates.startDate} - {shippingDates.endDate}
+                                                    </Text>
+                                                    <Text fontSize="xs" color="green.600">
+                                                        Nhận Voucher trị giá ₫15.000 nếu đơn hàng được giao đến bạn sau ngày {shippingDates.guaranteeDate}.
+                                                    </Text>
+                                                </VStack>
+                                                <VStack align="end" spacing={1}>
+                                                    {/* Individual shipping fee for this item */}
+                                                    {isFreeShipping ? (
+                                                        <Text fontWeight="medium" color="green.600">
+                                                            Miễn phí
+                                                        </Text>
+                                                    ) : (
+                                                        <VStack align="end" spacing={0}>
+                                                            <Text fontWeight="medium">
+                                                                {formatPrice(getItemShippingFee(item))}
+                                                            </Text>
+                                                            <Text fontSize="xs" color="gray.500">
+                                                                ({formatPrice(getItemShippingFeePerUnit(item))}/sp)
+                                                            </Text>
+                                                        </VStack>
+                                                    )}
+                                                    <Text fontSize="xs" color="gray.500">
+                                                        {item.weight && `${item.weight}kg`}
+                                                    </Text>
+                                                </VStack>
+                                            </Flex>
+                                        </Box>
                                     </Box>
-                                ))}
-                            </VStack>
+                                </VStack>
+                            </Box>
+                        ))}
 
-                            <Divider my={4} />
-
-                            {/* Voucher Section */}
+                        {/* Voucher Section - Separate */}
+                        <Box bg="white" p={4} borderRadius="md" borderWidth="1px">
                             <VStack spacing={3} align="stretch">
                                 <CheckoutVoucherSelector
                                     selectedVoucher={selectedVoucher}
@@ -280,35 +431,6 @@ const CheckoutPage = () => {
                                     cartTotal={subtotal}
                                 />
                             </VStack>
-
-                            <Divider my={4} />
-
-                            {/* Shipping Method */}
-                            <Box>
-                                <HStack justify="space-between" mb={2}>
-                                    <HStack>
-                                        <Icon as={FiTruck} color="blue.500" />
-                                        <Text fontWeight="medium">Phương thức vận chuyển:</Text>
-                                    </HStack>
-                                </HStack>
-
-                                <Box p={3} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
-                                    <Flex justify="space-between" align="center">
-                                        <VStack align="start" spacing={1}>
-                                            <Text fontWeight="medium">Nhanh</Text>
-                                            <Text fontSize="xs" color="gray.600">
-                                                Đảm bảo nhận hàng từ 25 Tháng 5 - 28 Tháng 5
-                                            </Text>
-                                            <Text fontSize="xs" color="green.600">
-                                                Nhận Voucher trị giá ₫15.000 nếu đơn hàng được giao đến bạn sau ngày 28 Tháng 5 2025.
-                                            </Text>
-                                        </VStack>
-                                        <Text fontWeight="medium">
-                                            {formatPrice(shippingFee)}
-                                        </Text>
-                                    </Flex>
-                                </Box>
-                            </Box>
                         </Box>
 
                         {/* Payment Method Section */}
@@ -337,7 +459,18 @@ const CheckoutPage = () => {
 
                                 <Flex justify="space-between">
                                     <Text>Phí vận chuyển:</Text>
-                                    <Text>{formatPrice(shippingFee)}</Text>
+                                    {isFreeShipping ? (
+                                        <VStack align="end" spacing={0}>
+                                            <Text as="s" color="gray.400" fontSize="sm">
+                                                {formatPrice(orderItems.reduce((total, item) => total + calculateItemShippingFee(item), 0))}
+                                            </Text>
+                                            <Text color="green.600" fontWeight="medium">
+                                                Miễn phí
+                                            </Text>
+                                        </VStack>
+                                    ) : (
+                                        <Text>{formatPrice(shippingFee)}</Text>
+                                    )}
                                 </Flex>
 
                                 {selectedVoucher && voucherDiscountAmount > 0 && (

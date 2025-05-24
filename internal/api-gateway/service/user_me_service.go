@@ -279,6 +279,7 @@ func (u *userMeService) GetListCurrentAddress(ctx context.Context, data *api_gat
 			Longtitude:    address.Longtitude,
 			Lattitude:     address.Latitude,
 			AddressTypeID: address.AddressTypeID,
+			AddressType:   address.AddressType,
 		})
 	}
 

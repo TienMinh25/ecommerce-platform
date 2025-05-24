@@ -174,7 +174,7 @@ const AddressSelector = ({ selectedAddress, onAddressSelect, orderTotal }) => {
                                     {selectedAddress.recipient_name} | {selectedAddress.phone}
                                 </Text>
                                 <Text fontSize="xs" color="gray.600">
-                                    {selectedAddress.address_line}, {selectedAddress.ward}, {selectedAddress.district}, {selectedAddress.province}
+                                    {selectedAddress.street}, {selectedAddress.ward}, {selectedAddress.district}, {selectedAddress.province}
                                 </Text>
                                 {selectedAddress.is_default && (
                                     <Badge colorScheme="red" size="sm">Mặc định</Badge>
@@ -265,12 +265,12 @@ const AddressSelector = ({ selectedAddress, onAddressSelect, orderTotal }) => {
                                                                     </Badge>
                                                                 )}
                                                                 <Badge colorScheme="blue" size="sm">
-                                                                    {address.address_type?.name || 'Nhà'}
+                                                                    {address.address_type || 'Nhà'}
                                                                 </Badge>
                                                             </HStack>
 
                                                             <Text fontSize="xs" color="gray.600">
-                                                                {address.address_line}
+                                                                {address.street}
                                                             </Text>
                                                             <Text fontSize="xs" color="gray.500">
                                                                 {address.ward}, {address.district}, {address.province}
