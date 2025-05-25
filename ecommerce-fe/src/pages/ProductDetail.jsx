@@ -277,7 +277,37 @@ const ProductDetail = () => {
       return;
     }
 
-    // Create order item from current selection
+    // Calculate estimated delivery date (current date + 5 days in UTC)
+    const estimatedDeliveryDate = new Date();
+    estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 5);
+
+    // Calculate shipping fee for this item
+    const baseShippingFee = 18300;
+    const itemValue = selectedVariant.discount_price > 0 ? selectedVariant.discount_price : selectedVariant.price;
+
+    // Quantity discount
+    let quantityMultiplier = 1;
+    if (quantity >= 5) {
+      quantityMultiplier = 0.6; // 40% off for 5+ items
+    } else if (quantity >= 3) {
+      quantityMultiplier = 0.7; // 30% off for 3+ items
+    } else if (quantity >= 2) {
+      quantityMultiplier = 0.8; // 20% off for 2+ items
+    }
+
+    // Value-based discount
+    let valueMultiplier = 1;
+    if (itemValue >= 1000000) { // 1M+
+      valueMultiplier = 0.5; // 50% off shipping
+    } else if (itemValue >= 500000) { // 500k+
+      valueMultiplier = 0.7; // 30% off shipping
+    } else if (itemValue >= 200000) { // 200k+
+      valueMultiplier = 0.85; // 15% off shipping
+    }
+
+    const shippingFee = Math.round(baseShippingFee * quantityMultiplier * valueMultiplier);
+
+    // Create order item from current selection with all required fields
     const orderItem = {
       cart_item_id: `temp_${Date.now()}`, // Temporary ID for direct purchase
       product_id: product.product_id,
@@ -285,11 +315,18 @@ const ProductDetail = () => {
       product_variant_id: selectedVariant.product_variant_id,
       product_variant_thumbnail: selectedVariant.thumbnail_url,
       variant_name: selectedVariant.variant_name,
+      product_variant_name: selectedVariant.variant_name, // API expects this field name
+      product_variant_image_url: selectedVariant.thumbnail_url, // API expects this field name
       price: selectedVariant.price,
       discount_price: selectedVariant.discount_price || 0,
       quantity: quantity,
-      attribute_values: selectedVariant.attribute_values || []
+      attribute_values: selectedVariant.attribute_values || [],
+      shipping_fee: shippingFee,
+      estimated_delivery_date: estimatedDeliveryDate.toISOString()
     };
+
+    // Calculate final total
+    const itemTotal = (selectedVariant.discount_price > 0 ? selectedVariant.discount_price : selectedVariant.price) * quantity;
 
     // Navigate to checkout with product data
     navigate('/checkout', {
@@ -298,7 +335,7 @@ const ProductDetail = () => {
         fromProductDetail: true,
         selectedVoucher: null,
         voucherDiscount: 0,
-        finalTotal: (selectedVariant.discount_price > 0 ? selectedVariant.discount_price : selectedVariant.price) * quantity
+        finalTotal: itemTotal
       }
     });
   };

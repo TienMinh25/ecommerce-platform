@@ -590,3 +590,80 @@ func (p *productRepository) GetProductInfoForCart(ctx context.Context, prodIds [
 
 	return mapProdInfo, prodVariants, nil
 }
+
+func (p *productRepository) GetProdInfoForPayment(ctx context.Context, data *partner_proto_gen.GetProdInfoForPaymentRequest) (*partner_proto_gen.GetProdInfoForPaymentResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetProdInfoForPayment"))
+	defer span.End()
+
+	variantIDs := make([]string, len(data.Items))
+	requestMap := make(map[string]int64)
+
+	for idx, item := range data.Items {
+		variantIDs[idx] = item.ProductVariantId
+		requestMap[item.ProductVariantId] = item.Quantity
+	}
+
+	querySelect, args, err := squirrel.Select("pv.id", "pv.price", "coalesce(pv.discount_price, 0)",
+		"pv.inventory_quantity", "p.tax_class").
+		From("product_variants pv").
+		InnerJoin("products p on p.id = pv.product_id").
+		Where(squirrel.Eq{"pv.id": variantIDs}).
+		Where(squirrel.Eq{"pv.is_active": true}).
+		PlaceholderFormat(squirrel.Dollar).ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	rows, err := p.db.Query(ctx, querySelect, args...)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	defer rows.Close()
+
+	result := new(partner_proto_gen.GetProdInfoForPaymentResponse)
+	unavailableItems := make([]string, 0)
+
+	for rows.Next() {
+		var (
+			variantID     string
+			originalPrice float64
+			discountPrice float64
+			inventory     int64
+			taxClass      string
+		)
+
+		if err = rows.Scan(&variantID, &originalPrice, &discountPrice, &inventory, &taxClass); err != nil {
+			span.RecordError(err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		if inventory < requestMap[variantID] {
+			unavailableItems = append(unavailableItems,
+				fmt.Sprintf("Product %s: requested %d, available %d", variantID, requestMap[variantID], inventory))
+			continue
+		}
+
+		result.Items = append(result.Items, &partner_proto_gen.ProdInfoForPaymentResponse{
+			ProductVariantId:  variantID,
+			OriginalUnitPrice: originalPrice,
+			DiscountUnitPrice: discountPrice,
+			TaxClass:          taxClass,
+		})
+	}
+
+	if len(unavailableItems) > 0 {
+		return nil, status.Errorf(codes.FailedPrecondition,
+			"Insufficient inventory: %s", strings.Join(unavailableItems, "; "))
+	}
+
+	if len(result.Items) != len(data.Items) {
+		return nil, status.Error(codes.FailedPrecondition, "Items is not active, please try again!")
+	}
+
+	return result, nil
+}

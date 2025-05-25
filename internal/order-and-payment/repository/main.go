@@ -2,8 +2,10 @@ package repository
 
 import (
 	"context"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/models"
+	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/service/dto"
 )
 
 type ICartRepository interface {
@@ -24,4 +26,5 @@ type ICouponRepository interface {
 
 type IPaymentRepository interface {
 	GetPaymentMethods(ctx context.Context) ([]*models.PaymentMethod, error)
+	CreateOrder(ctx context.Context, order dto.CheckoutRequest) (string, common.StatusOrder, float64, error)
 }

@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "./partner_proto_gen";
+
+message GetProdInfoForPaymentRequest {
+  repeated ProdInfoForPaymentRequest items = 1;
+}
+
+message ProdInfoForPaymentRequest {
+  string product_variant_id = 1;
+  int64 quantity = 2;
+}
+
+message GetProdInfoForPaymentResponse {
+  repeated ProdInfoForPaymentResponse items = 1;
+}
+
+message ProdInfoForPaymentResponse {
+  string product_variant_id = 1;
+  double original_unit_price = 2;
+  double discount_unit_price = 3;
+  string tax_class = 4;
+}

@@ -30,6 +30,7 @@ const (
 	OrderService_UpdateCoupon_FullMethodName       = "/OrderService/UpdateCoupon"
 	OrderService_DeleteCoupon_FullMethodName       = "/OrderService/DeleteCoupon"
 	OrderService_GetPaymentMethods_FullMethodName  = "/OrderService/GetPaymentMethods"
+	OrderService_CreateOrder_FullMethodName        = "/OrderService/CreateOrder"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -47,6 +48,7 @@ type OrderServiceClient interface {
 	UpdateCoupon(ctx context.Context, in *UpdateCouponRequest, opts ...grpc.CallOption) (*UpdateCouponResponse, error)
 	DeleteCoupon(ctx context.Context, in *DeleteCouponRequest, opts ...grpc.CallOption) (*DeleteCouponResponse, error)
 	GetPaymentMethods(ctx context.Context, in *GetPaymentMethodsRequest, opts ...grpc.CallOption) (*GetPaymentMethodsResponse, error)
+	CreateOrder(ctx context.Context, in *CheckoutRequest, opts ...grpc.CallOption) (*CheckoutResponse, error)
 }
 
 type orderServiceClient struct {
@@ -167,6 +169,16 @@ func (c *orderServiceClient) GetPaymentMethods(ctx context.Context, in *GetPayme
 	return out, nil
 }
 
+func (c *orderServiceClient) CreateOrder(ctx context.Context, in *CheckoutRequest, opts ...grpc.CallOption) (*CheckoutResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckoutResponse)
+	err := c.cc.Invoke(ctx, OrderService_CreateOrder_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -182,6 +194,7 @@ type OrderServiceServer interface {
 	UpdateCoupon(context.Context, *UpdateCouponRequest) (*UpdateCouponResponse, error)
 	DeleteCoupon(context.Context, *DeleteCouponRequest) (*DeleteCouponResponse, error)
 	GetPaymentMethods(context.Context, *GetPaymentMethodsRequest) (*GetPaymentMethodsResponse, error)
+	CreateOrder(context.Context, *CheckoutRequest) (*CheckoutResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -224,6 +237,9 @@ func (UnimplementedOrderServiceServer) DeleteCoupon(context.Context, *DeleteCoup
 }
 func (UnimplementedOrderServiceServer) GetPaymentMethods(context.Context, *GetPaymentMethodsRequest) (*GetPaymentMethodsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPaymentMethods not implemented")
+}
+func (UnimplementedOrderServiceServer) CreateOrder(context.Context, *CheckoutRequest) (*CheckoutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateOrder not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -444,6 +460,24 @@ func _OrderService_GetPaymentMethods_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).CreateOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_CreateOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).CreateOrder(ctx, req.(*CheckoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -494,6 +528,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPaymentMethods",
 			Handler:    _OrderService_GetPaymentMethods_Handler,
+		},
+		{
+			MethodName: "CreateOrder",
+			Handler:    _OrderService_CreateOrder_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

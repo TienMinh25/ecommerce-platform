@@ -42,14 +42,14 @@ const PaymentMethodSelector = ({ selectedPaymentMethod, onPaymentMethodSelect })
         }
     };
 
-    const getPaymentIcon = (iconType) => {
-        switch (iconType) {
-            case 'cash':
+    const getPaymentIcon = (code) => {
+        switch (code) {
+            case 'cod':
                 return FiDollarSign;
-            case 'bank':
-                return FiCreditCard;
             case 'momo':
                 return FiSmartphone;
+            case 'bank':
+                return FiCreditCard;
             case 'zalopay':
                 return FiSmartphone;
             default:
@@ -57,14 +57,14 @@ const PaymentMethodSelector = ({ selectedPaymentMethod, onPaymentMethodSelect })
         }
     };
 
-    const getPaymentIconColor = (iconType) => {
-        switch (iconType) {
-            case 'cash':
+    const getPaymentIconColor = (code) => {
+        switch (code) {
+            case 'cod':
                 return 'green.500';
-            case 'bank':
-                return 'blue.500';
             case 'momo':
                 return 'pink.500';
+            case 'bank':
+                return 'blue.500';
             case 'zalopay':
                 return 'blue.400';
             default:
@@ -116,22 +116,22 @@ const PaymentMethodSelector = ({ selectedPaymentMethod, onPaymentMethodSelect })
                             key={method.id}
                             p={3}
                             borderWidth="1px"
-                            borderColor={selectedPaymentMethod === method.id ? "green.300" : "gray.200"}
+                            borderColor={selectedPaymentMethod === method.code ? "green.300" : "gray.200"}
                             borderRadius="md"
-                            bg={selectedPaymentMethod === method.id ? "green.50" : "white"}
+                            bg={selectedPaymentMethod === method.code ? "green.50" : "white"}
                             opacity={1}
                             cursor={"pointer"}
-                            onClick={() => onPaymentMethodSelect(method.id)}
+                            onClick={() => onPaymentMethodSelect(method.code)}
                             _hover={{ borderColor: "green.200", bg: "green.25" }}
                         >
                             <Radio
-                                value={method.id}
+                                value={method.code}
                                 colorScheme="green"
                             >
                                 <HStack spacing={3}>
                                     <Icon
-                                        as={getPaymentIcon(method.icon)}
-                                        color={getPaymentIconColor(method.icon)}
+                                        as={getPaymentIcon(method.code)}
+                                        color={getPaymentIconColor(method.code)}
                                     />
                                     <VStack align="start" spacing={0}>
                                         <Text fontWeight="medium">

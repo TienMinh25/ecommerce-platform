@@ -28,4 +28,6 @@ service OrderService {
   rpc DeleteCoupon(DeleteCouponRequest) returns (DeleteCouponResponse);
 
   rpc GetPaymentMethods(GetPaymentMethodsRequest) returns (GetPaymentMethodsResponse);
+
+  rpc CreateOrder(CheckoutRequest) returns (CheckoutResponse);
 }

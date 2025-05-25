@@ -49,7 +49,7 @@ func (a *addressRepository) GetCurrentAddressByUserID(ctx context.Context, limit
 			FROM addresses a
 			INNER JOIN address_types at ON at.id = a.address_type_id
 			WHERE a.user_id = $1
-			ORDER BY a.created_at ASC
+			ORDER BY a.is_default DESC, a.created_at ASC
 			LIMIT $2 OFFSET $3`
 
 	rows, err := a.db.Query(ctx, query, userID, limit, limit*(page-1))

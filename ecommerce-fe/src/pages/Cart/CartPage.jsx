@@ -94,7 +94,7 @@ const CartPage = () => {
         setSelectedVoucher(voucher);
     };
 
-    // Updated checkout handler to pass data to checkout page
+    // Enhanced checkout handler with complete data preparation
     const handleCheckout = () => {
         if (selectedItems.length === 0) {
             return;
@@ -105,21 +105,57 @@ const CartPage = () => {
             selectedItems.includes(item.cart_item_id)
         );
 
-        // Transform cart items to checkout format
-        const checkoutItems = selectedCartItems.map(item => ({
-            cart_item_id: item.cart_item_id,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            product_variant_id: item.product_variant_id,
-            product_variant_thumbnail: item.product_variant_thumbnail,
-            variant_name: item.variant_name,
-            price: item.price,
-            discount_price: item.discount_price || 0,
-            quantity: item.quantity,
-            attribute_values: item.attribute_values || []
-        }));
+        // Transform cart items to checkout format with all required fields
+        const checkoutItems = selectedCartItems.map(item => {
+            // Calculate estimated delivery date (current date + 5 days in UTC)
+            const estimatedDeliveryDate = new Date();
+            estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 5);
 
-        // Navigate to checkout with cart data and voucher
+            // Calculate shipping fee (base fee with discounts)
+            const baseShippingFee = 18300;
+            const itemValue = item.discount_price > 0 ? item.discount_price : item.price;
+
+            // Quantity discount
+            let quantityMultiplier = 1;
+            if (item.quantity >= 5) {
+                quantityMultiplier = 0.6; // 40% off for 5+ items
+            } else if (item.quantity >= 3) {
+                quantityMultiplier = 0.7; // 30% off for 3+ items
+            } else if (item.quantity >= 2) {
+                quantityMultiplier = 0.8; // 20% off for 2+ items
+            }
+
+            // Value-based discount
+            let valueMultiplier = 1;
+            if (itemValue >= 1000000) { // 1M+
+                valueMultiplier = 0.5; // 50% off shipping
+            } else if (itemValue >= 500000) { // 500k+
+                valueMultiplier = 0.7; // 30% off shipping
+            } else if (itemValue >= 200000) { // 200k+
+                valueMultiplier = 0.85; // 15% off shipping
+            }
+
+            const shippingFee = Math.round(baseShippingFee * quantityMultiplier * valueMultiplier);
+
+            return {
+                cart_item_id: item.cart_item_id,
+                product_id: item.product_id,
+                product_name: item.product_name,
+                product_variant_id: item.product_variant_id,
+                product_variant_thumbnail: item.product_variant_thumbnail,
+                variant_name: item.variant_name,
+                product_variant_name: item.variant_name, // API expects this field name
+                product_variant_image_url: item.product_variant_thumbnail, // API expects this field name
+                price: item.price,
+                discount_price: item.discount_price || 0,
+                quantity: item.quantity,
+                attribute_values: item.attribute_values || [],
+                shipping_fee: shippingFee,
+                estimated_delivery_date: estimatedDeliveryDate.toISOString()
+            };
+        });
+
+        // Navigate to checkout with complete cart data and voucher
         navigate('/checkout', {
             state: {
                 cartItems: checkoutItems,

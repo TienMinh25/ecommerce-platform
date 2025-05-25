@@ -112,4 +112,5 @@ type ICouponHandler interface {
 
 type IPaymentHandler interface {
 	GetPaymentMethods(ctx *gin.Context)
+	Checkout(ctx *gin.Context)
 }

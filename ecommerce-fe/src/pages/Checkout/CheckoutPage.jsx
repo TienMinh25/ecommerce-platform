@@ -37,90 +37,52 @@ const CheckoutPage = () => {
         selectedVoucher: initialVoucher,
         voucherDiscount,
         finalTotal,
-        cartItems: passedCartItems
+        cartItems: passedCartItems,
+        fromCart = false,
+        fromProductDetail = false
     } = location.state || {};
 
-    // Mock cart items with shipping fee per item
-    const [orderItems] = useState(passedCartItems || [
-        {
-            cart_item_id: 1,
-            product_name: "Bộ sản phẩm Nông nghiệp & Vườn tược cao cấp",
-            product_variant_thumbnail: "https://via.placeholder.com/80",
-            variant_name: "Bạc, Chất liệu: Kim loại",
-            price: 1189000,
-            discount_price: 0,
-            quantity: 1,
-            shipping_fee: 18300, // Shipping fee per item
-            weight: 2.5, // kg - for shipping calculation
-            supplier_id: 1,
-            attribute_values: [
-                { attribute_name: "Màu sắc", attribute_value: "Bạc" },
-                { attribute_name: "Chất liệu", attribute_value: "Kim loại" }
-            ]
+    // Redirect if no cart items
+    useEffect(() => {
+        if (!passedCartItems || passedCartItems.length === 0) {
+            toast({
+                title: 'Không có sản phẩm',
+                description: 'Không có sản phẩm nào để thanh toán',
+                status: 'warning',
+                duration: 3000,
+                isClosable: true,
+            });
+            navigate('/cart');
+            return;
         }
-    ]);
+    }, [passedCartItems, navigate, toast]);
+
+    // Enhanced cart items with shipping calculation
+    const [orderItems] = useState(() => {
+        if (!passedCartItems) return [];
+
+        return passedCartItems.map(item => ({
+            ...item,
+            // Convert field names to match API expectations
+            product_variant_name: item.variant_name,
+            product_variant_image_url: item.product_variant_thumbnail,
+            // Calculate shipping fee per item (base fee 18,300 VND)
+            shipping_fee: calculateItemShippingFee(item),
+            // Calculate estimated delivery date (current date + 5 days)
+            estimated_delivery_date: getEstimatedDeliveryDate()
+        }));
+    });
 
     const [selectedAddress, setSelectedAddress] = useState(null);
     const [selectedVoucher, setSelectedVoucher] = useState(initialVoucher || null);
-    const [paymentMethod, setPaymentMethod] = useState('cod');
+    const [paymentMethod, setPaymentMethod] = useState('cod'); // Default to COD
+    const [paymentMethods, setPaymentMethods] = useState([]);
+    const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    // Set default address on component mount
-    useEffect(() => {
-        fetchDefaultAddress();
-    }, []);
-
-    const fetchDefaultAddress = async () => {
-        try {
-            const response = await userMeService.getAddresses({ page: 1, limit: 10 });
-            const defaultAddr = response.data.find(addr => addr.is_default);
-            if (defaultAddr) {
-                setSelectedAddress(defaultAddr);
-            }
-        } catch (error) {
-            console.error('Error fetching default address:', error);
-        }
-    };
-
-    // Format currency
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
-        }).format(price);
-    };
-
-    // Format date for shipping
-    const formatShippingDate = (date) => {
-        return date.toLocaleDateString('vi-VN', {
-            day: 'numeric',
-            month: 'long'
-        });
-    };
-
-    // Calculate shipping dates (today + 2 days to today + 5 days)
-    const getShippingDates = () => {
-        const today = new Date();
-        const deliveryStart = new Date();
-        const deliveryEnd = new Date();
-
-        deliveryStart.setDate(today.getDate() + 2); // Ngày hôm nay + 2 ngày
-        deliveryEnd.setDate(today.getDate() + 5);   // Ngày hôm nay + 5 ngày
-
-        return {
-            startDate: formatShippingDate(deliveryStart),
-            endDate: formatShippingDate(deliveryEnd),
-            guaranteeDate: formatShippingDate(deliveryEnd)
-        };
-    };
-
-    const shippingDates = getShippingDates();
-
-    // Calculate dynamic shipping fee for individual item
-    const calculateItemShippingFee = (item) => {
-        const baseShippingFee = 18300; // Base shipping fee
+    // Calculate shipping fee for individual item
+    function calculateItemShippingFee(item) {
+        const baseShippingFee = 18300; // Base shipping fee in VND
         const itemValue = item.discount_price > 0 ? item.discount_price : item.price;
 
         // Quantity discount: More items = lower shipping per item
@@ -143,15 +105,95 @@ const CheckoutPage = () => {
             valueMultiplier = 0.85; // 15% off shipping
         }
 
-        // Calculate final shipping fee per item
-        const discountedShippingPerItem = baseShippingFee * quantityMultiplier * valueMultiplier;
+        // Calculate final shipping fee
+        return Math.round(baseShippingFee * quantityMultiplier * valueMultiplier);
+    }
 
-        // Total shipping for this item (with quantity)
-        return Math.round(discountedShippingPerItem * item.quantity);
+    // Get estimated delivery date (current date + 5 days in UTC)
+    function getEstimatedDeliveryDate() {
+        const deliveryDate = new Date();
+        deliveryDate.setDate(deliveryDate.getDate() + 5);
+        return deliveryDate.toISOString();
+    }
+
+    // Set default address and fetch payment methods on component mount
+    useEffect(() => {
+        fetchDefaultAddress();
+        fetchPaymentMethods();
+    }, []);
+
+    const fetchDefaultAddress = async () => {
+        try {
+            const response = await userMeService.getAddresses({ page: 1, limit: 10 });
+            const defaultAddr = response.data.find(addr => addr.is_default);
+            if (defaultAddr) {
+                setSelectedAddress(defaultAddr);
+            }
+        } catch (error) {
+            console.error('Error fetching default address:', error);
+        }
     };
 
+    const fetchPaymentMethods = async () => {
+        try {
+            setIsLoadingPaymentMethods(true);
+            const response = await paymentMethodService.getPaymentMethods();
+            if (response && response.data) {
+                setPaymentMethods(response.data);
+
+                // Set default payment method to 'cod' if available
+                const codMethod = response.data.find(method => method.code === 'cod');
+                if (codMethod) {
+                    setPaymentMethod('cod');
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching payment methods:', error);
+            // Keep default 'cod' if API fails
+            setPaymentMethod('cod');
+        } finally {
+            setIsLoadingPaymentMethods(false);
+        }
+    };
+
+    // Format currency
+    const formatPrice = (price) => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+        }).format(price);
+    };
+
+    // Format date for shipping display
+    const formatShippingDate = (date) => {
+        return date.toLocaleDateString('vi-VN', {
+            day: 'numeric',
+            month: 'long'
+        });
+    };
+
+    // Calculate shipping dates for display (today + 2 days to today + 5 days)
+    const getShippingDates = () => {
+        const today = new Date();
+        const deliveryStart = new Date();
+        const deliveryEnd = new Date();
+
+        deliveryStart.setDate(today.getDate() + 2);
+        deliveryEnd.setDate(today.getDate() + 5);
+
+        return {
+            startDate: formatShippingDate(deliveryStart),
+            endDate: formatShippingDate(deliveryEnd),
+            guaranteeDate: formatShippingDate(deliveryEnd)
+        };
+    };
+
+    const shippingDates = getShippingDates();
+
     // Calculate total shipping fee based on all items
-    const calculateShippingFee = () => {
+    const calculateTotalShippingFee = () => {
         // Calculate subtotal to check for free shipping
         const subtotal = orderItems.reduce((total, item) => {
             const price = item.discount_price > 0 ? item.discount_price : item.price;
@@ -165,24 +207,8 @@ const CheckoutPage = () => {
 
         // Sum individual item shipping fees
         return orderItems.reduce((total, item) => {
-            return total + calculateItemShippingFee(item);
+            return total + item.shipping_fee;
         }, 0);
-    };
-
-    // Get individual item shipping fee (considering free shipping)
-    const getItemShippingFee = (item) => {
-        if (isFreeShipping) {
-            return 0;
-        }
-        return calculateItemShippingFee(item);
-    };
-
-    // Get shipping fee per unit for display
-    const getItemShippingFeePerUnit = (item) => {
-        if (isFreeShipping) {
-            return 0;
-        }
-        return Math.round(calculateItemShippingFee(item) / item.quantity);
     };
 
     // Calculate totals
@@ -191,7 +217,7 @@ const CheckoutPage = () => {
         return total + (price * item.quantity);
     }, 0);
 
-    const shippingFee = calculateShippingFee();
+    const shippingFee = calculateTotalShippingFee();
     const isFreeShipping = subtotal >= 500000;
 
     const calculateVoucherDiscount = () => {
@@ -227,6 +253,7 @@ const CheckoutPage = () => {
     };
 
     const handlePlaceOrder = async () => {
+        // Validate required fields
         if (!selectedAddress) {
             toast({
                 title: 'Thiếu thông tin',
@@ -238,23 +265,43 @@ const CheckoutPage = () => {
             return;
         }
 
+        if (!paymentMethod) {
+            toast({
+                title: 'Thiếu thông tin',
+                description: 'Vui lòng chọn phương thức thanh toán',
+                status: 'warning',
+                duration: 3000,
+                isClosable: true,
+            });
+            return;
+        }
+
         setIsProcessing(true);
 
         try {
-            const orderData = {
-                items: orderItems,
-                delivery_address: selectedAddress,
-                payment_method: paymentMethod,
-                voucher: selectedVoucher,
-                subtotal: subtotal,
-                shipping_fee: shippingFee,
-                voucher_discount: voucherDiscountAmount,
-                total_amount: totalAmount,
-                is_free_shipping: isFreeShipping
+            // Prepare checkout data according to API requirements
+            const checkoutData = {
+                items: orderItems.map(item => ({
+                    product_id: item.product_id,
+                    product_variant_id: item.product_variant_id,
+                    product_name: item.product_name,
+                    product_variant_name: item.product_variant_name || item.variant_name,
+                    product_variant_image_url: item.product_variant_image_url || item.product_variant_thumbnail,
+                    quantity: item.quantity,
+                    estimated_delivery_date: item.estimated_delivery_date,
+                    shipping_fee: isFreeShipping ? 0 : item.shipping_fee
+                })),
+                coupon_id: selectedVoucher?.id || null,
+                method_type: paymentMethod, // 'cod' or 'momo'
+                shipping_address: `${selectedAddress.street}, ${selectedAddress.ward}, ${selectedAddress.district}, ${selectedAddress.province}`,
+                recipient_name: selectedAddress.recipient_name,
+                recipient_phone: selectedAddress.phone
             };
 
+            console.log('Checkout data to be sent:', checkoutData);
+
             // Call API to create order
-            const result = await paymentMethodService.createOrder(orderData);
+            const result = await paymentMethodService.createOrder(checkoutData);
 
             toast({
                 title: 'Đặt hàng thành công!',
@@ -281,6 +328,21 @@ const CheckoutPage = () => {
             setIsProcessing(false);
         }
     };
+
+    // Early return if no order items
+    if (!orderItems || orderItems.length === 0) {
+        return (
+            <Container maxW="container.xl" py={6}>
+                <PageTitle title="Thanh Toán - Minh Plaza" />
+                <Box textAlign="center" py={10}>
+                    <Text>Không có sản phẩm để thanh toán</Text>
+                    <Button onClick={() => navigate('/cart')} mt={4}>
+                        Quay lại giỏ hàng
+                    </Button>
+                </Box>
+            </Container>
+        );
+    }
 
     return (
         <Container maxW="container.xl" py={6}>
@@ -313,11 +375,10 @@ const CheckoutPage = () => {
                         {/* Products Section - Separated by Items */}
                         {orderItems.map((item, index) => (
                             <Box key={item.cart_item_id} bg="white" p={4} borderRadius="md" borderWidth="1px">
-                                {/* Product Info */}
                                 <VStack spacing={4} align="stretch">
                                     <Flex align="center" spacing={4}>
                                         <Image
-                                            src={item.product_variant_thumbnail}
+                                            src={item.product_variant_thumbnail || item.product_variant_image_url}
                                             alt={item.product_name}
                                             boxSize="80px"
                                             objectFit="cover"
@@ -330,9 +391,7 @@ const CheckoutPage = () => {
                                                 {item.product_name}
                                             </Text>
                                             <Text fontSize="sm" color="gray.500">
-                                                Phân Loại Hàng: {item.variant_name ||
-                                                (item.attribute_values?.map(attr => attr.attribute_value).join(', ') || 'Mặc định')
-                                            }
+                                                Phân Loại Hàng: {item.variant_name || item.product_variant_name || 'Mặc định'}
                                             </Text>
                                             <Text fontSize="sm" color="gray.600">
                                                 x{item.quantity}
@@ -340,7 +399,7 @@ const CheckoutPage = () => {
                                             {/* Show shipping discount info */}
                                             {!isFreeShipping && (
                                                 <Text fontSize="xs" color="blue.600">
-                                                    Ship: {formatPrice(getItemShippingFeePerUnit(item))}/sp
+                                                    Ship: {formatPrice(item.shipping_fee / item.quantity)}/sp
                                                     {item.quantity >= 2 && (
                                                         <Text as="span" color="green.600" ml={1}>
                                                             (Giảm {item.quantity >= 5 ? '40%' : item.quantity >= 3 ? '30%' : '20%'})
@@ -391,12 +450,8 @@ const CheckoutPage = () => {
                                                     <Text fontSize="xs" color="gray.600">
                                                         Đảm bảo nhận hàng từ {shippingDates.startDate} - {shippingDates.endDate}
                                                     </Text>
-                                                    <Text fontSize="xs" color="green.600">
-                                                        Nhận Voucher trị giá ₫15.000 nếu đơn hàng được giao đến bạn sau ngày {shippingDates.guaranteeDate}.
-                                                    </Text>
                                                 </VStack>
                                                 <VStack align="end" spacing={1}>
-                                                    {/* Individual shipping fee for this item */}
                                                     {isFreeShipping ? (
                                                         <Text fontWeight="medium" color="green.600">
                                                             Miễn phí
@@ -404,16 +459,13 @@ const CheckoutPage = () => {
                                                     ) : (
                                                         <VStack align="end" spacing={0}>
                                                             <Text fontWeight="medium">
-                                                                {formatPrice(getItemShippingFee(item))}
+                                                                {formatPrice(item.shipping_fee)}
                                                             </Text>
                                                             <Text fontSize="xs" color="gray.500">
-                                                                ({formatPrice(getItemShippingFeePerUnit(item))}/sp)
+                                                                ({formatPrice(item.shipping_fee / item.quantity)}/sp)
                                                             </Text>
                                                         </VStack>
                                                     )}
-                                                    <Text fontSize="xs" color="gray.500">
-                                                        {item.weight && `${item.weight}kg`}
-                                                    </Text>
                                                 </VStack>
                                             </Flex>
                                         </Box>
@@ -462,7 +514,7 @@ const CheckoutPage = () => {
                                     {isFreeShipping ? (
                                         <VStack align="end" spacing={0}>
                                             <Text as="s" color="gray.400" fontSize="sm">
-                                                {formatPrice(orderItems.reduce((total, item) => total + calculateItemShippingFee(item), 0))}
+                                                {formatPrice(orderItems.reduce((total, item) => total + item.shipping_fee, 0))}
                                             </Text>
                                             <Text color="green.600" fontWeight="medium">
                                                 Miễn phí
@@ -503,7 +555,12 @@ const CheckoutPage = () => {
                                 onClick={handlePlaceOrder}
                                 isLoading={isProcessing}
                                 loadingText="Đang xử lý..."
-                                isDisabled={!selectedAddress}
+                                isDisabled={
+                                    !selectedAddress ||
+                                    !paymentMethod ||
+                                    isLoadingPaymentMethods ||
+                                    (paymentMethods.length > 0 && !paymentMethods.some(method => method.code === paymentMethod))
+                                }
                             >
                                 Đặt Hàng
                             </Button>

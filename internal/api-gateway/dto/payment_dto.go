@@ -1,10 +1,12 @@
 package api_gateway_dto
 
-import "github.com/TienMinh25/ecommerce-platform/internal/common"
+import (
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"time"
+)
 
 type CheckoutRequest struct {
 	Items           []CheckoutItemRequest `json:"items" binding:"required"`
-	CouponID        *string               `json:"coupon_id" binding:"omitempty"`
 	MethodType      common.MethodType     `json:"method_type" binding:"required,oneof=momo cod"`
 	ShippingAddress string                `json:"shipping_address" binding:"required"`
 	RecipientName   string                `json:"recipient_name" binding:"required"`
@@ -12,14 +14,25 @@ type CheckoutRequest struct {
 }
 
 type CheckoutItemRequest struct {
-	ProductName            string `json:"product_name" binding:"required"`
-	ProductVariantName     string `json:"product_variant_name" binding:"required"`
-	ProductVariantImageURL string `json:"product_variant_image_url" binding:"required"`
-	Quantity               int64  `json:"quantity" binding:"required,gt=0"`
+	ProductID              string    `json:"product_id" binding:"required"`
+	ProductVariantID       string    `json:"product_variant_id" binding:"required"`
+	ProductName            string    `json:"product_name" binding:"required"`
+	ProductVariantName     string    `json:"product_variant_name" binding:"required"`
+	ProductVariantImageURL string    `json:"product_variant_image_url" binding:"required"`
+	Quantity               int64     `json:"quantity" binding:"required,gt=0"`
+	EstimatedDeliveryDate  time.Time `json:"estimated_delivery_date" binding:"required"`
+	ShippingFee            float64   `json:"shipping_fee" binding:"required,gt=0"`
+	CouponID               *string   `json:"coupon_id" binding:"omitempty"`
 }
 
 type GetPaymentMethodsResponse struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 	Code string `json:"code"`
+}
+
+type CheckoutResponse struct {
+	OrderID    string  `json:"order_id"`
+	Status     string  `json:"status"`
+	PaymentURL *string `json:"payment_url"`
 }
