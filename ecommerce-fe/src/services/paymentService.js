@@ -1,6 +1,6 @@
 import api from './api';
 
-const paymentMethodService = {
+const paymentService = {
     /**
      * Get all available payment methods
      * @returns {Promise} Promise object with payment methods data
@@ -35,7 +35,7 @@ const paymentMethodService = {
      */
     createOrder: async (orderData) => {
         try {
-            const response = await api.post('/orders', orderData);
+            const response = await api.post('/payments/checkout', orderData);
             return response.data;
         } catch (error) {
             throw error;
@@ -43,4 +43,4 @@ const paymentMethodService = {
     }
 };
 
-export default paymentMethodService;
+export default paymentService;

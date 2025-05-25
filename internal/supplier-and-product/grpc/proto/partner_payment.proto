@@ -20,4 +20,5 @@ message ProdInfoForPaymentResponse {
   double original_unit_price = 2;
   double discount_unit_price = 3;
   string tax_class = 4;
+  int64 supplier_id = 5;
 }

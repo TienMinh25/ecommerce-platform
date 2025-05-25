@@ -196,21 +196,29 @@ const RoleManagementComponent = () => {
 
   // Map role permissions for display in the UI
   const mapRolePermissionsForDisplay = useCallback((role) => {
-    if (!role || !role.permissions || !modulesList.length) return [];
+    if (!role || !role.permissions || !modulesList.length || !permissionsList.length) return [];
+
+    // Create permission mapping from permissionsList
+    const permissionMapping = {};
+    permissionsList.forEach(permission => {
+      permissionMapping[permission.name] = permission.id;
+    });
+
     return modulesList.map((module) => {
       const modulePermissions = role.permissions?.find((p) => p.module_id === module.id);
       return {
         id: module.id,
         name: module.name,
-        read: modulePermissions?.permissions?.includes(1) || false,
-        create: modulePermissions?.permissions?.includes(2) || false,
-        update: modulePermissions?.permissions?.includes(3) || false,
-        delete: modulePermissions?.permissions?.includes(4) || false,
-        approve: modulePermissions?.permissions?.includes(5) || false,
-        reject: modulePermissions?.permissions?.includes(6) || false,
+        // Use dynamic mapping instead of hardcoded IDs
+        read: modulePermissions?.permissions?.includes(permissionMapping.read) || false,
+        create: modulePermissions?.permissions?.includes(permissionMapping.create) || false,
+        update: modulePermissions?.permissions?.includes(permissionMapping.update) || false,
+        delete: modulePermissions?.permissions?.includes(permissionMapping.delete) || false,
+        approve: modulePermissions?.permissions?.includes(permissionMapping.approve) || false,
+        reject: modulePermissions?.permissions?.includes(permissionMapping.reject) || false,
       };
     });
-  }, [modulesList]);
+  }, [modulesList, permissionsList]);
 
   // Load modules and permissions on mount
   useEffect(() => {

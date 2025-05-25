@@ -28,12 +28,14 @@ type CheckoutItemRequest struct {
 	DiscountUnitPrice      float64
 	TaxClass               string
 	CouponID               *string
+	SupplierID             int64
 }
 
 type AdditionalInfoCheckout struct {
 	OriginalUnitPrice float64
 	DiscountUnitPrice float64
 	TaxClass          string
+	SupplierID        int64
 }
 
 func (c CheckoutRequest) FromDto(data *order_proto_gen.CheckoutRequest, additionInfoMap map[string]AdditionalInfoCheckout) CheckoutRequest {
@@ -53,6 +55,7 @@ func (c CheckoutRequest) FromDto(data *order_proto_gen.CheckoutRequest, addition
 			DiscountUnitPrice:      additionInfoMap[item.ProductVariantId].DiscountUnitPrice,
 			TaxClass:               additionInfoMap[item.ProductVariantId].TaxClass,
 			CouponID:               item.CouponId,
+			SupplierID:             additionInfoMap[item.ProductVariantId].SupplierID,
 		}
 	}
 

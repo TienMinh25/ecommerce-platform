@@ -55,12 +55,25 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
     const [modules, setModules] = useState([]);
     const [loadingModules, setLoadingModules] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
+    const [permissionMapping, setPermissionMapping] = useState({});
 
     // Validation and submission state
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const toast = useToast();
+
+    // Create permission mapping from permissionsList
+    useEffect(() => {
+        if (permissionsList && permissionsList.length > 0) {
+            const mapping = {};
+            permissionsList.forEach(permission => {
+                mapping[permission.name] = permission.id;
+            });
+            setPermissionMapping(mapping);
+            console.log('Permission mapping created:', mapping);
+        }
+    }, [permissionsList]);
 
     // Handle input changes
     const handleChange = (e) => {
@@ -94,7 +107,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
 
     // Load modules and permissions when modal opens
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && Object.keys(permissionMapping).length > 0) {
             setHasChanges(false);
 
             // Use provided modules and permissions or fetch them
@@ -104,7 +117,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                 fetchModulesAndPermissions();
             }
         }
-    }, [isOpen, modulesList]);
+    }, [isOpen, modulesList, permissionMapping]);
 
     // Prepare modules from props
     const prepareModules = (modules) => {
@@ -135,9 +148,19 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
             ]);
 
             const allModules = modulesResponse.data || [];
+            const allPermissions = permissionsResponse.data || [];
 
             console.log('Fetched modules:', allModules);
-            console.log('Fetched permissions:', permissionsResponse.data || []);
+            console.log('Fetched permissions:', allPermissions);
+
+            // Create permission mapping if not provided in props
+            if (Object.keys(permissionMapping).length === 0) {
+                const mapping = {};
+                allPermissions.forEach(permission => {
+                    mapping[permission.name] = permission.id;
+                });
+                setPermissionMapping(mapping);
+            }
 
             // Prepare modules
             prepareModules(allModules);
@@ -183,67 +206,68 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
 
     // Handle form submission
     const handleSubmit = async () => {
-        if (validateForm()) {
-            setIsSubmitting(true);
-            try {
-                // Format modules with permissions for API
-                const modules_permissions = modules
-                    .filter(module =>
-                        module.read || module.create || module.update ||
-                        module.delete || module.approve || module.reject
-                    )
-                    .map(module => {
-                        // Map permissions to their numeric IDs
-                        const permissionIds = [];
-                        if (module.read) permissionIds.push(1);
-                        if (module.create) permissionIds.push(2);
-                        if (module.update) permissionIds.push(3);
-                        if (module.delete) permissionIds.push(4);
-                        if (module.approve) permissionIds.push(5);
-                        if (module.reject) permissionIds.push(6);
+        if (!validateForm() || Object.keys(permissionMapping).length === 0) return;
 
-                        return {
-                            module_id: module.id,
-                            permissions: permissionIds
-                        };
-                    });
+        setIsSubmitting(true);
+        try {
+            // Format modules with permissions for API
+            const modules_permissions = modules
+                .filter(module =>
+                    module.read || module.create || module.update ||
+                    module.delete || module.approve || module.reject
+                )
+                .map(module => {
+                    // Map permissions to their correct IDs using dynamic mapping
+                    const permissionIds = [];
+                    if (module.read) permissionIds.push(permissionMapping.read);
+                    if (module.create) permissionIds.push(permissionMapping.create);
+                    if (module.update) permissionIds.push(permissionMapping.update);
+                    if (module.delete) permissionIds.push(permissionMapping.delete);
+                    if (module.approve) permissionIds.push(permissionMapping.approve);
+                    if (module.reject) permissionIds.push(permissionMapping.reject);
 
-                // Create the role data according to the API schema
-                const roleData = {
-                    role_name: formData.name.trim(),
-                    description: formData.description.trim(),
-                    modules_permissions: modules_permissions
-                };
-
-                console.log('Submitting role data:', roleData);
-
-                // Create the role with all data in one request
-                await roleService.createRole(roleData);
-
-                toast({
-                    title: 'Role created successfully',
-                    status: 'success',
-                    duration: 3000,
-                    isClosable: true,
+                    return {
+                        module_id: module.id,
+                        permissions: permissionIds
+                    };
                 });
 
-                if (onRoleCreated) {
-                    onRoleCreated();
-                }
+            // Create the role data according to the API schema
+            const roleData = {
+                role_name: formData.name.trim(),
+                description: formData.description.trim(),
+                modules_permissions: modules_permissions
+            };
 
-                onClose();
-            } catch (error) {
-                console.error('Error creating role:', error);
-                toast({
-                    title: 'Failed to create role',
-                    description: error.response?.data?.error?.message || 'An unexpected error occurred',
-                    status: 'error',
-                    duration: 5000,
-                    isClosable: true,
-                });
-            } finally {
-                setIsSubmitting(false);
+            console.log('Creating role with mapping:', permissionMapping);
+            console.log('Submitting role data:', roleData);
+
+            // Create the role with all data in one request
+            await roleService.createRole(roleData);
+
+            toast({
+                title: 'Role created successfully',
+                status: 'success',
+                duration: 3000,
+                isClosable: true,
+            });
+
+            if (onRoleCreated) {
+                onRoleCreated();
             }
+
+            onClose();
+        } catch (error) {
+            console.error('Error creating role:', error);
+            toast({
+                title: 'Failed to create role',
+                description: error.response?.data?.error?.message || 'An unexpected error occurred',
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -371,7 +395,7 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                                                     MODULE
                                                 </Th>
                                                 <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
-                                                    READ
+                                                    read
                                                 </Th>
                                                 <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
                                                     CREATE

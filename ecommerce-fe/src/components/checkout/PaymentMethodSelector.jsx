@@ -12,7 +12,7 @@ import {
     SkeletonText
 } from '@chakra-ui/react';
 import { FiCreditCard, FiDollarSign, FiSmartphone } from 'react-icons/fi';
-import paymentMethodService from '../../services/paymentMethodService';
+import paymentService from '../../services/paymentService.js';
 
 const PaymentMethodSelector = ({ selectedPaymentMethod, onPaymentMethodSelect }) => {
     const [paymentMethods, setPaymentMethods] = useState([]);
@@ -26,7 +26,7 @@ const PaymentMethodSelector = ({ selectedPaymentMethod, onPaymentMethodSelect })
     const fetchPaymentMethods = async () => {
         try {
             setIsLoading(true);
-            const response = await paymentMethodService.getPaymentMethods();
+            const response = await paymentService.getPaymentMethods();
             setPaymentMethods(response.data);
         } catch (error) {
             console.error('Error fetching payment methods:', error);

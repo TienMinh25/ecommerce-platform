@@ -95,6 +95,12 @@ func (s *paymentService) CreateOrder(ctx context.Context, data api_gateway_dto.C
 				Message:   st.Message(),
 				ErrorCode: errorcode.BAD_REQUEST,
 			}
+		case codes.NotFound:
+			return nil, utils.BusinessError{
+				Code:      http.StatusBadRequest,
+				Message:   st.Message(),
+				ErrorCode: errorcode.BAD_REQUEST,
+			}
 		}
 
 		return nil, utils.TechnicalError{

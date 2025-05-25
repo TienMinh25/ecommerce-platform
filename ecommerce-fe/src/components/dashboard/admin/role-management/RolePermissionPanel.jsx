@@ -29,6 +29,7 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
     const [loadingModules, setLoadingModules] = useState(false);
     const [savingChanges, setSavingChanges] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
+    const [permissionMapping, setPermissionMapping] = useState({});
 
     // Toast for notifications
     const toast = useToast();
@@ -41,9 +42,21 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
     const bgColor = useColorModeValue('white', 'gray.800');
     const panelBgColor = useColorModeValue('white', 'gray.800');
 
+    // Create permission mapping from permissionsList
+    useEffect(() => {
+        if (permissionsList && permissionsList.length > 0) {
+            const mapping = {};
+            permissionsList.forEach(permission => {
+                mapping[permission.name] = permission.id;
+            });
+            setPermissionMapping(mapping);
+            console.log('Permission mapping created:', mapping);
+        }
+    }, [permissionsList]);
+
     // Load modules and permissions
     useEffect(() => {
-        if (role) {
+        if (role && Object.keys(permissionMapping).length > 0) {
             // If modulesList is provided, use it
             if (modulesList && modulesList.length > 0) {
                 mapModulesFromProps();
@@ -52,11 +65,11 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                 fetchModulesAndPermissions();
             }
         }
-    }, [role, modulesList]);
+    }, [role, modulesList, permissionMapping]);
 
     // Map modules from props instead of fetching
     const mapModulesFromProps = () => {
-        if (!role || !modulesList) return;
+        if (!role || !modulesList || Object.keys(permissionMapping).length === 0) return;
 
         setLoadingModules(true);
         try {
@@ -81,13 +94,13 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                 if (modulePermissions) {
                     const permList = modulePermissions.permissions || [];
 
-                    // Handle numeric permission IDs
-                    if (permList.includes(1)) permissionObject.read = true;
-                    if (permList.includes(2)) permissionObject.create = true;
-                    if (permList.includes(3)) permissionObject.update = true;
-                    if (permList.includes(4)) permissionObject.delete = true;
-                    if (permList.includes(5)) permissionObject.approve = true;
-                    if (permList.includes(6)) permissionObject.reject = true;
+                    // Use dynamic mapping instead of hardcoded IDs
+                    if (permList.includes(permissionMapping.read)) permissionObject.read = true;
+                    if (permList.includes(permissionMapping.create)) permissionObject.create = true;
+                    if (permList.includes(permissionMapping.update)) permissionObject.update = true;
+                    if (permList.includes(permissionMapping.delete)) permissionObject.delete = true;
+                    if (permList.includes(permissionMapping.approve)) permissionObject.approve = true;
+                    if (permList.includes(permissionMapping.reject)) permissionObject.reject = true;
                 }
 
                 return permissionObject;
@@ -119,6 +132,16 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
             ]);
 
             const allModules = modulesResponse.data || [];
+            const allPermissions = permissionsResponse.data || [];
+
+            // Create permission mapping if not provided in props
+            if (Object.keys(permissionMapping).length === 0) {
+                const mapping = {};
+                allPermissions.forEach(permission => {
+                    mapping[permission.name] = permission.id;
+                });
+                setPermissionMapping(mapping);
+            }
 
             // Create the module permission structure
             const formattedModules = allModules.map(module => {
@@ -141,13 +164,13 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                 if (modulePermissions) {
                     const permList = modulePermissions.permissions || [];
 
-                    // Handle numeric permission IDs
-                    if (permList.includes(1)) permissionObject.read = true;
-                    if (permList.includes(2)) permissionObject.create = true;
-                    if (permList.includes(3)) permissionObject.update = true;
-                    if (permList.includes(4)) permissionObject.delete = true;
-                    if (permList.includes(5)) permissionObject.approve = true;
-                    if (permList.includes(6)) permissionObject.reject = true;
+                    // Use dynamic mapping instead of hardcoded IDs
+                    if (permList.includes(permissionMapping.read)) permissionObject.read = true;
+                    if (permList.includes(permissionMapping.create)) permissionObject.create = true;
+                    if (permList.includes(permissionMapping.update)) permissionObject.update = true;
+                    if (permList.includes(permissionMapping.delete)) permissionObject.delete = true;
+                    if (permList.includes(permissionMapping.approve)) permissionObject.approve = true;
+                    if (permList.includes(permissionMapping.reject)) permissionObject.reject = true;
                 }
 
                 return permissionObject;
@@ -180,7 +203,7 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
 
     // Handle save permissions
     const handleSave = async () => {
-        if (!role) return;
+        if (!role || Object.keys(permissionMapping).length === 0) return;
 
         setSavingChanges(true);
         try {
@@ -191,14 +214,14 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                     module.delete || module.approve || module.reject
                 )
                 .map(module => {
-                    // Map permissions to their numeric IDs
+                    // Map permissions to their correct IDs using dynamic mapping
                     const permissionIds = [];
-                    if (module.read) permissionIds.push(1);
-                    if (module.create) permissionIds.push(2);
-                    if (module.update) permissionIds.push(3);
-                    if (module.delete) permissionIds.push(4);
-                    if (module.approve) permissionIds.push(5);
-                    if (module.reject) permissionIds.push(6);
+                    if (module.read) permissionIds.push(permissionMapping.read);
+                    if (module.create) permissionIds.push(permissionMapping.create);
+                    if (module.update) permissionIds.push(permissionMapping.update);
+                    if (module.delete) permissionIds.push(permissionMapping.delete);
+                    if (module.approve) permissionIds.push(permissionMapping.approve);
+                    if (module.reject) permissionIds.push(permissionMapping.reject);
 
                     return {
                         module_id: module.id,
@@ -212,6 +235,9 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                 modules_permissions: modulesWithPermissions, // Using the correct field name from API docs
                 description: role.description // Preserve existing description
             };
+
+            console.log('Saving permissions with mapping:', permissionMapping);
+            console.log('Payload:', permissionsPayload);
 
             // Call the save callback with the updated permissions
             await onSave(role.id, permissionsPayload);

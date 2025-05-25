@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/repository"
@@ -77,6 +78,7 @@ func (s *paymentService) CreateOrder(ctx context.Context, data *order_proto_gen.
 			OriginalUnitPrice: item.OriginalUnitPrice,
 			DiscountUnitPrice: item.DiscountUnitPrice,
 			TaxClass:          item.TaxClass,
+			SupplierID:        item.SupplierId,
 		}
 	}
 
@@ -89,6 +91,8 @@ func (s *paymentService) CreateOrder(ctx context.Context, data *order_proto_gen.
 		return nil, err
 	}
 
+	// todo: in the future, integrate with notification in here
+	// todo: send events throw kafka and notification service will consume it
 	// step 3: check type of method to return url or not
 	if data.MethodType == string(common.Cod) {
 		return &order_proto_gen.CheckoutResponse{
@@ -98,11 +102,16 @@ func (s *paymentService) CreateOrder(ctx context.Context, data *order_proto_gen.
 		}, nil
 	}
 
+	var paymentURL *string
 	// step 4: call to payment gateway (momo) to get payment url
 	switch common.MethodType(data.MethodType) {
 	case common.Momo:
-
+		fmt.Println(totalAmount)
 	}
 
-	return nil, nil
+	return &order_proto_gen.CheckoutResponse{
+		OrderId:    orderID,
+		Status:     string(statusOrder),
+		PaymentUrl: paymentURL,
+	}, nil
 }

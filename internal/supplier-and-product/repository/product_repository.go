@@ -604,7 +604,7 @@ func (p *productRepository) GetProdInfoForPayment(ctx context.Context, data *par
 	}
 
 	querySelect, args, err := squirrel.Select("pv.id", "pv.price", "coalesce(pv.discount_price, 0)",
-		"pv.inventory_quantity", "p.tax_class").
+		"pv.inventory_quantity", "p.tax_class", "p.supplier_id").
 		From("product_variants pv").
 		InnerJoin("products p on p.id = pv.product_id").
 		Where(squirrel.Eq{"pv.id": variantIDs}).
@@ -635,9 +635,10 @@ func (p *productRepository) GetProdInfoForPayment(ctx context.Context, data *par
 			discountPrice float64
 			inventory     int64
 			taxClass      string
+			supplierID    int64
 		)
 
-		if err = rows.Scan(&variantID, &originalPrice, &discountPrice, &inventory, &taxClass); err != nil {
+		if err = rows.Scan(&variantID, &originalPrice, &discountPrice, &inventory, &taxClass, &supplierID); err != nil {
 			span.RecordError(err)
 			return nil, status.Error(codes.Internal, err.Error())
 		}
@@ -653,6 +654,7 @@ func (p *productRepository) GetProdInfoForPayment(ctx context.Context, data *par
 			OriginalUnitPrice: originalPrice,
 			DiscountUnitPrice: discountPrice,
 			TaxClass:          taxClass,
+			SupplierId:        supplierID,
 		})
 	}
 

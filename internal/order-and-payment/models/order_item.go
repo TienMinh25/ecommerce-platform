@@ -25,4 +25,5 @@ type OrderItem struct {
 	CreatedAt              time.Time
 	UpdatedAt              time.Time
 	ProductVariantID       string
+	SupplierID             int64
 }

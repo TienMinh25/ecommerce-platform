@@ -25,12 +25,14 @@ import AddressSelector from '../../components/checkout/AddressSelector';
 import CheckoutVoucherSelector from '../../components/checkout/CheckoutVoucherSelector';
 import PaymentMethodSelector from '../../components/checkout/PaymentMethodSelector';
 import userMeService from '../../services/userMeService';
-import paymentMethodService from '../../services/paymentMethodService';
+import paymentService from '../../services/paymentService.js';
+import {useCart} from "../../context/CartContext.jsx";
 
 const CheckoutPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const toast = useToast();
+    const { refreshCart } = useCart();
 
     // Get data from navigation state (from cart or product detail)
     const {
@@ -74,11 +76,13 @@ const CheckoutPage = () => {
     });
 
     const [selectedAddress, setSelectedAddress] = useState(null);
-    const [selectedVoucher, setSelectedVoucher] = useState(initialVoucher || null);
     const [paymentMethod, setPaymentMethod] = useState('cod'); // Default to COD
     const [paymentMethods, setPaymentMethods] = useState([]);
     const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
+
+    // Individual vouchers for each item - using product_variant_id as key
+    const [itemVouchers, setItemVouchers] = useState({}); // { product_variant_id: voucher_object }
 
     // Calculate shipping fee for individual item
     function calculateItemShippingFee(item) {
@@ -137,20 +141,13 @@ const CheckoutPage = () => {
     const fetchPaymentMethods = async () => {
         try {
             setIsLoadingPaymentMethods(true);
-            const response = await paymentMethodService.getPaymentMethods();
+            const response = await paymentService.getPaymentMethods();
             if (response && response.data) {
                 setPaymentMethods(response.data);
-
-                // Set default payment method to 'cod' if available
-                const codMethod = response.data.find(method => method.code === 'cod');
-                if (codMethod) {
-                    setPaymentMethod('cod');
-                }
+                // paymentMethod already set to 'cod' by default
             }
         } catch (error) {
             console.error('Error fetching payment methods:', error);
-            // Keep default 'cod' if API fails
-            setPaymentMethod('cod');
         } finally {
             setIsLoadingPaymentMethods(false);
         }
@@ -192,6 +189,59 @@ const CheckoutPage = () => {
 
     const shippingDates = getShippingDates();
 
+    // Calculate individual item total (including voucher discount)
+    const calculateItemTotal = (item) => {
+        const unitPrice = item.discount_price > 0 ? item.discount_price : item.price;
+        const itemSubtotal = unitPrice * item.quantity;
+
+        // Apply voucher discount if selected for this item
+        const voucher = itemVouchers[item.product_variant_id];
+        if (voucher) {
+            let voucherDiscount = 0;
+            if (voucher.discount_type === 'percentage') {
+                voucherDiscount = (itemSubtotal * voucher.discount_value) / 100;
+            } else {
+                voucherDiscount = voucher.discount_value;
+            }
+
+            // Apply maximum discount limit
+            if (voucher.maximum_discount_amount) {
+                voucherDiscount = Math.min(voucherDiscount, voucher.maximum_discount_amount);
+            }
+
+            // Ensure discount doesn't exceed item subtotal
+            voucherDiscount = Math.min(voucherDiscount, itemSubtotal);
+
+            return itemSubtotal - voucherDiscount;
+        }
+
+        return itemSubtotal;
+    };
+
+    // Calculate voucher discount for specific item
+    const calculateItemVoucherDiscount = (item) => {
+        const unitPrice = item.discount_price > 0 ? item.discount_price : item.price;
+        const itemSubtotal = unitPrice * item.quantity;
+
+        const voucher = itemVouchers[item.product_variant_id];
+        if (!voucher) return 0;
+
+        let voucherDiscount = 0;
+        if (voucher.discount_type === 'percentage') {
+            voucherDiscount = (itemSubtotal * voucher.discount_value) / 100;
+        } else {
+            voucherDiscount = voucher.discount_value;
+        }
+
+        // Apply maximum discount limit
+        if (voucher.maximum_discount_amount) {
+            voucherDiscount = Math.min(voucherDiscount, voucher.maximum_discount_amount);
+        }
+
+        // Ensure discount doesn't exceed item subtotal
+        return Math.min(voucherDiscount, itemSubtotal);
+    };
+
     // Calculate total shipping fee based on all items
     const calculateTotalShippingFee = () => {
         // Calculate subtotal to check for free shipping
@@ -220,36 +270,27 @@ const CheckoutPage = () => {
     const shippingFee = calculateTotalShippingFee();
     const isFreeShipping = subtotal >= 500000;
 
-    const calculateVoucherDiscount = () => {
-        if (!selectedVoucher || subtotal === 0) return 0;
+    // Calculate total voucher discount from all items
+    const totalVoucherDiscount = orderItems.reduce((total, item) => {
+        return total + calculateItemVoucherDiscount(item);
+    }, 0);
 
-        let discount = 0;
-        if (selectedVoucher.discount_type === 'percentage') {
-            discount = (subtotal * selectedVoucher.discount_value) / 100;
-        } else {
-            discount = selectedVoucher.discount_value;
-        }
-
-        if (selectedVoucher.maximum_discount_amount) {
-            discount = Math.min(discount, selectedVoucher.maximum_discount_amount);
-        }
-
-        return discount;
-    };
-
-    const voucherDiscountAmount = calculateVoucherDiscount();
-    const totalAmount = subtotal + shippingFee - voucherDiscountAmount;
+    const totalAmount = subtotal + shippingFee - totalVoucherDiscount;
 
     const handleAddressSelect = (address) => {
         setSelectedAddress(address);
     };
 
-    const handleVoucherSelect = (voucher) => {
-        setSelectedVoucher(voucher);
-    };
-
     const handlePaymentMethodSelect = (methodId) => {
         setPaymentMethod(methodId);
+    };
+
+    // Handle voucher selection for specific item
+    const handleItemVoucherSelect = (productVariantId, voucher) => {
+        setItemVouchers(prev => ({
+            ...prev,
+            [productVariantId]: voucher
+        }));
     };
 
     const handlePlaceOrder = async () => {
@@ -289,9 +330,9 @@ const CheckoutPage = () => {
                     product_variant_image_url: item.product_variant_image_url || item.product_variant_thumbnail,
                     quantity: item.quantity,
                     estimated_delivery_date: item.estimated_delivery_date,
-                    shipping_fee: isFreeShipping ? 0 : item.shipping_fee
+                    shipping_fee: isFreeShipping ? 0 : item.shipping_fee,
+                    coupon_id: itemVouchers[item.product_variant_id]?.id || null
                 })),
-                coupon_id: selectedVoucher?.id || null,
                 method_type: paymentMethod, // 'cod' or 'momo'
                 shipping_address: `${selectedAddress.street}, ${selectedAddress.ward}, ${selectedAddress.district}, ${selectedAddress.province}`,
                 recipient_name: selectedAddress.recipient_name,
@@ -301,20 +342,28 @@ const CheckoutPage = () => {
             console.log('Checkout data to be sent:', checkoutData);
 
             // Call API to create order
-            const result = await paymentMethodService.createOrder(checkoutData);
+            const result = await paymentService.createOrder(checkoutData);
 
-            toast({
-                title: 'Đặt hàng thành công!',
-                description: 'Đơn hàng của bạn đã được xác nhận và đang được xử lý',
-                status: 'success',
-                duration: 5000,
-                isClosable: true,
-            });
+            if (result.payment_url) {
+                refreshCart();
+                // For MoMo payment, redirect to payment URL
+                window.location.href = result.payment_url;
+            } else {
+                refreshCart();
+                // For COD, show success and navigate
+                toast({
+                    title: 'Đặt hàng thành công!',
+                    description: 'Đơn hàng của bạn đã được xác nhận và đang được xử lý',
+                    status: 'success',
+                    duration: 5000,
+                    isClosable: true,
+                });
 
-            // Navigate to order success page or orders page
-            navigate('/user/account/orders', {
-                state: { orderId: result.data?.id }
-            });
+                // Navigate to order success page or orders page
+                navigate('/user/account/orders', {
+                    state: { orderId: result.order_id }
+                });
+            }
         } catch (error) {
             console.error('Error placing order:', error);
             toast({
@@ -372,118 +421,138 @@ const CheckoutPage = () => {
                             />
                         </Box>
 
-                        {/* Products Section - Separated by Items */}
-                        {orderItems.map((item, index) => (
-                            <Box key={item.cart_item_id} bg="white" p={4} borderRadius="md" borderWidth="1px">
-                                <VStack spacing={4} align="stretch">
-                                    <Flex align="center" spacing={4}>
-                                        <Image
-                                            src={item.product_variant_thumbnail || item.product_variant_image_url}
-                                            alt={item.product_name}
-                                            boxSize="80px"
-                                            objectFit="cover"
-                                            borderRadius="md"
-                                            mr={4}
-                                        />
+                        {/* Products Section - Each item with individual voucher */}
+                        {orderItems.map((item, index) => {
+                            const itemSubtotal = (item.discount_price > 0 ? item.discount_price : item.price) * item.quantity;
+                            const itemVoucherDiscount = calculateItemVoucherDiscount(item);
+                            const itemTotal = itemSubtotal - itemVoucherDiscount;
 
-                                        <VStack align="start" spacing={1} flex="1">
-                                            <Text fontWeight="medium" noOfLines={2}>
-                                                {item.product_name}
-                                            </Text>
-                                            <Text fontSize="sm" color="gray.500">
-                                                Phân Loại Hàng: {item.variant_name || item.product_variant_name || 'Mặc định'}
-                                            </Text>
-                                            <Text fontSize="sm" color="gray.600">
-                                                x{item.quantity}
-                                            </Text>
-                                            {/* Show shipping discount info */}
-                                            {!isFreeShipping && (
-                                                <Text fontSize="xs" color="blue.600">
-                                                    Ship: {formatPrice(item.shipping_fee / item.quantity)}/sp
-                                                    {item.quantity >= 2 && (
-                                                        <Text as="span" color="green.600" ml={1}>
-                                                            (Giảm {item.quantity >= 5 ? '40%' : item.quantity >= 3 ? '30%' : '20%'})
-                                                        </Text>
-                                                    )}
-                                                    {((item.discount_price > 0 ? item.discount_price : item.price) >= 200000) && (
-                                                        <Text as="span" color="purple.600" ml={1}>
-                                                            (VIP giảm)
-                                                        </Text>
-                                                    )}
+                            return (
+                                <Box key={item.cart_item_id} bg="white" p={4} borderRadius="md" borderWidth="1px">
+                                    <VStack spacing={4} align="stretch">
+                                        <Flex align="center" spacing={4}>
+                                            <Image
+                                                src={item.product_variant_thumbnail || item.product_variant_image_url}
+                                                alt={item.product_name}
+                                                boxSize="80px"
+                                                objectFit="cover"
+                                                borderRadius="md"
+                                                mr={4}
+                                            />
+
+                                            <VStack align="start" spacing={1} flex="1">
+                                                <Text fontWeight="medium" noOfLines={2}>
+                                                    {item.product_name}
                                                 </Text>
-                                            )}
-                                        </VStack>
+                                                <Text fontSize="sm" color="gray.500">
+                                                    Phân Loại Hàng: {item.variant_name || item.product_variant_name || 'Mặc định'}
+                                                </Text>
+                                                <Text fontSize="sm" color="gray.600">
+                                                    x{item.quantity}
+                                                </Text>
+                                                {/* Show shipping discount info */}
+                                                {!isFreeShipping && (
+                                                    <Text fontSize="xs" color="blue.600">
+                                                        Ship: {formatPrice(item.shipping_fee / item.quantity)}/sp
+                                                        {item.quantity >= 2 && (
+                                                            <Text as="span" color="green.600" ml={1}>
+                                                                (Giảm {item.quantity >= 5 ? '40%' : item.quantity >= 3 ? '30%' : '20%'})
+                                                            </Text>
+                                                        )}
+                                                        {((item.discount_price > 0 ? item.discount_price : item.price) >= 200000) && (
+                                                            <Text as="span" color="purple.600" ml={1}>
+                                                                (VIP giảm)
+                                                            </Text>
+                                                        )}
+                                                    </Text>
+                                                )}
+                                            </VStack>
 
-                                        <VStack align="end" spacing={1}>
-                                            {item.discount_price > 0 ? (
-                                                <>
-                                                    <Text as="s" color="gray.500" fontSize="sm">
+                                            <VStack align="end" spacing={1}>
+                                                {item.discount_price > 0 ? (
+                                                    <>
+                                                        <Text as="s" color="gray.500" fontSize="sm">
+                                                            {formatPrice(item.price)}
+                                                        </Text>
+                                                        <Text fontWeight="medium" color="red.500">
+                                                            {formatPrice(item.discount_price)}
+                                                        </Text>
+                                                    </>
+                                                ) : (
+                                                    <Text fontWeight="medium">
                                                         {formatPrice(item.price)}
                                                     </Text>
-                                                    <Text fontWeight="medium" color="red.500">
-                                                        {formatPrice(item.discount_price)}
+                                                )}
+
+                                                {/* Show voucher discount if applied */}
+                                                {itemVoucherDiscount > 0 && (
+                                                    <Text fontSize="xs" color="green.600" fontWeight="medium">
+                                                        Voucher: -{formatPrice(itemVoucherDiscount)}
                                                     </Text>
-                                                </>
-                                            ) : (
-                                                <Text fontWeight="medium">
-                                                    {formatPrice(item.price)}
+                                                )}
+
+                                                <Text fontWeight="bold" color="red.500" fontSize="lg">
+                                                    {formatPrice(itemTotal)}
                                                 </Text>
-                                            )}
-                                        </VStack>
-                                    </Flex>
+                                            </VStack>
+                                        </Flex>
 
-                                    <Divider />
+                                        <Divider />
 
-                                    {/* Individual Shipping Method for this item */}
-                                    <Box>
-                                        <HStack justify="space-between" mb={2}>
-                                            <HStack>
-                                                <Icon as={FiTruck} color="blue.500" />
-                                                <Text fontWeight="medium">Phương thức vận chuyển:</Text>
+                                        {/* Individual Shipping Method for this item */}
+                                        <Box>
+                                            <HStack justify="space-between" mb={2}>
+                                                <HStack>
+                                                    <Icon as={FiTruck} color="blue.500" />
+                                                    <Text fontWeight="medium">Phương thức vận chuyển:</Text>
+                                                </HStack>
                                             </HStack>
-                                        </HStack>
 
-                                        <Box p={3} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
-                                            <Flex justify="space-between" align="center">
-                                                <VStack align="start" spacing={1}>
-                                                    <Text fontWeight="medium">Nhanh</Text>
-                                                    <Text fontSize="xs" color="gray.600">
-                                                        Đảm bảo nhận hàng từ {shippingDates.startDate} - {shippingDates.endDate}
-                                                    </Text>
-                                                </VStack>
-                                                <VStack align="end" spacing={1}>
-                                                    {isFreeShipping ? (
-                                                        <Text fontWeight="medium" color="green.600">
-                                                            Miễn phí
+                                            <Box p={3} bg="blue.50" borderRadius="md" borderWidth="1px" borderColor="blue.200">
+                                                <Flex justify="space-between" align="center">
+                                                    <VStack align="start" spacing={1}>
+                                                        <Text fontWeight="medium">Nhanh</Text>
+                                                        <Text fontSize="xs" color="gray.600">
+                                                            Đảm bảo nhận hàng từ {shippingDates.startDate} - {shippingDates.endDate}
                                                         </Text>
-                                                    ) : (
-                                                        <VStack align="end" spacing={0}>
-                                                            <Text fontWeight="medium">
-                                                                {formatPrice(item.shipping_fee)}
+                                                    </VStack>
+                                                    <VStack align="end" spacing={1}>
+                                                        {isFreeShipping ? (
+                                                            <Text fontWeight="medium" color="green.600">
+                                                                Miễn phí
                                                             </Text>
-                                                            <Text fontSize="xs" color="gray.500">
-                                                                ({formatPrice(item.shipping_fee / item.quantity)}/sp)
-                                                            </Text>
-                                                        </VStack>
-                                                    )}
-                                                </VStack>
-                                            </Flex>
+                                                        ) : (
+                                                            <VStack align="end" spacing={0}>
+                                                                <Text fontWeight="medium">
+                                                                    {formatPrice(item.shipping_fee)}
+                                                                </Text>
+                                                                <Text fontSize="xs" color="gray.500">
+                                                                    ({formatPrice(item.shipping_fee / item.quantity)}/sp)
+                                                                </Text>
+                                                            </VStack>
+                                                        )}
+                                                    </VStack>
+                                                </Flex>
+                                            </Box>
                                         </Box>
-                                    </Box>
-                                </VStack>
-                            </Box>
-                        ))}
 
-                        {/* Voucher Section - Separate */}
-                        <Box bg="white" p={4} borderRadius="md" borderWidth="1px">
-                            <VStack spacing={3} align="stretch">
-                                <CheckoutVoucherSelector
-                                    selectedVoucher={selectedVoucher}
-                                    onVoucherSelect={handleVoucherSelect}
-                                    cartTotal={subtotal}
-                                />
-                            </VStack>
-                        </Box>
+                                        <Divider />
+
+                                        {/* Individual Voucher Section for this item */}
+                                        <Box>
+                                            <Text fontWeight="medium" mb={2} color="orange.500">
+                                                Voucher cho sản phẩm này:
+                                            </Text>
+                                            <CheckoutVoucherSelector
+                                                selectedVoucher={itemVouchers[item.product_variant_id] || null}
+                                                onVoucherSelect={(voucher) => handleItemVoucherSelect(item.product_variant_id, voucher)}
+                                                cartTotal={itemSubtotal}
+                                            />
+                                        </Box>
+                                    </VStack>
+                                </Box>
+                            );
+                        })}
 
                         {/* Payment Method Section */}
                         <PaymentMethodSelector
@@ -525,11 +594,11 @@ const CheckoutPage = () => {
                                     )}
                                 </Flex>
 
-                                {selectedVoucher && voucherDiscountAmount > 0 && (
+                                {totalVoucherDiscount > 0 && (
                                     <Flex justify="space-between">
-                                        <Text>Minh Plaza Voucher giảm giá:</Text>
+                                        <Text>Tổng Voucher giảm giá:</Text>
                                         <Text color="green.600">
-                                            -{formatPrice(voucherDiscountAmount)}
+                                            -{formatPrice(totalVoucherDiscount)}
                                         </Text>
                                     </Flex>
                                 )}
@@ -558,8 +627,7 @@ const CheckoutPage = () => {
                                 isDisabled={
                                     !selectedAddress ||
                                     !paymentMethod ||
-                                    isLoadingPaymentMethods ||
-                                    (paymentMethods.length > 0 && !paymentMethods.some(method => method.code === paymentMethod))
+                                    isLoadingPaymentMethods
                                 }
                             >
                                 Đặt Hàng

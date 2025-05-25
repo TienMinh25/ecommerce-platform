@@ -133,5 +133,5 @@ type ICouponService interface {
 
 type IPaymentService interface {
 	GetPaymentMethods(ctx context.Context) ([]api_gateway_dto.GetPaymentMethodsResponse, error)
-	CreateOrder(ctx context.Context, data api_gateway_dto.CheckoutRequest, int) (*api_gateway_dto.CheckoutResponse, error)
+	CreateOrder(ctx context.Context, data api_gateway_dto.CheckoutRequest, userID int) (*api_gateway_dto.CheckoutResponse, error)
 }

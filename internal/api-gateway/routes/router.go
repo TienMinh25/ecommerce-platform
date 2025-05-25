@@ -50,7 +50,7 @@ func NewRouter(
 	registerCategoryEndpoint(apiV1Group, accessTokenMiddleware, categoryHandler)
 	registerProductEndpoint(apiV1Group, accessTokenMiddleware, productHandler)
 	registerCouponEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, couponHandler)
-	registerPaymentEndpoint(apiV1Group, accessTokenMiddleware, paymentHandler)
+	registerPaymentEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, paymentHandler)
 
 	return &Router{
 		Router: router,
@@ -217,10 +217,11 @@ func registerCouponEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middl
 	}
 }
 
-func registerPaymentEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, paymentHandler api_gateway_handler.IPaymentHandler) {
+func registerPaymentEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, permissionMiddleware *middleware.PermissionMiddleware, paymentHandler api_gateway_handler.IPaymentHandler) {
 	paymentGroup := group.Group("/payments")
 	paymentGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
-		paymentGroup.GET("/payment-methods", paymentHandler.GetPaymentMethods)
+		paymentGroup.GET("/payment-methods", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.Payment, common.Read), paymentHandler.GetPaymentMethods)
+		paymentGroup.POST("/checkout", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.Payment, common.Create), paymentHandler.Checkout)
 	}
 }

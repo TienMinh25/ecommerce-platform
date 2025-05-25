@@ -15,7 +15,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -172,6 +171,7 @@ func (r *paymentRepository) CreateOrder(ctx context.Context, data dto.CheckoutRe
 					ProductVariantID:       item.ProductVariantID,
 					DiscountAmount:         discountAmount,
 					TaxAmount:              0,
+					SupplierID:             item.SupplierID,
 				})
 			case common.Momo:
 				statusOrder = common.PendingPayment
@@ -189,6 +189,7 @@ func (r *paymentRepository) CreateOrder(ctx context.Context, data dto.CheckoutRe
 					ProductVariantID:       item.ProductVariantID,
 					DiscountAmount:         discountAmount,
 					TaxAmount:              0,
+					SupplierID:             item.SupplierID,
 				})
 			}
 		}
@@ -309,121 +310,91 @@ func (r *paymentRepository) processOrder(ctx context.Context, tx pkg.Tx, orderIt
 	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "processOrder"))
 	defer span.End()
 
-	wg := sync.WaitGroup{}
-	wg.Add(3)
-
-	var err error
-
 	// insert order_items
-	go func() {
-		defer wg.Done()
-		insertOrderItemsBuilder := squirrel.Insert("order_items").
-			Columns("order_id", "product_name", "product_variant_image_url", "product_variant_name",
-				"quantity", "unit_price", "total_price", "estimated_delivery_date", "status",
-				"shipping_fee", "product_variant_id", "discount_amount", "tax_amount")
+	insertOrderItemsBuilder := squirrel.Insert("order_items").
+		Columns("order_id", "product_name", "product_variant_image_url", "product_variant_name",
+			"quantity", "unit_price", "total_price", "estimated_delivery_date", "status",
+			"shipping_fee", "product_variant_id", "discount_amount", "tax_amount", "supplier_id")
 
-		for _, orderItem := range orderItems {
-			insertOrderItemsBuilder = insertOrderItemsBuilder.Values(orderItem.OrderID,
-				orderItem.ProductName, orderItem.ProductVariantImageURL, orderItem.ProductVariantName,
-				orderItem.Quantity, orderItem.UnitPrice, orderItem.TotalPrice, orderItem.EstimatedDeliveryDate, orderItem.Status,
-				orderItem.ShippingFee, orderItem.ProductVariantID, orderItem.DiscountAmount, orderItem.TaxAmount)
-		}
+	for _, orderItem := range orderItems {
+		insertOrderItemsBuilder = insertOrderItemsBuilder.Values(orderItem.OrderID,
+			orderItem.ProductName, orderItem.ProductVariantImageURL, orderItem.ProductVariantName,
+			orderItem.Quantity, orderItem.UnitPrice, orderItem.TotalPrice, orderItem.EstimatedDeliveryDate, orderItem.Status,
+			orderItem.ShippingFee, orderItem.ProductVariantID, orderItem.DiscountAmount, orderItem.TaxAmount, orderItem.SupplierID)
+	}
 
-		insertOrderItems, args, errBuildQuery := insertOrderItemsBuilder.PlaceholderFormat(squirrel.Dollar).ToSql()
+	insertOrderItems, args, errBuildQuery := insertOrderItemsBuilder.PlaceholderFormat(squirrel.Dollar).ToSql()
 
-		if errBuildQuery != nil {
-			span.RecordError(errBuildQuery)
-			err = status.Error(codes.Internal, errBuildQuery.Error())
-			return
-		}
+	if errBuildQuery != nil {
+		span.RecordError(errBuildQuery)
+		return status.Error(codes.Internal, errBuildQuery.Error())
+	}
 
-		if err = tx.Exec(ctx, insertOrderItems, args...); err != nil {
-			span.RecordError(err)
-			err = status.Error(codes.Internal, err.Error())
-			return
-		}
-	}()
+	if err := tx.Exec(ctx, insertOrderItems, args...); err != nil {
+		span.RecordError(err)
+		return status.Error(codes.Internal, err.Error())
+	}
 
 	// update cart_items
-	go func() {
-		// get cart_id by using user_id
-		querySelect := `select id from carts where user_id = $1`
-		var cartID int64
+	// get cart_id by using user_id
+	querySelect := `select id from carts where user_id = $1`
+	var cartID int64
 
-		if err = tx.QueryRow(ctx, querySelect, userID).Scan(&cartID); err != nil {
-			span.RecordError(err)
+	if err := tx.QueryRow(ctx, querySelect, userID).Scan(&cartID); err != nil {
+		span.RecordError(err)
 
-			if errors.Is(err, pgx.ErrNoRows) {
-				err = status.Error(codes.NotFound, err.Error())
-			}
-
-			err = status.Error(codes.Internal, err.Error())
-			return
+		if errors.Is(err, pgx.ErrNoRows) {
+			return status.Error(codes.NotFound, err.Error())
 		}
 
-		// update cart_items
-		productVariantIds := make([]string, 0)
+		return status.Error(codes.Internal, err.Error())
+	}
 
-		for _, orderItem := range orderItems {
-			productVariantIds = append(productVariantIds, orderItem.ProductVariantID)
-		}
+	// update cart_items
+	productVariantIds := make([]string, 0)
 
-		queryDelete, args, errBuilder := squirrel.Delete("cart_items").
-			Where(squirrel.Eq{"product_variant_id": productVariantIds}).
-			Where(squirrel.Eq{"cart_id": cartID}).
-			PlaceholderFormat(squirrel.Dollar).
-			ToSql()
+	for _, orderItem := range orderItems {
+		productVariantIds = append(productVariantIds, orderItem.ProductVariantID)
+	}
 
-		if errBuilder != nil {
-			span.RecordError(errBuilder)
-			err = status.Error(codes.Internal, errBuilder.Error())
-			return
-		}
+	queryDelete, args, errBuilder := squirrel.Delete("cart_items").
+		Where(squirrel.Eq{"product_variant_id": productVariantIds}).
+		Where(squirrel.Eq{"cart_id": cartID}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
 
-		if err = tx.Exec(ctx, queryDelete, args...); err != nil {
-			span.RecordError(err)
-			err = status.Error(codes.Internal, err.Error())
-			return
-		}
-	}()
+	if errBuilder != nil {
+		span.RecordError(errBuilder)
+		return status.Error(codes.Internal, errBuilder.Error())
+	}
+
+	if err := tx.Exec(ctx, queryDelete, args...); err != nil {
+		span.RecordError(err)
+		return status.Error(codes.Internal, err.Error())
+	}
 
 	// update coupons
-	go func() {
-		defer wg.Done()
 
-		var valuesParts []string
-		var args []interface{}
+	var valuesParts []string
+	args = []interface{}{}
+	argIndex := 1
 
-		for couponID, usageCount := range couponUsageCount {
-			valuesParts = append(valuesParts, "(?, ?)")
-			args = append(args, couponID, couponMap[couponID].UsageCount+usageCount)
-		}
+	for couponID, usageCount := range couponUsageCount {
+		valuesParts = append(valuesParts, fmt.Sprintf("($%d::uuid, $%d::integer)", argIndex, argIndex+1))
+		args = append(args, couponID, couponMap[couponID].UsageCount+usageCount)
+		argIndex += 2
+	}
 
-		rawSQL := fmt.Sprintf(`
+	rawSQL := fmt.Sprintf(`
 			UPDATE coupons 
-			SET usage_count = updates.new_usage_count,
+			SET usage_count = updates.new_usage_count
 			FROM (VALUES %s) AS updates(coupon_id, new_usage_count)
 			WHERE coupons.id = updates.coupon_id
-    	`, strings.Join(valuesParts, ", "))
+		`, strings.Join(valuesParts, ", "))
 
-		finalSQL, errBuilderQuery := squirrel.Dollar.ReplacePlaceholders(rawSQL)
-
-		if errBuilderQuery != nil {
-			span.RecordError(errBuilderQuery)
-			err = status.Error(codes.Internal, errBuilderQuery.Error())
-			return
-		}
-
-		if err = tx.Exec(ctx, finalSQL, args...); err != nil {
-			span.RecordError(err)
-			return
-		}
-	}()
-
-	wg.Wait()
-
-	if err != nil {
-		return err
+	if err := tx.Exec(ctx, rawSQL, args...); err != nil {
+		span.RecordError(err)
+		return status.Error(codes.Internal, err.Error())
 	}
 
 	return nil
