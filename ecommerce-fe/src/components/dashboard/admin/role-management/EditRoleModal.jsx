@@ -55,6 +55,7 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
     const [modules, setModules] = useState([]);
     const [loadingModules, setLoadingModules] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
+    const [permissionMapping, setPermissionMapping] = useState({});
 
     // Validation and submission state
     const [errors, setErrors] = useState({});
@@ -62,9 +63,21 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
 
     const toast = useToast();
 
+    // Create permission mapping from permissionsList
+    useEffect(() => {
+        if (permissionsList && permissionsList.length > 0) {
+            const mapping = {};
+            permissionsList.forEach(permission => {
+                mapping[permission.name] = permission.id;
+            });
+            setPermissionMapping(mapping);
+            console.log('Permission mapping created:', mapping);
+        }
+    }, [permissionsList]);
+
     // Load role data and fetch modules when modal opens
     useEffect(() => {
-        if (isOpen && role) {
+        if (isOpen && role && Object.keys(permissionMapping).length > 0) {
             setFormData({
                 name: role.name || '',
                 description: role.description || '',
@@ -80,11 +93,11 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                 fetchModulesAndPermissions();
             }
         }
-    }, [isOpen, role, modulesList]);
+    }, [isOpen, role, modulesList, permissionMapping]);
 
     // Map modules from role data
     const mapModulesFromRole = () => {
-        if (!role || !modulesList) return;
+        if (!role || !modulesList || Object.keys(permissionMapping).length === 0) return;
 
         setLoadingModules(true);
         try {
@@ -109,13 +122,13 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                 if (modulePermissions) {
                     const permList = modulePermissions.permissions || [];
 
-                    // Map numeric permission IDs to boolean values
-                    if (permList.includes(1)) permissionObject.read = true;
-                    if (permList.includes(2)) permissionObject.create = true;
-                    if (permList.includes(3)) permissionObject.update = true;
-                    if (permList.includes(4)) permissionObject.delete = true;
-                    if (permList.includes(5)) permissionObject.approve = true;
-                    if (permList.includes(6)) permissionObject.reject = true;
+                    // Use dynamic mapping instead of hardcoded IDs
+                    if (permList.includes(permissionMapping.read)) permissionObject.read = true;
+                    if (permList.includes(permissionMapping.create)) permissionObject.create = true;
+                    if (permList.includes(permissionMapping.update)) permissionObject.update = true;
+                    if (permList.includes(permissionMapping.delete)) permissionObject.delete = true;
+                    if (permList.includes(permissionMapping.approve)) permissionObject.approve = true;
+                    if (permList.includes(permissionMapping.reject)) permissionObject.reject = true;
                 }
 
                 return permissionObject;
@@ -149,6 +162,16 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
             ]);
 
             const allModules = modulesResponse.data || [];
+            const allPermissions = permissionsResponse.data || [];
+
+            // Create permission mapping if not provided in props
+            if (Object.keys(permissionMapping).length === 0) {
+                const mapping = {};
+                allPermissions.forEach(permission => {
+                    mapping[permission.name] = permission.id;
+                });
+                setPermissionMapping(mapping);
+            }
 
             // Create the module permission structure
             const formattedModules = allModules.map(module => {
@@ -171,13 +194,13 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                 if (modulePermissions) {
                     const permList = modulePermissions.permissions || [];
 
-                    // Map numeric permission IDs to boolean values
-                    if (permList.includes(1)) permissionObject.read = true;
-                    if (permList.includes(2)) permissionObject.create = true;
-                    if (permList.includes(3)) permissionObject.update = true;
-                    if (permList.includes(4)) permissionObject.delete = true;
-                    if (permList.includes(5)) permissionObject.approve = true;
-                    if (permList.includes(6)) permissionObject.reject = true;
+                    // Use dynamic mapping instead of hardcoded IDs
+                    if (permList.includes(permissionMapping.read)) permissionObject.read = true;
+                    if (permList.includes(permissionMapping.create)) permissionObject.create = true;
+                    if (permList.includes(permissionMapping.update)) permissionObject.update = true;
+                    if (permList.includes(permissionMapping.delete)) permissionObject.delete = true;
+                    if (permList.includes(permissionMapping.approve)) permissionObject.approve = true;
+                    if (permList.includes(permissionMapping.reject)) permissionObject.reject = true;
                 }
 
                 return permissionObject;
@@ -244,7 +267,7 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
 
     // Handle form submission
     const handleSubmit = async () => {
-        if (!validateForm()) return;
+        if (!validateForm() || Object.keys(permissionMapping).length === 0) return;
 
         setIsSubmitting(true);
         try {
@@ -255,14 +278,14 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                     module.delete || module.approve || module.reject
                 )
                 .map(module => {
-                    // Map permissions to their numeric IDs
+                    // Map permissions to their correct IDs using dynamic mapping
                     const permissionIds = [];
-                    if (module.read) permissionIds.push(1);
-                    if (module.create) permissionIds.push(2);
-                    if (module.update) permissionIds.push(3);
-                    if (module.delete) permissionIds.push(4);
-                    if (module.approve) permissionIds.push(5);
-                    if (module.reject) permissionIds.push(6);
+                    if (module.read) permissionIds.push(permissionMapping.read);
+                    if (module.create) permissionIds.push(permissionMapping.create);
+                    if (module.update) permissionIds.push(permissionMapping.update);
+                    if (module.delete) permissionIds.push(permissionMapping.delete);
+                    if (module.approve) permissionIds.push(permissionMapping.approve);
+                    if (module.reject) permissionIds.push(permissionMapping.reject);
 
                     return {
                         module_id: module.id,
@@ -276,6 +299,9 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                 description: formData.description.trim(),
                 modules_permissions: modules_permissions
             };
+
+            console.log('Updating role with mapping:', permissionMapping);
+            console.log('Role data:', roleData);
 
             // Update role with all data in one call
             await roleService.updateRole(role.id, roleData);
@@ -449,7 +475,7 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                                                     MODULE
                                                 </Th>
                                                 <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
-                                                    READ
+                                                    read
                                                 </Th>
                                                 <Th textAlign="center" fontSize="xs" fontWeight="bold" py={4} width="11.6%" borderBottomWidth="2px" borderColor={borderColor}>
                                                     CREATE

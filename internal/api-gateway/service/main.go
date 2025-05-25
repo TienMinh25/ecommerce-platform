@@ -130,3 +130,8 @@ type ICouponService interface {
 	UpdateCoupon(ctx context.Context, data *api_gateway_dto.UpdateCouponRequest, couponID string) error
 	DeleteCouponByID(ctx context.Context, couponID string) error
 }
+
+type IPaymentService interface {
+	GetPaymentMethods(ctx context.Context) ([]api_gateway_dto.GetPaymentMethodsResponse, error)
+	CreateOrder(ctx context.Context, data api_gateway_dto.CheckoutRequest, userID int) (*api_gateway_dto.CheckoutResponse, error)
+}

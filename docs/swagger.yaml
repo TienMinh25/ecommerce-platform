@@ -71,6 +71,22 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.CheckoutResponse:
+    properties:
+      order_id:
+        type: string
+      payment_url:
+        type: string
+      status:
+        type: string
+    type: object
+  api_gateway_dto.CheckoutResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.CheckoutResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.CreateAddressRequest:
     properties:
       address_type_id:
@@ -681,6 +697,24 @@ definitions:
       user_id:
         type: integer
     type: object
+  api_gateway_dto.GetPaymentMethodsResponse:
+    properties:
+      code:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  api_gateway_dto.GetPaymentMethodsResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetPaymentMethodsResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.GetPermissionResponse:
     properties:
       created_at:
@@ -869,6 +903,8 @@ definitions:
     type: object
   api_gateway_dto.GetUserAddressResponse:
     properties:
+      address_type:
+        type: string
       address_type_id:
         type: integer
       country:
@@ -2604,6 +2640,60 @@ paths:
       summary: Update module by ID
       tags:
       - modules
+  /payments/checkout:
+    post:
+      consumes:
+      - application/json
+      description: create order
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.CheckoutResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: create order
+      tags:
+      - payments
+  /payments/payment-methods:
+    get:
+      consumes:
+      - application/json
+      description: Get payment methods
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetPaymentMethodsResponseDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Get payment methods
+      tags:
+      - payments
   /permissions:
     get:
       consumes:

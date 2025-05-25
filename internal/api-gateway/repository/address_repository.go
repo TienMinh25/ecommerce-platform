@@ -45,10 +45,11 @@ func (a *addressRepository) GetCurrentAddressByUserID(ctx context.Context, limit
 
 	query := `SELECT a.id, a.recipient_name, a.phone, a.street, a.district,
 			a.province, a.ward, a.postal_code, a.country, a.is_default, a.longtitude, a.latitude,
-			a.address_type_id
+			a.address_type_id, at.address_type
 			FROM addresses a
+			INNER JOIN address_types at ON at.id = a.address_type_id
 			WHERE a.user_id = $1
-			ORDER BY a.created_at ASC
+			ORDER BY a.is_default DESC, a.created_at ASC
 			LIMIT $2 OFFSET $3`
 
 	rows, err := a.db.Query(ctx, query, userID, limit, limit*(page-1))
@@ -70,7 +71,7 @@ func (a *addressRepository) GetCurrentAddressByUserID(ctx context.Context, limit
 
 		if err = rows.Scan(&address.ID, &address.RecipientName, &address.Phone, &address.Street,
 			&address.District, &address.Province, &address.Ward, &address.PostalCode, &address.Country, &address.IsDefault,
-			&address.Longtitude, &address.Latitude, &address.AddressTypeID); err != nil {
+			&address.Longtitude, &address.Latitude, &address.AddressTypeID, &address.AddressType); err != nil {
 			span.RecordError(err)
 			return nil, 0, utils.TechnicalError{
 				Message: common.MSG_INTERNAL_ERROR,

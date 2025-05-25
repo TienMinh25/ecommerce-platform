@@ -20,3 +20,8 @@ type ICouponService interface {
 	GetCouponsByClient(ctx context.Context, data *order_proto_gen.GetCouponByClientRequest) (*order_proto_gen.GetCouponResponse, error)
 	CreateCoupon(ctx context.Context, data *order_proto_gen.CreateCouponRequest) error
 }
+
+type IPaymentService interface {
+	GetPaymentMethods(ctx context.Context) (*order_proto_gen.GetPaymentMethodsResponse, error)
+	CreateOrder(ctx context.Context, data *order_proto_gen.CheckoutRequest) (*order_proto_gen.CheckoutResponse, error)
+}

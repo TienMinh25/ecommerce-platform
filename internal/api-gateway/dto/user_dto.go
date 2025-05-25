@@ -93,6 +93,7 @@ type GetUserAddressResponse struct {
 	Longtitude    *float64 `json:"longtitude"`
 	Lattitude     *float64 `json:"lattitude"`
 	AddressTypeID int      `json:"address_type_id"`
+	AddressType   string   `json:"address_type"`
 }
 
 type SetDefaultAddressRequest struct {

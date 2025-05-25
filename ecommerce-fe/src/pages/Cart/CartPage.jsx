@@ -28,7 +28,8 @@ import {
 import { FaTrash, FaMinus, FaPlus } from 'react-icons/fa';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import PageTitle from "../PageTitle.jsx";
-import {useCart} from "../../context/CartContext.jsx";
+import { useCart } from "../../context/CartContext.jsx";
+import VoucherSelector from "../../components/cart/VoucherSelector.jsx";
 
 const CartPage = () => {
     const {
@@ -44,8 +45,34 @@ const CartPage = () => {
     } = useCart();
 
     const [itemToDelete, setItemToDelete] = useState(null);
+    const [selectedVoucher, setSelectedVoucher] = useState(null);
     const { isOpen, onOpen, onClose } = useDisclosure();
     const navigate = useNavigate();
+
+    // Calculate cart total for selected items
+    const cartTotal = calculateTotal();
+
+    // Calculate discount from voucher
+    const calculateVoucherDiscount = () => {
+        if (!selectedVoucher || cartTotal === 0) return 0;
+
+        let discount = 0;
+        if (selectedVoucher.discount_type === 'percentage') {
+            discount = (cartTotal * selectedVoucher.discount_value) / 100;
+        } else {
+            discount = selectedVoucher.discount_value;
+        }
+
+        // Apply maximum discount limit
+        if (selectedVoucher.maximum_discount_amount) {
+            discount = Math.min(discount, selectedVoucher.maximum_discount_amount);
+        }
+
+        return discount;
+    };
+
+    // Calculate final total after voucher discount
+    const finalTotal = cartTotal - calculateVoucherDiscount();
 
     const openDeleteConfirmation = (cartItemId, productName) => {
         setItemToDelete({ id: cartItemId, name: productName });
@@ -63,11 +90,81 @@ const CartPage = () => {
         await deleteCartItems(selectedItems);
     };
 
+    const handleVoucherSelect = (voucher) => {
+        setSelectedVoucher(voucher);
+    };
+
+    // Enhanced checkout handler with complete data preparation
     const handleCheckout = () => {
         if (selectedItems.length === 0) {
             return;
         }
-        navigate('/checkout');
+
+        // Get selected cart items
+        const selectedCartItems = cartItems.filter(item =>
+            selectedItems.includes(item.cart_item_id)
+        );
+
+        // Transform cart items to checkout format with all required fields
+        const checkoutItems = selectedCartItems.map(item => {
+            // Calculate estimated delivery date (current date + 5 days in UTC)
+            const estimatedDeliveryDate = new Date();
+            estimatedDeliveryDate.setDate(estimatedDeliveryDate.getDate() + 5);
+
+            // Calculate shipping fee (base fee with discounts)
+            const baseShippingFee = 18300;
+            const itemValue = item.discount_price > 0 ? item.discount_price : item.price;
+
+            // Quantity discount
+            let quantityMultiplier = 1;
+            if (item.quantity >= 5) {
+                quantityMultiplier = 0.6; // 40% off for 5+ items
+            } else if (item.quantity >= 3) {
+                quantityMultiplier = 0.7; // 30% off for 3+ items
+            } else if (item.quantity >= 2) {
+                quantityMultiplier = 0.8; // 20% off for 2+ items
+            }
+
+            // Value-based discount
+            let valueMultiplier = 1;
+            if (itemValue >= 1000000) { // 1M+
+                valueMultiplier = 0.5; // 50% off shipping
+            } else if (itemValue >= 500000) { // 500k+
+                valueMultiplier = 0.7; // 30% off shipping
+            } else if (itemValue >= 200000) { // 200k+
+                valueMultiplier = 0.85; // 15% off shipping
+            }
+
+            const shippingFee = Math.round(baseShippingFee * quantityMultiplier * valueMultiplier);
+
+            return {
+                cart_item_id: item.cart_item_id,
+                product_id: item.product_id,
+                product_name: item.product_name,
+                product_variant_id: item.product_variant_id,
+                product_variant_thumbnail: item.product_variant_thumbnail,
+                variant_name: item.variant_name,
+                product_variant_name: item.variant_name, // API expects this field name
+                product_variant_image_url: item.product_variant_thumbnail, // API expects this field name
+                price: item.price,
+                discount_price: item.discount_price || 0,
+                quantity: item.quantity,
+                attribute_values: item.attribute_values || [],
+                shipping_fee: shippingFee,
+                estimated_delivery_date: estimatedDeliveryDate.toISOString()
+            };
+        });
+
+        // Navigate to checkout with complete cart data and voucher
+        navigate('/checkout', {
+            state: {
+                cartItems: checkoutItems,
+                selectedVoucher,
+                voucherDiscount: calculateVoucherDiscount(),
+                finalTotal,
+                fromCart: true
+            }
+        });
     };
 
     // Loading skeleton
@@ -275,7 +372,6 @@ const CartPage = () => {
                                     borderRadius="md"
                                     colorScheme="blue"
                                     variant="outline"
-                                    // Allow decreasing even when quantity is 1
                                     onClick={() => updateCartItem(item.cart_item_id, {
                                         product_variant_id: item.product_variant_id,
                                         quantity: item.quantity - 1
@@ -366,7 +462,6 @@ const CartPage = () => {
                                             borderRadius="md"
                                             colorScheme="blue"
                                             variant="outline"
-                                            // Allow decreasing even when quantity is 1
                                             onClick={() => updateCartItem(item.cart_item_id, {
                                                 product_variant_id: item.product_variant_id,
                                                 quantity: item.quantity - 1
@@ -466,26 +561,54 @@ const CartPage = () => {
                     </Button>
                 </HStack>
 
-                <HStack spacing={6} mt={{ base: 4, md: 0 }}>
-                    <Box textAlign={{ base: 'center', md: 'right' }}>
-                        <Text>
-                            Tổng thanh toán ({selectedItems.length} Sản phẩm):
-                            <Text as="span" fontWeight="bold" color="red.500" fontSize="xl" ml={2}>
-                                {formatPrice(calculateTotal())}
-                            </Text>
-                        </Text>
+                <VStack spacing={3} align={{ base: 'stretch', md: 'flex-end' }} mt={{ base: 4, md: 0 }}>
+                    {/* Voucher Section - Always visible */}
+                    <Box w={{ base: '100%', md: '400px' }}>
+                        <VoucherSelector
+                            selectedVoucher={selectedVoucher}
+                            onVoucherSelect={handleVoucherSelect}
+                            cartTotal={cartTotal}
+                        />
                     </Box>
 
-                    <Button
-                        colorScheme="red"
-                        size="lg"
-                        isDisabled={selectedItems.length === 0}
-                        onClick={handleCheckout}
-                        px={8}
-                    >
-                        Mua Hàng
-                    </Button>
-                </HStack>
+                    {/* Show voucher discount if applied */}
+                    {selectedVoucher && calculateVoucherDiscount() > 0 && (
+                        <HStack spacing={2} justify={{ base: 'space-between', md: 'flex-end' }} w="100%">
+                            <Text fontSize="sm" color="gray.600">
+                                Voucher giảm:
+                            </Text>
+                            <Text fontSize="sm" color="green.600" fontWeight="medium">
+                                -{formatPrice(calculateVoucherDiscount())}
+                            </Text>
+                        </HStack>
+                    )}
+
+                    <HStack spacing={6} w="100%" justify={{ base: 'space-between', md: 'flex-end' }}>
+                        <Box textAlign={{ base: 'left', md: 'right' }}>
+                            <Text>
+                                Tổng thanh toán ({selectedItems.length} Sản phẩm):
+                                <Text as="span" fontWeight="bold" color="red.500" fontSize="xl" ml={2}>
+                                    {formatPrice(finalTotal)}
+                                </Text>
+                            </Text>
+                            {selectedVoucher && calculateVoucherDiscount() > 0 && (
+                                <Text fontSize="sm" color="gray.500" as="s">
+                                    {formatPrice(cartTotal)}
+                                </Text>
+                            )}
+                        </Box>
+
+                        <Button
+                            colorScheme="red"
+                            size="lg"
+                            isDisabled={selectedItems.length === 0}
+                            onClick={handleCheckout}
+                            px={8}
+                        >
+                            Mua Hàng
+                        </Button>
+                    </HStack>
+                </VStack>
             </Flex>
 
             {/* Delete Confirmation Modal */}

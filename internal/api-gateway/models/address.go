@@ -17,6 +17,7 @@ type Address struct {
 	Latitude      *float64
 	IsDefault     bool
 	AddressTypeID int
+	AddressType   string
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 }

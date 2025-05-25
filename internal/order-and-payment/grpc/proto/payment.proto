@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option go_package = "./order_proto_gen";
+
+import "google/protobuf/timestamp.proto";
+
+message GetPaymentMethodsRequest {}
+
+message GetPaymentMethodsResponse {
+  repeated PaymentMethodsResponse payment_methods = 1;
+}
+
+message PaymentMethodsResponse {
+  int64 id = 1;
+  string name = 2;
+  string code = 3;
+}
+
+message CheckoutRequest {
+  repeated CheckoutItemRequest items = 1;
+  string method_type = 3;
+  string shipping_address = 4;
+  string recipient_name = 5;
+  string recipient_phone = 6;
+  int64 user_id = 7;
+}
+
+message CheckoutItemRequest {
+  string product_id = 1;
+  string product_variant_id = 2;
+  string product_name = 3;
+  string product_variant_name = 4;
+  string product_variant_image_url = 5;
+  int64 quantity = 6;
+  google.protobuf.Timestamp estimated_delivery_date = 7;
+  double shipping_fee = 8;
+  optional string coupon_id = 9;
+}
+
+message CheckoutResponse {
+  string order_id = 1;
+  string status = 2;
+  optional string payment_url = 3;
+}

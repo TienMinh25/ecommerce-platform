@@ -373,3 +373,16 @@ func (p *productService) GetProductInfoForCart(ctx context.Context, data *partne
 		ProductInfo: res,
 	}, nil
 }
+
+func (p *productService) GetProdInfoForPayment(ctx context.Context, data *partner_proto_gen.GetProdInfoForPaymentRequest) (*partner_proto_gen.GetProdInfoForPaymentResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetProdInfoForPayment"))
+	defer span.End()
+
+	res, err := p.repo.GetProdInfoForPayment(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

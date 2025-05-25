@@ -54,3 +54,26 @@ const (
 	ModuleManagement      ModuleName = "Module Management"
 	CouponManagement      ModuleName = "Coupon Management"
 )
+
+type MethodType string
+
+const (
+	Momo MethodType = "momo"
+	Cod  MethodType = "cod"
+)
+
+type StatusOrder string
+
+const (
+	PendingPayment StatusOrder = "pending_payment"  // Chờ thanh toán
+	Pending        StatusOrder = "pending"          // Chờ supplier xác nhận
+	Confirmed      StatusOrder = "confirmed"        // Supplier đã xác nhận
+	Processing     StatusOrder = "processing"       // Đang chuẩn bị hàng
+	ReadyToShip    StatusOrder = "ready_to_ship"    // Sẵn sàng giao hàng
+	InTransit      StatusOrder = "in_transit"       // Đang vận chuyển (đang ship)
+	OutForDelivery StatusOrder = "out_for_delivery" // Sắp giao (shipper đang trên đường)
+	Delivered      StatusOrder = "delivered"        // Đã giao thành công
+	Cancelled      StatusOrder = "cancelled"
+	PaymentFailed  StatusOrder = "payment_failed"
+	Refunded       StatusOrder = "refunded"
+)

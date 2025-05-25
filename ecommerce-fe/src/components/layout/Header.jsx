@@ -241,7 +241,7 @@ const Header = () => {
                   </MenuItem>
                   <MenuItem
                       as={RouterLink}
-                      to='/account/orders'
+                      to='user/account/orders'
                       py={3}
                       _hover={{ bg: 'gray.50' }}
                       w="full"
