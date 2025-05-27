@@ -19,18 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrderService_AddItemToCart_FullMethodName      = "/OrderService/AddItemToCart"
-	OrderService_GetCart_FullMethodName            = "/OrderService/GetCart"
-	OrderService_UpdateCart_FullMethodName         = "/OrderService/UpdateCart"
-	OrderService_RemoveCartItem_FullMethodName     = "/OrderService/RemoveCartItem"
-	OrderService_GetCoupons_FullMethodName         = "/OrderService/GetCoupons"
-	OrderService_CreateCoupon_FullMethodName       = "/OrderService/CreateCoupon"
-	OrderService_GetCouponsByClient_FullMethodName = "/OrderService/GetCouponsByClient"
-	OrderService_GetDetailCoupon_FullMethodName    = "/OrderService/GetDetailCoupon"
-	OrderService_UpdateCoupon_FullMethodName       = "/OrderService/UpdateCoupon"
-	OrderService_DeleteCoupon_FullMethodName       = "/OrderService/DeleteCoupon"
-	OrderService_GetPaymentMethods_FullMethodName  = "/OrderService/GetPaymentMethods"
-	OrderService_CreateOrder_FullMethodName        = "/OrderService/CreateOrder"
+	OrderService_AddItemToCart_FullMethodName             = "/OrderService/AddItemToCart"
+	OrderService_GetCart_FullMethodName                   = "/OrderService/GetCart"
+	OrderService_UpdateCart_FullMethodName                = "/OrderService/UpdateCart"
+	OrderService_RemoveCartItem_FullMethodName            = "/OrderService/RemoveCartItem"
+	OrderService_GetCoupons_FullMethodName                = "/OrderService/GetCoupons"
+	OrderService_CreateCoupon_FullMethodName              = "/OrderService/CreateCoupon"
+	OrderService_GetCouponsByClient_FullMethodName        = "/OrderService/GetCouponsByClient"
+	OrderService_GetDetailCoupon_FullMethodName           = "/OrderService/GetDetailCoupon"
+	OrderService_UpdateCoupon_FullMethodName              = "/OrderService/UpdateCoupon"
+	OrderService_DeleteCoupon_FullMethodName              = "/OrderService/DeleteCoupon"
+	OrderService_GetPaymentMethods_FullMethodName         = "/OrderService/GetPaymentMethods"
+	OrderService_CreateOrder_FullMethodName               = "/OrderService/CreateOrder"
+	OrderService_GetMyOrders_FullMethodName               = "/OrderService/GetMyOrders"
+	OrderService_UpdateOrderStatusFromMomo_FullMethodName = "/OrderService/UpdateOrderStatusFromMomo"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -49,6 +51,8 @@ type OrderServiceClient interface {
 	DeleteCoupon(ctx context.Context, in *DeleteCouponRequest, opts ...grpc.CallOption) (*DeleteCouponResponse, error)
 	GetPaymentMethods(ctx context.Context, in *GetPaymentMethodsRequest, opts ...grpc.CallOption) (*GetPaymentMethodsResponse, error)
 	CreateOrder(ctx context.Context, in *CheckoutRequest, opts ...grpc.CallOption) (*CheckoutResponse, error)
+	GetMyOrders(ctx context.Context, in *GetMyOrdersRequest, opts ...grpc.CallOption) (*GetMyOrdersResponse, error)
+	UpdateOrderStatusFromMomo(ctx context.Context, in *UpdateOrderStatusFromMomoRequest, opts ...grpc.CallOption) (*UpdateOrderStatusFromMomoResponse, error)
 }
 
 type orderServiceClient struct {
@@ -179,6 +183,26 @@ func (c *orderServiceClient) CreateOrder(ctx context.Context, in *CheckoutReques
 	return out, nil
 }
 
+func (c *orderServiceClient) GetMyOrders(ctx context.Context, in *GetMyOrdersRequest, opts ...grpc.CallOption) (*GetMyOrdersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMyOrdersResponse)
+	err := c.cc.Invoke(ctx, OrderService_GetMyOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *orderServiceClient) UpdateOrderStatusFromMomo(ctx context.Context, in *UpdateOrderStatusFromMomoRequest, opts ...grpc.CallOption) (*UpdateOrderStatusFromMomoResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateOrderStatusFromMomoResponse)
+	err := c.cc.Invoke(ctx, OrderService_UpdateOrderStatusFromMomo_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -195,6 +219,8 @@ type OrderServiceServer interface {
 	DeleteCoupon(context.Context, *DeleteCouponRequest) (*DeleteCouponResponse, error)
 	GetPaymentMethods(context.Context, *GetPaymentMethodsRequest) (*GetPaymentMethodsResponse, error)
 	CreateOrder(context.Context, *CheckoutRequest) (*CheckoutResponse, error)
+	GetMyOrders(context.Context, *GetMyOrdersRequest) (*GetMyOrdersResponse, error)
+	UpdateOrderStatusFromMomo(context.Context, *UpdateOrderStatusFromMomoRequest) (*UpdateOrderStatusFromMomoResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -240,6 +266,12 @@ func (UnimplementedOrderServiceServer) GetPaymentMethods(context.Context, *GetPa
 }
 func (UnimplementedOrderServiceServer) CreateOrder(context.Context, *CheckoutRequest) (*CheckoutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrder not implemented")
+}
+func (UnimplementedOrderServiceServer) GetMyOrders(context.Context, *GetMyOrdersRequest) (*GetMyOrdersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMyOrders not implemented")
+}
+func (UnimplementedOrderServiceServer) UpdateOrderStatusFromMomo(context.Context, *UpdateOrderStatusFromMomoRequest) (*UpdateOrderStatusFromMomoResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateOrderStatusFromMomo not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -478,6 +510,42 @@ func _OrderService_CreateOrder_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_GetMyOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMyOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetMyOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetMyOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetMyOrders(ctx, req.(*GetMyOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _OrderService_UpdateOrderStatusFromMomo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateOrderStatusFromMomoRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).UpdateOrderStatusFromMomo(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_UpdateOrderStatusFromMomo_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).UpdateOrderStatusFromMomo(ctx, req.(*UpdateOrderStatusFromMomoRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -532,6 +600,14 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateOrder",
 			Handler:    _OrderService_CreateOrder_Handler,
+		},
+		{
+			MethodName: "GetMyOrders",
+			Handler:    _OrderService_GetMyOrders_Handler,
+		},
+		{
+			MethodName: "UpdateOrderStatusFromMomo",
+			Handler:    _OrderService_UpdateOrderStatusFromMomo_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

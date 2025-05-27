@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"github.com/TienMinh25/ecommerce-platform/infrastructure"
-	"github.com/TienMinh25/ecommerce-platform/internal/api-gateway/httpclient"
 	"github.com/TienMinh25/ecommerce-platform/internal/api-gateway/middleware"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
+	"github.com/TienMinh25/ecommerce-platform/internal/httpclient"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
@@ -32,7 +32,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func NewGinEngine() *gin.Engine {
+func NewGinEngine(validators *middleware.ValidatorManager) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
@@ -42,6 +42,8 @@ func NewGinEngine() *gin.Engine {
 		AllowOrigins:     []string{"*"},
 		MaxAge:           12 * time.Hour,
 	}))
+
+	validators.RegisterDefaultValidator()
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -187,6 +189,8 @@ func main() {
 			NewDatabase,
 			// gin engine
 			NewGinEngine,
+			// custom validator
+			middleware.NewValidatorManager,
 			// router and handler
 			api_gateway_router.NewRouter,
 			api_gateway_handler.NewAdminAddressTypeHandler,

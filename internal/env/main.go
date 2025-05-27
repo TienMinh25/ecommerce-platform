@@ -107,6 +107,15 @@ type ClientConfig struct {
 	ClientPort int    `envconfig:"CLIENT_PORT"`
 }
 
+type MomoConfig struct {
+	MomoPartnerCode string `envconfig:"MOMO_PARTNER_CODE"`
+	MomoAccessKey   string `envconfig:"MOMO_ACCESS_KEY"`
+	MomoSecretKey   string `envconfig:"MOMO_SECRET_KEY"`
+	MomoHost        string `envconfig:"MOMO_HOST"`
+	MomoRedirectURL string `envconfig:"MOMO_REDIRECT_URL"`
+	MomoNotifyURL   string `envconfig:"MOMO_NOTIFY_URL"`
+}
+
 type EnvManager struct {
 	ServerConfig                   *ServerConfig
 	PostgreSQL                     *PostgreSQLConfig
@@ -123,6 +132,7 @@ type EnvManager struct {
 	GoogleOAuth                    *GoogleOAuthConfig
 	FacebookOAuth                  *FacebookOAuthConfig
 	Client                         *ClientConfig
+	MomoConfig                     *MomoConfig
 
 	RedirectURI string `envconfig:"REDIRECT_URI"`
 

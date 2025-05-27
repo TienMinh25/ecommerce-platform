@@ -25,4 +25,5 @@ type IProductRepository interface {
 
 type ISupplierProfileRepository interface {
 	GetSupplierInfoForProductDetail(ctx context.Context, supplierID int64) (*models.Supplier, error)
+	GetSupplierInfoForOrder(ctx context.Context, supplierID []int64) ([]models.Supplier, error)
 }

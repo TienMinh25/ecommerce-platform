@@ -12,15 +12,18 @@ type OrderHandler struct {
 	cartService    service.ICartService
 	couponService  service.ICouponService
 	paymentService service.IPaymentService
+	orderService   service.IOrderService
 }
 
 func NewOrderHandler(tracer pkg.Tracer, cartService service.ICartService,
 	couponService service.ICouponService,
-	paymentService service.IPaymentService) *OrderHandler {
+	paymentService service.IPaymentService,
+	orderService service.IOrderService) *OrderHandler {
 	return &OrderHandler{
 		tracer:         tracer,
 		cartService:    cartService,
 		couponService:  couponService,
 		paymentService: paymentService,
+		orderService:   orderService,
 	}
 }

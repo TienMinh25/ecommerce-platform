@@ -24,7 +24,7 @@ const UserAccountLayout = () => {
         { label: 'Địa chỉ', icon: <FaMapMarkerAlt />, path: '/user/account/addresses' },
         { label: 'Đơn hàng của tôi', icon: <FaShoppingBag />, path: '/user/account/orders' },
         { label: 'Cài đặt thông báo', icon: <FaBell />, path: '/user/account/notifications/settings' },
-        {label: 'Thông báo của tôi', icon: <FaEnvelope />, path: '/user/account/notifications/see'}
+        { label: 'Thông báo của tôi', icon: <FaEnvelope />, path: '/user/account/notifications/see'}
     ];
 
     // Check if a menu item is active
@@ -108,8 +108,11 @@ const UserAccountLayout = () => {
                     borderWidth="1px"
                     borderColor={useColorModeValue('gray.200', 'gray.700')}
                     minH="500px"
+                    overflow="hidden"
                 >
-                    <Outlet />
+                    <Box p={0}>
+                        <Outlet />
+                    </Box>
                 </Box>
             </Flex>
         </Container>

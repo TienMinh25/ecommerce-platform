@@ -83,6 +83,9 @@ type IUserHandler interface {
 	AddCartItem(ctx *gin.Context)
 	DeleteCartItems(ctx *gin.Context)
 	UpdateCartItem(ctx *gin.Context)
+
+	// manage my orders
+	GetMyOrders(ctx *gin.Context)
 }
 
 type IAdministrativeDivisionHandler interface {
@@ -113,4 +116,5 @@ type ICouponHandler interface {
 type IPaymentHandler interface {
 	GetPaymentMethods(ctx *gin.Context)
 	Checkout(ctx *gin.Context)
+	UpdateOrderIPNMomo(ctx *gin.Context)
 }

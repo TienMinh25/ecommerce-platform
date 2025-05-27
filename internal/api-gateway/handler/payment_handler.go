@@ -2,24 +2,34 @@ package api_gateway_handler
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_service "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service"
+	"github.com/TienMinh25/ecommerce-platform/internal/env"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"github.com/gin-gonic/gin"
+	"github.com/pkg/errors"
 	"net/http"
 )
 
 type paymentHandler struct {
 	tracer         pkg.Tracer
 	paymentService api_gateway_service.IPaymentService
+	envManager     *env.EnvManager
 }
 
-func NewPaymentHandler(tracer pkg.Tracer, paymentService api_gateway_service.IPaymentService) IPaymentHandler {
+func NewPaymentHandler(tracer pkg.Tracer, paymentService api_gateway_service.IPaymentService,
+	envManager *env.EnvManager) IPaymentHandler {
 	return &paymentHandler{
 		tracer:         tracer,
 		paymentService: paymentService,
+		envManager:     envManager,
 	}
 }
 
@@ -95,4 +105,44 @@ func (p *paymentHandler) Checkout(ctx *gin.Context) {
 	}
 
 	utils.SuccessResponse(ctx, http.StatusCreated, *res)
+}
+
+func (p *paymentHandler) UpdateOrderIPNMomo(ctx *gin.Context) {
+	c, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateOrderIPNMomo"))
+	defer span.End()
+
+	var data api_gateway_dto.UpdateOrderIPNMomoRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	rawSignature := fmt.Sprintf("accessKey=%v&amount=%v&extraData=%v&message=%v&orderId=%v&orderInfo=%v&orderType=%v&partnerCode=%v&payType=%v&requestId=%v&responseTime=%v&resultCode=%v&transId=%v",
+		p.envManager.MomoConfig.MomoAccessKey, data.Amount, data.ExtraData, data.Message, data.OrderID, data.OrderInfo,
+		data.OrderType, data.PartnerCode, data.PayType, data.RequestID, data.ResponseTime, data.ResultCode,
+		data.TransId)
+
+	hmacBuilder := hmac.New(sha256.New, []byte(p.envManager.MomoConfig.MomoSecretKey))
+	hmacBuilder.Write([]byte(rawSignature))
+
+	signature := hex.EncodeToString(hmacBuilder.Sum(nil))
+
+	if signature != data.Signature {
+		span.RecordError(errors.New("signature does not match"))
+		utils.HandleErrorResponse(ctx, utils.BusinessError{
+			Code:      http.StatusBadRequest,
+			Message:   "signature does not match",
+			ErrorCode: errorcode.BAD_REQUEST,
+		})
+	}
+
+	if err := p.paymentService.UpdateOrderIPNMomo(c, data); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusNoContent, struct{}{})
 }

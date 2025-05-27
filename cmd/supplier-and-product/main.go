@@ -118,6 +118,7 @@ func main() {
 			// service
 			service.NewCategoryService,
 			service.NewProductService,
+			service.NewSupplierService,
 			// repository
 			repository.NewCategoryRepository,
 			repository.NewProductRepository,

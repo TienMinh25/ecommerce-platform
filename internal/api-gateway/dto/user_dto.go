@@ -1,6 +1,9 @@
 package api_gateway_dto
 
-import "time"
+import (
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"time"
+)
 
 type GetCurrentUserResponse struct {
 	FullName    string  `json:"full_name"`
@@ -221,4 +224,45 @@ type GetCartItemsResponse struct {
 	ProductVariantThumbnail string  `json:"product_variant_thumbnail"`
 	Currency                string  `json:"currency"`
 	VariantName             string  `json:"variant_name"`
+}
+
+type GetMyOrdersRequest struct {
+	Limit   int64              `form:"limit,default=1" binding:"omitempty,gte=1"`
+	Page    int64              `form:"page,default=1" binding:"omitempty,gte=1"`
+	Status  common.StatusOrder `form:"status" binding:"omitempty,enum"`
+	Keyword *string            `form:"keyword" binding:"omitempty,gte=1"`
+}
+
+type GetMyOrdersResponse struct {
+	// info of supplier
+	SupplierID        int64  `json:"supplier_id"`
+	SupplierName      string `json:"supplier_name"`
+	SupplierThumbnail string `json:"supplier_thumbnail"`
+
+	// info products
+	ProductID               string             `json:"product_id"`
+	ProductVariantID        string             `json:"product_variant_id"`
+	ProductVariantThumbnail string             `json:"product_variant_thumbnail"`
+	ProductName             string             `json:"product_name"`
+	ProductVariantName      string             `json:"product_variant_name"`
+	Quantity                int64              `json:"quantity"`
+	UnitPrice               float64            `json:"unit_price"`
+	TotalPrice              float64            `json:"total_price"`     // money need to be paid
+	DiscountAmount          float64            `json:"discount_amount"` // discount amount
+	TaxAmount               float64            `json:"tax_amount"`
+	ShippingFee             float64            `json:"shipping_fee"`
+	Status                  common.StatusOrder `json:"status"`
+
+	// Used for detail when click into one order item
+	TrackingNumber        string            `json:"tracking_number"`
+	ShippingAddress       string            `json:"shipping_address"`
+	ShippingMethod        common.MethodType `json:"shipping_method"`
+	RecipientName         string            `json:"recipient_name"`
+	RecipientPhone        string            `json:"recipient_phone"`
+	EstimatedDeliveryDate time.Time         `json:"estimated_delivery_date"`
+	ActualDeliveryDate    *time.Time        `json:"actual_delivery_date"`
+	Notes                 *string           `json:"notes"`
+	CancelledReason       *string           `json:"cancelled_reason"`
+
+	OrderItemID string `json:"order_item_id"`
 }

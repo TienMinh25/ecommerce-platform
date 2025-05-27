@@ -36,7 +36,7 @@ const paymentService = {
     createOrder: async (orderData) => {
         try {
             const response = await api.post('/payments/checkout', orderData);
-            return response.data;
+            return response.data.data;
         } catch (error) {
             throw error;
         }

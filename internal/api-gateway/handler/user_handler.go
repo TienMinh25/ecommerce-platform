@@ -4,6 +4,7 @@ import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_service "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service"
+	api_gateway_servicedto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service/dto"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
@@ -745,4 +746,57 @@ func (u *userHandler) UpdateCartItem(ctx *gin.Context) {
 	}
 
 	utils.SuccessResponse(ctx, http.StatusOK, *res)
+}
+
+// GetMyOrders godoc
+//
+//	@Summary		update cart item
+//	@Tags			me
+//	@Description	update cart item
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//
+//	@Param			data	query		api_gateway_dto.GetMyOrdersRequest	false	"information get list my orders"
+//
+//	@Success		200		{object}	api_gateway_dto.UpdateCartItemResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/users/me/orders [get]
+func (u *userHandler) GetMyOrders(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := u.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetMyOrders"))
+	defer span.End()
+
+	userClaimsRaw, _ := ctx.Get("user")
+	userClaims := userClaimsRaw.(*api_gateway_service.UserClaims)
+
+	var data api_gateway_dto.GetMyOrdersRequest
+
+	if err := ctx.ShouldBindQuery(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	in := api_gateway_servicedto.GetMyOrdersRequest{
+		Limit:   data.Limit,
+		Page:    data.Page,
+		Status:  data.Status,
+		Keyword: data.Keyword,
+		UserID:  userClaims.UserID,
+	}
+
+	res, totalItems, totalPages, hasNext, hasPrevious, err := u.service.GetMyOrders(ct, in)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.PaginatedResponse(ctx, res, int(data.Page), int(data.Limit), totalPages, totalItems, hasNext, hasPrevious)
 }

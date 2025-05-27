@@ -115,3 +115,31 @@ func (s *paymentService) CreateOrder(ctx context.Context, data api_gateway_dto.C
 		PaymentURL: res.PaymentUrl,
 	}, nil
 }
+
+func (s *paymentService) UpdateOrderIPNMomo(ctx context.Context, data api_gateway_dto.UpdateOrderIPNMomoRequest) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateOrderIPNMomo"))
+	defer span.End()
+
+	var statusOrder string
+
+	if data.ResultCode != 0 && data.ResultCode != 9000 {
+		statusOrder = string(common.PaymentFailed)
+	} else {
+		statusOrder = string(common.Pending)
+	}
+
+	// get order id and result code
+	_, err := s.orderClient.UpdateOrderStatusFromMomo(ctx, &order_proto_gen.UpdateOrderStatusFromMomoRequest{
+		OrderId: data.OrderID,
+		Status:  statusOrder,
+	})
+
+	if err != nil {
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return nil
+}

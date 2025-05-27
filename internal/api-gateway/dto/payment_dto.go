@@ -36,3 +36,19 @@ type CheckoutResponse struct {
 	Status     string  `json:"status"`
 	PaymentURL *string `json:"payment_url"`
 }
+
+type UpdateOrderIPNMomoRequest struct {
+	PartnerCode  string `json:"partnerCode" binding:"required"`
+	OrderID      string `json:"orderId" binding:"required"`
+	RequestID    string `json:"requestId" binding:"required"`
+	Amount       int64  `json:"amount" binding:"required"`
+	OrderInfo    string `json:"orderInfo"`
+	OrderType    string `json:"orderType"`
+	TransId      int64  `json:"transId" binding:"required"`
+	ResultCode   int64  `json:"resultCode" binding:"omitempty,gte=0"`
+	Message      string `json:"message" binding:"omitempty"`
+	PayType      string `json:"payType"`
+	ResponseTime int64  `json:"responseTime"`
+	ExtraData    string `json:"extraData" binding:"omitempty"`
+	Signature    string `json:"signature" binding:"required"`
+}

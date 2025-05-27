@@ -173,6 +173,9 @@ func registerUserMeHandler(group *gin.RouterGroup, permissionMiddleware *middlew
 		userMeGroup.POST("/carts", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Create), handler.AddCartItem)
 		userMeGroup.PATCH("/carts/:cartItemID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Update), handler.UpdateCartItem)
 		userMeGroup.DELETE("/carts", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.UserManagement, common.Delete), handler.DeleteCartItems)
+
+		// my orders
+		userMeGroup.GET("/orders", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin, common.RoleCustomer}, common.OrderManagement, common.Read), handler.GetMyOrders)
 	}
 }
 
@@ -219,9 +222,10 @@ func registerCouponEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middl
 
 func registerPaymentEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, permissionMiddleware *middleware.PermissionMiddleware, paymentHandler api_gateway_handler.IPaymentHandler) {
 	paymentGroup := group.Group("/payments")
+	paymentGroup.POST("/webhook/momo", paymentHandler.UpdateOrderIPNMomo)
 	paymentGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
 		paymentGroup.GET("/payment-methods", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.Payment, common.Read), paymentHandler.GetPaymentMethods)
-		paymentGroup.POST("/checkout", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.Payment, common.Create), paymentHandler.Checkout)
+		paymentGroup.POST("/checkout", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.OrderManagement, common.Create), paymentHandler.Checkout)
 	}
 }

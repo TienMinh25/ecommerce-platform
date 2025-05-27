@@ -24,4 +24,9 @@ type ICouponService interface {
 type IPaymentService interface {
 	GetPaymentMethods(ctx context.Context) (*order_proto_gen.GetPaymentMethodsResponse, error)
 	CreateOrder(ctx context.Context, data *order_proto_gen.CheckoutRequest) (*order_proto_gen.CheckoutResponse, error)
+	UpdateOrderStatusFromMomo(ctx context.Context, data *order_proto_gen.UpdateOrderStatusFromMomoRequest) error
+}
+
+type IOrderService interface {
+	GetMyOrders(ctx context.Context, data *order_proto_gen.GetMyOrdersRequest) (*order_proto_gen.GetMyOrdersResponse, error)
 }

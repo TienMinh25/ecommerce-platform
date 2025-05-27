@@ -27,4 +27,9 @@ type ICouponRepository interface {
 type IPaymentRepository interface {
 	GetPaymentMethods(ctx context.Context) ([]*models.PaymentMethod, error)
 	CreateOrder(ctx context.Context, order dto.CheckoutRequest) (string, common.StatusOrder, float64, error)
+	UpdateOrderStatusFromMomo(ctx context.Context, data *order_proto_gen.UpdateOrderStatusFromMomoRequest) error
+}
+
+type IOrderRepository interface {
+	GetMyOrders(ctx context.Context, data *order_proto_gen.GetMyOrdersRequest) ([]models.OrderItem, int64, error)
 }

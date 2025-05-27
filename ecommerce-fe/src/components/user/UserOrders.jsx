@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Heading,
@@ -19,96 +19,51 @@ import {
     HStack,
     Divider,
     useColorModeValue,
-    Link
+    Link,
+    Collapse,
+    Spinner,
+    Alert,
+    AlertIcon,
+    Grid,
+    GridItem,
+    useDisclosure,
+    Avatar
 } from '@chakra-ui/react';
-import { SearchIcon, InfoOutlineIcon } from '@chakra-ui/icons';
-
-// Mock data for orders
-const mockOrders = [
-    {
-        id: '123456789',
-        status: 'cancelled',
-        shop: {
-            name: 'Thinkmax Official Store',
-            isOfficial: true,
-        },
-        items: [
-            {
-                id: 'item1',
-                name: 'Thinkmax 2 Mút Đệm Tai Nghe Không Dây Cho Sennheiser Hd4.50 Btnc',
-                variant: 'Đen',
-                price: 66000,
-                originalPrice: 95000,
-                quantity: 1,
-                image: 'https://via.placeholder.com/80'
-            }
-        ],
-        total: 66000,
-        cancelledReason: 'Đã hủy tự động bởi hệ thống Shopee',
-        createdAt: '2023-08-15T10:30:00Z'
-    },
-    {
-        id: '987654321',
-        status: 'completed',
-        shop: {
-            name: 'PiSoo - Dép Nam Nữ',
-            isFavorite: true,
-        },
-        items: [
-            {
-                id: 'item2',
-                name: 'Dép Nam và Nữ Quai Ngang Dion Unisex POPULAR Chọn tăng 1 Size',
-                variant: 'Trắng Dino,41',
-                price: 52000,
-                originalPrice: 110000,
-                quantity: 1,
-                image: 'https://via.placeholder.com/80'
-            }
-        ],
-        total: 52000,
-        deliveredAt: '2023-08-10T15:45:00Z'
-    }
-];
+import { SearchIcon, InfoOutlineIcon, ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
+import userMeService from '../../services/userMeService';
+import OrderDetailsSection from "./OrderDetailsSection.jsx";
 
 const UserOrders = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [activeTab, setActiveTab] = useState(0);
-    const [orders, setOrders] = useState(mockOrders);
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 10,
+        total_items: 0,
+        total_pages: 0,
+        has_next: false,
+        has_previous: false
+    });
+    const [expandedOrder, setExpandedOrder] = useState(null);
 
-    // Filter orders based on tab and search query
-    const getFilteredOrders = () => {
-        let filtered = [...orders];
-
-        // Filter by tab/status
-        if (activeTab === 1) {
-            filtered = filtered.filter(order => order.status === 'pending');
-        } else if (activeTab === 2) {
-            filtered = filtered.filter(order => order.status === 'shipping');
-        } else if (activeTab === 3) {
-            filtered = filtered.filter(order => order.status === 'delivered');
-        } else if (activeTab === 4) {
-            filtered = filtered.filter(order => order.status === 'completed');
-        } else if (activeTab === 5) {
-            filtered = filtered.filter(order => order.status === 'cancelled');
-        } else if (activeTab === 6) {
-            filtered = filtered.filter(order => order.status === 'returned');
-        }
-
-        // Filter by search query
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase();
-            filtered = filtered.filter(order =>
-                order.id.toLowerCase().includes(query) ||
-                order.items.some(item =>
-                    item.name.toLowerCase().includes(query) ||
-                    (item.variant && item.variant.toLowerCase().includes(query))
-                ) ||
-                order.shop.name.toLowerCase().includes(query)
-            );
-        }
-
-        return filtered;
-    };
+    // Status mapping for tabs
+    const statusTabs = [
+        { key: null, label: 'Tất cả' },
+        { key: 'pending_payment', label: 'Chờ thanh toán' },
+        { key: 'pending', label: 'Chờ xác nhận' },
+        { key: 'confirmed', label: 'Đã xác nhận' },
+        { key: 'processing', label: 'Đang chuẩn bị' },
+        { key: 'ready_to_ship', label: 'Sẵn sàng giao' },
+        { key: 'in_transit', label: 'Đang vận chuyển' },
+        { key: 'out_for_delivery', label: 'Sắp giao' },
+        { key: 'delivered', label: 'Đã giao' },
+        { key: 'cancelled', label: 'Đã hủy' },
+        { key: 'payment_failed', label: 'Thanh toán thất bại' },
+        { key: 'refunded', label: 'Đã hoàn tiền' }
+    ];
 
     // Colors
     const bgColor = useColorModeValue('white', 'gray.800');
@@ -116,113 +71,229 @@ const UserOrders = () => {
     const redColor = useColorModeValue('red.500', 'red.300');
     const greenColor = useColorModeValue('green.500', 'green.300');
 
+    // Fetch orders
+    const fetchOrders = async (page = 1, status = null, keyword = null) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const params = {
+                page,
+                limit: pagination.limit
+            };
+
+            if (status) {
+                params.status = status;
+            }
+
+            if (keyword && keyword.trim()) {
+                params.keyword = keyword.trim();
+            }
+
+            const response = await userMeService.getOrders(params);
+            setOrders(response.data || []);
+            setPagination(response.metadata.pagination);
+        } catch (err) {
+            setError(err.message || 'Có lỗi xảy ra khi tải đơn hàng');
+            setOrders([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Effect to fetch orders when tab or search changes
+    useEffect(() => {
+        const currentStatus = statusTabs[activeTab]?.key;
+        fetchOrders(1, currentStatus, searchQuery);
+    }, [activeTab]);
+
+    // Handle search
+    const handleSearch = () => {
+        const currentStatus = statusTabs[activeTab]?.key;
+        fetchOrders(1, currentStatus, searchQuery);
+    };
+
+    // Handle search input change with debounce
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (searchQuery !== '') {
+                handleSearch();
+            } else {
+                const currentStatus = statusTabs[activeTab]?.key;
+                fetchOrders(1, currentStatus, null);
+            }
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery]);
+
     // Status badges
     const renderStatusBadge = (status) => {
-        let color = 'gray';
-        let text = 'Unknown';
+        const statusConfig = {
+            'pending_payment': {
+                text: 'Chờ thanh toán',
+                bg: '#FEF3C7',
+                color: '#92400E'
+            },
+            'pending': {
+                text: 'Chờ xác nhận',
+                bg: '#FED7AA',
+                color: '#C2410C'
+            },
+            'confirmed': {
+                text: 'Đã xác nhận',
+                bg: '#DBEAFE',
+                color: '#1E40AF'
+            },
+            'processing': {
+                text: 'Đang chuẩn bị',
+                bg: '#E9D5FF',
+                color: '#6B21A8'
+            },
+            'ready_to_ship': {
+                text: 'Sẵn sàng giao',
+                bg: '#CFFAFE',
+                color: '#155E75'
+            },
+            'in_transit': {
+                text: 'Đang vận chuyển',
+                bg: '#DBEAFE',
+                color: '#1E40AF'
+            },
+            'out_for_delivery': {
+                text: 'Sắp giao',
+                bg: '#CCFBF1',
+                color: '#134E4A'
+            },
+            'delivered': {
+                text: 'Đã giao',
+                bg: '#D1FAE5',
+                color: '#065F46'
+            },
+            'cancelled': {
+                text: 'Đã hủy',
+                bg: '#FEE2E2',
+                color: '#991B1B'
+            },
+            'payment_failed': {
+                text: 'Thanh toán thất bại',
+                bg: '#FEE2E2',
+                color: '#991B1B'
+            },
+            'refunded': {
+                text: 'Đã hoàn tiền',
+                bg: '#F3F4F6',
+                color: '#374151'
+            }
+        };
 
-        switch (status) {
-            case 'pending':
-                color = 'yellow';
-                text = 'Chờ thanh toán';
-                break;
-            case 'shipping':
-                color = 'blue';
-                text = 'Đang vận chuyển';
-                break;
-            case 'delivered':
-                color = 'teal';
-                text = 'Chờ giao hàng';
-                break;
-            case 'completed':
-                color = 'green';
-                text = 'HOÀN THÀNH';
-                break;
-            case 'cancelled':
-                color = 'red';
-                text = 'ĐÃ HỦY';
-                break;
-            case 'returned':
-                color = 'purple';
-                text = 'Trả hàng/Hoàn tiền';
-                break;
-        }
+        const config = statusConfig[status] || {
+            text: 'Không xác định',
+            bg: '#F3F4F6',
+            color: '#374151'
+        };
 
         return (
-            <Badge
-                colorScheme={color}
-                px={2}
-                py={1}
-                borderRadius="sm"
-                textTransform="uppercase"
-                fontWeight="bold"
-                fontSize="xs"
+            <Box
+                px={3}
+                py={1.5}
+                borderRadius="md"
+                bg={config.bg}
             >
-                {text}
-            </Badge>
+                <Text
+                    color={config.color}
+                    fontWeight="medium"
+                    fontSize="sm"
+                >
+                    {config.text}
+                </Text>
+            </Box>
         );
     };
 
     // Format currency
     const formatCurrency = (amount) => {
-        return `đ${amount.toLocaleString('vi-VN')}`;
+        return `₫${amount.toLocaleString('vi-VN')}`;
     };
 
-    // Render single order
-    const renderOrder = (order) => (
-        <Box
-            key={order.id}
-            mb={6}
-            bg={bgColor}
-            borderRadius="md"
-            borderWidth="1px"
-            borderColor={borderColor}
-            overflow="hidden"
-        >
-            {/* Order header */}
-            <Flex
-                bg="gray.50"
-                p={4}
-                justify="space-between"
-                align="center"
-                borderBottomWidth="1px"
+    // Convert orders to individual order items (no grouping)
+    const convertToOrderItems = (orders) => {
+        return orders.map(order => {
+            const calculatedAmount = order.total_price + order.tax_amount + order.shipping_fee - order.discount_amount;
+            const isPaidAlready = order.shipping_method === 'momo' && order.status !== 'payment_failed';
+
+            return {
+                ...order,
+                supplier_name: order.supplier_name || 'Cửa hàng không xác định',
+                finalAmount: isPaidAlready ? 0 : calculatedAmount
+            }
+        });
+    };
+
+    // Toggle order details
+    const toggleOrderDetails = (orderItemId) => {
+        setExpandedOrder(expandedOrder === orderItemId ? null : orderItemId);
+    };
+
+    // Render single order item
+    const renderOrderItem = (order) => {
+        const isExpanded = expandedOrder === order.order_item_id;
+
+        return (
+            <Box
+                key={order.order_item_id}
+                mb={6}
+                bg={bgColor}
+                borderRadius="md"
+                borderWidth="1px"
                 borderColor={borderColor}
+                overflow="hidden"
             >
-                <Flex align="center" gap={2}>
-                    {order.shop.isOfficial && (
-                        <Badge colorScheme="red" px={2} fontSize="xs">
-                            HOT
-                        </Badge>
-                    )}
-                    {order.shop.isFavorite && (
-                        <Badge colorScheme="red" px={2} fontSize="xs">
-                            Yêu thích
-                        </Badge>
-                    )}
-                    <Text fontWeight="bold">{order.shop.name}</Text>
-                    <Button size="xs" colorScheme="red" variant="outline">
-                        Chat
-                    </Button>
-                    <Button size="xs" variant="outline">
-                        Xem Shop
-                    </Button>
-                </Flex>
-
-                <Flex align="center">
-                    {order.status === 'completed' && (
-                        <Flex align="center" mr={4} color={greenColor}>
-                            <InfoOutlineIcon mr={1} />
-                            <Text fontSize="sm">Đơn hàng đã được giao thành công</Text>
-                        </Flex>
-                    )}
-                    {renderStatusBadge(order.status)}
-                </Flex>
-            </Flex>
-
-            {/* Order items */}
-            {order.items.map(item => (
+                {/* Order header */}
                 <Flex
-                    key={item.id}
+                    bg="gray.50"
+                    p={4}
+                    justify="space-between"
+                    align="center"
+                    borderBottomWidth="1px"
+                    borderColor={borderColor}
+                    direction={{ base: "column", md: "row" }}
+                    gap={{ base: 3, md: 0 }}
+                >
+                    <Flex align="center" gap={3} flex="1" minW="0">
+                        <Avatar
+                            size="sm"
+                            src={order.supplier_thumbnail}
+                            name={order.supplier_name}
+                        />
+                        <Text fontWeight="bold" noOfLines={1} flex="1">
+                            {order.supplier_name}
+                        </Text>
+                    </Flex>
+
+                    <Flex align="center" gap={2} flexShrink={0} direction={{ base: "row", md: "row" }}>
+                        {order.status === 'delivered' && (
+                            <Flex align="center" mr={2} color={greenColor} display={{ base: "none", lg: "flex" }}>
+                                <InfoOutlineIcon mr={1} />
+                                <Text fontSize="sm">Đơn hàng đã được giao thành công</Text>
+                            </Flex>
+                        )}
+                        {renderStatusBadge(order.status)}
+                    </Flex>
+
+                    {/* Mobile buttons */}
+                    <Flex gap={2} display={{ base: "flex", md: "none" }} w="full" justify="center">
+                        <Button size="xs" colorScheme="red" variant="outline">
+                            Chat
+                        </Button>
+                        <Button size="xs" variant="outline">
+                            Xem Shop
+                        </Button>
+                    </Flex>
+                </Flex>
+
+                {/* Order item */}
+                <Flex
                     p={4}
                     borderBottomWidth="1px"
                     borderColor={borderColor}
@@ -230,8 +301,8 @@ const UserOrders = () => {
                 >
                     <Flex flex="1" gap={4}>
                         <Image
-                            src={item.image}
-                            alt={item.name}
+                            src={order.product_variant_thumbnail || 'https://via.placeholder.com/80'}
+                            alt={order.product_name}
                             boxSize="80px"
                             objectFit="cover"
                             borderRadius="md"
@@ -241,77 +312,90 @@ const UserOrders = () => {
 
                         <Flex direction="column" flex="1">
                             <Text noOfLines={2} fontWeight="medium" mb={1}>
-                                {item.name}
+                                {order.product_name}
                             </Text>
                             <Text fontSize="sm" color="gray.600" mb={1}>
-                                Phân loại hàng: {item.variant}
+                                Phân loại hàng: {order.product_variant_name}
                             </Text>
-                            <Text fontSize="sm">x{item.quantity}</Text>
+                            <Text fontSize="sm">x{order.quantity}</Text>
                         </Flex>
                     </Flex>
 
                     <Flex direction="column" align="flex-end" minW="140px">
-                        <Text textDecoration="line-through" color="gray.500" fontSize="sm">
-                            {formatCurrency(item.originalPrice)}
-                        </Text>
+                        {order.discount_amount > 0 && (
+                            <Text textDecoration="line-through" color="gray.500" fontSize="sm">
+                                {formatCurrency(order.unit_price)}
+                            </Text>
+                        )}
                         <Text color={redColor} fontWeight="bold">
-                            {formatCurrency(item.price)}
+                            {formatCurrency(order.total_price)}
                         </Text>
                     </Flex>
                 </Flex>
-            ))}
 
-            {/* Order footer */}
-            <Flex
-                p={4}
-                justify="space-between"
-                align="center"
-                bg="gray.50"
-            >
-                <Box>
-                    {order.status === 'cancelled' && (
-                        <Flex align="center" color="gray.500">
-                            <InfoOutlineIcon mr={2} />
-                            <Text fontSize="sm">{order.cancelledReason}</Text>
-                        </Flex>
-                    )}
-                </Box>
+                {/* Order footer */}
+                <Flex
+                    p={4}
+                    justify="space-between"
+                    align="center"
+                    bg="gray.50"
+                >
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        leftIcon={isExpanded ? <ChevronUpIcon /> : <ChevronDownIcon />}
+                        onClick={() => toggleOrderDetails(order.order_item_id)}
+                    >
+                        {isExpanded ? 'Ẩn chi tiết' : 'Xem chi tiết'}
+                    </Button>
 
-                <Flex align="center" gap={3}>
-                    <Text fontSize="sm">Thành tiền:</Text>
-                    <Text fontSize="lg" fontWeight="bold" color={redColor}>
-                        {formatCurrency(order.total)}
-                    </Text>
+                    <Flex align="center" gap={3}>
+                        <Text fontSize="sm">Thành tiền:</Text>
+                        <Text fontSize="lg" fontWeight="bold" color={redColor}>
+                            {formatCurrency(order.finalAmount)}
+                        </Text>
 
-                    {/* Order actions */}
-                    {order.status === 'cancelled' && (
-                        <>
-                            <Button size="sm" colorScheme="red">
-                                Mua Lại
-                            </Button>
-                            <Button size="sm" variant="outline">
-                                Xem Chi Tiết Hủy Đơn
-                            </Button>
-                            <Button size="sm" variant="outline">
-                                Liên Hệ Người Bán
-                            </Button>
-                        </>
-                    )}
+                        {/* Order actions */}
+                        {order.status === 'cancelled' && (
+                            <>
+                                <Button size="sm" colorScheme="red">
+                                    Mua Lại
+                                </Button>
+                                <Button size="sm" variant="outline">
+                                    Liên Hệ Người Bán
+                                </Button>
+                            </>
+                        )}
 
-                    {order.status === 'completed' && (
-                        <>
-                            <Button size="sm" colorScheme="red">
-                                Mua Lại
-                            </Button>
-                            <Button size="sm" variant="outline">
-                                Liên Hệ Người Bán
-                            </Button>
-                        </>
-                    )}
+                        {order.status === 'delivered' && (
+                            <>
+                                <Button size="sm" colorScheme="red">
+                                    Mua Lại
+                                </Button>
+                                <Button size="sm" variant="outline">
+                                    Đánh Giá
+                                </Button>
+                                <Button size="sm" variant="outline">
+                                    Liên Hệ Người Bán
+                                </Button>
+                            </>
+                        )}
+                    </Flex>
                 </Flex>
-            </Flex>
-        </Box>
-    );
+
+                {/* Expandable order details */}
+                <Collapse in={isExpanded} animateOpacity>
+                    <OrderDetailsSection order={order} />
+                </Collapse>
+            </Box>
+        );
+    };
+
+    // Handle pagination
+    const handlePageChange = (newPage) => {
+        const currentStatus = statusTabs[activeTab]?.key;
+        fetchOrders(newPage, currentStatus, searchQuery);
+    };
 
     return (
         <Box>
@@ -319,57 +403,140 @@ const UserOrders = () => {
                 Đơn Hàng Của Tôi
             </Heading>
 
-            <Tabs
-                variant="line"
-                colorScheme="red"
-                onChange={index => setActiveTab(index)}
-                mb={6}
+            <Box
+                bg={bgColor}
+                borderRadius="md"
+                borderWidth="1px"
+                borderColor={borderColor}
+                overflow="hidden"
             >
-                <TabList>
-                    <Tab _selected={{ color: redColor, borderColor: redColor }}>Tất cả</Tab>
-                    <Tab _selected={{ color: redColor, borderColor: redColor }}>Chờ thanh toán</Tab>
-                    <Tab _selected={{ color: redColor, borderColor: redColor }}>Vận chuyển</Tab>
-                    <Tab _selected={{ color: redColor, borderColor: redColor }}>Chờ giao hàng</Tab>
-                    <Tab _selected={{ color: redColor, borderColor: redColor }}>Hoàn thành</Tab>
-                    <Tab _selected={{ color: redColor, borderColor: redColor }}>Đã hủy</Tab>
-                    <Tab _selected={{ color: redColor, borderColor: redColor }}>Trả hàng/Hoàn tiền</Tab>
-                </TabList>
+                <Tabs
+                    variant="line"
+                    colorScheme="red"
+                    onChange={index => setActiveTab(index)}
+                >
+                    <TabList
+                        overflowX="auto"
+                        overflowY="hidden"
+                        maxW="100%"
+                        borderBottomWidth="2px"
+                        borderColor={borderColor}
+                        css={{
+                            '&::-webkit-scrollbar': {
+                                display: 'none',
+                            },
+                            '-ms-overflow-style': 'none',
+                            'scrollbar-width': 'none',
+                        }}
+                    >
+                        {statusTabs.map((tab, index) => (
+                            <Tab
+                                key={index}
+                                _selected={{
+                                    color: redColor,
+                                    borderColor: redColor,
+                                    borderBottomWidth: "3px"
+                                }}
+                                whiteSpace="nowrap"
+                                minW="fit-content"
+                                px={4}
+                                py={3}
+                                fontSize="sm"
+                                fontWeight="medium"
+                                position="relative"
+                                borderBottomWidth="3px"
+                                borderColor="transparent"
+                                transition="all 0.2s"
+                                _hover={{
+                                    bg: "gray.50",
+                                    color: redColor
+                                }}
+                                mr={1}
+                            >
+                                {tab.label}
+                            </Tab>
+                        ))}
+                    </TabList>
 
-                <TabPanels>
-                    {/* We'll use the same panel for all tabs, but filter the orders */}
-                    {[0, 1, 2, 3, 4, 5, 6].map(tabIndex => (
-                        <TabPanel key={tabIndex} px={0}>
-                            <Box mb={6}>
-                                <InputGroup>
-                                    <InputLeftElement pointerEvents="none">
-                                        <SearchIcon color="gray.300" />
-                                    </InputLeftElement>
-                                    <Input
-                                        placeholder="Bạn có thể tìm kiếm theo tên Shop, ID đơn hàng hoặc Tên Sản phẩm"
-                                        value={searchQuery}
-                                        onChange={e => setSearchQuery(e.target.value)}
-                                        bg={bgColor}
-                                        borderColor={borderColor}
-                                    />
-                                </InputGroup>
-                            </Box>
+                    <TabPanels>
+                        {statusTabs.map((tab, tabIndex) => (
+                            <TabPanel key={tabIndex} p={4}>
+                                <Box mb={6}>
+                                    <InputGroup>
+                                        <InputLeftElement pointerEvents="none">
+                                            <SearchIcon color="gray.300" />
+                                        </InputLeftElement>
+                                        <Input
+                                            placeholder="Bạn có thể tìm kiếm theo tên sản phẩm"
+                                            value={searchQuery}
+                                            onChange={e => setSearchQuery(e.target.value)}
+                                            bg={bgColor}
+                                            borderColor={borderColor}
+                                        />
+                                    </InputGroup>
+                                </Box>
 
-                            {getFilteredOrders().length > 0 ? (
-                                getFilteredOrders().map(order => renderOrder(order))
-                            ) : (
-                                <VStack spacing={4} py={10}>
-                                    <Image
-                                        src="https://deo.shopeemobile.com/shopee/shopee-pcmall-live-sg/assets/5fafbb923393b712b96488590b8f781f.png"
-                                        alt="No orders"
-                                        boxSize="100px"
-                                    />
-                                    <Text color="gray.500">Chưa có đơn hàng</Text>
-                                </VStack>
-                            )}
-                        </TabPanel>
-                    ))}
-                </TabPanels>
-            </Tabs>
+                                {error && (
+                                    <Alert status="error" mb={4}>
+                                        <AlertIcon />
+                                        {error}
+                                    </Alert>
+                                )}
+
+                                {loading ? (
+                                    <Flex justify="center" py={10}>
+                                        <Spinner size="lg" color={redColor} />
+                                    </Flex>
+                                ) : (
+                                    <>
+                                        {orders.length > 0 ? (
+                                            <>
+                                                {convertToOrderItems(orders).map(order =>
+                                                    renderOrderItem(order)
+                                                )}
+
+                                                {/* Pagination */}
+                                                {pagination.total_pages > 1 && (
+                                                    <Flex justify="center" mt={6} gap={2}>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handlePageChange(pagination.page - 1)}
+                                                            isDisabled={!pagination.has_previous}
+                                                        >
+                                                            Trước
+                                                        </Button>
+
+                                                        <Text mx={4} alignSelf="center">
+                                                            Trang {pagination.page} / {pagination.total_pages}
+                                                        </Text>
+
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => handlePageChange(pagination.page + 1)}
+                                                            isDisabled={!pagination.has_next}
+                                                        >
+                                                            Sau
+                                                        </Button>
+                                                    </Flex>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <VStack spacing={4} py={10}>
+                                                <Image
+                                                    src="https://deo.shopeemobile.com/shopee/shopee-pcmall-live-sg/assets/5fafbb923393b712b96488590b8f781f.png"
+                                                    alt="No orders"
+                                                    boxSize="100px"
+                                                />
+                                                <Text color="gray.500">Chưa có đơn hàng</Text>
+                                            </VStack>
+                                        )}
+                                    </>
+                                )}
+                            </TabPanel>
+                        ))}
+                    </TabPanels>
+                </Tabs>
+            </Box>
         </Box>
     );
 };

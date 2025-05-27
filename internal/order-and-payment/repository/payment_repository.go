@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/service/dto"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -172,6 +173,7 @@ func (r *paymentRepository) CreateOrder(ctx context.Context, data dto.CheckoutRe
 					DiscountAmount:         discountAmount,
 					TaxAmount:              0,
 					SupplierID:             item.SupplierID,
+					ProductID:              item.ProductID,
 				})
 			case common.Momo:
 				statusOrder = common.PendingPayment
@@ -190,6 +192,7 @@ func (r *paymentRepository) CreateOrder(ctx context.Context, data dto.CheckoutRe
 					DiscountAmount:         discountAmount,
 					TaxAmount:              0,
 					SupplierID:             item.SupplierID,
+					ProductID:              item.ProductID,
 				})
 			}
 		}
@@ -314,13 +317,13 @@ func (r *paymentRepository) processOrder(ctx context.Context, tx pkg.Tx, orderIt
 	insertOrderItemsBuilder := squirrel.Insert("order_items").
 		Columns("order_id", "product_name", "product_variant_image_url", "product_variant_name",
 			"quantity", "unit_price", "total_price", "estimated_delivery_date", "status",
-			"shipping_fee", "product_variant_id", "discount_amount", "tax_amount", "supplier_id")
+			"shipping_fee", "product_variant_id", "discount_amount", "tax_amount", "supplier_id", "product_id")
 
 	for _, orderItem := range orderItems {
 		insertOrderItemsBuilder = insertOrderItemsBuilder.Values(orderItem.OrderID,
 			orderItem.ProductName, orderItem.ProductVariantImageURL, orderItem.ProductVariantName,
 			orderItem.Quantity, orderItem.UnitPrice, orderItem.TotalPrice, orderItem.EstimatedDeliveryDate, orderItem.Status,
-			orderItem.ShippingFee, orderItem.ProductVariantID, orderItem.DiscountAmount, orderItem.TaxAmount, orderItem.SupplierID)
+			orderItem.ShippingFee, orderItem.ProductVariantID, orderItem.DiscountAmount, orderItem.TaxAmount, orderItem.SupplierID, orderItem.ProductID)
 	}
 
 	insertOrderItems, args, errBuildQuery := insertOrderItemsBuilder.PlaceholderFormat(squirrel.Dollar).ToSql()
@@ -385,17 +388,39 @@ func (r *paymentRepository) processOrder(ctx context.Context, tx pkg.Tx, orderIt
 		argIndex += 2
 	}
 
-	rawSQL := fmt.Sprintf(`
+	if len(valuesParts) > 0 {
+		rawSQL := fmt.Sprintf(`
 			UPDATE coupons 
 			SET usage_count = updates.new_usage_count
 			FROM (VALUES %s) AS updates(coupon_id, new_usage_count)
 			WHERE coupons.id = updates.coupon_id
 		`, strings.Join(valuesParts, ", "))
 
-	if err := tx.Exec(ctx, rawSQL, args...); err != nil {
-		span.RecordError(err)
-		return status.Error(codes.Internal, err.Error())
+		if err := tx.Exec(ctx, rawSQL, args...); err != nil {
+			span.RecordError(err)
+			return status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	return nil
+}
+
+func (r *paymentRepository) UpdateOrderStatusFromMomo(ctx context.Context, data *order_proto_gen.UpdateOrderStatusFromMomoRequest) error {
+	return r.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
+		sqlUpdate, args, err := squirrel.Update("order_items").
+			Set("status", data.Status).
+			Where(squirrel.Eq{"order_id": data.OrderId}).
+			PlaceholderFormat(squirrel.Dollar).
+			ToSql()
+
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		if err = tx.Exec(ctx, sqlUpdate, args...); err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		return nil
+	})
 }
