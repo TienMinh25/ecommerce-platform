@@ -104,6 +104,7 @@ func (s *paymentService) CreateOrder(ctx context.Context, data *order_proto_gen.
 
 	var paymentURL *string
 	// step 4: call to payment gateway (momo) to get payment url
+	// todo: integrate momo in here
 	switch common.MethodType(data.MethodType) {
 	case common.Momo:
 		fmt.Println(totalAmount)

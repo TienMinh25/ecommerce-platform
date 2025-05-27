@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option go_package = "./partner_proto_gen";
+
+message GetSupplierInfoForOrderRequest {
+  repeated int64 supplier_ids = 1;
+}
+
+message GetSupplierInfoForOrderResponse {
+  repeated SupplierInfoForOrderResponse data = 1;
+}
+
+message SupplierInfoForOrderResponse {
+  int64 supplier_id = 1;
+  string supplier_name = 2;
+  string supplier_thumbnail = 3;
+}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
+	api_gateway_servicedto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service/dto"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
@@ -597,4 +598,71 @@ func (u *userMeService) GetCartItems(ctx context.Context, userID int) ([]api_gat
 	}
 
 	return result, nil
+}
+
+func (u *userMeService) GetMyOrders(ctx context.Context, data api_gateway_servicedto.GetMyOrdersRequest) ([]api_gateway_dto.GetMyOrdersResponse, int, int, bool, bool, error) {
+	ctx, span := u.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetMyOrders"))
+	defer span.End()
+
+	var orderStatus *string = nil
+
+	if data.Status != "" {
+		status := string(data.Status)
+		orderStatus = &status
+	}
+
+	resOrderClient, err := u.orderClient.GetMyOrders(ctx, &order_proto_gen.GetMyOrdersRequest{
+		Limit:   data.Limit,
+		Page:    data.Page,
+		Status:  orderStatus,
+		Keyword: data.Keyword,
+		UserId:  int64(data.UserID),
+	})
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, 0, 0, false, false, utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	result := make([]api_gateway_dto.GetMyOrdersResponse, 0)
+
+	for _, item := range resOrderClient.Data {
+		var actualDeliveryDate *time.Time
+
+		if item.ActualDeliveryDate != nil {
+			*actualDeliveryDate = item.ActualDeliveryDate.AsTime()
+		}
+
+		result = append(result, api_gateway_dto.GetMyOrdersResponse{
+			OrderItemID:           item.OrderItemId,
+			SupplierID:            item.SupplierId,
+			SupplierName:          item.SupplierName,
+			SupplierThumbnail:     item.SupplierThumbnail,
+			ProductID:             item.ProductId,
+			ProductVariantID:      item.ProductVariantId,
+			ProductName:           item.ProductName,
+			ProductVariantName:    item.ProductVariantName,
+			Quantity:              item.Quantity,
+			UnitPrice:             item.UnitPrice,
+			TotalPrice:            item.TotalPrice,
+			DiscountAmount:        item.DiscountAmount,
+			TaxAmount:             item.TaxAmount,
+			ShippingFee:           item.ShippingFee,
+			Status:                common.StatusOrder(item.Status),
+			TrackingNumber:        item.TrackingNumber,
+			ShippingMethod:        common.MethodType(item.ShippingMethod),
+			ShippingAddress:       item.ShippingAddress,
+			RecipientName:         item.RecipientName,
+			RecipientPhone:        item.RecipientPhone,
+			EstimatedDeliveryDate: item.EstimatedDeliveryDate.AsTime(),
+			ActualDeliveryDate:    actualDeliveryDate,
+			Notes:                 item.Notes,
+			CancelledReason:       item.CancelledReason,
+		})
+	}
+
+	return result, int(resOrderClient.Metadata.TotalItems), int(resOrderClient.Metadata.TotalPages), resOrderClient.Metadata.HasNext, resOrderClient.Metadata.HasPrevious, nil
 }

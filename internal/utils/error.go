@@ -49,6 +49,9 @@ func msgForTag(fe validator.FieldError) string {
 		return fmt.Sprintf("The '%s' field must be equal %v characters.", fe.Field(), fe.Param())
 	case "uuid":
 		return fmt.Sprintf("The '%s' field must be a valid uuid.", fe.Field())
+	case "enum":
+		enum, _ := fe.Value().(common.Enum)
+		return enum.ErrorMessage()
 	default:
 		return fmt.Sprintf("The '%s' field is invalid.", fe.Field())
 	}

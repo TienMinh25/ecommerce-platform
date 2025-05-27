@@ -83,6 +83,9 @@ type IUserHandler interface {
 	AddCartItem(ctx *gin.Context)
 	DeleteCartItems(ctx *gin.Context)
 	UpdateCartItem(ctx *gin.Context)
+
+	// manage my orders
+	GetMyOrders(ctx *gin.Context)
 }
 
 type IAdministrativeDivisionHandler interface {

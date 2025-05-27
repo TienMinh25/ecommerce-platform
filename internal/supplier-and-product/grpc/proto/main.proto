@@ -6,6 +6,7 @@ import 'category.proto';
 import 'product.proto';
 import 'product_variant.proto';
 import "partner_payment.proto";
+import "partner_order.proto";
 
 service PartnerService {
   rpc GetCategories(GetCategoriesRequest) returns (GetCategoriesResponse);
@@ -21,4 +22,6 @@ service PartnerService {
   rpc GetProductInfoCart(GetProductInfoCartRequest) returns (GetProductInfoCartResponse);
 
   rpc GetProdInfoForPayment(GetProdInfoForPaymentRequest) returns (GetProdInfoForPaymentResponse);
+
+  rpc GetSupplierInfoForMyOrders(GetSupplierInfoForOrderRequest) returns (GetSupplierInfoForOrderResponse);
 }

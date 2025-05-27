@@ -25,3 +25,7 @@ type IPaymentService interface {
 	GetPaymentMethods(ctx context.Context) (*order_proto_gen.GetPaymentMethodsResponse, error)
 	CreateOrder(ctx context.Context, data *order_proto_gen.CheckoutRequest) (*order_proto_gen.CheckoutResponse, error)
 }
+
+type IOrderService interface {
+	GetMyOrders(ctx context.Context, data *order_proto_gen.GetMyOrdersRequest) (*order_proto_gen.GetMyOrdersResponse, error)
+}

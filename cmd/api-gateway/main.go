@@ -32,7 +32,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func NewGinEngine() *gin.Engine {
+func NewGinEngine(validators *middleware.ValidatorManager) *gin.Engine {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
@@ -42,6 +42,8 @@ func NewGinEngine() *gin.Engine {
 		AllowOrigins:     []string{"*"},
 		MaxAge:           12 * time.Hour,
 	}))
+
+	validators.RegisterDefaultValidator()
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -187,6 +189,8 @@ func main() {
 			NewDatabase,
 			// gin engine
 			NewGinEngine,
+			// custom validator
+			middleware.NewValidatorManager,
 			// router and handler
 			api_gateway_router.NewRouter,
 			api_gateway_handler.NewAdminAddressTypeHandler,

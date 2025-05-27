@@ -172,6 +172,7 @@ func (r *paymentRepository) CreateOrder(ctx context.Context, data dto.CheckoutRe
 					DiscountAmount:         discountAmount,
 					TaxAmount:              0,
 					SupplierID:             item.SupplierID,
+					ProductID:              item.ProductID,
 				})
 			case common.Momo:
 				statusOrder = common.PendingPayment
@@ -190,6 +191,7 @@ func (r *paymentRepository) CreateOrder(ctx context.Context, data dto.CheckoutRe
 					DiscountAmount:         discountAmount,
 					TaxAmount:              0,
 					SupplierID:             item.SupplierID,
+					ProductID:              item.ProductID,
 				})
 			}
 		}
@@ -314,13 +316,13 @@ func (r *paymentRepository) processOrder(ctx context.Context, tx pkg.Tx, orderIt
 	insertOrderItemsBuilder := squirrel.Insert("order_items").
 		Columns("order_id", "product_name", "product_variant_image_url", "product_variant_name",
 			"quantity", "unit_price", "total_price", "estimated_delivery_date", "status",
-			"shipping_fee", "product_variant_id", "discount_amount", "tax_amount", "supplier_id")
+			"shipping_fee", "product_variant_id", "discount_amount", "tax_amount", "supplier_id", "product_id")
 
 	for _, orderItem := range orderItems {
 		insertOrderItemsBuilder = insertOrderItemsBuilder.Values(orderItem.OrderID,
 			orderItem.ProductName, orderItem.ProductVariantImageURL, orderItem.ProductVariantName,
 			orderItem.Quantity, orderItem.UnitPrice, orderItem.TotalPrice, orderItem.EstimatedDeliveryDate, orderItem.Status,
-			orderItem.ShippingFee, orderItem.ProductVariantID, orderItem.DiscountAmount, orderItem.TaxAmount, orderItem.SupplierID)
+			orderItem.ShippingFee, orderItem.ProductVariantID, orderItem.DiscountAmount, orderItem.TaxAmount, orderItem.SupplierID, orderItem.ProductID)
 	}
 
 	insertOrderItems, args, errBuildQuery := insertOrderItemsBuilder.PlaceholderFormat(squirrel.Dollar).ToSql()

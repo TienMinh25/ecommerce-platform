@@ -51,3 +51,43 @@ func (s *supplierProfileRepository) GetSupplierInfoForProductDetail(ctx context.
 
 	return &supplier, nil
 }
+
+func (s *supplierProfileRepository) GetSupplierInfoForOrder(ctx context.Context, supplierIDs []int64) ([]models.Supplier, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetSupplierInfoForOrder"))
+	defer span.End()
+
+	querySelect, args, err := squirrel.Select("id", "company_name", "logo_url").
+		From("supplier_profiles").
+		Where(squirrel.Eq{"id": supplierIDs}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	var suppliers []models.Supplier
+
+	rows, err := s.db.Query(ctx, querySelect, args...)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var supplier models.Supplier
+
+		if err = rows.Scan(&supplier.ID, &supplier.CompanyName, &supplier.LogoURL); err != nil {
+			span.RecordError(err)
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+
+		suppliers = append(suppliers, supplier)
+	}
+
+	return suppliers, nil
+}

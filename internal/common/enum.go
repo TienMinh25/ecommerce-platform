@@ -1,5 +1,11 @@
 package common
 
+import (
+	"fmt"
+	"slices"
+	"strings"
+)
+
 const (
 	API_GATEWAY_DB   = "api_gateway_db"
 	NOTIFICATIONS_DB = "notifications_db"
@@ -77,3 +83,30 @@ const (
 	PaymentFailed  StatusOrder = "payment_failed"
 	Refunded       StatusOrder = "refunded"
 )
+
+type Enum interface {
+	IsValid() bool
+	ErrorMessage() string
+}
+
+func (s StatusOrder) IsValid() bool {
+	validArray := []StatusOrder{PendingPayment, Pending, Confirmed, Processing, ReadyToShip, InTransit, OutForDelivery, Delivered, Cancelled,
+		PaymentFailed, Refunded}
+
+	if slices.Contains(validArray, s) {
+		return true
+	}
+
+	return false
+}
+
+func (s StatusOrder) ErrorMessage() string {
+	validArray := []string{
+		string(PendingPayment), string(Pending), string(Confirmed),
+		string(Processing), string(ReadyToShip), string(InTransit),
+		string(OutForDelivery), string(Delivered), string(Cancelled),
+		string(PaymentFailed), string(Refunded),
+	}
+
+	return fmt.Sprintf("Status must be in the one of: [%v]", strings.Join(validArray, ", "))
+}

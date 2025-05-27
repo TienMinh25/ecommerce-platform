@@ -3,6 +3,7 @@ package api_gateway_service
 import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
+	api_gateway_servicedto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service/dto"
 	"time"
 )
 
@@ -95,6 +96,7 @@ type IUserMeService interface {
 	DeleteCartItems(ctx context.Context, cartItemIDs []string, userID int) error
 	UpdateCartItem(ctx context.Context, data api_gateway_dto.UpdateCartItemRequest, cartItemID string, userID int) (*api_gateway_dto.UpdateCartItemResponse, error)
 	GetCartItems(ctx context.Context, userID int) ([]api_gateway_dto.GetCartItemsResponse, error)
+	GetMyOrders(ctx context.Context, data api_gateway_servicedto.GetMyOrdersRequest) ([]api_gateway_dto.GetMyOrdersResponse, int, int, bool, bool, error)
 }
 
 type IRoleService interface {

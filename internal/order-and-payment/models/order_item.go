@@ -15,9 +15,9 @@ type OrderItem struct {
 	UnitPrice              float64
 	TotalPrice             float64
 	EstimatedDeliveryDate  time.Time
-	ActualDeliveryDate     time.Time
-	CancelledReason        string
-	Notes                  string
+	ActualDeliveryDate     *time.Time
+	CancelledReason        *string
+	Notes                  *string
 	Status                 common.StatusOrder
 	DiscountAmount         float64
 	TaxAmount              float64
@@ -26,4 +26,12 @@ type OrderItem struct {
 	UpdatedAt              time.Time
 	ProductVariantID       string
 	SupplierID             int64
+	ProductID              string
+
+	// additional info
+	TrackingNumber  string
+	ShippingAddress string
+	ShippingMethod  common.MethodType
+	RecipientName   string
+	RecipientPhone  string
 }

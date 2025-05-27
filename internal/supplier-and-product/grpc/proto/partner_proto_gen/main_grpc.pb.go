@@ -19,13 +19,14 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PartnerService_GetCategories_FullMethodName         = "/PartnerService/GetCategories"
-	PartnerService_GetProducts_FullMethodName           = "/PartnerService/GetProducts"
-	PartnerService_GetProductByID_FullMethodName        = "/PartnerService/GetProductByID"
-	PartnerService_GetProductReviewsByID_FullMethodName = "/PartnerService/GetProductReviewsByID"
-	PartnerService_CheckAvailableProduct_FullMethodName = "/PartnerService/CheckAvailableProduct"
-	PartnerService_GetProductInfoCart_FullMethodName    = "/PartnerService/GetProductInfoCart"
-	PartnerService_GetProdInfoForPayment_FullMethodName = "/PartnerService/GetProdInfoForPayment"
+	PartnerService_GetCategories_FullMethodName              = "/PartnerService/GetCategories"
+	PartnerService_GetProducts_FullMethodName                = "/PartnerService/GetProducts"
+	PartnerService_GetProductByID_FullMethodName             = "/PartnerService/GetProductByID"
+	PartnerService_GetProductReviewsByID_FullMethodName      = "/PartnerService/GetProductReviewsByID"
+	PartnerService_CheckAvailableProduct_FullMethodName      = "/PartnerService/CheckAvailableProduct"
+	PartnerService_GetProductInfoCart_FullMethodName         = "/PartnerService/GetProductInfoCart"
+	PartnerService_GetProdInfoForPayment_FullMethodName      = "/PartnerService/GetProdInfoForPayment"
+	PartnerService_GetSupplierInfoForMyOrders_FullMethodName = "/PartnerService/GetSupplierInfoForMyOrders"
 )
 
 // PartnerServiceClient is the client API for PartnerService service.
@@ -39,6 +40,7 @@ type PartnerServiceClient interface {
 	CheckAvailableProduct(ctx context.Context, in *CheckAvailableProductRequest, opts ...grpc.CallOption) (*CheckAvailableProductResponse, error)
 	GetProductInfoCart(ctx context.Context, in *GetProductInfoCartRequest, opts ...grpc.CallOption) (*GetProductInfoCartResponse, error)
 	GetProdInfoForPayment(ctx context.Context, in *GetProdInfoForPaymentRequest, opts ...grpc.CallOption) (*GetProdInfoForPaymentResponse, error)
+	GetSupplierInfoForMyOrders(ctx context.Context, in *GetSupplierInfoForOrderRequest, opts ...grpc.CallOption) (*GetSupplierInfoForOrderResponse, error)
 }
 
 type partnerServiceClient struct {
@@ -119,6 +121,16 @@ func (c *partnerServiceClient) GetProdInfoForPayment(ctx context.Context, in *Ge
 	return out, nil
 }
 
+func (c *partnerServiceClient) GetSupplierInfoForMyOrders(ctx context.Context, in *GetSupplierInfoForOrderRequest, opts ...grpc.CallOption) (*GetSupplierInfoForOrderResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSupplierInfoForOrderResponse)
+	err := c.cc.Invoke(ctx, PartnerService_GetSupplierInfoForMyOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PartnerServiceServer is the server API for PartnerService service.
 // All implementations must embed UnimplementedPartnerServiceServer
 // for forward compatibility.
@@ -130,6 +142,7 @@ type PartnerServiceServer interface {
 	CheckAvailableProduct(context.Context, *CheckAvailableProductRequest) (*CheckAvailableProductResponse, error)
 	GetProductInfoCart(context.Context, *GetProductInfoCartRequest) (*GetProductInfoCartResponse, error)
 	GetProdInfoForPayment(context.Context, *GetProdInfoForPaymentRequest) (*GetProdInfoForPaymentResponse, error)
+	GetSupplierInfoForMyOrders(context.Context, *GetSupplierInfoForOrderRequest) (*GetSupplierInfoForOrderResponse, error)
 	mustEmbedUnimplementedPartnerServiceServer()
 }
 
@@ -160,6 +173,9 @@ func (UnimplementedPartnerServiceServer) GetProductInfoCart(context.Context, *Ge
 }
 func (UnimplementedPartnerServiceServer) GetProdInfoForPayment(context.Context, *GetProdInfoForPaymentRequest) (*GetProdInfoForPaymentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProdInfoForPayment not implemented")
+}
+func (UnimplementedPartnerServiceServer) GetSupplierInfoForMyOrders(context.Context, *GetSupplierInfoForOrderRequest) (*GetSupplierInfoForOrderResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupplierInfoForMyOrders not implemented")
 }
 func (UnimplementedPartnerServiceServer) mustEmbedUnimplementedPartnerServiceServer() {}
 func (UnimplementedPartnerServiceServer) testEmbeddedByValue()                        {}
@@ -308,6 +324,24 @@ func _PartnerService_GetProdInfoForPayment_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PartnerService_GetSupplierInfoForMyOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupplierInfoForOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).GetSupplierInfoForMyOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_GetSupplierInfoForMyOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).GetSupplierInfoForMyOrders(ctx, req.(*GetSupplierInfoForOrderRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PartnerService_ServiceDesc is the grpc.ServiceDesc for PartnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -342,6 +376,10 @@ var PartnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProdInfoForPayment",
 			Handler:    _PartnerService_GetProdInfoForPayment_Handler,
+		},
+		{
+			MethodName: "GetSupplierInfoForMyOrders",
+			Handler:    _PartnerService_GetSupplierInfoForMyOrders_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
