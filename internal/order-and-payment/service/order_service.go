@@ -115,6 +115,7 @@ func (s *orderService) getSupplierInfoForOrders(ctx context.Context, data []mode
 			ProductVariantId:      item.ProductVariantID,
 			ProductName:           item.ProductName,
 			ProductVariantName:    item.ProductVariantName,
+			ProductThumbnailUrl:   item.ProductVariantImageURL,
 			Quantity:              item.Quantity,
 			UnitPrice:             item.UnitPrice,
 			TotalPrice:            item.TotalPrice,

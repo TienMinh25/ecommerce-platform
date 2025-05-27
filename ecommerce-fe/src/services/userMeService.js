@@ -237,6 +237,27 @@ const userMeService = {
             throw error;
         }
     },
+
+    /**
+     * Get user orders with pagination and filters
+     * @param {Object} params - Query parameters (page, limit, status, keyword)
+     * @returns {Promise} Promise object with user orders and pagination metadata
+     */
+    getOrders: async (params = { page: 1, limit: 10 }) => {
+        try {
+            const response = await api.get('/users/me/orders', {
+                params: {
+                    page: params.page,
+                    limit: params.limit,
+                    ...(params.status && { status: params.status }),
+                    ...(params.keyword && { keyword: params.keyword })
+                }
+            });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
 };
 
 export default userMeService;

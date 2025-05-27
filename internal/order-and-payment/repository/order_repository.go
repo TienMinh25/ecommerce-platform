@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/models"
@@ -36,7 +37,8 @@ func (r *orderRepository) GetMyOrders(ctx context.Context, data *order_proto_gen
 	selectQueryBuilder := squirrel.Select("oi.id", "oi.product_id", "oi.product_variant_id", "oi.product_name",
 		"oi.product_variant_name", "oi.quantity", "oi.unit_price", "oi.total_price", "coalesce(oi.discount_amount, 0)",
 		"coalesce(oi.tax_amount, 0)", "oi.shipping_fee", "oi.status", "o.tracking_number", "o.shipping_address", "o.shipping_method",
-		"o.recipient_name", "o.recipient_phone", "oi.estimated_delivery_date", "oi.actual_delivery_date", "oi.notes", "oi.cancelled_reason").
+		"o.recipient_name", "o.recipient_phone", "oi.estimated_delivery_date", "oi.actual_delivery_date", "oi.notes", "oi.cancelled_reason",
+		"oi.product_variant_image_url", "oi.supplier_id").
 		From("order_items oi").
 		InnerJoin("orders o on oi.order_id = o.id").
 		Where(squirrel.Eq{"o.user_id": data.UserId})
@@ -47,8 +49,8 @@ func (r *orderRepository) GetMyOrders(ctx context.Context, data *order_proto_gen
 	}
 
 	if data.Keyword != nil {
-		countQueryBuilder = countQueryBuilder.Where(squirrel.ILike{"oi.product_name": *data.Keyword})
-		selectQueryBuilder = selectQueryBuilder.Where(squirrel.ILike{"oi.product_name": *data.Keyword})
+		countQueryBuilder = countQueryBuilder.Where(squirrel.ILike{"oi.product_name": fmt.Sprintf("%%%s%%", *data.Keyword)})
+		selectQueryBuilder = selectQueryBuilder.Where(squirrel.ILike{"oi.product_name": fmt.Sprintf("%%%s%%", *data.Keyword)})
 	}
 
 	limit := uint64(data.Limit)
@@ -109,7 +111,8 @@ func (r *orderRepository) GetMyOrders(ctx context.Context, data *order_proto_gen
 			if err = rows.Scan(&orderItem.ID, &orderItem.ProductID, &orderItem.ProductVariantID, &orderItem.ProductName,
 				&orderItem.ProductVariantName, &orderItem.Quantity, &orderItem.UnitPrice, &orderItem.TotalPrice, &orderItem.DiscountAmount,
 				&orderItem.TaxAmount, &orderItem.ShippingFee, &orderItem.Status, &orderItem.TrackingNumber, &orderItem.ShippingAddress, &orderItem.ShippingMethod,
-				&orderItem.RecipientName, &orderItem.RecipientPhone, &orderItem.EstimatedDeliveryDate, &orderItem.ActualDeliveryDate, &orderItem.Notes, &orderItem.CancelledReason); err != nil {
+				&orderItem.RecipientName, &orderItem.RecipientPhone, &orderItem.EstimatedDeliveryDate, &orderItem.ActualDeliveryDate, &orderItem.Notes, &orderItem.CancelledReason,
+				&orderItem.ProductVariantImageURL, &orderItem.SupplierID); err != nil {
 				span.RecordError(err)
 				err = status.Error(codes.Internal, err.Error())
 				return

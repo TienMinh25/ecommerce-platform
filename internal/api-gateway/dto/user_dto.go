@@ -240,17 +240,18 @@ type GetMyOrdersResponse struct {
 	SupplierThumbnail string `json:"supplier_thumbnail"`
 
 	// info products
-	ProductID          string             `json:"product_id"`
-	ProductVariantID   string             `json:"product_variant_id"`
-	ProductName        string             `json:"product_name"`
-	ProductVariantName string             `json:"product_variant_name"`
-	Quantity           int64              `json:"quantity"`
-	UnitPrice          float64            `json:"unit_price"`
-	TotalPrice         float64            `json:"total_price"`     // money need to be paid
-	DiscountAmount     float64            `json:"discount_amount"` // discount amount
-	TaxAmount          float64            `json:"tax_amount"`
-	ShippingFee        float64            `json:"shipping_fee"`
-	Status             common.StatusOrder `json:"status"`
+	ProductID               string             `json:"product_id"`
+	ProductVariantID        string             `json:"product_variant_id"`
+	ProductVariantThumbnail string             `json:"product_variant_thumbnail"`
+	ProductName             string             `json:"product_name"`
+	ProductVariantName      string             `json:"product_variant_name"`
+	Quantity                int64              `json:"quantity"`
+	UnitPrice               float64            `json:"unit_price"`
+	TotalPrice              float64            `json:"total_price"`     // money need to be paid
+	DiscountAmount          float64            `json:"discount_amount"` // discount amount
+	TaxAmount               float64            `json:"tax_amount"`
+	ShippingFee             float64            `json:"shipping_fee"`
+	Status                  common.StatusOrder `json:"status"`
 
 	// Used for detail when click into one order item
 	TrackingNumber        string            `json:"tracking_number"`

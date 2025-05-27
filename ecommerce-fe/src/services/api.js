@@ -78,7 +78,7 @@ api.interceptors.response.use(
                 // Use a direct axios call (NOT through the api instance) to avoid interceptors
                 const response = await axios({
                     method: 'post',
-                    url: 'http://server.local:3000/api/v1/auth/refresh-token',
+                    url: 'http://localhost:3000/api/v1/auth/refresh-token',
                     headers: {
                         'X-Authorization': `${refreshToken}`
                     }

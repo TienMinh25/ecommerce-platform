@@ -29,25 +29,26 @@ message MyOrdersResponse {
   string product_variant_id = 5;
   string product_name = 6;
   string product_variant_name = 7;
-  int64 quantity = 8;
-  double unit_price = 9;
-  double total_price = 10;
-  double discount_amount = 11;
-  double tax_amount = 12;
-  double shipping_fee = 13;
-  string status = 14;
+  string product_thumbnail_url = 8;
+  int64 quantity = 9;
+  double unit_price = 10;
+  double total_price = 11;
+  double discount_amount = 12;
+  double tax_amount = 13;
+  double shipping_fee = 14;
+  string status = 15;
 
   // Used for detail when click into one order item
-  string tracking_number = 15;
-  string shipping_address = 16;
-  string shipping_method = 17;
-  string recipient_name = 18;
-  string recipient_phone = 19;
-  google.protobuf.Timestamp estimated_delivery_date = 20;
-  optional google.protobuf.Timestamp actual_delivery_date = 21;
-  optional string notes = 22;
-  optional string cancelled_reason = 23;
+  string tracking_number = 16;
+  string shipping_address = 17;
+  string shipping_method = 18;
+  string recipient_name = 19;
+  string recipient_phone = 20;
+  google.protobuf.Timestamp estimated_delivery_date = 21;
+  optional google.protobuf.Timestamp actual_delivery_date = 22;
+  optional string notes = 23;
+  optional string cancelled_reason = 24;
 
   // additional
-  string order_item_id = 24;
+  string order_item_id = 25;
 }
