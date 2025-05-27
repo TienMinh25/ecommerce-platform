@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/service/dto"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -387,17 +388,39 @@ func (r *paymentRepository) processOrder(ctx context.Context, tx pkg.Tx, orderIt
 		argIndex += 2
 	}
 
-	rawSQL := fmt.Sprintf(`
+	if len(valuesParts) > 0 {
+		rawSQL := fmt.Sprintf(`
 			UPDATE coupons 
 			SET usage_count = updates.new_usage_count
 			FROM (VALUES %s) AS updates(coupon_id, new_usage_count)
 			WHERE coupons.id = updates.coupon_id
 		`, strings.Join(valuesParts, ", "))
 
-	if err := tx.Exec(ctx, rawSQL, args...); err != nil {
-		span.RecordError(err)
-		return status.Error(codes.Internal, err.Error())
+		if err := tx.Exec(ctx, rawSQL, args...); err != nil {
+			span.RecordError(err)
+			return status.Error(codes.Internal, err.Error())
+		}
 	}
 
 	return nil
+}
+
+func (r *paymentRepository) UpdateOrderStatusFromMomo(ctx context.Context, data *order_proto_gen.UpdateOrderStatusFromMomoRequest) error {
+	return r.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
+		sqlUpdate, args, err := squirrel.Update("order_items").
+			Set("status", data.Status).
+			Where(squirrel.Eq{"order_id": data.OrderId}).
+			PlaceholderFormat(squirrel.Dollar).
+			ToSql()
+
+		if err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		if err = tx.Exec(ctx, sqlUpdate, args...); err != nil {
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		return nil
+	})
 }

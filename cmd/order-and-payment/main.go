@@ -6,6 +6,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
+	"github.com/TienMinh25/ecommerce-platform/internal/httpclient"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/handler"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/repository"
@@ -149,6 +150,7 @@ func main() {
 			infrastructure.NewRedisCache,
 			// adapter
 			NewGrpcSupplierAndProductClient,
+			httpclient.NewHTTPClient,
 		),
 		fx.Invoke(StartServer),
 		//fx.Invoke(func(messageBroker pkg.MessageQueue) {}),

@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"github.com/TienMinh25/ecommerce-platform/infrastructure"
-	"github.com/TienMinh25/ecommerce-platform/internal/api-gateway/httpclient"
 	"github.com/TienMinh25/ecommerce-platform/internal/api-gateway/middleware"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
+	"github.com/TienMinh25/ecommerce-platform/internal/httpclient"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"

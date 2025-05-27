@@ -339,8 +339,6 @@ const CheckoutPage = () => {
                 recipient_phone: selectedAddress.phone
             };
 
-            console.log('Checkout data to be sent:', checkoutData);
-
             // Call API to create order
             const result = await paymentService.createOrder(checkoutData);
 
@@ -350,20 +348,19 @@ const CheckoutPage = () => {
                 window.location.href = result.payment_url;
             } else {
                 refreshCart();
-                // For COD, show success and navigate
-                toast({
-                    title: 'Đặt hàng thành công!',
-                    description: 'Đơn hàng của bạn đã được xác nhận và đang được xử lý',
-                    status: 'success',
-                    duration: 5000,
-                    isClosable: true,
-                });
-
                 // Navigate to order success page or orders page
                 navigate('/user/account/orders', {
                     state: { orderId: result.order_id }
                 });
             }
+
+            toast({
+                title: 'Đặt hàng thành công!',
+                description: 'Đơn hàng của bạn đã được xác nhận và đang được xử lý',
+                status: 'success',
+                duration: 5000,
+                isClosable: true,
+            });
         } catch (error) {
             console.error('Error placing order:', error);
             toast({

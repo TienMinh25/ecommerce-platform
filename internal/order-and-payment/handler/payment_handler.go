@@ -31,3 +31,14 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, data *order_proto_gen.Ch
 
 	return res, nil
 }
+
+func (h *OrderHandler) UpdateOrderStatusFromMomo(ctx context.Context, data *order_proto_gen.UpdateOrderStatusFromMomoRequest) (*order_proto_gen.UpdateOrderStatusFromMomoResponse, error) {
+	ctx, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateOrderStatusFromMomo"))
+	defer span.End()
+
+	if err := h.paymentService.UpdateOrderStatusFromMomo(ctx, data); err != nil {
+		return nil, err
+	}
+
+	return &order_proto_gen.UpdateOrderStatusFromMomoResponse{}, nil
+}

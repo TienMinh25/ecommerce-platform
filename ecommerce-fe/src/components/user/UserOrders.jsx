@@ -218,11 +218,16 @@ const UserOrders = () => {
 
     // Convert orders to individual order items (no grouping)
     const convertToOrderItems = (orders) => {
-        return orders.map(order => ({
-            ...order,
-            supplier_name: order.supplier_name || 'Cửa hàng không xác định',
-            finalAmount: order.total_price + order.tax_amount + order.shipping_fee
-        }));
+        return orders.map(order => {
+            const calculatedAmount = order.total_price + order.tax_amount + order.shipping_fee - order.discount_amount;
+            const isPaidAlready = order.shipping_method === 'momo' && order.status !== 'payment_failed';
+
+            return {
+                ...order,
+                supplier_name: order.supplier_name || 'Cửa hàng không xác định',
+                finalAmount: isPaidAlready ? 0 : calculatedAmount
+            }
+        });
     };
 
     // Toggle order details
@@ -374,12 +379,6 @@ const UserOrders = () => {
                                     Liên Hệ Người Bán
                                 </Button>
                             </>
-                        )}
-
-                        {order.status === 'pending_payment' && (
-                            <Button size="sm" colorScheme="red">
-                                Thanh Toán
-                            </Button>
                         )}
                     </Flex>
                 </Flex>

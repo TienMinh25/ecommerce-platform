@@ -33,4 +33,6 @@ service OrderService {
   rpc CreateOrder(CheckoutRequest) returns (CheckoutResponse);
 
   rpc GetMyOrders(GetMyOrdersRequest) returns (GetMyOrdersResponse);
+
+  rpc UpdateOrderStatusFromMomo(UpdateOrderStatusFromMomoRequest) returns (UpdateOrderStatusFromMomoResponse);
 }

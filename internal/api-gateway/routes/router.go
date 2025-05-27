@@ -222,6 +222,7 @@ func registerCouponEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middl
 
 func registerPaymentEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, permissionMiddleware *middleware.PermissionMiddleware, paymentHandler api_gateway_handler.IPaymentHandler) {
 	paymentGroup := group.Group("/payments")
+	paymentGroup.POST("/webhook/momo", paymentHandler.UpdateOrderIPNMomo)
 	paymentGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
 		paymentGroup.GET("/payment-methods", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.Payment, common.Read), paymentHandler.GetPaymentMethods)

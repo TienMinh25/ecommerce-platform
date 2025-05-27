@@ -17,8 +17,10 @@ const OrderPriceBreakdown = ({ order }) => {
     };
 
     // Calculate values
-    const subtotal = order.total_price + order.discount_amount;
-    const finalAmount = order.total_price + order.tax_amount + order.shipping_fee;
+    const calculatedAmount = order.total_price + order.tax_amount + order.shipping_fee - order.discount_amount;
+
+    const isPaidAlready = order.shipping_method === 'momo' && order.status !== 'payment_failed';
+    const finalAmount = isPaidAlready ? 0 : calculatedAmount;
 
     return (
         <Box>
@@ -26,7 +28,7 @@ const OrderPriceBreakdown = ({ order }) => {
             <VStack spacing={2} align="stretch">
                 <Flex justify="space-between">
                     <Text>Tổng tiền hàng:</Text>
-                    <Text>{formatCurrency(subtotal)}</Text>
+                    <Text>{formatCurrency(order.total_price)}</Text>
                 </Flex>
 
 
@@ -36,17 +38,23 @@ const OrderPriceBreakdown = ({ order }) => {
                 </Flex>
 
 
-                <Flex justify="space-between" color="green.500">
+                <Flex justify="space-between">
                     <Text>Phí vận chuyển:</Text>
-                    <Text>-{formatCurrency(order.shipping_fee)}</Text>
+                    <Text>{formatCurrency(order.shipping_fee)}</Text>
                 </Flex>
 
 
-                <Flex justify="space-between" color="green.500">
+                <Flex justify="space-between">
                     <Text>Thuế:</Text>
-                    <Text>-{formatCurrency(order.tax_amount)}</Text>
+                    <Text>{formatCurrency(order.tax_amount)}</Text>
                 </Flex>
 
+                {isPaidAlready && (
+                    <Flex justify="space-between" color="blue.500">
+                        <Text>Đã thanh toán:</Text>
+                        <Text>-{formatCurrency(calculatedAmount)}</Text>
+                    </Flex>
+                )}
 
                 <Divider />
 

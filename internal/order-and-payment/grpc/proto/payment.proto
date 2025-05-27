@@ -42,3 +42,11 @@ message CheckoutResponse {
   string status = 2;
   optional string payment_url = 3;
 }
+
+message UpdateOrderStatusFromMomoRequest {
+  string order_id = 1;
+  string status = 2;
+}
+
+message UpdateOrderStatusFromMomoResponse {
+}

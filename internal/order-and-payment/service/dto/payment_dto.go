@@ -68,3 +68,30 @@ func (c CheckoutRequest) FromDto(data *order_proto_gen.CheckoutRequest, addition
 		UserID:          data.UserId,
 	}
 }
+
+type MomoPaymentCreateRequest struct {
+	PartnerCode string `json:"partnerCode"`
+	RequestID   string `json:"requestId"`
+	Amount      int64  `json:"amount"`
+	OrderID     string `json:"orderId"`
+	OrderInfo   string `json:"orderInfo"`
+	RedirectUrl string `json:"redirectUrl"`
+	IpnUrl      string `json:"ipnUrl"`
+	RequestType string `json:"requestType"`
+	ExtraData   string `json:"extraData"`
+	Lang        string `json:"lang"`
+	AutoCapture bool   `json:"autoCapture"`
+	Signature   string `json:"signature"`
+}
+
+type MomoPaymentCreateResponse struct {
+	PartnerCode  string `json:"partnerCode"`
+	RequestID    string `json:"requestId"`
+	OrderID      string `json:"orderId"`
+	Amount       int64  `json:"amount"`
+	ResponseTime int64  `json:"responseTime"`
+	Message      string `json:"message"`
+	ResultCode   int    `json:"resultCode"`
+	PayURL       string `json:"payUrl"`
+	ShortLink    string `json:"shortLink"`
+}
