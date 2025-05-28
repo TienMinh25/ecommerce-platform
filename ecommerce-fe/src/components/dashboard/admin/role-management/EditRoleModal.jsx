@@ -71,7 +71,6 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                 mapping[permission.name] = permission.id;
             });
             setPermissionMapping(mapping);
-            console.log('Permission mapping created:', mapping);
         }
     }, [permissionsList]);
 
@@ -299,9 +298,6 @@ const EditRoleModal = ({ isOpen, onClose, role, onRoleUpdated, modulesList = [],
                 description: formData.description.trim(),
                 modules_permissions: modules_permissions
             };
-
-            console.log('Updating role with mapping:', permissionMapping);
-            console.log('Role data:', roleData);
 
             // Update role with all data in one call
             await roleService.updateRole(role.id, roleData);

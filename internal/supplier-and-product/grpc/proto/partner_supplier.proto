@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option go_package = "./partner_proto_gen";
+
+message RegisterSupplierRequest {
+  string company_name = 1;
+  string contact_phone = 2;
+  string tax_id = 3;
+  int64 business_address_id = 4;
+  string logo_company_url = 5;
+  optional string description = 6;
+  RegisterSupplierDocument documents = 7;
+  int64 user_id = 8;
+}
+
+message RegisterSupplierDocument {
+  string business_license = 1;
+  string tax_certificate = 2;
+  string id_card_front = 3;
+  string id_card_back = 4;
+}
+
+message RegisterSupplierResponse {}

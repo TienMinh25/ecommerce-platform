@@ -118,3 +118,12 @@ type IPaymentHandler interface {
 	Checkout(ctx *gin.Context)
 	UpdateOrderIPNMomo(ctx *gin.Context)
 }
+
+type ISupplierHandler interface {
+	RegisterSupplier(ctx *gin.Context)
+}
+
+type IS3Handler interface {
+	// presigned url
+	GetPresignedURLUpload(ctx *gin.Context)
+}

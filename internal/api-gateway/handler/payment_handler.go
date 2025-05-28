@@ -43,9 +43,9 @@ func NewPaymentHandler(tracer pkg.Tracer, paymentService api_gateway_service.IPa
 //	@Security		BearerAuth
 //
 //	@Produce		json
-//	@Success		200			{object}	api_gateway_dto.GetPaymentMethodsResponseDocs
-//	@Failure		401			{object}	api_gateway_dto.ResponseErrorDocs
-//	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Success		200	{object}	api_gateway_dto.GetPaymentMethodsResponseDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/payments/payment-methods [get]
 func (p *paymentHandler) GetPaymentMethods(ctx *gin.Context) {
 	cRaw, _ := ctx.Get("tracingContext")
@@ -74,10 +74,10 @@ func (p *paymentHandler) GetPaymentMethods(ctx *gin.Context) {
 //	@Security		BearerAuth
 //
 //	@Produce		json
-//	@Success		200			{object}	api_gateway_dto.CheckoutResponseDocs
-//	@Failure		400			{object}	api_gateway_dto.ResponseErrorDocs
-//	@Failure		401			{object}	api_gateway_dto.ResponseErrorDocs
-//	@Failure		500			{object}	api_gateway_dto.ResponseErrorDocs
+//	@Success		200	{object}	api_gateway_dto.CheckoutResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
 //	@Router			/payments/checkout [post]
 func (p *paymentHandler) Checkout(ctx *gin.Context) {
 	cRaw, _ := ctx.Get("tracingContext")
@@ -107,6 +107,21 @@ func (p *paymentHandler) Checkout(ctx *gin.Context) {
 	utils.SuccessResponse(ctx, http.StatusCreated, *res)
 }
 
+// UpdateOrderIPNMomo godoc
+//
+//	@Summary		update order status (receive event from momo)
+//	@Description	update order status (receive event from momo)
+//	@Tags			payments
+//	@Accept			json
+//
+//	@Security		BearerAuth
+//	@Param			data	body	api_gateway_dto.UpdateOrderIPNMomoRequest	true	"data"
+//
+//	@Produce		json
+//	@Success		200	{object}	api_gateway_dto.UpdateOrderIPNMomoResponseDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/payments/webhook/momo [post]
 func (p *paymentHandler) UpdateOrderIPNMomo(ctx *gin.Context) {
 	c, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateOrderIPNMomo"))
 	defer span.End()

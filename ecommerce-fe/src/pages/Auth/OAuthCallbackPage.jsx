@@ -38,8 +38,6 @@ const OAuthCallbackPage = () => {
                     }
                 }
 
-                console.log('Bắt đầu xác thực OAuth với:', { provider, code, state });
-
                 // Thực hiện đăng nhập với OAuth
                 const result = await socialLogin(code, state, provider);
 

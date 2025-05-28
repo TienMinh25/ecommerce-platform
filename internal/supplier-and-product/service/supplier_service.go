@@ -44,3 +44,14 @@ func (s *supplierService) GetSupplierInfoForOrders(ctx context.Context, supplier
 		Data: result,
 	}, nil
 }
+
+func (s *supplierService) RegisterSupplier(ctx context.Context, data *partner_proto_gen.RegisterSupplierRequest) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "RegisterSupplier"))
+	defer span.End()
+
+	if err := s.supplierRepo.RegisterSupplier(ctx, data); err != nil {
+		return err
+	}
+
+	return nil
+}

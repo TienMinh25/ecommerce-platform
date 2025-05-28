@@ -30,6 +30,7 @@ import { useDropzone } from 'react-dropzone';
 import { FaStore, FaUpload, FaFileAlt, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import useAuth from "../hooks/useAuth.js";
 import BusinessAddressSection from "../components/supplier/BusinessAddressSection.jsx";
+import supplierService from "../services/supplierService.js";
 
 const SupplierRegistration = () => {
     const [currentStep, setCurrentStep] = useState(1);
@@ -54,7 +55,18 @@ const SupplierRegistration = () => {
         taxId: ''
     });
 
-    const [uploadedDocuments, setUploadedDocuments] = useState({
+    // Store files instead of data URLs
+    const [uploadedFiles, setUploadedFiles] = useState({
+        logo: null,
+        business_license: null,
+        tax_certificate: null,
+        id_card_front: null,
+        id_card_back: null
+    });
+
+    // Store preview URLs for display
+    const [previewUrls, setPreviewUrls] = useState({
+        logo: null,
         business_license: null,
         tax_certificate: null,
         id_card_front: null,
@@ -91,6 +103,16 @@ const SupplierRegistration = () => {
             description: 'Ảnh mặt sau căn cước công dân người đại diện'
         }
     ];
+
+    // Upload file to S3 and return the URL
+    const uploadToS3 = async (file, bucketName = 'suppliers') => {
+        try {
+            return await supplierService.uploadFile(file, bucketName);
+        } catch (error) {
+            console.error('Error uploading to S3:', error);
+            throw error;
+        }
+    };
 
     // Handle form input changes
     const handleInputChange = (field, value) => {
@@ -162,11 +184,21 @@ const SupplierRegistration = () => {
     const onLogoDropAccepted = useCallback((acceptedFiles) => {
         const file = acceptedFiles[0];
         if (file) {
+            setUploadedFiles(prev => ({
+                ...prev,
+                logo: file
+            }));
+
+            // Create preview URL
             const reader = new FileReader();
             reader.onload = () => {
+                setPreviewUrls(prev => ({
+                    ...prev,
+                    logo: reader.result
+                }));
                 setFormData(prev => ({
                     ...prev,
-                    logoUrl: reader.result
+                    logoUrl: reader.result // For validation purposes
                 }));
             };
             reader.readAsDataURL(file);
@@ -177,11 +209,17 @@ const SupplierRegistration = () => {
     const handleDocumentUpload = useCallback((docType, acceptedFiles) => {
         const file = acceptedFiles[0];
         if (file) {
+            setUploadedFiles(prev => ({
+                ...prev,
+                [docType]: file
+            }));
+
+            // Create preview URL
             const reader = new FileReader();
             reader.onload = () => {
-                setUploadedDocuments(prev => ({
+                setPreviewUrls(prev => ({
                     ...prev,
-                    [docType]: reader.result // Will be S3 URL in production
+                    [docType]: reader.result
                 }));
             };
             reader.readAsDataURL(file);
@@ -190,10 +228,22 @@ const SupplierRegistration = () => {
 
     // Remove document
     const removeDocument = (docType) => {
-        setUploadedDocuments(prev => ({
+        setUploadedFiles(prev => ({
             ...prev,
             [docType]: null
         }));
+        setPreviewUrls(prev => ({
+            ...prev,
+            [docType]: null
+        }));
+
+        // Clear logo URL in form data if removing logo
+        if (docType === 'logo') {
+            setFormData(prev => ({
+                ...prev,
+                logoUrl: ''
+            }));
+        }
     };
 
     // Logo dropzone
@@ -266,19 +316,18 @@ const SupplierRegistration = () => {
             if (!formData.companyName.trim()) newErrors.companyName = 'Tên công ty là bắt buộc';
             if (!formData.contactPhone.trim()) newErrors.contactPhone = 'Số điện thoại là bắt buộc';
             if (!formData.taxId.trim()) newErrors.taxId = 'Mã số thuế là bắt buộc';
-            if (!formData.businessAddress.street.trim()) newErrors['businessAddress.street'] = 'Địa chỉ là bắt buộc';
-            if (!formData.businessAddress.ward.trim()) newErrors['businessAddress.ward'] = 'Phường/Xã là bắt buộc';
-            if (!formData.businessAddress.district.trim()) newErrors['businessAddress.district'] = 'Quận/Huyện là bắt buộc';
-            if (!formData.businessAddress.city.trim()) newErrors['businessAddress.city'] = 'Tỉnh/Thành phố là bắt buộc';
+            if (!selectedAddress) {
+                newErrors['businessAddress'] = 'Vui lòng chọn địa chỉ kinh doanh';
+            }
         }
 
         if (step === 2) {
-            if (!formData.logoUrl) newErrors.logoUrl = 'Logo công ty là bắt buộc';
+            if (!uploadedFiles.logo) newErrors.logoUrl = 'Logo công ty là bắt buộc';
         }
 
         if (step === 3) {
             documentTypes.forEach(docType => {
-                if (docType.required && !uploadedDocuments[docType.key]) {
+                if (docType.required && !uploadedFiles[docType.key]) {
                     newErrors[docType.key] = `${docType.label} là bắt buộc`;
                 }
             });
@@ -303,32 +352,38 @@ const SupplierRegistration = () => {
 
         setLoading(true);
         try {
-            const submissionData = {
-                companyName: formData.companyName,
-                contactPhone: formData.contactPhone,
-                taxId: formData.taxId,
-                description: formData.description,
-                logoUrl: formData.logoUrl,
-                businessAddress: formData.businessAddress,
-                documents: uploadedDocuments
-            };
+            // Use the service to handle complete registration process
+            const result = await supplierService.completeRegistration(
+                formData,
+                uploadedFiles,
+                selectedAddress
+            );
 
-            console.log('Submission data:', submissionData);
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            if (result.success) {
+                toast({
+                    title: 'Đăng ký thành công!',
+                    description: 'Đơn đăng ký của bạn đã được gửi và đang chờ xét duyệt.',
+                    status: 'success',
+                    duration: 5000,
+                    isClosable: true,
+                });
 
-            toast({
-                title: 'Đăng ký thành công!',
-                description: 'Đơn đăng ký của bạn đã được gửi và đang chờ xét duyệt.',
-                status: 'success',
-                duration: 5000,
-                isClosable: true,
-            });
-
-            navigate('/user/account/profile');
+            } else {
+                throw result.error;
+            }
         } catch (error) {
+            console.error('Registration error:', error);
+
+            let errorMessage = 'Vui lòng thử lại sau.';
+            if (error.response?.data?.error?.message) {
+                errorMessage = error.response.data.error.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
             toast({
                 title: 'Có lỗi xảy ra',
-                description: 'Vui lòng thử lại sau.',
+                description: errorMessage,
                 status: 'error',
                 duration: 5000,
                 isClosable: true,
@@ -336,6 +391,8 @@ const SupplierRegistration = () => {
         } finally {
             setLoading(false);
         }
+
+        navigate('/');
     };
 
     return (
@@ -412,14 +469,17 @@ const SupplierRegistration = () => {
                                     </GridItem>
                                 </Grid>
 
-                                <BusinessAddressSection
-                                    formData={formData}
-                                    errors={errors}
-                                    selectedAddress={selectedAddress}
-                                    onInputChange={handleInputChange}
-                                    onSelectAddress={handleSelectAddress}
-                                    onClearAddress={handleClearAddress}
-                                />
+                                <FormControl isInvalid={errors.businessAddress}>
+                                    <BusinessAddressSection
+                                        formData={formData}
+                                        errors={errors}
+                                        selectedAddress={selectedAddress}
+                                        onInputChange={handleInputChange}
+                                        onSelectAddress={handleSelectAddress}
+                                        onClearAddress={handleClearAddress}
+                                    />
+                                    <FormErrorMessage>{errors.businessAddress}</FormErrorMessage>
+                                </FormControl>
                             </VStack>
                         )}
 
@@ -446,10 +506,10 @@ const SupplierRegistration = () => {
                                         transition="all 0.2s"
                                     >
                                         <input {...getLogoInputProps()} />
-                                        {formData.logoUrl ? (
+                                        {previewUrls.logo ? (
                                             <VStack spacing={4}>
                                                 <Image
-                                                    src={formData.logoUrl}
+                                                    src={previewUrls.logo}
                                                     alt="Logo công ty"
                                                     maxH="200px"
                                                     maxW="300px"
@@ -518,7 +578,7 @@ const SupplierRegistration = () => {
                                 <VStack spacing={6}>
                                     {documentTypes.map((docType) => {
                                         const dropzone = getDropzoneByType(docType.key);
-                                        const documentUrl = uploadedDocuments[docType.key];
+                                        const previewUrl = previewUrls[docType.key];
 
                                         return (
                                             <Box key={docType.key} w="100%">
@@ -532,7 +592,7 @@ const SupplierRegistration = () => {
                                                                 {docType.description}
                                                             </Text>
                                                         </VStack>
-                                                        {documentUrl && (
+                                                        {previewUrl && (
                                                             <Button
                                                                 size="sm"
                                                                 colorScheme="red"
@@ -550,7 +610,7 @@ const SupplierRegistration = () => {
                                                         border="2px dashed"
                                                         borderColor={
                                                             errors[docType.key] ? "red.300" :
-                                                                documentUrl ? "green.300" :
+                                                                previewUrl ? "green.300" :
                                                                     dropzone.isDragActive ? "blue.300" : "gray.300"
                                                         }
                                                         borderRadius="md"
@@ -558,11 +618,11 @@ const SupplierRegistration = () => {
                                                         textAlign="center"
                                                         cursor="pointer"
                                                         _hover={{
-                                                            borderColor: documentUrl ? "green.400" : "blue.400",
-                                                            bg: documentUrl ? "green.50" : "blue.50"
+                                                            borderColor: previewUrl ? "green.400" : "blue.400",
+                                                            bg: previewUrl ? "green.50" : "blue.50"
                                                         }}
                                                         bg={
-                                                            documentUrl ? "green.50" :
+                                                            previewUrl ? "green.50" :
                                                                 dropzone.isDragActive ? "blue.50" : "gray.50"
                                                         }
                                                         transition="all 0.2s"
@@ -573,10 +633,10 @@ const SupplierRegistration = () => {
                                                     >
                                                         <input {...dropzone.getInputProps()} />
 
-                                                        {documentUrl ? (
+                                                        {previewUrl ? (
                                                             <VStack spacing={3}>
                                                                 <Image
-                                                                    src={documentUrl}
+                                                                    src={previewUrl}
                                                                     alt={docType.label}
                                                                     maxH="120px"
                                                                     maxW="200px"
@@ -629,17 +689,17 @@ const SupplierRegistration = () => {
                                         {documentTypes.map(docType => (
                                             <HStack key={docType.key} spacing={2}>
                                                 <Icon
-                                                    as={uploadedDocuments[docType.key] ? FaCheckCircle : FaTimesCircle}
-                                                    color={uploadedDocuments[docType.key] ? "green.500" : "gray.400"}
+                                                    as={uploadedFiles[docType.key] ? FaCheckCircle : FaTimesCircle}
+                                                    color={uploadedFiles[docType.key] ? "green.500" : "gray.400"}
                                                 />
-                                                <Text fontSize="sm" color={uploadedDocuments[docType.key] ? "green.700" : "gray.500"}>
+                                                <Text fontSize="sm" color={uploadedFiles[docType.key] ? "green.700" : "gray.500"}>
                                                     {docType.label}
                                                 </Text>
                                             </HStack>
                                         ))}
                                     </HStack>
                                     <Progress
-                                        value={(Object.values(uploadedDocuments).filter(Boolean).length / documentTypes.length) * 100}
+                                        value={(Object.values(uploadedFiles).slice(1).filter(Boolean).length) / documentTypes.length * 100} // slice(1) to exclude logo
                                         colorScheme="green"
                                         size="sm"
                                         mt={3}
@@ -682,7 +742,7 @@ const SupplierRegistration = () => {
                             colorScheme="green"
                             size="lg"
                             isLoading={loading}
-                            loadingText="Đang gửi đăng ký..."
+                            loadingText="Đang upload và đăng ký..."
                         >
                             Hoàn tất đăng ký
                         </Button>

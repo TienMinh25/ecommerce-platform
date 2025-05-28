@@ -71,7 +71,6 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                 mapping[permission.name] = permission.id;
             });
             setPermissionMapping(mapping);
-            console.log('Permission mapping created:', mapping);
         }
     }, [permissionsList]);
 
@@ -149,9 +148,6 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
 
             const allModules = modulesResponse.data || [];
             const allPermissions = permissionsResponse.data || [];
-
-            console.log('Fetched modules:', allModules);
-            console.log('Fetched permissions:', allPermissions);
 
             // Create permission mapping if not provided in props
             if (Object.keys(permissionMapping).length === 0) {
@@ -238,9 +234,6 @@ const CreateRoleModal = ({ isOpen, onClose, onRoleCreated, modulesList = [], per
                 description: formData.description.trim(),
                 modules_permissions: modules_permissions
             };
-
-            console.log('Creating role with mapping:', permissionMapping);
-            console.log('Submitting role data:', roleData);
 
             // Create the role with all data in one request
             await roleService.createRole(roleData);

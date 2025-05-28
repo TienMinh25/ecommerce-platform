@@ -138,3 +138,11 @@ type IPaymentService interface {
 	CreateOrder(ctx context.Context, data api_gateway_dto.CheckoutRequest, userID int) (*api_gateway_dto.CheckoutResponse, error)
 	UpdateOrderIPNMomo(ctx context.Context, data api_gateway_dto.UpdateOrderIPNMomoRequest) error
 }
+
+type ISupplierService interface {
+	RegisterSupplier(ctx context.Context, data api_gateway_dto.RegisterSupplierRequest, userID int) error
+}
+
+type IS3Service interface {
+	GetPresignedURLUpload(ctx context.Context, data *api_gateway_dto.GetPresignedURLRequest, userID int) (string, error)
+}

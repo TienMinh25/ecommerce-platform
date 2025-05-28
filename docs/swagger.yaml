@@ -735,6 +735,34 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.GetPresignedURLRequest:
+    properties:
+      bucket_name:
+        $ref: '#/definitions/common.BucketName'
+      content_type:
+        type: string
+      file_name:
+        type: string
+      file_size:
+        type: integer
+    required:
+    - bucket_name
+    - content_type
+    - file_name
+    - file_size
+    type: object
+  api_gateway_dto.GetPresignedURLResponse:
+    properties:
+      url:
+        type: string
+    type: object
+  api_gateway_dto.GetPresignedURLResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetPresignedURLResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.GetProductDetailResponse:
     properties:
       attributes:
@@ -1150,6 +1178,39 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.RegisterSupplierRequest:
+    properties:
+      business_address_id:
+        type: integer
+      company_name:
+        type: string
+      contact_phone:
+        type: string
+      description:
+        type: string
+      documents:
+        $ref: '#/definitions/api_gateway_dto.SupplierDocument'
+      logo_company_url:
+        type: string
+      tax_id:
+        type: string
+    required:
+    - business_address_id
+    - company_name
+    - contact_phone
+    - documents
+    - logo_company_url
+    - tax_id
+    type: object
+  api_gateway_dto.RegisterSupplierResponse:
+    type: object
+  api_gateway_dto.RegisterSupplierResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.RegisterSupplierResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.ResendVerifyEmailRequest:
     properties:
       email:
@@ -1222,6 +1283,22 @@ definitions:
         type: boolean
       promotion:
         type: boolean
+    type: object
+  api_gateway_dto.SupplierDocument:
+    properties:
+      business_license:
+        type: string
+      id_card_back:
+        type: string
+      id_card_front:
+        type: string
+      tax_certificate:
+        type: string
+    required:
+    - business_license
+    - id_card_back
+    - id_card_front
+    - tax_certificate
     type: object
   api_gateway_dto.UpdateAddressRequest:
     properties:
@@ -1456,6 +1533,52 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.UpdateOrderIPNMomoRequest:
+    properties:
+      amount:
+        type: integer
+      extraData:
+        type: string
+      message:
+        type: string
+      orderId:
+        type: string
+      orderInfo:
+        type: string
+      orderType:
+        type: string
+      partnerCode:
+        type: string
+      payType:
+        type: string
+      requestId:
+        type: string
+      responseTime:
+        type: integer
+      resultCode:
+        minimum: 0
+        type: integer
+      signature:
+        type: string
+      transId:
+        type: integer
+    required:
+    - amount
+    - orderId
+    - partnerCode
+    - requestId
+    - signature
+    - transId
+    type: object
+  api_gateway_dto.UpdateOrderIPNMomoResponse:
+    type: object
+  api_gateway_dto.UpdateOrderIPNMomoResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateOrderIPNMomoResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.UpdatePermissionByIDResponseDocs:
     properties:
       data:
@@ -1582,6 +1705,51 @@ definitions:
     x-enum-varnames:
     - UserStatusActive
     - UserStatusInactive
+  common.BucketName:
+    enum:
+    - avatars
+    - deliverers
+    - suppliers
+    type: string
+    x-enum-varnames:
+    - BucketAvatars
+    - BucketDeliverers
+    - BucketSuppliers
+  common.StatusOrder:
+    enum:
+    - pending_payment
+    - pending
+    - confirmed
+    - processing
+    - ready_to_ship
+    - in_transit
+    - out_for_delivery
+    - delivered
+    - cancelled
+    - payment_failed
+    - refunded
+    type: string
+    x-enum-comments:
+      Confirmed: Supplier đã xác nhận
+      Delivered: Đã giao thành công
+      InTransit: Đang vận chuyển (đang ship)
+      OutForDelivery: Sắp giao (shipper đang trên đường)
+      Pending: Chờ supplier xác nhận
+      PendingPayment: Chờ thanh toán
+      Processing: Đang chuẩn bị hàng
+      ReadyToShip: Sẵn sàng giao hàng
+    x-enum-varnames:
+    - PendingPayment
+    - Pending
+    - Confirmed
+    - Processing
+    - ReadyToShip
+    - InTransit
+    - OutForDelivery
+    - Delivered
+    - Cancelled
+    - PaymentFailed
+    - Refunded
 host: server.local:3000
 info:
   contact: {}
@@ -2694,6 +2862,38 @@ paths:
       summary: Get payment methods
       tags:
       - payments
+  /payments/webhook/momo:
+    post:
+      consumes:
+      - application/json
+      description: update order status (receive event from momo)
+      parameters:
+      - description: data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateOrderIPNMomoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateOrderIPNMomoResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: update order status (receive event from momo)
+      tags:
+      - payments
   /permissions:
     get:
       consumes:
@@ -3182,6 +3382,78 @@ paths:
       summary: Update permissions on modules for role
       tags:
       - roles
+  /s3/presigned_url:
+    post:
+      consumes:
+      - application/json
+      description: lấy presigned url để upload ảnh
+      parameters:
+      - description: Thông tin file
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.GetPresignedURLRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetPresignedURLResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: lấy presigned url để upload ảnh
+      tags:
+      - s3
+  /suppliers/register:
+    post:
+      consumes:
+      - application/json
+      description: customer register supplier
+      parameters:
+      - description: data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.RegisterSupplierRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.RegisterSupplierResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: customer register supplier
+      tags:
+      - suppliers
   /users:
     get:
       consumes:
@@ -3985,6 +4257,84 @@ paths:
       security:
       - BearerAuth: []
       summary: Đánh dấu tất cả thông báo đã được đọc
+      tags:
+      - me
+  /users/me/orders:
+    get:
+      consumes:
+      - application/json
+      description: update cart item
+      parameters:
+      - in: query
+        minLength: 1
+        name: keyword
+        type: string
+      - in: query
+        minimum: 1
+        name: limit
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - enum:
+        - pending_payment
+        - pending
+        - confirmed
+        - processing
+        - ready_to_ship
+        - in_transit
+        - out_for_delivery
+        - delivered
+        - cancelled
+        - payment_failed
+        - refunded
+        in: query
+        name: status
+        type: string
+        x-enum-comments:
+          Confirmed: Supplier đã xác nhận
+          Delivered: Đã giao thành công
+          InTransit: Đang vận chuyển (đang ship)
+          OutForDelivery: Sắp giao (shipper đang trên đường)
+          Pending: Chờ supplier xác nhận
+          PendingPayment: Chờ thanh toán
+          Processing: Đang chuẩn bị hàng
+          ReadyToShip: Sẵn sàng giao hàng
+        x-enum-varnames:
+        - PendingPayment
+        - Pending
+        - Confirmed
+        - Processing
+        - ReadyToShip
+        - InTransit
+        - OutForDelivery
+        - Delivered
+        - Cancelled
+        - PaymentFailed
+        - Refunded
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateCartItemResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: update cart item
       tags:
       - me
 securityDefinitions:

@@ -99,7 +99,6 @@ const UserProfile = () => {
 
     // Handle date changes - fixed to ensure state update triggers re-render
     const handleDateChange = (field, value) => {
-        console.log("run")
         setFormData((prev) => {
             // Create a new object to ensure React detects the change
             return { ...prev, [field]: value };

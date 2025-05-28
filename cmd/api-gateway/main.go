@@ -205,6 +205,8 @@ func main() {
 			api_gateway_handler.NewProductHandler,
 			api_gateway_handler.NewCouponHandler,
 			api_gateway_handler.NewPaymentHandler,
+			api_gateway_handler.NewSupplierHandler,
+			api_gateway_handler.NewS3Handler,
 			// service
 			api_gateway_service.NewAdminAddressTypeService,
 			api_gateway_service.NewAuthenticationService,
@@ -221,6 +223,8 @@ func main() {
 			api_gateway_service.NewProductService,
 			api_gateway_service.NewCouponService,
 			api_gateway_service.NewPaymentService,
+			api_gateway_service.NewSupplierService,
+			api_gateway_service.NewS3Service,
 			// repository
 			api_gateway_repository.NewAddressTypeRepository,
 			api_gateway_repository.NewUserRepository,
