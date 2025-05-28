@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/squirrel"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/brianvoe/gofakeit/v7"
@@ -33,20 +34,20 @@ type progressUpdate struct {
 
 // Cấu trúc cho dữ liệu địa giới hành chính
 type Province struct {
-	ID        string     `json:"Id"`
-	Name      string     `json:"Name"`
-	Districts []District `json:"Districts"`
+	ID        int        `json:"code"`
+	Name      string     `json:"name"`
+	Districts []District `json:"districts"`
 }
 
 type District struct {
-	ID    string `json:"Id"`
-	Name  string `json:"Name"`
-	Wards []Ward `json:"Wards"`
+	ID    int    `json:"code"`
+	Name  string `json:"name"`
+	Wards []Ward `json:"wards"`
 }
 
 type Ward struct {
-	ID   string `json:"Id"`
-	Name string `json:"Name"`
+	ID   int    `json:"code"`
+	Name string `json:"name"`
 }
 
 // Danh sách các APIs hỗ trợ dữ liệu địa giới hành chính Việt Nam
@@ -715,49 +716,7 @@ func loadAdministrativeDivisions() []Province {
 
 	// Fallback vào dữ liệu mẫu nếu không thể tải
 	log.Println("⚠️ Using sample administrative divisions data")
-	return getSampleAdministrativeDivisions()
-}
-
-// Dữ liệu mẫu nếu không tải được từ API hoặc file
-func getSampleAdministrativeDivisions() []Province {
-	provinces := []Province{
-		{ID: "01", Name: "Hà Nội", Districts: []District{
-			{ID: "001", Name: "Ba Đình", Wards: []Ward{{ID: "00001", Name: "Phúc Xá"}, {ID: "00002", Name: "Trúc Bạch"}}},
-			{ID: "002", Name: "Hoàn Kiếm", Wards: []Ward{{ID: "00003", Name: "Hàng Bạc"}, {ID: "00004", Name: "Hàng Bồ"}}},
-			{ID: "003", Name: "Tây Hồ", Wards: []Ward{{ID: "00005", Name: "Bưởi"}, {ID: "00006", Name: "Nhật Tân"}}},
-			{ID: "004", Name: "Long Biên", Wards: []Ward{{ID: "00007", Name: "Bồ Đề"}, {ID: "00008", Name: "Sài Đồng"}}},
-			{ID: "005", Name: "Cầu Giấy", Wards: []Ward{{ID: "00009", Name: "Quan Hoa"}, {ID: "00010", Name: "Nghĩa Đô"}}},
-		}},
-		{ID: "02", Name: "TP Hồ Chí Minh", Districts: []District{
-			{ID: "006", Name: "Quận 1", Wards: []Ward{{ID: "00011", Name: "Bến Nghé"}, {ID: "00012", Name: "Bến Thành"}}},
-			{ID: "007", Name: "Quận 3", Wards: []Ward{{ID: "00013", Name: "Võ Thị Sáu"}, {ID: "00014", Name: "Nguyễn Cư Trinh"}}},
-			{ID: "008", Name: "Quận 7", Wards: []Ward{{ID: "00015", Name: "Tân Thuận Đông"}, {ID: "00016", Name: "Tân Thuận Tây"}}},
-			{ID: "009", Name: "Bình Thạnh", Wards: []Ward{{ID: "00017", Name: "Phường 1"}, {ID: "00018", Name: "Phường 2"}}},
-			{ID: "010", Name: "Thủ Đức", Wards: []Ward{{ID: "00019", Name: "Linh Đông"}, {ID: "00020", Name: "Linh Tây"}}},
-		}},
-		{ID: "03", Name: "Đà Nẵng", Districts: []District{
-			{ID: "011", Name: "Hải Châu", Wards: []Ward{{ID: "00021", Name: "Thanh Bình"}, {ID: "00022", Name: "Hải Châu I"}}},
-			{ID: "012", Name: "Thanh Khê", Wards: []Ward{{ID: "00023", Name: "Tam Thuận"}, {ID: "00024", Name: "Thanh Khê Đông"}}},
-			{ID: "013", Name: "Sơn Trà", Wards: []Ward{{ID: "00025", Name: "An Hải Bắc"}, {ID: "00026", Name: "Mân Thái"}}},
-		}},
-		{ID: "04", Name: "Hải Phòng", Districts: []District{
-			{ID: "014", Name: "Hồng Bàng", Wards: []Ward{{ID: "00027", Name: "Minh Khai"}, {ID: "00028", Name: "Quang Trung"}}},
-			{ID: "015", Name: "Ngô Quyền", Wards: []Ward{{ID: "00029", Name: "Lạch Tray"}, {ID: "00030", Name: "Đông Khê"}}},
-		}},
-		{ID: "05", Name: "Cần Thơ", Districts: []District{
-			{ID: "016", Name: "Ninh Kiều", Wards: []Ward{{ID: "00031", Name: "Tân An"}, {ID: "00032", Name: "An Phú"}}},
-			{ID: "017", Name: "Bình Thủy", Wards: []Ward{{ID: "00033", Name: "Bình Thủy"}, {ID: "00034", Name: "Trà An"}}},
-		}},
-		{ID: "06", Name: "Nha Trang", Districts: []District{
-			{ID: "018", Name: "Khánh Hòa", Wards: []Ward{{ID: "00035", Name: "Vạn Thạnh"}, {ID: "00036", Name: "Phương Sài"}}},
-			{ID: "019", Name: "Vĩnh Trường", Wards: []Ward{{ID: "00037", Name: "Vĩnh Nguyên"}, {ID: "00038", Name: "Vĩnh Hòa"}}},
-		}},
-		{ID: "07", Name: "Huế", Districts: []District{
-			{ID: "020", Name: "Thừa Thiên", Wards: []Ward{{ID: "00039", Name: "Phú Hậu"}, {ID: "00040", Name: "Vĩnh Ninh"}}},
-			{ID: "021", Name: "Phú Vang", Wards: []Ward{{ID: "00041", Name: "Thuận An"}, {ID: "00042", Name: "Phú Thuận"}}},
-		}},
-	}
-	return provinces
+	return nil
 }
 
 // API Gateway Seeding
@@ -1409,70 +1368,75 @@ func seedAddressesForUsers(ctx context.Context, db *pgxpool.Pool, userIDs []int6
 	log.Println("✅ Successfully seeded addresses for users using Vietnam administrative divisions")
 }
 
-// Order Service Seeding
-func seedOrderIndependentTables(ctx context.Context, db *pgxpool.Pool, adminDivisions []Province) {
-	seedAreasFromAdminDivisions(ctx, db, adminDivisions)
-	seedPaymentMethods(ctx, db)
-}
-
 func seedAreasFromAdminDivisions(ctx context.Context, db *pgxpool.Pool, adminDivisions []Province) {
 	if len(adminDivisions) == 0 {
-		log.Println("⚠️ No administrative divisions data, using fallback data")
-		seedAreas(ctx, db)
+		log.Println("⚠️ No administrative divisions data")
 		return
 	}
 
-	// Chọn một số tỉnh/thành phố và quận/huyện để seed
+	log.Printf("🏠 Starting to seed areas from %d provinces...", len(adminDivisions))
+
+	// Khởi tạo squirrel query builder
+	psql := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+
+	// Tạo bulk insert query
+	insertQuery := psql.Insert("areas").
+		Columns("city", "country", "district", "ward", "area_code")
+
+	totalAreas := 0
+
+	// Duyệt qua tất cả và add vào query
 	for _, province := range adminDivisions {
 		for _, district := range province.Districts {
-			// Chọn ngẫu nhiên một số phường/xã
 			for _, ward := range district.Wards {
-				areaCode := fmt.Sprintf("%s-%s-%s", province.ID, district.ID, ward.ID)
+				areaCode := fmt.Sprintf("area-code-%v-%v-%v", province.ID, district.ID, ward.ID)
 
-				_, err := db.Exec(ctx, `
-					INSERT INTO areas (city, country, district, ward, area_code)
-					VALUES ($1, 'Việt Nam', $2, $3, $4)
-					ON CONFLICT (area_code) DO NOTHING;
-				`, province.Name, district.Name, ward.Name, areaCode)
-
-				if err != nil {
-					log.Printf("Error inserting area: %v", err)
-				}
+				insertQuery = insertQuery.Values(
+					province.Name, // city
+					"Việt Nam",    // country
+					district.Name, // district
+					ward.Name,     // ward
+					areaCode,      // area_code
+				)
+				totalAreas++
 			}
 		}
 	}
-	log.Println("✅ Areas seeded successfully")
+
+	// Add ON CONFLICT DO NOTHING
+	insertQuery = insertQuery.Suffix("ON CONFLICT (area_code) DO NOTHING")
+
+	// Build query
+	sql, args, err := insertQuery.ToSql()
+	if err != nil {
+		log.Printf("❌ Error building query: %v", err)
+		return
+	}
+
+	log.Printf("📝 Executing bulk insert for %d areas...", totalAreas)
+
+	// Execute query
+	result, err := db.Exec(ctx, sql, args...)
+	if err != nil {
+		log.Printf("❌ Error executing bulk insert: %v", err)
+		return
+	}
+
+	rowsAffected := result.RowsAffected()
+	log.Printf("✅ Areas seeded successfully: %d areas inserted", rowsAffected)
 }
 
-// Fallback cho seedAreas nếu không có dữ liệu
-func seedAreas(ctx context.Context, db *pgxpool.Pool) {
-	sampleAreas := []struct {
-		city, district, ward, areaCode string
-	}{
-		{"Hà Nội", "Ba Đình", "Phúc Xá", "01-001-00001"},
-		{"Hà Nội", "Ba Đình", "Trúc Bạch", "01-001-00002"},
-		{"Hà Nội", "Hoàn Kiếm", "Hàng Bạc", "01-002-00003"},
-		{"Hà Nội", "Hoàn Kiếm", "Hàng Bồ", "01-002-00004"},
-		{"TP Hồ Chí Minh", "Quận 1", "Bến Nghé", "02-006-00011"},
-		{"TP Hồ Chí Minh", "Quận 1", "Bến Thành", "02-006-00012"},
-		{"TP Hồ Chí Minh", "Quận 3", "Võ Thị Sáu", "02-007-00013"},
-		{"Đà Nẵng", "Hải Châu", "Thanh Bình", "03-011-00021"},
-		{"Đà Nẵng", "Hải Châu", "Hải Châu I", "03-011-00022"},
-		{"Hải Phòng", "Hồng Bàng", "Minh Khai", "04-014-00027"},
-	}
+// Cập nhật hàm seedOrderIndependentTables
+func seedOrderIndependentTables(ctx context.Context, db *pgxpool.Pool, adminDivisions []Province) {
+	log.Println("🏗️ Seeding Order service independent tables...")
 
-	for _, area := range sampleAreas {
-		_, err := db.Exec(ctx, `
-			INSERT INTO areas (city, country, district, ward, area_code)
-			VALUES ($1, 'Việt Nam', $2, $3, $4)
-			ON CONFLICT (area_code) DO NOTHING;
-		`, area.city, area.district, area.ward, area.areaCode)
+	// Seed TẤT CẢ areas từ dữ liệu hành chính
+	seedAreasFromAdminDivisions(ctx, db, adminDivisions)
 
-		if err != nil {
-			log.Printf("Error inserting area: %v", err)
-		}
-	}
-	log.Println("✅ Sample areas seeded successfully")
+	// Seed payment methods
+	seedPaymentMethods(ctx, db)
+
+	log.Println("✅ Order service independent tables seeded successfully")
 }
 
 func seedPaymentMethods(ctx context.Context, db *pgxpool.Pool) {

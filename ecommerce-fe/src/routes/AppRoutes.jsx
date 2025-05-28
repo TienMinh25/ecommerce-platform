@@ -32,6 +32,8 @@ import UserNotifications from "../components/user/UserNotifications.jsx";
 import CartPage from "../pages/Cart/CartPage.jsx";
 import CouponManagementComponent from "../components/dashboard/admin/coupon-management/CouponManagementComponent.jsx";
 import CheckoutPage from "../pages/Checkout/CheckoutPage.jsx";
+import SupplierRegistration from "../pages/SupplierRegistration.jsx";
+import DelivererRegistration from "../pages/DelivererRegistration.jsx";
 
 const AppRoutes = () => {
     return (
@@ -61,6 +63,10 @@ const AppRoutes = () => {
                         <Route path='orders' element={<UserOrders />} />
                         <Route path='notifications/see' element={<UserNotifications />} />
                     </Route>
+
+                    {/* Registration Routes */}
+                    <Route path='/register/supplier' element={<SupplierRegistration />} />
+                    <Route path='/register/deliverer' element={<DelivererRegistration />} />
 
                     <Route path='/products' element={<ProductListing />} />
                     <Route path='/products/:id' element={<ProductDetail />} />
