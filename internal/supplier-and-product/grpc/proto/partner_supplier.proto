@@ -90,3 +90,13 @@ message UpdateSupplierRequest {
 }
 
 message UpdateSupplierResponse {}
+
+message UpdateDocumentSupplierRequest {
+  string status = 1;
+  int64 supplier_id = 2;
+  string document_id = 3;
+}
+
+message UpdateDocumentSupplierResponse {
+  string status = 1;
+}

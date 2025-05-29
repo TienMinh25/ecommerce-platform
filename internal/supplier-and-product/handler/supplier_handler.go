@@ -53,3 +53,16 @@ func (p *PartnerHandler) UpdateSupplier(ctx context.Context, data *partner_proto
 
 	return &partner_proto_gen.UpdateSupplierResponse{}, nil
 }
+
+func (p *PartnerHandler) UpdateDocumentSupplier(ctx context.Context, data *partner_proto_gen.UpdateDocumentSupplierRequest) (*partner_proto_gen.UpdateDocumentSupplierResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateDocumentSupplier"))
+	defer span.End()
+
+	res, err := p.supplierService.UpdateDocumentSupplier(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

@@ -2748,6 +2748,58 @@
                 }
             }
         },
+        "/suppliers/uprole": {
+            "post": {
+                "description": "up role supplier for user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "up role supplier for user",
+                "parameters": [
+                    {
+                        "description": "Thông tin cần cập nhật",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateRoleForUserRegisterSupplierRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateRoleForUserRegisterSupplierResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/suppliers/{id}": {
             "get": {
                 "security": [
@@ -2840,6 +2892,75 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api_gateway_dto.UpdateSupplierResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/suppliers/{id}/documents/{documentID}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "approve or reject supplier document",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "approve or reject supplier document",
+                "parameters": [
+                    {
+                        "description": "Thông tin cần cập nhật",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "name": "documentID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponseDocs"
                         }
                     },
                     "400": {
@@ -6763,6 +6884,31 @@
         "api_gateway_dto.UpdatePermissionByPermissionIDResponse": {
             "type": "object"
         },
+        "api_gateway_dto.UpdateRoleForUserRegisterSupplierRequest": {
+            "type": "object",
+            "required": [
+                "user_id"
+            ],
+            "properties": {
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateRoleForUserRegisterSupplierResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.UpdateRoleForUserRegisterSupplierResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateRoleForUserRegisterSupplierResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.UpdateRoleRequest": {
             "type": "object",
             "required": [
@@ -6793,6 +6939,33 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.UpdateRoleResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/common.SupplierDocumentStatus"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/common.SupplierDocumentStatus"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"

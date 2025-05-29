@@ -144,6 +144,8 @@ type ISupplierService interface {
 	GetSuppliers(ctx context.Context, data *api_gateway_dto.GetSuppliersRequest) ([]api_gateway_dto.GetSuppliersResponse, int, int, bool, bool, error)
 	GetSupplierByID(ctx context.Context, supplierID int64) (*api_gateway_dto.GetSupplierByIDResponse, error)
 	UpdateSupplier(ctx context.Context, data api_gateway_dto.UpdateSupplierRequest, supplierID int64) error
+	UpdateDocumentVerificationStatus(ctx context.Context, data api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest, supplierID int64, documentID string) (string, error)
+	UpdateRoleForUserRegisterSupplier(ctx context.Context, userID int) error
 }
 
 type IS3Service interface {

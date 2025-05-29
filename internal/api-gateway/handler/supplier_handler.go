@@ -4,6 +4,7 @@ import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_service "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/service"
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
@@ -191,4 +192,91 @@ func (h *supplierHandler) UpdateSupplier(ctx *gin.Context) {
 	}
 
 	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.UpdateSupplierResponse{})
+}
+
+// UpdateSupplierDocumentVerificationStatus approve or reject supplier document
+//
+//	@Summary		approve or reject supplier document
+//	@Tags			suppliers
+//	@Description	approve or reject supplier document
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//	@Param			request	body		api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest		true	"Thông tin cần cập nhật"
+//	@Param			uri		path		api_gateway_dto.UpdateSupplierDocumentVerificationStatusURIRequest	true	"Thông tin cần cập nhật"
+//	@Success		200		{object}	api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/suppliers/{id}/documents/{documentID} [patch]
+func (h *supplierHandler) UpdateSupplierDocumentVerificationStatus(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateSupplierDocumentVerificationStatus"))
+	defer span.End()
+
+	var data api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest
+	var uri api_gateway_dto.UpdateSupplierDocumentVerificationStatusURIRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	statusUpdated, err := h.service.UpdateDocumentVerificationStatus(ct, data, uri.SupplierID, uri.DocumentID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponse{
+		Status: common.SupplierDocumentStatus(statusUpdated),
+	})
+}
+
+// UpdateRoleForUserRegisterSupplier up role supplier for user
+//
+//	@Summary		up role supplier for user
+//	@Tags			suppliers
+//	@Description	up role supplier for user
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			request	body		api_gateway_dto.UpdateRoleForUserRegisterSupplierRequest	true	"Thông tin cần cập nhật"
+//	@Success		200		{object}	api_gateway_dto.UpdateRoleForUserRegisterSupplierResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/suppliers/uprole [post]
+func (h *supplierHandler) UpdateRoleForUserRegisterSupplier(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateRoleForUserRegisterSupplier"))
+	defer span.End()
+
+	var data api_gateway_dto.UpdateRoleForUserRegisterSupplierRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := h.service.UpdateRoleForUserRegisterSupplier(ct, data.UserID); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.UpdateRoleForUserRegisterSupplierResponse{})
 }

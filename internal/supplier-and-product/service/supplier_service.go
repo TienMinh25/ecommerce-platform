@@ -154,3 +154,18 @@ func (s *supplierService) UpdateSupplier(ctx context.Context, data *partner_prot
 
 	return nil
 }
+
+func (s *supplierService) UpdateDocumentSupplier(ctx context.Context, data *partner_proto_gen.UpdateDocumentSupplierRequest) (*partner_proto_gen.UpdateDocumentSupplierResponse, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateDocumentSupplier"))
+	defer span.End()
+
+	statusUpdated, err := s.supplierRepo.UpdateDocumentSupplier(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &partner_proto_gen.UpdateDocumentSupplierResponse{
+		Status: statusUpdated,
+	}, nil
+}

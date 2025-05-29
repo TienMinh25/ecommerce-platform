@@ -182,6 +182,7 @@ func main() {
 			// middleware,
 			middleware.NewJwtMiddleware,
 			middleware.NewPermissionMiddleware,
+			middleware.NewXAuthMiddleware,
 			// infrastructure
 			infrastructure.NewRedisCache,
 			NewMessageBroker,
@@ -236,6 +237,7 @@ func main() {
 			api_gateway_repository.NewRoleRepository,
 			api_gateway_repository.NewAddressRepository,
 			api_gateway_repository.NewAdministrativeDivisionRepository,
+			api_gateway_repository.NewUserRoleRepository,
 			// tracer
 			NewTracerApiGatewayService,
 			// adapter

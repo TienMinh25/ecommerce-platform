@@ -1674,6 +1674,22 @@ definitions:
     type: object
   api_gateway_dto.UpdatePermissionByPermissionIDResponse:
     type: object
+  api_gateway_dto.UpdateRoleForUserRegisterSupplierRequest:
+    properties:
+      user_id:
+        type: integer
+    required:
+    - user_id
+    type: object
+  api_gateway_dto.UpdateRoleForUserRegisterSupplierResponse:
+    type: object
+  api_gateway_dto.UpdateRoleForUserRegisterSupplierResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateRoleForUserRegisterSupplierResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.UpdateRoleRequest:
     properties:
       description:
@@ -1695,6 +1711,23 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/api_gateway_dto.UpdateRoleResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest:
+    properties:
+      status:
+        $ref: '#/definitions/common.SupplierDocumentStatus'
+    type: object
+  api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponse:
+    properties:
+      status:
+        $ref: '#/definitions/common.SupplierDocumentStatus'
+    type: object
+  api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponse'
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
@@ -3660,6 +3693,50 @@ paths:
       summary: Quản trị viên cho phép supplier hoạt động hoặc không
       tags:
       - suppliers
+  /suppliers/{id}/documents/{documentID}:
+    patch:
+      consumes:
+      - application/json
+      description: approve or reject supplier document
+      parameters:
+      - description: Thông tin cần cập nhật
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest'
+      - in: path
+        name: documentID
+        required: true
+        type: string
+      - in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: approve or reject supplier document
+      tags:
+      - suppliers
   /suppliers/register:
     post:
       consumes:
@@ -3694,6 +3771,40 @@ paths:
       security:
       - BearerAuth: []
       summary: customer register supplier
+      tags:
+      - suppliers
+  /suppliers/uprole:
+    post:
+      consumes:
+      - application/json
+      description: up role supplier for user
+      parameters:
+      - description: Thông tin cần cập nhật
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateRoleForUserRegisterSupplierRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateRoleForUserRegisterSupplierResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: up role supplier for user
       tags:
       - suppliers
   /users:

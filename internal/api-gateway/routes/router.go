@@ -31,6 +31,7 @@ func NewRouter(
 	userMeHandler api_gateway_handler.IUserHandler,
 	accessTokenMiddleware *middleware.JwtMiddleware,
 	permissionMiddleware *middleware.PermissionMiddleware,
+	xAuthMiddleware *middleware.XAuthMiddleware,
 	administrativeDivisionHandler api_gateway_handler.IAdministrativeDivisionHandler,
 	categoryHandler api_gateway_handler.ICategoryHandler,
 	productHandler api_gateway_handler.IProductHandler,
@@ -53,7 +54,7 @@ func NewRouter(
 	registerProductEndpoint(apiV1Group, accessTokenMiddleware, productHandler)
 	registerCouponEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, couponHandler)
 	registerPaymentEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, paymentHandler)
-	registerSupplierEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, supplierHandler)
+	registerSupplierEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, xAuthMiddleware, supplierHandler)
 	registerS3Endpoint(apiV1Group, accessTokenMiddleware, s3Handler)
 
 	return &Router{
@@ -234,14 +235,18 @@ func registerPaymentEndpoint(group *gin.RouterGroup, accessTokenMiddleware *midd
 	}
 }
 
-func registerSupplierEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, permissionMiddleware *middleware.PermissionMiddleware, supplierHandler api_gateway_handler.ISupplierHandler) {
+func registerSupplierEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, permissionMiddleware *middleware.PermissionMiddleware, xAuthMiddleware *middleware.XAuthMiddleware,
+	supplierHandler api_gateway_handler.ISupplierHandler) {
 	supplierGroup := group.Group("/suppliers")
+
+	supplierGroup.POST("/uprole", xAuthMiddleware.CheckValidAuthHeader(), supplierHandler.UpdateRoleForUserRegisterSupplier)
 	supplierGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
 		supplierGroup.POST("/register", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.UserManagement, common.Create), supplierHandler.RegisterSupplier)
 		supplierGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Read), supplierHandler.GetSuppliers)
 		supplierGroup.GET("/:id", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Read), supplierHandler.GetSupplierByID)
 		supplierGroup.PATCH("/:id", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Update), supplierHandler.UpdateSupplier)
+		supplierGroup.PATCH("/:id/documents/:documentID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Update), supplierHandler.UpdateSupplierDocumentVerificationStatus)
 	}
 }
 

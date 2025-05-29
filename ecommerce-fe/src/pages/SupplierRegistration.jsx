@@ -368,6 +368,7 @@ const SupplierRegistration = () => {
                     isClosable: true,
                 });
 
+                navigate('/');
             } else {
                 throw result.error;
             }
@@ -391,8 +392,6 @@ const SupplierRegistration = () => {
         } finally {
             setLoading(false);
         }
-
-        navigate('/');
     };
 
     return (

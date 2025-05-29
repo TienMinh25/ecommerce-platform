@@ -191,6 +191,24 @@ const supplierService = {
         } catch (error) {
             throw error;
         }
+    },
+
+    /**
+     * Update supplier document verification status (approve/reject)
+     * @param {string} supplierId - Supplier ID
+     * @param {string} documentId - Document ID
+     * @param {string} status - Document status ('approved', 'rejected', 'pending')
+     * @returns {Promise} Promise object with update result
+     */
+    updateDocumentVerificationStatus: async (supplierId, documentId, status) => {
+        try {
+            const response = await api.patch(`/suppliers/${supplierId}/documents/${documentId}`, {
+                status: status
+            });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 };
 

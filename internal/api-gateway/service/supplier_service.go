@@ -15,17 +15,19 @@ import (
 )
 
 type supplierService struct {
-	tracer            pkg.Tracer
-	partnerClient     partner_proto_gen.PartnerServiceClient
-	addressRepository api_gateway_repository.IAddressRepository
+	tracer             pkg.Tracer
+	partnerClient      partner_proto_gen.PartnerServiceClient
+	addressRepository  api_gateway_repository.IAddressRepository
+	userRoleRepository api_gateway_repository.IUserRoleRepository
 }
 
 func NewSupplierService(tracer pkg.Tracer, partnerClient partner_proto_gen.PartnerServiceClient,
-	addressRepository api_gateway_repository.IAddressRepository) ISupplierService {
+	addressRepository api_gateway_repository.IAddressRepository, userRoleRepository api_gateway_repository.IUserRoleRepository) ISupplierService {
 	return &supplierService{
-		tracer:            tracer,
-		partnerClient:     partnerClient,
-		addressRepository: addressRepository,
+		tracer:             tracer,
+		partnerClient:      partnerClient,
+		addressRepository:  addressRepository,
+		userRoleRepository: userRoleRepository,
 	}
 }
 
@@ -210,6 +212,48 @@ func (s *supplierService) UpdateSupplier(ctx context.Context, data api_gateway_d
 				Message: common.MSG_INTERNAL_ERROR,
 			}
 		}
+	}
+
+	return nil
+}
+
+func (s *supplierService) UpdateDocumentVerificationStatus(ctx context.Context, data api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest, supplierID int64, documentID string) (string, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateDocumentVerificationStatus"))
+	defer span.End()
+
+	resultPartner, err := s.partnerClient.UpdateDocumentSupplier(ctx, &partner_proto_gen.UpdateDocumentSupplierRequest{
+		SupplierId: supplierID,
+		Status:     string(data.Status),
+		DocumentId: documentID,
+	})
+
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		switch st.Code() {
+		case codes.NotFound:
+			return "", utils.BusinessError{
+				Code:      http.StatusBadRequest,
+				Message:   st.Message(),
+				ErrorCode: st.Code().String(),
+			}
+		case codes.Internal:
+			return "", utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+	}
+
+	return resultPartner.Status, nil
+}
+
+func (s *supplierService) UpdateRoleForUserRegisterSupplier(ctx context.Context, userID int) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateRoleForUserRegisterSupplier"))
+	defer span.End()
+
+	if err := s.userRoleRepository.UpRoleSupplierForUser(ctx, userID); err != nil {
+		return err
 	}
 
 	return nil

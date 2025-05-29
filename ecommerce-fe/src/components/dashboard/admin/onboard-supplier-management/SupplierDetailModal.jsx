@@ -38,6 +38,7 @@ import {
     FiXCircle,
     FiClock,
     FiShield,
+    FiExternalLink,
     FiCheck,
     FiX,
 } from 'react-icons/fi';
@@ -148,8 +149,9 @@ const SupplierDetailModal = ({ isOpen, onClose, supplierId }) => {
         setActionLoading(`${documentId}-${action}`);
         try {
             // Call API to approve/reject document
-            await supplierService.updateDocumentStatus(documentId, action);
-            // Refresh supplier data
+            const status = action === 'approve' ? 'approved' : 'rejected';
+            await supplierService.updateDocumentVerificationStatus(supplierId, documentId, status);
+            // Refresh supplier data to get full updated info
             await fetchSupplierDetail();
         } catch (err) {
             console.error('Error updating document status:', err);

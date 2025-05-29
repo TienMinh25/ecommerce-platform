@@ -144,3 +144,7 @@ type IAdministrativeDivisionRepository interface {
 	GetDistrictsByProvinceID(ctx context.Context, provinceID string) ([]District, error)
 	GetWardsByDistrictID(ctx context.Context, provinceID, districtID string) ([]Ward, error)
 }
+
+type IUserRoleRepository interface {
+	UpRoleSupplierForUser(ctx context.Context, userID int) error
+}

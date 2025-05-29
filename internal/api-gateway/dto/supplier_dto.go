@@ -79,7 +79,7 @@ type Document struct {
 }
 
 type UpdateSupplierRequest struct {
-	Status common.SupplierProfileStatus `form:"status" binding:"omitempty,enum"`
+	Status common.SupplierProfileStatus `json:"status" binding:"omitempty,enum"`
 }
 
 type UpdateSupplierURIRequest struct {
@@ -87,3 +87,22 @@ type UpdateSupplierURIRequest struct {
 }
 
 type UpdateSupplierResponse struct{}
+
+type UpdateSupplierDocumentVerificationStatusRequest struct {
+	Status common.SupplierDocumentStatus `json:"status" binding:"omitempty,enum"`
+}
+
+type UpdateSupplierDocumentVerificationStatusURIRequest struct {
+	SupplierID int64  `uri:"id" binding:"required"`
+	DocumentID string `uri:"documentID" binding:"required"`
+}
+
+type UpdateSupplierDocumentVerificationStatusResponse struct {
+	Status common.SupplierDocumentStatus `json:"status"`
+}
+
+type UpdateRoleForUserRegisterSupplierRequest struct {
+	UserID int `json:"user_id" binding:"required"`
+}
+
+type UpdateRoleForUserRegisterSupplierResponse struct{}

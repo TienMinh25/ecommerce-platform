@@ -5,6 +5,7 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/db/postgres"
 	"github.com/TienMinh25/ecommerce-platform/internal/env"
+	"github.com/TienMinh25/ecommerce-platform/internal/httpclient"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/handler"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/repository"
@@ -128,7 +129,7 @@ func main() {
 			// kafka,
 
 			// adapter
-
+			httpclient.NewHTTPClient,
 		),
 		fx.Invoke(StartServer),
 		//fx.Invoke(func(messageBroker pkg.MessageQueue) {}),

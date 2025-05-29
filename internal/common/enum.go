@@ -151,6 +151,19 @@ const (
 	SupplierDocumentStatusRejected SupplierDocumentStatus = "rejected"
 )
 
+func (s SupplierDocumentStatus) IsValid() bool {
+	return s == SupplierDocumentStatusRejected || s == SupplierDocumentStatusApproved
+}
+
+func (s SupplierDocumentStatus) ErrorMessage() string {
+	validArray := []string{
+		string(SupplierDocumentStatusApproved),
+		string(SupplierDocumentStatusRejected),
+	}
+
+	return fmt.Sprintf("Document status must be in the one of: [%v]", strings.Join(validArray, ", "))
+}
+
 type BucketName string
 
 const (
@@ -174,3 +187,9 @@ func (s BucketName) ErrorMessage() string {
 
 	return fmt.Sprintf("Bucket name must be in the one of: [%v]", strings.Join(validArray, ", "))
 }
+
+type SupplierDocumentType string
+
+const (
+	SupplierDocumentTypeRegister SupplierDocumentType = "register"
+)
