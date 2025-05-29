@@ -28,7 +28,7 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { useState } from 'react';
-import { FaShoppingCart, FaStore, FaShippingFast, FaUserShield } from 'react-icons/fa';
+import { FaShoppingCart, FaStore, FaShippingFast, FaUserShield, FaUserPlus } from 'react-icons/fa';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import Logo from '../ui/Logo';
@@ -303,6 +303,39 @@ const Header = () => {
                       </>
                   )}
 
+                  {/* Show registration options only if user is not supplier or deliverer */}
+                  {!isSupplier && !isDeliverer && (
+                      <>
+                        <MenuDivider m={0} />
+                        <MenuItem
+                            as={RouterLink}
+                            to='/register/supplier'
+                            py={3}
+                            _hover={{ bg: 'blue.50' }}
+                            w="full"
+                            color="blue.600"
+                        >
+                          <Flex align="center">
+                            <FaUserPlus style={{ marginRight: '8px' }} />
+                            Đăng ký trở thành nhà cung cấp
+                          </Flex>
+                        </MenuItem>
+                        <MenuItem
+                            as={RouterLink}
+                            to='/register/deliverer'
+                            py={3}
+                            _hover={{ bg: 'green.50' }}
+                            w="full"
+                            color="green.600"
+                        >
+                          <Flex align="center">
+                            <FaShippingFast style={{ marginRight: '8px' }} />
+                            Đăng ký trở thành người giao hàng
+                          </Flex>
+                        </MenuItem>
+                      </>
+                  )}
+
                   <MenuDivider m={0} />
                   <MenuItem
                       onClick={handleLogout}
@@ -559,6 +592,53 @@ const Header = () => {
                         Trang quản trị
                       </Flex>
                     </Box>
+                )}
+
+                {/* Show registration options in mobile drawer too */}
+                {!isSupplier && !isDeliverer && (
+                    <>
+                      <Box py={2} px={4} bg="gray.100" fontWeight="bold" color="gray.700">
+                        Đăng ký
+                      </Box>
+
+                      <Box
+                          as={RouterLink}
+                          to='/register/supplier'
+                          py={3}
+                          px={4}
+                          borderBottomWidth="1px"
+                          bg="white"
+                          _hover={{ bg: 'blue.50' }}
+                          onClick={onClose}
+                          fontWeight="medium"
+                          w="full"
+                          color="blue.600"
+                      >
+                        <Flex align="center">
+                          <FaUserPlus style={{ marginRight: '8px' }} />
+                          Đăng ký trở thành nhà cung cấp
+                        </Flex>
+                      </Box>
+
+                      <Box
+                          as={RouterLink}
+                          to='/register/deliverer'
+                          py={3}
+                          px={4}
+                          borderBottomWidth="1px"
+                          bg="white"
+                          _hover={{ bg: 'green.50' }}
+                          onClick={onClose}
+                          fontWeight="medium"
+                          w="full"
+                          color="green.600"
+                      >
+                        <Flex align="center">
+                          <FaShippingFast style={{ marginRight: '8px' }} />
+                          Đăng ký trở thành người giao hàng
+                        </Flex>
+                      </Box>
+                    </>
                 )}
 
                 <Box

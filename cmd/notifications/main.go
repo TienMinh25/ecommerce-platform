@@ -44,7 +44,6 @@ func NewTracerNotificationService(env *env.EnvManager, lifecycle fx.Lifecycle) (
 }
 
 func StartServer(lifecycle fx.Lifecycle, env *env.EnvManager, notificationHandler *notification_handler.NotificationHandler) {
-	// TODO: tuong lai them option cho viec validate du lieu
 	server := grpc.NewServer()
 
 	lifecycle.Append(fx.Hook{

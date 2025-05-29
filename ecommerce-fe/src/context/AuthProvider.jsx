@@ -39,9 +39,6 @@ export const AuthProvider = ({ children }) => {
             localStorage.removeItem('refresh_token');
             localStorage.removeItem('user');
           }
-        } else {
-          // Không có token
-          console.log("No authentication token found");
         }
       } catch (error) {
         console.error('Authentication check error:', error);

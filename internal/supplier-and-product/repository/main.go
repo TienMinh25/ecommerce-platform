@@ -26,4 +26,9 @@ type IProductRepository interface {
 type ISupplierProfileRepository interface {
 	GetSupplierInfoForProductDetail(ctx context.Context, supplierID int64) (*models.Supplier, error)
 	GetSupplierInfoForOrder(ctx context.Context, supplierID []int64) ([]models.Supplier, error)
+	RegisterSupplier(ctx context.Context, data *partner_proto_gen.RegisterSupplierRequest) error
+	GetSuppliers(ctx context.Context, data *partner_proto_gen.GetSuppliersRequest) ([]models.Supplier, int64, error)
+	GetSupplierDetail(ctx context.Context, supplierID int64) (*models.Supplier, []models.SupplierDocument, error)
+	UpdateSupplierByAdmin(ctx context.Context, data *partner_proto_gen.UpdateSupplierRequest) error
+	UpdateDocumentSupplier(ctx context.Context, data *partner_proto_gen.UpdateDocumentSupplierRequest) (string, error)
 }

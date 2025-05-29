@@ -1732,6 +1732,57 @@
                 }
             }
         },
+        "/payments/webhook/momo": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update order status (receive event from momo)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "payments"
+                ],
+                "summary": "update order status (receive event from momo)",
+                "parameters": [
+                    {
+                        "description": "data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateOrderIPNMomoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateOrderIPNMomoResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/permissions": {
             "get": {
                 "security": [
@@ -2470,6 +2521,446 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api_gateway_dto.UpdateRolesResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/s3/presigned_url": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "lấy presigned url để upload ảnh",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "s3"
+                ],
+                "summary": "lấy presigned url để upload ảnh",
+                "parameters": [
+                    {
+                        "description": "Thông tin file",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetPresignedURLRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetPresignedURLResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/suppliers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "get suppliers by admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "get suppliers by admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "company_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "contact_phone",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "pending",
+                            "active",
+                            "suspended"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "SupplierProfileStatusPending",
+                            "SupplierProfileStatusActive",
+                            "SupplierProfileStatusSuspended"
+                        ],
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "tax_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetSuppliersResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/suppliers/register": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "customer register supplier",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "customer register supplier",
+                "parameters": [
+                    {
+                        "description": "data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.RegisterSupplierRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.RegisterSupplierResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/suppliers/uprole": {
+            "post": {
+                "description": "up role supplier for user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "up role supplier for user",
+                "parameters": [
+                    {
+                        "description": "Thông tin cần cập nhật",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateRoleForUserRegisterSupplierRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateRoleForUserRegisterSupplierResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/suppliers/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "get supplier detail",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "get supplier detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetSupplierByIDResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Quản trị viên cho phép supplier hoạt động hoặc không",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "Quản trị viên cho phép supplier hoạt động hoặc không",
+                "parameters": [
+                    {
+                        "description": "Thông tin cần cập nhật",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateSupplierRequest"
+                        }
+                    },
+                    {
+                        "type": "integer",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateSupplierResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/suppliers/{id}/documents/{documentID}": {
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "approve or reject supplier document",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "approve or reject supplier document",
+                "parameters": [
+                    {
+                        "description": "Thông tin cần cập nhật",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest"
+                        }
+                    },
+                    {
+                        "type": "string",
+                        "name": "documentID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponseDocs"
                         }
                     },
                     "400": {
@@ -3607,6 +4098,113 @@
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api_gateway_dto.MarkNotificationResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/users/me/orders": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "update cart item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "me"
+                ],
+                "summary": "update cart item",
+                "parameters": [
+                    {
+                        "minLength": 1,
+                        "type": "string",
+                        "name": "keyword",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "pending_payment",
+                            "pending",
+                            "confirmed",
+                            "processing",
+                            "ready_to_ship",
+                            "in_transit",
+                            "out_for_delivery",
+                            "delivered",
+                            "cancelled",
+                            "payment_failed",
+                            "refunded"
+                        ],
+                        "type": "string",
+                        "x-enum-comments": {
+                            "Confirmed": "Supplier đã xác nhận",
+                            "Delivered": "Đã giao thành công",
+                            "InTransit": "Đang vận chuyển (đang ship)",
+                            "OutForDelivery": "Sắp giao (shipper đang trên đường)",
+                            "Pending": "Chờ supplier xác nhận",
+                            "PendingPayment": "Chờ thanh toán",
+                            "Processing": "Đang chuẩn bị hàng",
+                            "ReadyToShip": "Sẵn sàng giao hàng"
+                        },
+                        "x-enum-varnames": [
+                            "PendingPayment",
+                            "Pending",
+                            "Confirmed",
+                            "Processing",
+                            "ReadyToShip",
+                            "InTransit",
+                            "OutForDelivery",
+                            "Delivered",
+                            "Cancelled",
+                            "PaymentFailed",
+                            "Refunded"
+                        ],
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateCartItemResponseDocs"
                         }
                     },
                     "400": {
@@ -4867,6 +5465,48 @@
                 }
             }
         },
+        "api_gateway_dto.GetPresignedURLRequest": {
+            "type": "object",
+            "required": [
+                "bucket_name",
+                "content_type",
+                "file_name",
+                "file_size"
+            ],
+            "properties": {
+                "bucket_name": {
+                    "$ref": "#/definitions/common.BucketName"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "file_name": {
+                    "type": "string"
+                },
+                "file_size": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.GetPresignedURLResponse": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetPresignedURLResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetPresignedURLResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.GetProductDetailResponse": {
             "type": "object",
             "properties": {
@@ -5104,6 +5744,78 @@
                 }
             }
         },
+        "api_gateway_dto.GetSupplierByIDResponse": {
+            "type": "object",
+            "properties": {
+                "business_address": {
+                    "type": "string"
+                },
+                "company_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetSupplierDocument"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "logo_thumbnail_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/common.SupplierProfileStatus"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetSupplierByIDResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetSupplierByIDResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.GetSupplierDocument": {
+            "type": "object",
+            "properties": {
+                "admin_note": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "document": {
+                    "$ref": "#/definitions/api_gateway_dto.SupplierDocument"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "verification_status": {
+                    "$ref": "#/definitions/common.SupplierDocumentStatus"
+                }
+            }
+        },
         "api_gateway_dto.GetSupplierProductResponse": {
             "type": "object",
             "properties": {
@@ -5118,6 +5830,52 @@
                 },
                 "thumbnail": {
                     "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetSuppliersResponse": {
+            "type": "object",
+            "properties": {
+                "business_address": {
+                    "type": "string"
+                },
+                "company_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "logo_thumbnail_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/common.SupplierProfileStatus"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetSuppliersResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetSuppliersResponse"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
                 }
             }
         },
@@ -5501,6 +6259,54 @@
                 }
             }
         },
+        "api_gateway_dto.RegisterSupplierRequest": {
+            "type": "object",
+            "required": [
+                "business_address_id",
+                "company_name",
+                "contact_phone",
+                "documents",
+                "logo_company_url",
+                "tax_id"
+            ],
+            "properties": {
+                "business_address_id": {
+                    "type": "integer"
+                },
+                "company_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "documents": {
+                    "$ref": "#/definitions/api_gateway_dto.SupplierDocument"
+                },
+                "logo_company_url": {
+                    "type": "string"
+                },
+                "tax_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.RegisterSupplierResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.RegisterSupplierResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.RegisterSupplierResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.ResendVerifyEmailRequest": {
             "type": "object",
             "required": [
@@ -5609,6 +6415,29 @@
                 },
                 "promotion": {
                     "type": "boolean"
+                }
+            }
+        },
+        "api_gateway_dto.SupplierDocument": {
+            "type": "object",
+            "required": [
+                "business_license",
+                "id_card_back",
+                "id_card_front",
+                "tax_certificate"
+            ],
+            "properties": {
+                "business_license": {
+                    "type": "string"
+                },
+                "id_card_back": {
+                    "type": "string"
+                },
+                "id_card_front": {
+                    "type": "string"
+                },
+                "tax_certificate": {
+                    "type": "string"
                 }
             }
         },
@@ -5961,6 +6790,73 @@
                 }
             }
         },
+        "api_gateway_dto.UpdateOrderIPNMomoRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "orderId",
+                "partnerCode",
+                "requestId",
+                "signature",
+                "transId"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer"
+                },
+                "extraData": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "orderId": {
+                    "type": "string"
+                },
+                "orderInfo": {
+                    "type": "string"
+                },
+                "orderType": {
+                    "type": "string"
+                },
+                "partnerCode": {
+                    "type": "string"
+                },
+                "payType": {
+                    "type": "string"
+                },
+                "requestId": {
+                    "type": "string"
+                },
+                "responseTime": {
+                    "type": "integer"
+                },
+                "resultCode": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "signature": {
+                    "type": "string"
+                },
+                "transId": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateOrderIPNMomoResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.UpdateOrderIPNMomoResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateOrderIPNMomoResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
         "api_gateway_dto.UpdatePermissionByIDResponseDocs": {
             "type": "object",
             "properties": {
@@ -5987,6 +6883,31 @@
         },
         "api_gateway_dto.UpdatePermissionByPermissionIDResponse": {
             "type": "object"
+        },
+        "api_gateway_dto.UpdateRoleForUserRegisterSupplierRequest": {
+            "type": "object",
+            "required": [
+                "user_id"
+            ],
+            "properties": {
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateRoleForUserRegisterSupplierResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.UpdateRoleForUserRegisterSupplierResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateRoleForUserRegisterSupplierResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
         },
         "api_gateway_dto.UpdateRoleRequest": {
             "type": "object",
@@ -6018,6 +6939,55 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.UpdateRoleResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateSupplierDocumentVerificationStatusRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/common.SupplierDocumentStatus"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/common.SupplierDocumentStatus"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateSupplierDocumentVerificationStatusResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateSupplierRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "$ref": "#/definitions/common.SupplierProfileStatus"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateSupplierResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.UpdateSupplierResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateSupplierResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"
@@ -6152,6 +7122,84 @@
             "x-enum-varnames": [
                 "UserStatusActive",
                 "UserStatusInactive"
+            ]
+        },
+        "common.BucketName": {
+            "type": "string",
+            "enum": [
+                "avatars",
+                "deliverers",
+                "suppliers"
+            ],
+            "x-enum-varnames": [
+                "BucketAvatars",
+                "BucketDeliverers",
+                "BucketSuppliers"
+            ]
+        },
+        "common.StatusOrder": {
+            "type": "string",
+            "enum": [
+                "pending_payment",
+                "pending",
+                "confirmed",
+                "processing",
+                "ready_to_ship",
+                "in_transit",
+                "out_for_delivery",
+                "delivered",
+                "cancelled",
+                "payment_failed",
+                "refunded"
+            ],
+            "x-enum-comments": {
+                "Confirmed": "Supplier đã xác nhận",
+                "Delivered": "Đã giao thành công",
+                "InTransit": "Đang vận chuyển (đang ship)",
+                "OutForDelivery": "Sắp giao (shipper đang trên đường)",
+                "Pending": "Chờ supplier xác nhận",
+                "PendingPayment": "Chờ thanh toán",
+                "Processing": "Đang chuẩn bị hàng",
+                "ReadyToShip": "Sẵn sàng giao hàng"
+            },
+            "x-enum-varnames": [
+                "PendingPayment",
+                "Pending",
+                "Confirmed",
+                "Processing",
+                "ReadyToShip",
+                "InTransit",
+                "OutForDelivery",
+                "Delivered",
+                "Cancelled",
+                "PaymentFailed",
+                "Refunded"
+            ]
+        },
+        "common.SupplierDocumentStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "approved",
+                "rejected"
+            ],
+            "x-enum-varnames": [
+                "SupplierDocumentStatusPending",
+                "SupplierDocumentStatusApproved",
+                "SupplierDocumentStatusRejected"
+            ]
+        },
+        "common.SupplierProfileStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "active",
+                "suspended"
+            ],
+            "x-enum-varnames": [
+                "SupplierProfileStatusPending",
+                "SupplierProfileStatusActive",
+                "SupplierProfileStatusSuspended"
             ]
         }
     },

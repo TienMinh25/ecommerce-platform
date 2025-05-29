@@ -7,7 +7,7 @@ type Supplier struct {
 	UserID            int64
 	CompanyName       string
 	ContactPhone      string
-	Description       string
+	Description       *string
 	LogoURL           string
 	BusinessAddressID int64
 	TaxID             string

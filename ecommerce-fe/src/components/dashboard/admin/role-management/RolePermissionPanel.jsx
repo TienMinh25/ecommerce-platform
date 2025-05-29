@@ -50,7 +50,6 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                 mapping[permission.name] = permission.id;
             });
             setPermissionMapping(mapping);
-            console.log('Permission mapping created:', mapping);
         }
     }, [permissionsList]);
 
@@ -235,9 +234,6 @@ const RolePermissionPanel = ({ role, onSave, onClose, isLoading = false, modules
                 modules_permissions: modulesWithPermissions, // Using the correct field name from API docs
                 description: role.description // Preserve existing description
             };
-
-            console.log('Saving permissions with mapping:', permissionMapping);
-            console.log('Payload:', permissionsPayload);
 
             // Call the save callback with the updated permissions
             await onSave(role.id, permissionsPayload);

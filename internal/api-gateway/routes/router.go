@@ -31,11 +31,14 @@ func NewRouter(
 	userMeHandler api_gateway_handler.IUserHandler,
 	accessTokenMiddleware *middleware.JwtMiddleware,
 	permissionMiddleware *middleware.PermissionMiddleware,
+	xAuthMiddleware *middleware.XAuthMiddleware,
 	administrativeDivisionHandler api_gateway_handler.IAdministrativeDivisionHandler,
 	categoryHandler api_gateway_handler.ICategoryHandler,
 	productHandler api_gateway_handler.IProductHandler,
 	couponHandler api_gateway_handler.ICouponHandler,
 	paymentHandler api_gateway_handler.IPaymentHandler,
+	supplierHandler api_gateway_handler.ISupplierHandler,
+	s3Handler api_gateway_handler.IS3Handler,
 ) *Router {
 	apiV1Group := router.Group("/api/v1")
 
@@ -51,6 +54,8 @@ func NewRouter(
 	registerProductEndpoint(apiV1Group, accessTokenMiddleware, productHandler)
 	registerCouponEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, couponHandler)
 	registerPaymentEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, paymentHandler)
+	registerSupplierEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, xAuthMiddleware, supplierHandler)
+	registerS3Endpoint(apiV1Group, accessTokenMiddleware, s3Handler)
 
 	return &Router{
 		Router: router,
@@ -227,5 +232,28 @@ func registerPaymentEndpoint(group *gin.RouterGroup, accessTokenMiddleware *midd
 	{
 		paymentGroup.GET("/payment-methods", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.Payment, common.Read), paymentHandler.GetPaymentMethods)
 		paymentGroup.POST("/checkout", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.OrderManagement, common.Create), paymentHandler.Checkout)
+	}
+}
+
+func registerSupplierEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, permissionMiddleware *middleware.PermissionMiddleware, xAuthMiddleware *middleware.XAuthMiddleware,
+	supplierHandler api_gateway_handler.ISupplierHandler) {
+	supplierGroup := group.Group("/suppliers")
+
+	supplierGroup.POST("/uprole", xAuthMiddleware.CheckValidAuthHeader(), supplierHandler.UpdateRoleForUserRegisterSupplier)
+	supplierGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		supplierGroup.POST("/register", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.UserManagement, common.Create), supplierHandler.RegisterSupplier)
+		supplierGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Read), supplierHandler.GetSuppliers)
+		supplierGroup.GET("/:id", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Read), supplierHandler.GetSupplierByID)
+		supplierGroup.PATCH("/:id", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Update), supplierHandler.UpdateSupplier)
+		supplierGroup.PATCH("/:id/documents/:documentID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Update), supplierHandler.UpdateSupplierDocumentVerificationStatus)
+	}
+}
+
+func registerS3Endpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, s3Handler api_gateway_handler.IS3Handler) {
+	s3Group := group.Group("/s3")
+	s3Group.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		s3Group.POST("/presigned_url", s3Handler.GetPresignedURLUpload)
 	}
 }

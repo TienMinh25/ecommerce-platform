@@ -32,6 +32,10 @@ import UserNotifications from "../components/user/UserNotifications.jsx";
 import CartPage from "../pages/Cart/CartPage.jsx";
 import CouponManagementComponent from "../components/dashboard/admin/coupon-management/CouponManagementComponent.jsx";
 import CheckoutPage from "../pages/Checkout/CheckoutPage.jsx";
+import SupplierRegistration from "../pages/SupplierRegistration.jsx";
+import DelivererRegistration from "../pages/DelivererRegistration.jsx";
+import SupplierManagementComponent
+    from "../components/dashboard/admin/onboard-supplier-management/SupplierManagementComponent.jsx";
 
 const AppRoutes = () => {
     return (
@@ -62,6 +66,10 @@ const AppRoutes = () => {
                         <Route path='notifications/see' element={<UserNotifications />} />
                     </Route>
 
+                    {/* Registration Routes */}
+                    <Route path='/register/supplier' element={<SupplierRegistration />} />
+                    <Route path='/register/deliverer' element={<DelivererRegistration />} />
+
                     <Route path='/products' element={<ProductListing />} />
                     <Route path='/products/:id' element={<ProductDetail />} />
                     <Route path='carts' element={<CartPage />} />
@@ -78,8 +86,10 @@ const AppRoutes = () => {
                     <Route path='modules' element={<ModuleManagementComponent />} />
                     <Route path='address-types' element={<AddressTypesManagementComponent />} />
                     <Route path='coupons' element={<CouponManagementComponent />} />
+
+                    {/* Onboarding management */}
+                    <Route path='onboarding/suppliers' element={<SupplierManagementComponent />} />
                     {/*
-                      <Route path='onboarding/suppliers' element={<DashboardComponent />} />
                       <Route path='onboarding/deliverers' element={<DashboardComponent />} /> */}
                 </Route>
             </Route>

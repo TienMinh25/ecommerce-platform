@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+option go_package = "./partner_proto_gen";
+
+import "google/protobuf/timestamp.proto";
+import "partner_metadata.proto";
+
+message RegisterSupplierRequest {
+  string company_name = 1;
+  string contact_phone = 2;
+  string tax_id = 3;
+  int64 business_address_id = 4;
+  string logo_company_url = 5;
+  optional string description = 6;
+  RegisterSupplierDocument documents = 7;
+  int64 user_id = 8;
+}
+
+message RegisterSupplierDocument {
+  string business_license = 1;
+  string tax_certificate = 2;
+  string id_card_front = 3;
+  string id_card_back = 4;
+}
+
+message RegisterSupplierResponse {}
+
+message GetSuppliersRequest {
+  int64 limit = 1;
+  int64 page = 2;
+  optional string status = 3;
+  optional string tax_id = 4;
+  optional string company_name = 5;
+  optional string contact_phone = 6;
+}
+
+message GetSuppliersResponse {
+    repeated SuppliersResponse data = 1;
+    PartnerMetadata metadata = 2;
+}
+
+message SuppliersResponse {
+  int64 id = 1;
+  string company_name = 2;
+  string contact_phone = 3;
+  string logo_thumbnail_url = 4;
+  int64 business_address_id = 5;
+  string tax_id = 6;
+  string status = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+}
+
+message GetSupplierDetailRequest {
+  int64 supplier_id = 1;
+}
+
+message GetSupplierDetailResponse {
+  int64 id = 1;
+  string company_name = 2;
+  string contact_phone = 3;
+  string logo_thumbnail_url = 4;
+  int64 business_address_id = 5;
+  string tax_id = 6;
+  string status = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  repeated GetSupplierDetailDocument documents = 10;
+}
+
+message GetSupplierDetailDocument {
+  string id = 1;
+  string verification_status = 2;
+  optional string admin_note = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+  DocumentDetail document = 6;
+}
+
+message DocumentDetail {
+  string business_license = 1;
+  string tax_certificate = 2;
+  string id_card_front = 3;
+  string id_card_back = 4;
+}
+
+message UpdateSupplierRequest {
+  int64 supplier_id = 1;
+  string status = 2;
+}
+
+message UpdateSupplierResponse {}
+
+message UpdateDocumentSupplierRequest {
+  string status = 1;
+  int64 supplier_id = 2;
+  string document_id = 3;
+}
+
+message UpdateDocumentSupplierResponse {
+  string status = 1;
+}

@@ -2,6 +2,7 @@ package api_gateway_repository
 
 import (
 	"context"
+	"github.com/Masterminds/squirrel"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
@@ -247,4 +248,61 @@ func (a *addressRepository) DeleteAddressByID(ctx context.Context, addressID int
 	}
 
 	return nil
+}
+
+func (a *addressRepository) GetBusinessAddressForSupplier(ctx context.Context, businessIdsMap map[int64]bool) (map[int64]string, error) {
+	ctx, span := a.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetBusinessAddressForSupplier"))
+	defer span.End()
+
+	businessIds := make([]int64, 0)
+
+	for id, _ := range businessIdsMap {
+		businessIds = append(businessIds, id)
+	}
+
+	selectQuery, args, err := squirrel.Select("id",
+		"concat(street, ', ', ward, ', ', district, ', ', province, ', ', country) as full_address").
+		From("addresses").
+		Where(squirrel.Eq{"id": businessIds}).
+		PlaceholderFormat(squirrel.Dollar).
+		ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	rows, err := a.db.Query(ctx, selectQuery, args...)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, utils.TechnicalError{
+			Message: common.MSG_INTERNAL_ERROR,
+			Code:    http.StatusInternalServerError,
+		}
+	}
+
+	defer rows.Close()
+
+	addressesMap := make(map[int64]string)
+
+	for rows.Next() {
+		var id int64
+		var fullAddress string
+
+		if err = rows.Scan(&id, &fullAddress); err != nil {
+			span.RecordError(err)
+			return nil, utils.TechnicalError{
+				Message: common.MSG_INTERNAL_ERROR,
+				Code:    http.StatusInternalServerError,
+			}
+		}
+
+		addressesMap[id] = fullAddress
+	}
+
+	return addressesMap, nil
 }

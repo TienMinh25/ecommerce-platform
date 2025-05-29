@@ -20,4 +20,9 @@ type IProductService interface {
 
 type ISupplierService interface {
 	GetSupplierInfoForOrders(ctx context.Context, supplierIDs []int64) (*partner_proto_gen.GetSupplierInfoForOrderResponse, error)
+	RegisterSupplier(ctx context.Context, data *partner_proto_gen.RegisterSupplierRequest) error
+	GetSuppliers(ctx context.Context, data *partner_proto_gen.GetSuppliersRequest) (*partner_proto_gen.GetSuppliersResponse, error)
+	GetSupplierDetail(ctx context.Context, data *partner_proto_gen.GetSupplierDetailRequest) (*partner_proto_gen.GetSupplierDetailResponse, error)
+	UpdateSupplier(ctx context.Context, data *partner_proto_gen.UpdateSupplierRequest) error
+	UpdateDocumentSupplier(ctx context.Context, data *partner_proto_gen.UpdateDocumentSupplierRequest) (*partner_proto_gen.UpdateDocumentSupplierResponse, error)
 }

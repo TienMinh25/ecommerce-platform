@@ -27,6 +27,11 @@ const (
 	PartnerService_GetProductInfoCart_FullMethodName         = "/PartnerService/GetProductInfoCart"
 	PartnerService_GetProdInfoForPayment_FullMethodName      = "/PartnerService/GetProdInfoForPayment"
 	PartnerService_GetSupplierInfoForMyOrders_FullMethodName = "/PartnerService/GetSupplierInfoForMyOrders"
+	PartnerService_RegisterSupplier_FullMethodName           = "/PartnerService/RegisterSupplier"
+	PartnerService_GetSuppliers_FullMethodName               = "/PartnerService/GetSuppliers"
+	PartnerService_GetSupplierDetail_FullMethodName          = "/PartnerService/GetSupplierDetail"
+	PartnerService_UpdateSupplier_FullMethodName             = "/PartnerService/UpdateSupplier"
+	PartnerService_UpdateDocumentSupplier_FullMethodName     = "/PartnerService/UpdateDocumentSupplier"
 )
 
 // PartnerServiceClient is the client API for PartnerService service.
@@ -41,6 +46,11 @@ type PartnerServiceClient interface {
 	GetProductInfoCart(ctx context.Context, in *GetProductInfoCartRequest, opts ...grpc.CallOption) (*GetProductInfoCartResponse, error)
 	GetProdInfoForPayment(ctx context.Context, in *GetProdInfoForPaymentRequest, opts ...grpc.CallOption) (*GetProdInfoForPaymentResponse, error)
 	GetSupplierInfoForMyOrders(ctx context.Context, in *GetSupplierInfoForOrderRequest, opts ...grpc.CallOption) (*GetSupplierInfoForOrderResponse, error)
+	RegisterSupplier(ctx context.Context, in *RegisterSupplierRequest, opts ...grpc.CallOption) (*RegisterSupplierResponse, error)
+	GetSuppliers(ctx context.Context, in *GetSuppliersRequest, opts ...grpc.CallOption) (*GetSuppliersResponse, error)
+	GetSupplierDetail(ctx context.Context, in *GetSupplierDetailRequest, opts ...grpc.CallOption) (*GetSupplierDetailResponse, error)
+	UpdateSupplier(ctx context.Context, in *UpdateSupplierRequest, opts ...grpc.CallOption) (*UpdateSupplierResponse, error)
+	UpdateDocumentSupplier(ctx context.Context, in *UpdateDocumentSupplierRequest, opts ...grpc.CallOption) (*UpdateDocumentSupplierResponse, error)
 }
 
 type partnerServiceClient struct {
@@ -131,6 +141,56 @@ func (c *partnerServiceClient) GetSupplierInfoForMyOrders(ctx context.Context, i
 	return out, nil
 }
 
+func (c *partnerServiceClient) RegisterSupplier(ctx context.Context, in *RegisterSupplierRequest, opts ...grpc.CallOption) (*RegisterSupplierResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterSupplierResponse)
+	err := c.cc.Invoke(ctx, PartnerService_RegisterSupplier_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *partnerServiceClient) GetSuppliers(ctx context.Context, in *GetSuppliersRequest, opts ...grpc.CallOption) (*GetSuppliersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSuppliersResponse)
+	err := c.cc.Invoke(ctx, PartnerService_GetSuppliers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *partnerServiceClient) GetSupplierDetail(ctx context.Context, in *GetSupplierDetailRequest, opts ...grpc.CallOption) (*GetSupplierDetailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSupplierDetailResponse)
+	err := c.cc.Invoke(ctx, PartnerService_GetSupplierDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *partnerServiceClient) UpdateSupplier(ctx context.Context, in *UpdateSupplierRequest, opts ...grpc.CallOption) (*UpdateSupplierResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateSupplierResponse)
+	err := c.cc.Invoke(ctx, PartnerService_UpdateSupplier_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *partnerServiceClient) UpdateDocumentSupplier(ctx context.Context, in *UpdateDocumentSupplierRequest, opts ...grpc.CallOption) (*UpdateDocumentSupplierResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateDocumentSupplierResponse)
+	err := c.cc.Invoke(ctx, PartnerService_UpdateDocumentSupplier_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PartnerServiceServer is the server API for PartnerService service.
 // All implementations must embed UnimplementedPartnerServiceServer
 // for forward compatibility.
@@ -143,6 +203,11 @@ type PartnerServiceServer interface {
 	GetProductInfoCart(context.Context, *GetProductInfoCartRequest) (*GetProductInfoCartResponse, error)
 	GetProdInfoForPayment(context.Context, *GetProdInfoForPaymentRequest) (*GetProdInfoForPaymentResponse, error)
 	GetSupplierInfoForMyOrders(context.Context, *GetSupplierInfoForOrderRequest) (*GetSupplierInfoForOrderResponse, error)
+	RegisterSupplier(context.Context, *RegisterSupplierRequest) (*RegisterSupplierResponse, error)
+	GetSuppliers(context.Context, *GetSuppliersRequest) (*GetSuppliersResponse, error)
+	GetSupplierDetail(context.Context, *GetSupplierDetailRequest) (*GetSupplierDetailResponse, error)
+	UpdateSupplier(context.Context, *UpdateSupplierRequest) (*UpdateSupplierResponse, error)
+	UpdateDocumentSupplier(context.Context, *UpdateDocumentSupplierRequest) (*UpdateDocumentSupplierResponse, error)
 	mustEmbedUnimplementedPartnerServiceServer()
 }
 
@@ -176,6 +241,21 @@ func (UnimplementedPartnerServiceServer) GetProdInfoForPayment(context.Context, 
 }
 func (UnimplementedPartnerServiceServer) GetSupplierInfoForMyOrders(context.Context, *GetSupplierInfoForOrderRequest) (*GetSupplierInfoForOrderResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSupplierInfoForMyOrders not implemented")
+}
+func (UnimplementedPartnerServiceServer) RegisterSupplier(context.Context, *RegisterSupplierRequest) (*RegisterSupplierResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RegisterSupplier not implemented")
+}
+func (UnimplementedPartnerServiceServer) GetSuppliers(context.Context, *GetSuppliersRequest) (*GetSuppliersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSuppliers not implemented")
+}
+func (UnimplementedPartnerServiceServer) GetSupplierDetail(context.Context, *GetSupplierDetailRequest) (*GetSupplierDetailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupplierDetail not implemented")
+}
+func (UnimplementedPartnerServiceServer) UpdateSupplier(context.Context, *UpdateSupplierRequest) (*UpdateSupplierResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateSupplier not implemented")
+}
+func (UnimplementedPartnerServiceServer) UpdateDocumentSupplier(context.Context, *UpdateDocumentSupplierRequest) (*UpdateDocumentSupplierResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateDocumentSupplier not implemented")
 }
 func (UnimplementedPartnerServiceServer) mustEmbedUnimplementedPartnerServiceServer() {}
 func (UnimplementedPartnerServiceServer) testEmbeddedByValue()                        {}
@@ -342,6 +422,96 @@ func _PartnerService_GetSupplierInfoForMyOrders_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PartnerService_RegisterSupplier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterSupplierRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).RegisterSupplier(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_RegisterSupplier_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).RegisterSupplier(ctx, req.(*RegisterSupplierRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PartnerService_GetSuppliers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSuppliersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).GetSuppliers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_GetSuppliers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).GetSuppliers(ctx, req.(*GetSuppliersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PartnerService_GetSupplierDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupplierDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).GetSupplierDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_GetSupplierDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).GetSupplierDetail(ctx, req.(*GetSupplierDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PartnerService_UpdateSupplier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateSupplierRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).UpdateSupplier(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_UpdateSupplier_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).UpdateSupplier(ctx, req.(*UpdateSupplierRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PartnerService_UpdateDocumentSupplier_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateDocumentSupplierRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).UpdateDocumentSupplier(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_UpdateDocumentSupplier_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).UpdateDocumentSupplier(ctx, req.(*UpdateDocumentSupplierRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PartnerService_ServiceDesc is the grpc.ServiceDesc for PartnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +550,26 @@ var PartnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSupplierInfoForMyOrders",
 			Handler:    _PartnerService_GetSupplierInfoForMyOrders_Handler,
+		},
+		{
+			MethodName: "RegisterSupplier",
+			Handler:    _PartnerService_RegisterSupplier_Handler,
+		},
+		{
+			MethodName: "GetSuppliers",
+			Handler:    _PartnerService_GetSuppliers_Handler,
+		},
+		{
+			MethodName: "GetSupplierDetail",
+			Handler:    _PartnerService_GetSupplierDetail_Handler,
+		},
+		{
+			MethodName: "UpdateSupplier",
+			Handler:    _PartnerService_UpdateSupplier_Handler,
+		},
+		{
+			MethodName: "UpdateDocumentSupplier",
+			Handler:    _PartnerService_UpdateDocumentSupplier_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

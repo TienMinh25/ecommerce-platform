@@ -52,3 +52,5 @@ type UpdateOrderIPNMomoRequest struct {
 	ExtraData    string `json:"extraData" binding:"omitempty"`
 	Signature    string `json:"signature" binding:"required"`
 }
+
+type UpdateOrderIPNMomoResponse struct{}

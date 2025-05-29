@@ -110,3 +110,86 @@ func (s StatusOrder) ErrorMessage() string {
 
 	return fmt.Sprintf("Status must be in the one of: [%v]", strings.Join(validArray, ", "))
 }
+
+type SupplierProfileStatus string
+
+const (
+	SupplierProfileStatusPending   SupplierProfileStatus = "pending"
+	SupplierProfileStatusActive    SupplierProfileStatus = "active"
+	SupplierProfileStatusSuspended SupplierProfileStatus = "suspended"
+)
+
+func (s SupplierProfileStatus) IsValid() bool {
+	validArray := []SupplierProfileStatus{
+		SupplierProfileStatusPending,
+		SupplierProfileStatusActive,
+		SupplierProfileStatusSuspended,
+	}
+
+	if slices.Contains(validArray, s) {
+		return true
+	}
+
+	return false
+}
+
+func (s SupplierProfileStatus) ErrorMessage() string {
+	validArray := []string{
+		string(SupplierProfileStatusPending),
+		string(SupplierProfileStatusActive),
+		string(SupplierProfileStatusSuspended),
+	}
+
+	return fmt.Sprintf("Supplier profile status must be in the one of: [%v]", strings.Join(validArray, ", "))
+}
+
+type SupplierDocumentStatus string
+
+const (
+	SupplierDocumentStatusPending  SupplierDocumentStatus = "pending"
+	SupplierDocumentStatusApproved SupplierDocumentStatus = "approved"
+	SupplierDocumentStatusRejected SupplierDocumentStatus = "rejected"
+)
+
+func (s SupplierDocumentStatus) IsValid() bool {
+	return s == SupplierDocumentStatusRejected || s == SupplierDocumentStatusApproved
+}
+
+func (s SupplierDocumentStatus) ErrorMessage() string {
+	validArray := []string{
+		string(SupplierDocumentStatusApproved),
+		string(SupplierDocumentStatusRejected),
+	}
+
+	return fmt.Sprintf("Document status must be in the one of: [%v]", strings.Join(validArray, ", "))
+}
+
+type BucketName string
+
+const (
+	BucketAvatars    BucketName = "avatars"
+	BucketDeliverers BucketName = "deliverers"
+	BucketSuppliers  BucketName = "suppliers"
+)
+
+func (b BucketName) IsValid() bool {
+	validArray := []BucketName{BucketAvatars, BucketDeliverers, BucketSuppliers}
+
+	if slices.Contains(validArray, b) {
+		return true
+	}
+
+	return false
+}
+
+func (s BucketName) ErrorMessage() string {
+	validArray := []string{string(BucketAvatars), string(BucketDeliverers), string(BucketSuppliers)}
+
+	return fmt.Sprintf("Bucket name must be in the one of: [%v]", strings.Join(validArray, ", "))
+}
+
+type SupplierDocumentType string
+
+const (
+	SupplierDocumentTypeRegister SupplierDocumentType = "register"
+)
