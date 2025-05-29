@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-    Box,
     Flex,
     Switch,
     Text,
@@ -15,13 +14,15 @@ const ModernToggleSwitch = ({ isChecked, onChange, label, name, value }) => {
         <Flex
             align="center"
             justify="space-between"
-            bg="gray.100"
+            bg={isChecked ? "blue.50" : "gray.100"}
             borderRadius="full"
             p={1}
             px={3}
             height="36px"
             cursor="pointer"
             onClick={() => onChange(name, value)}
+            flex="1"
+            transition="background-color 0.2s ease"
         >
             <Text
                 fontSize="sm"

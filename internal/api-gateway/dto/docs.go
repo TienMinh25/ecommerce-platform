@@ -100,3 +100,4 @@ type GetMyOrdersResponseDocs = ResponseSuccessPaginationDocs[[]GetMyOrdersRespon
 type UpdateOrderIPNMomoResponseDocs = ResponseSuccessDocs[UpdateOrderIPNMomoResponse]
 type RegisterSupplierResponseDocs = ResponseSuccessDocs[RegisterSupplierResponse]
 type GetPresignedURLResponseDocs = ResponseSuccessDocs[GetPresignedURLResponse]
+type GetSuppliersResponseDocs = ResponseSuccessPaginationDocs[[]GetSuppliersResponse]

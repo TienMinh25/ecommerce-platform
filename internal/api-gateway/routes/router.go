@@ -239,6 +239,7 @@ func registerSupplierEndpoint(group *gin.RouterGroup, accessTokenMiddleware *mid
 	supplierGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
 		supplierGroup.POST("/register", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.UserManagement, common.Create), supplierHandler.RegisterSupplier)
+		supplierGroup.GET("", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Read), supplierHandler.GetSuppliers)
 	}
 }
 

@@ -3,6 +3,7 @@ package api_gateway_service
 import (
 	"context"
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
+	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
@@ -14,14 +15,17 @@ import (
 )
 
 type supplierService struct {
-	tracer        pkg.Tracer
-	partnerClient partner_proto_gen.PartnerServiceClient
+	tracer            pkg.Tracer
+	partnerClient     partner_proto_gen.PartnerServiceClient
+	addressRepository api_gateway_repository.IAddressRepository
 }
 
-func NewSupplierService(tracer pkg.Tracer, partnerClient partner_proto_gen.PartnerServiceClient) ISupplierService {
+func NewSupplierService(tracer pkg.Tracer, partnerClient partner_proto_gen.PartnerServiceClient,
+	addressRepository api_gateway_repository.IAddressRepository) ISupplierService {
 	return &supplierService{
-		tracer:        tracer,
-		partnerClient: partnerClient,
+		tracer:            tracer,
+		partnerClient:     partnerClient,
+		addressRepository: addressRepository,
 	}
 }
 
@@ -48,7 +52,6 @@ func (s *supplierService) RegisterSupplier(ctx context.Context, data api_gateway
 	if err != nil {
 		st, _ := status.FromError(err)
 
-		// todo: handle error
 		switch st.Code() {
 		case codes.AlreadyExists:
 		case codes.FailedPrecondition:
@@ -66,4 +69,62 @@ func (s *supplierService) RegisterSupplier(ctx context.Context, data api_gateway
 	}
 
 	return nil
+}
+
+func (s *supplierService) GetSuppliers(ctx context.Context, data *api_gateway_dto.GetSuppliersRequest) ([]api_gateway_dto.GetSuppliersResponse, int, int, bool, bool, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetSuppliers"))
+	defer span.End()
+
+	var statusSupplier *string = nil
+
+	if data.Status != "" {
+		statusSup := string(data.Status)
+		statusSupplier = &statusSup
+	}
+
+	resPartner, err := s.partnerClient.GetSuppliers(ctx, &partner_proto_gen.GetSuppliersRequest{
+		Limit:        data.Limit,
+		Page:         data.Page,
+		Status:       statusSupplier,
+		TaxId:        data.TaxID,
+		CompanyName:  data.CompanyName,
+		ContactPhone: data.ContactPhone,
+	})
+
+	if err != nil {
+		return nil, 0, 0, false, false, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	businessIdsMap := make(map[int64]bool)
+
+	for _, item := range resPartner.Data {
+		businessIdsMap[item.BusinessAddressId] = true
+	}
+
+	businessStrMap, err := s.addressRepository.GetBusinessAddressForSupplier(ctx, businessIdsMap)
+
+	if err != nil {
+		return nil, 0, 0, false, false, err
+	}
+
+	result := make([]api_gateway_dto.GetSuppliersResponse, 0)
+
+	for _, item := range resPartner.Data {
+		result = append(result, api_gateway_dto.GetSuppliersResponse{
+			ID:               item.Id,
+			CompanyName:      item.CompanyName,
+			ContactPhone:     item.ContactPhone,
+			LogoThumbnailURL: item.LogoThumbnailUrl,
+			BusinessAddress:  businessStrMap[item.BusinessAddressId],
+			TaxID:            item.TaxId,
+			Status:           common.SupplierProfileStatus(item.Status),
+			CreatedAt:        item.CreatedAt.AsTime(),
+			UpdatedAt:        item.UpdatedAt.AsTime(),
+		})
+	}
+
+	return result, int(resPartner.Metadata.TotalItems), int(resPartner.Metadata.TotalPages), resPartner.Metadata.HasNext, resPartner.Metadata.HasPrevious, nil
 }

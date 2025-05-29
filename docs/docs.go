@@ -2607,6 +2607,96 @@ const docTemplate = `{
                 }
             }
         },
+        "/suppliers": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "get suppliers by admin",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "get suppliers by admin",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "company_name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "contact_phone",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "pending",
+                            "active",
+                            "suspended"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "SupplierProfileStatusPending",
+                            "SupplierProfileStatusActive",
+                            "SupplierProfileStatusSuspended"
+                        ],
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "name": "tax_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetSuppliersResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/suppliers/register": {
             "post": {
                 "security": [
@@ -5441,6 +5531,52 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.GetSuppliersResponse": {
+            "type": "object",
+            "properties": {
+                "business_address": {
+                    "type": "string"
+                },
+                "company_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "logo_thumbnail_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/common.SupplierProfileStatus"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetSuppliersResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetSuppliersResponse"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
+                }
+            }
+        },
         "api_gateway_dto.GetUserAddressResponse": {
             "type": "object",
             "properties": {
@@ -6662,6 +6798,19 @@ const docTemplate = `{
                 "Cancelled",
                 "PaymentFailed",
                 "Refunded"
+            ]
+        },
+        "common.SupplierProfileStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "active",
+                "suspended"
+            ],
+            "x-enum-varnames": [
+                "SupplierProfileStatusPending",
+                "SupplierProfileStatusActive",
+                "SupplierProfileStatusSuspended"
             ]
         }
     },

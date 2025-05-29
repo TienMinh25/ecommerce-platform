@@ -31,7 +31,7 @@ var file_main_proto_rawDesc = string([]byte{
 	0x65, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x13, 0x70, 0x61, 0x72, 0x74, 0x6e,
 	0x65, 0x72, 0x5f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x16,
 	0x70, 0x61, 0x72, 0x74, 0x6e, 0x65, 0x72, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0xca, 0x05, 0x0a, 0x0e, 0x50, 0x61, 0x72, 0x74, 0x6e,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0x87, 0x06, 0x0a, 0x0e, 0x50, 0x61, 0x72, 0x74, 0x6e,
 	0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3e, 0x0a, 0x0d, 0x47, 0x65, 0x74,
 	0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x12, 0x15, 0x2e, 0x47, 0x65, 0x74,
 	0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
@@ -76,9 +76,12 @@ var file_main_proto_rawDesc = string([]byte{
 	0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
 	0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73,
 	0x74, 0x65, 0x72, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f,
-	0x6e, 0x73, 0x65, 0x42, 0x15, 0x5a, 0x13, 0x2e, 0x2f, 0x70, 0x61, 0x72, 0x74, 0x6e, 0x65, 0x72,
-	0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x5f, 0x67, 0x65, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
-	0x6f, 0x33,
+	0x6e, 0x73, 0x65, 0x12, 0x3b, 0x0a, 0x0c, 0x47, 0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69,
+	0x65, 0x72, 0x73, 0x12, 0x14, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x15, 0x2e, 0x47, 0x65, 0x74, 0x53,
+	0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x42, 0x15, 0x5a, 0x13, 0x2e, 0x2f, 0x70, 0x61, 0x72, 0x74, 0x6e, 0x65, 0x72, 0x5f, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x5f, 0x67, 0x65, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 })
 
 var file_main_proto_goTypes = []any{
@@ -91,15 +94,17 @@ var file_main_proto_goTypes = []any{
 	(*GetProdInfoForPaymentRequest)(nil),    // 6: GetProdInfoForPaymentRequest
 	(*GetSupplierInfoForOrderRequest)(nil),  // 7: GetSupplierInfoForOrderRequest
 	(*RegisterSupplierRequest)(nil),         // 8: RegisterSupplierRequest
-	(*GetCategoriesResponse)(nil),           // 9: GetCategoriesResponse
-	(*GetProductsResponse)(nil),             // 10: GetProductsResponse
-	(*GetProductDetailResponse)(nil),        // 11: GetProductDetailResponse
-	(*GetProductReviewsResponse)(nil),       // 12: GetProductReviewsResponse
-	(*CheckAvailableProductResponse)(nil),   // 13: CheckAvailableProductResponse
-	(*GetProductInfoCartResponse)(nil),      // 14: GetProductInfoCartResponse
-	(*GetProdInfoForPaymentResponse)(nil),   // 15: GetProdInfoForPaymentResponse
-	(*GetSupplierInfoForOrderResponse)(nil), // 16: GetSupplierInfoForOrderResponse
-	(*RegisterSupplierResponse)(nil),        // 17: RegisterSupplierResponse
+	(*GetSuppliersRequest)(nil),             // 9: GetSuppliersRequest
+	(*GetCategoriesResponse)(nil),           // 10: GetCategoriesResponse
+	(*GetProductsResponse)(nil),             // 11: GetProductsResponse
+	(*GetProductDetailResponse)(nil),        // 12: GetProductDetailResponse
+	(*GetProductReviewsResponse)(nil),       // 13: GetProductReviewsResponse
+	(*CheckAvailableProductResponse)(nil),   // 14: CheckAvailableProductResponse
+	(*GetProductInfoCartResponse)(nil),      // 15: GetProductInfoCartResponse
+	(*GetProdInfoForPaymentResponse)(nil),   // 16: GetProdInfoForPaymentResponse
+	(*GetSupplierInfoForOrderResponse)(nil), // 17: GetSupplierInfoForOrderResponse
+	(*RegisterSupplierResponse)(nil),        // 18: RegisterSupplierResponse
+	(*GetSuppliersResponse)(nil),            // 19: GetSuppliersResponse
 }
 var file_main_proto_depIdxs = []int32{
 	0,  // 0: PartnerService.GetCategories:input_type -> GetCategoriesRequest
@@ -111,17 +116,19 @@ var file_main_proto_depIdxs = []int32{
 	6,  // 6: PartnerService.GetProdInfoForPayment:input_type -> GetProdInfoForPaymentRequest
 	7,  // 7: PartnerService.GetSupplierInfoForMyOrders:input_type -> GetSupplierInfoForOrderRequest
 	8,  // 8: PartnerService.RegisterSupplier:input_type -> RegisterSupplierRequest
-	9,  // 9: PartnerService.GetCategories:output_type -> GetCategoriesResponse
-	10, // 10: PartnerService.GetProducts:output_type -> GetProductsResponse
-	11, // 11: PartnerService.GetProductByID:output_type -> GetProductDetailResponse
-	12, // 12: PartnerService.GetProductReviewsByID:output_type -> GetProductReviewsResponse
-	13, // 13: PartnerService.CheckAvailableProduct:output_type -> CheckAvailableProductResponse
-	14, // 14: PartnerService.GetProductInfoCart:output_type -> GetProductInfoCartResponse
-	15, // 15: PartnerService.GetProdInfoForPayment:output_type -> GetProdInfoForPaymentResponse
-	16, // 16: PartnerService.GetSupplierInfoForMyOrders:output_type -> GetSupplierInfoForOrderResponse
-	17, // 17: PartnerService.RegisterSupplier:output_type -> RegisterSupplierResponse
-	9,  // [9:18] is the sub-list for method output_type
-	0,  // [0:9] is the sub-list for method input_type
+	9,  // 9: PartnerService.GetSuppliers:input_type -> GetSuppliersRequest
+	10, // 10: PartnerService.GetCategories:output_type -> GetCategoriesResponse
+	11, // 11: PartnerService.GetProducts:output_type -> GetProductsResponse
+	12, // 12: PartnerService.GetProductByID:output_type -> GetProductDetailResponse
+	13, // 13: PartnerService.GetProductReviewsByID:output_type -> GetProductReviewsResponse
+	14, // 14: PartnerService.CheckAvailableProduct:output_type -> CheckAvailableProductResponse
+	15, // 15: PartnerService.GetProductInfoCart:output_type -> GetProductInfoCartResponse
+	16, // 16: PartnerService.GetProdInfoForPayment:output_type -> GetProdInfoForPaymentResponse
+	17, // 17: PartnerService.GetSupplierInfoForMyOrders:output_type -> GetSupplierInfoForOrderResponse
+	18, // 18: PartnerService.RegisterSupplier:output_type -> RegisterSupplierResponse
+	19, // 19: PartnerService.GetSuppliers:output_type -> GetSuppliersResponse
+	10, // [10:20] is the sub-list for method output_type
+	0,  // [0:10] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

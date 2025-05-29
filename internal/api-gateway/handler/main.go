@@ -121,6 +121,9 @@ type IPaymentHandler interface {
 
 type ISupplierHandler interface {
 	RegisterSupplier(ctx *gin.Context)
+	GetSuppliers(ctx *gin.Context)
+	GetSupplierByID(ctx *gin.Context)
+	UpdateSupplier(ctx *gin.Context)
 }
 
 type IS3Handler interface {

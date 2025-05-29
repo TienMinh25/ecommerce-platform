@@ -21,4 +21,5 @@ type IProductService interface {
 type ISupplierService interface {
 	GetSupplierInfoForOrders(ctx context.Context, supplierIDs []int64) (*partner_proto_gen.GetSupplierInfoForOrderResponse, error)
 	RegisterSupplier(ctx context.Context, data *partner_proto_gen.RegisterSupplierRequest) error
+	GetSuppliers(ctx context.Context, data *partner_proto_gen.GetSuppliersRequest) (*partner_proto_gen.GetSuppliersResponse, error)
 }

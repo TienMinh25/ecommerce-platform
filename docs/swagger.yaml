@@ -929,6 +929,36 @@ definitions:
       thumbnail:
         type: string
     type: object
+  api_gateway_dto.GetSuppliersResponse:
+    properties:
+      business_address:
+        type: string
+      company_name:
+        type: string
+      contact_phone:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      logo_thumbnail_url:
+        type: string
+      status:
+        $ref: '#/definitions/common.SupplierProfileStatus'
+      tax_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  api_gateway_dto.GetSuppliersResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetSuppliersResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
+    type: object
   api_gateway_dto.GetUserAddressResponse:
     properties:
       address_type:
@@ -1750,6 +1780,16 @@ definitions:
     - Cancelled
     - PaymentFailed
     - Refunded
+  common.SupplierProfileStatus:
+    enum:
+    - pending
+    - active
+    - suspended
+    type: string
+    x-enum-varnames:
+    - SupplierProfileStatusPending
+    - SupplierProfileStatusActive
+    - SupplierProfileStatusSuspended
 host: server.local:3000
 info:
   contact: {}
@@ -3418,6 +3458,64 @@ paths:
       summary: lấy presigned url để upload ảnh
       tags:
       - s3
+  /suppliers:
+    get:
+      consumes:
+      - application/json
+      description: get suppliers by admin
+      parameters:
+      - in: query
+        name: company_name
+        type: string
+      - in: query
+        name: contact_phone
+        type: string
+      - in: query
+        minimum: 1
+        name: limit
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - enum:
+        - pending
+        - active
+        - suspended
+        in: query
+        name: status
+        type: string
+        x-enum-varnames:
+        - SupplierProfileStatusPending
+        - SupplierProfileStatusActive
+        - SupplierProfileStatusSuspended
+      - in: query
+        name: tax_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetSuppliersResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: get suppliers by admin
+      tags:
+      - suppliers
   /suppliers/register:
     post:
       consumes:

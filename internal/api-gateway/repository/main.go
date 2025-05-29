@@ -136,6 +136,7 @@ type IAddressRepository interface {
 	CreateNewAddress(ctx context.Context, data *api_gateway_dto.CreateAddressRequest, userID int) error
 	UpdateAddressByID(ctx context.Context, data *api_gateway_dto.UpdateAddressRequest, userID, addressID int) error
 	DeleteAddressByID(ctx context.Context, addressID int) error
+	GetBusinessAddressForSupplier(ctx context.Context, businessIdsMap map[int64]bool) (map[int64]string, error)
 }
 
 type IAdministrativeDivisionRepository interface {

@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/Masterminds/squirrel"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
@@ -168,4 +169,83 @@ func (s *supplierProfileRepository) RegisterSupplier(ctx context.Context, data *
 
 		return nil
 	})
+}
+
+func (s *supplierProfileRepository) GetSuppliers(ctx context.Context, data *partner_proto_gen.GetSuppliersRequest) ([]models.Supplier, int64, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetSuppliers"))
+	defer span.End()
+
+	pgBuilder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+
+	countQueryBuilder := pgBuilder.Select("count(*)").
+		From("supplier_profiles")
+
+	selectQueryBuilder := pgBuilder.Select("id", "company_name", "contact_phone", "logo_url", "business_address_id",
+		"tax_id", "status", "created_at", "updated_at").
+		From("supplier_profiles")
+
+	if data.Status != nil {
+		countQueryBuilder = countQueryBuilder.Where(squirrel.Eq{"status": data.Status})
+		selectQueryBuilder = selectQueryBuilder.Where(squirrel.Eq{"status": data.Status})
+	}
+
+	if data.CompanyName != nil {
+		countQueryBuilder = countQueryBuilder.Where(squirrel.ILike{"company_name": fmt.Sprintf("%%%s%%", *data.CompanyName)})
+		selectQueryBuilder = selectQueryBuilder.Where(squirrel.ILike{"company_name": fmt.Sprintf("%%%s%%", *data.CompanyName)})
+	}
+
+	if data.TaxId != nil {
+		countQueryBuilder = countQueryBuilder.Where(squirrel.ILike{"tax_id": fmt.Sprintf("%%%s%%", *data.TaxId)})
+		selectQueryBuilder = selectQueryBuilder.Where(squirrel.ILike{"tax_id": fmt.Sprintf("%%%s%%", *data.TaxId)})
+	}
+
+	if data.ContactPhone != nil {
+		countQueryBuilder = countQueryBuilder.Where(squirrel.ILike{"contact_phone": fmt.Sprintf("%%%s%%", *data.ContactPhone)})
+		selectQueryBuilder = selectQueryBuilder.Where(squirrel.ILike{"contact_phone": fmt.Sprintf("%%%s%%", *data.ContactPhone)})
+	}
+
+	countQuery, args, err := countQueryBuilder.ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	var totalItems int64
+
+	if err = s.db.QueryRow(ctx, countQuery, args...).Scan(&totalItems); err != nil {
+		span.RecordError(err)
+		return nil, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	res := make([]models.Supplier, 0)
+
+	limit := uint64(data.Limit)
+	offset := uint64(data.Limit * (data.Page - 1))
+
+	selectQuery, args, err := selectQueryBuilder.Limit(limit).
+		Offset(offset).ToSql()
+
+	rows, err := s.db.Query(ctx, selectQuery, args...)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, 0, status.Error(codes.Internal, err.Error())
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var supplier models.Supplier
+
+		if err = rows.Scan(&supplier.ID, &supplier.CompanyName, &supplier.ContactPhone, &supplier.LogoURL,
+			&supplier.BusinessAddressID, &supplier.TaxID, &supplier.Status, &supplier.CreatedAt, &supplier.UpdatedAt); err != nil {
+			span.RecordError(err)
+			return nil, 0, status.Error(codes.Internal, err.Error())
+		}
+
+		res = append(res, supplier)
+	}
+
+	return res, totalItems, nil
 }

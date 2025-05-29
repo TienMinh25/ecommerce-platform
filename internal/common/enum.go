@@ -119,6 +119,30 @@ const (
 	SupplierProfileStatusSuspended SupplierProfileStatus = "suspended"
 )
 
+func (s SupplierProfileStatus) IsValid() bool {
+	validArray := []SupplierProfileStatus{
+		SupplierProfileStatusPending,
+		SupplierProfileStatusActive,
+		SupplierProfileStatusSuspended,
+	}
+
+	if slices.Contains(validArray, s) {
+		return true
+	}
+
+	return false
+}
+
+func (s SupplierProfileStatus) ErrorMessage() string {
+	validArray := []string{
+		string(SupplierProfileStatusPending),
+		string(SupplierProfileStatusActive),
+		string(SupplierProfileStatusSuspended),
+	}
+
+	return fmt.Sprintf("Supplier profile status must be in the one of: [%v]", strings.Join(validArray, ", "))
+}
+
 type SupplierDocumentStatus string
 
 const (

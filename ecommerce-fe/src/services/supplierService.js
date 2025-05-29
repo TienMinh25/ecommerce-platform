@@ -148,6 +148,49 @@ const supplierService = {
         } catch (error) {
             return { success: false, error: error };
         }
+    },
+
+    /**
+     * Get suppliers with filters and pagination
+     * @param {Object} params - Query parameters
+     * @returns {Promise} Promise object with suppliers data
+     */
+    getSuppliers: async (params) => {
+        try {
+            const response = await api.get('/suppliers', { params });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    /**
+     * Get supplier by ID
+     * @param {string} supplierId - Supplier ID
+     * @returns {Promise} Promise object with supplier details
+     */
+    getSupplierById: async (supplierId) => {
+        try {
+            const response = await api.get(`/suppliers/${supplierId}`);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    /**
+     * Update supplier status
+     * @param {string} supplierId - Supplier ID
+     * @param {Object} updateData - Update data
+     * @returns {Promise} Promise object with update result
+     */
+    updateSupplier: async (supplierId, updateData) => {
+        try {
+            const response = await api.patch(`/suppliers/${supplierId}`, updateData);
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 };
 

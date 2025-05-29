@@ -23,58 +23,7 @@ import {
 } from '@chakra-ui/react';
 import {FiCalendar, FiChevronDown, FiFilter, FiX} from 'react-icons/fi';
 import roleService from "../../../../services/roleService.js";
-
-// Modern Switch Toggle Component
-const ModernToggleSwitch = ({ isChecked, onChange, label, name, value }) => {
-    return (
-        <Flex
-            align="center"
-            justify="space-between"
-            bg={isChecked ? "blue.50" : "gray.100"}
-            borderRadius="full"
-            p={1}
-            px={3}
-            height="36px"
-            cursor="pointer"
-            onClick={() => onChange(name, value)}
-            flex="1"
-            transition="background-color 0.2s ease"
-        >
-            <Text
-                fontSize="sm"
-                fontWeight="medium"
-                color={isChecked ? "blue.600" : "gray.500"}
-                transition="color 0.2s ease"
-            >
-                {label}
-            </Text>
-            <Switch
-                isChecked={isChecked}
-                size="md"
-                colorScheme="blue"
-                onChange={() => onChange(name, value)}
-            />
-        </Flex>
-    );
-};
-
-// Group of toggle switches for binary options
-const ModernToggleGroup = ({ options, value, onChange, name }) => {
-    return (
-        <HStack spacing={4} width="100%">
-            {options.map((option) => (
-                <ModernToggleSwitch
-                    key={option.value}
-                    isChecked={value === option.value}
-                    onChange={onChange}
-                    label={option.label}
-                    name={name}
-                    value={option.value}
-                />
-            ))}
-        </HStack>
-    );
-};
+import {ModernToggleGroup} from "../../../toggle/main.jsx";
 
 // Improved Dropdown Component with correct positioning and better styling
 const CustomDropdown = ({options, value, onChange, name, placeholder}) => {

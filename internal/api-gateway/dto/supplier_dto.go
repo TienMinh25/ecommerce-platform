@@ -1,5 +1,10 @@
 package api_gateway_dto
 
+import (
+	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"time"
+)
+
 type RegisterSupplierRequest struct {
 	CompanyName       string           `json:"company_name" binding:"required"`
 	ContactPhone      string           `json:"contact_phone" binding:"required"`
@@ -18,3 +23,24 @@ type SupplierDocument struct {
 }
 
 type RegisterSupplierResponse struct{}
+
+type GetSuppliersRequest struct {
+	Limit        int64                        `form:"limit,default=10" binding:"omitempty,gte=1"`
+	Page         int64                        `form:"page,default=1" binding:"omitempty,gte=1"`
+	Status       common.SupplierProfileStatus `form:"status" binding:"omitempty,enum"`
+	TaxID        *string                      `form:"tax_id" binding:"omitempty"`
+	CompanyName  *string                      `form:"company_name" binding:"omitempty"`
+	ContactPhone *string                      `form:"contact_phone" binding:"omitempty"`
+}
+
+type GetSuppliersResponse struct {
+	ID               int64                        `json:"id"`
+	CompanyName      string                       `json:"company_name"`
+	ContactPhone     string                       `json:"contact_phone"`
+	LogoThumbnailURL string                       `json:"logo_thumbnail_url"`
+	BusinessAddress  string                       `json:"business_address"`
+	TaxID            string                       `json:"tax_id"`
+	Status           common.SupplierProfileStatus `json:"status"`
+	CreatedAt        time.Time                    `json:"created_at"`
+	UpdatedAt        time.Time                    `json:"updated_at"`
+}

@@ -34,6 +34,8 @@ import CouponManagementComponent from "../components/dashboard/admin/coupon-mana
 import CheckoutPage from "../pages/Checkout/CheckoutPage.jsx";
 import SupplierRegistration from "../pages/SupplierRegistration.jsx";
 import DelivererRegistration from "../pages/DelivererRegistration.jsx";
+import SupplierManagementComponent
+    from "../components/dashboard/admin/onboard-supplier-management/SupplierManagementComponent.jsx";
 
 const AppRoutes = () => {
     return (
@@ -84,8 +86,10 @@ const AppRoutes = () => {
                     <Route path='modules' element={<ModuleManagementComponent />} />
                     <Route path='address-types' element={<AddressTypesManagementComponent />} />
                     <Route path='coupons' element={<CouponManagementComponent />} />
+
+                    {/* Onboarding management */}
+                    <Route path='onboarding/suppliers' element={<SupplierManagementComponent />} />
                     {/*
-                      <Route path='onboarding/suppliers' element={<DashboardComponent />} />
                       <Route path='onboarding/deliverers' element={<DashboardComponent />} /> */}
                 </Route>
             </Route>

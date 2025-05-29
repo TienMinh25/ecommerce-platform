@@ -27,4 +27,6 @@ service PartnerService {
   rpc GetSupplierInfoForMyOrders(GetSupplierInfoForOrderRequest) returns (GetSupplierInfoForOrderResponse);
 
   rpc RegisterSupplier(RegisterSupplierRequest) returns (RegisterSupplierResponse);
+
+  rpc GetSuppliers(GetSuppliersRequest) returns (GetSuppliersResponse);
 }
