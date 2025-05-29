@@ -128,3 +128,58 @@ func (s *supplierService) GetSuppliers(ctx context.Context, data *api_gateway_dt
 
 	return result, int(resPartner.Metadata.TotalItems), int(resPartner.Metadata.TotalPages), resPartner.Metadata.HasNext, resPartner.Metadata.HasPrevious, nil
 }
+
+func (s *supplierService) GetSupplierByID(ctx context.Context, supplierID int64) (*api_gateway_dto.GetSupplierByIDResponse, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetSupplierByID"))
+	defer span.End()
+
+	resPartner, err := s.partnerClient.GetSupplierDetail(ctx, &partner_proto_gen.GetSupplierDetailRequest{
+		SupplierId: supplierID,
+	})
+
+	if err != nil {
+		return nil, utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	resAddress, err := s.addressRepository.GetBusinessAddressForSupplier(ctx, map[int64]bool{
+		resPartner.BusinessAddressId: true,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	resSupplierDocuments := make([]api_gateway_dto.GetSupplierDocument, 0)
+
+	for _, document := range resPartner.Documents {
+		resSupplierDocuments = append(resSupplierDocuments, api_gateway_dto.GetSupplierDocument{
+			ID:                 document.Id,
+			VerificationStatus: common.SupplierDocumentStatus(document.VerificationStatus),
+			AdminNote:          document.AdminNote,
+			CreatedAt:          document.CreatedAt.AsTime(),
+			UpdatedAt:          document.UpdatedAt.AsTime(),
+			Document: api_gateway_dto.SupplierDocument{
+				BusinessLicense: document.Document.BusinessLicense,
+				TaxCertificate:  document.Document.TaxCertificate,
+				IDCardFront:     document.Document.IdCardFront,
+				IDCardBack:      document.Document.IdCardBack,
+			},
+		})
+	}
+
+	return &api_gateway_dto.GetSupplierByIDResponse{
+		ID:               resPartner.Id,
+		CompanyName:      resPartner.CompanyName,
+		ContactPhone:     resPartner.ContactPhone,
+		LogoThumbnailURL: resPartner.LogoThumbnailUrl,
+		BusinessAddress:  resAddress[resPartner.BusinessAddressId],
+		TaxID:            resPartner.TaxId,
+		Status:           common.SupplierProfileStatus(resPartner.Status),
+		CreatedAt:        resPartner.CreatedAt.AsTime(),
+		UpdatedAt:        resPartner.UpdatedAt.AsTime(),
+		Documents:        resSupplierDocuments,
+	}, nil
+}

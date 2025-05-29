@@ -918,6 +918,53 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
     type: object
+  api_gateway_dto.GetSupplierByIDResponse:
+    properties:
+      business_address:
+        type: string
+      company_name:
+        type: string
+      contact_phone:
+        type: string
+      created_at:
+        type: string
+      documents:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetSupplierDocument'
+        type: array
+      id:
+        type: integer
+      logo_thumbnail_url:
+        type: string
+      status:
+        $ref: '#/definitions/common.SupplierProfileStatus'
+      tax_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  api_gateway_dto.GetSupplierByIDResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.GetSupplierByIDResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.GetSupplierDocument:
+    properties:
+      admin_note:
+        type: string
+      created_at:
+        type: string
+      document:
+        $ref: '#/definitions/api_gateway_dto.SupplierDocument'
+      id:
+        type: string
+      updated_at:
+        type: string
+      verification_status:
+        $ref: '#/definitions/common.SupplierDocumentStatus'
+    type: object
   api_gateway_dto.GetSupplierProductResponse:
     properties:
       company_name:
@@ -1780,6 +1827,16 @@ definitions:
     - Cancelled
     - PaymentFailed
     - Refunded
+  common.SupplierDocumentStatus:
+    enum:
+    - pending
+    - approved
+    - rejected
+    type: string
+    x-enum-varnames:
+    - SupplierDocumentStatusPending
+    - SupplierDocumentStatusApproved
+    - SupplierDocumentStatusRejected
   common.SupplierProfileStatus:
     enum:
     - pending
@@ -3514,6 +3571,40 @@ paths:
       security:
       - BearerAuth: []
       summary: get suppliers by admin
+      tags:
+      - suppliers
+  /suppliers/{id}:
+    get:
+      consumes:
+      - application/json
+      description: get supplier detail
+      parameters:
+      - in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetSupplierByIDResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: get supplier detail
       tags:
       - suppliers
   /suppliers/register:

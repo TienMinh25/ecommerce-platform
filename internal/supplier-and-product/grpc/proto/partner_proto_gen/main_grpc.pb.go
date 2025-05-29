@@ -29,6 +29,7 @@ const (
 	PartnerService_GetSupplierInfoForMyOrders_FullMethodName = "/PartnerService/GetSupplierInfoForMyOrders"
 	PartnerService_RegisterSupplier_FullMethodName           = "/PartnerService/RegisterSupplier"
 	PartnerService_GetSuppliers_FullMethodName               = "/PartnerService/GetSuppliers"
+	PartnerService_GetSupplierDetail_FullMethodName          = "/PartnerService/GetSupplierDetail"
 )
 
 // PartnerServiceClient is the client API for PartnerService service.
@@ -45,6 +46,7 @@ type PartnerServiceClient interface {
 	GetSupplierInfoForMyOrders(ctx context.Context, in *GetSupplierInfoForOrderRequest, opts ...grpc.CallOption) (*GetSupplierInfoForOrderResponse, error)
 	RegisterSupplier(ctx context.Context, in *RegisterSupplierRequest, opts ...grpc.CallOption) (*RegisterSupplierResponse, error)
 	GetSuppliers(ctx context.Context, in *GetSuppliersRequest, opts ...grpc.CallOption) (*GetSuppliersResponse, error)
+	GetSupplierDetail(ctx context.Context, in *GetSupplierDetailRequest, opts ...grpc.CallOption) (*GetSupplierDetailResponse, error)
 }
 
 type partnerServiceClient struct {
@@ -155,6 +157,16 @@ func (c *partnerServiceClient) GetSuppliers(ctx context.Context, in *GetSupplier
 	return out, nil
 }
 
+func (c *partnerServiceClient) GetSupplierDetail(ctx context.Context, in *GetSupplierDetailRequest, opts ...grpc.CallOption) (*GetSupplierDetailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSupplierDetailResponse)
+	err := c.cc.Invoke(ctx, PartnerService_GetSupplierDetail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PartnerServiceServer is the server API for PartnerService service.
 // All implementations must embed UnimplementedPartnerServiceServer
 // for forward compatibility.
@@ -169,6 +181,7 @@ type PartnerServiceServer interface {
 	GetSupplierInfoForMyOrders(context.Context, *GetSupplierInfoForOrderRequest) (*GetSupplierInfoForOrderResponse, error)
 	RegisterSupplier(context.Context, *RegisterSupplierRequest) (*RegisterSupplierResponse, error)
 	GetSuppliers(context.Context, *GetSuppliersRequest) (*GetSuppliersResponse, error)
+	GetSupplierDetail(context.Context, *GetSupplierDetailRequest) (*GetSupplierDetailResponse, error)
 	mustEmbedUnimplementedPartnerServiceServer()
 }
 
@@ -208,6 +221,9 @@ func (UnimplementedPartnerServiceServer) RegisterSupplier(context.Context, *Regi
 }
 func (UnimplementedPartnerServiceServer) GetSuppliers(context.Context, *GetSuppliersRequest) (*GetSuppliersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSuppliers not implemented")
+}
+func (UnimplementedPartnerServiceServer) GetSupplierDetail(context.Context, *GetSupplierDetailRequest) (*GetSupplierDetailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupplierDetail not implemented")
 }
 func (UnimplementedPartnerServiceServer) mustEmbedUnimplementedPartnerServiceServer() {}
 func (UnimplementedPartnerServiceServer) testEmbeddedByValue()                        {}
@@ -410,6 +426,24 @@ func _PartnerService_GetSuppliers_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PartnerService_GetSupplierDetail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupplierDetailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).GetSupplierDetail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_GetSupplierDetail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).GetSupplierDetail(ctx, req.(*GetSupplierDetailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PartnerService_ServiceDesc is the grpc.ServiceDesc for PartnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -456,6 +490,10 @@ var PartnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSuppliers",
 			Handler:    _PartnerService_GetSuppliers_Handler,
+		},
+		{
+			MethodName: "GetSupplierDetail",
+			Handler:    _PartnerService_GetSupplierDetail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

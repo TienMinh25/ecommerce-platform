@@ -106,11 +106,45 @@ func (h *supplierHandler) GetSuppliers(ctx *gin.Context) {
 	utils.PaginatedResponse(ctx, res, int(data.Page), int(data.Limit), totalPages, totalItems, hasNext, hasPrevious)
 }
 
+// GetSupplierByID godoc
+//
+//	@Summary		get supplier detail
+//	@Description	get supplier detail
+//	@Tags			suppliers
+//	@Accept			json
+//
+//	@Security		BearerAuth
+//	@Param			data	path	api_gateway_dto.GetSupplierByIDRequest	true	"data"
+//
+//	@Produce		json
+//	@Success		200	{object}	api_gateway_dto.GetSupplierByIDResponseDocs
+//	@Failure		401	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		400	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500	{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/suppliers/{id} [get]
 func (h *supplierHandler) GetSupplierByID(ctx *gin.Context) {
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)
-	_, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetSupplierByID"))
+	ct, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetSupplierByID"))
 	defer span.End()
+
+	var pathData api_gateway_dto.GetSupplierByIDRequest
+
+	if err := ctx.ShouldBindUri(&pathData); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	res, err := h.service.GetSupplierByID(ct, pathData.ID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, *res)
 }
 
 func (h *supplierHandler) UpdateSupplier(ctx *gin.Context) {

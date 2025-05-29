@@ -101,3 +101,4 @@ type UpdateOrderIPNMomoResponseDocs = ResponseSuccessDocs[UpdateOrderIPNMomoResp
 type RegisterSupplierResponseDocs = ResponseSuccessDocs[RegisterSupplierResponse]
 type GetPresignedURLResponseDocs = ResponseSuccessDocs[GetPresignedURLResponse]
 type GetSuppliersResponseDocs = ResponseSuccessPaginationDocs[[]GetSuppliersResponse]
+type GetSupplierByIDResponseDocs = ResponseSuccessDocs[GetSupplierByIDResponse]

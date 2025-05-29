@@ -249,3 +249,50 @@ func (s *supplierProfileRepository) GetSuppliers(ctx context.Context, data *part
 
 	return res, totalItems, nil
 }
+
+func (s *supplierProfileRepository) GetSupplierDetail(ctx context.Context, supplierID int64) (*models.Supplier, []models.SupplierDocument, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetSupplierDetail"))
+	defer span.End()
+
+	pgBuilder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+
+	selectQuery, args, err := pgBuilder.Select("sp.id", "sp.company_name", "sp.contact_phone", "sp.logo_url", "sp.business_address_id",
+		"sp.tax_id", "sp.status", "sp.created_at", "sp.updated_at", "sd.id", "sd.verification_status", "sd.admin_note",
+		"sd.created_at", "sd.updated_at", "sd.documents").
+		From("supplier_profiles sp").
+		InnerJoin("supplier_documents sd on sp.id = sd.supplier_id").
+		Where(squirrel.Eq{"sp.id": supplierID}).
+		ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, nil, status.Error(codes.Internal, err.Error())
+	}
+
+	rows, err := s.db.Query(ctx, selectQuery, args...)
+
+	if err != nil {
+		span.RecordError(err)
+		return nil, nil, status.Error(codes.Internal, err.Error())
+	}
+
+	defer rows.Close()
+
+	var supplier models.Supplier
+	supplierDocuments := make([]models.SupplierDocument, 0)
+
+	for rows.Next() {
+		var supplierDocument models.SupplierDocument
+
+		if err = rows.Scan(&supplier.ID, &supplier.CompanyName, &supplier.ContactPhone, &supplier.LogoURL, &supplier.BusinessAddressID,
+			&supplier.TaxID, &supplier.Status, &supplier.CreatedAt, &supplier.UpdatedAt, &supplierDocument.ID, &supplierDocument.VerificationStatus,
+			&supplierDocument.AdminNote, &supplierDocument.CreatedAt, &supplierDocument.UpdatedAt, &supplierDocument.Documents); err != nil {
+			span.RecordError(err)
+			return nil, nil, status.Error(codes.Internal, err.Error())
+		}
+
+		supplierDocuments = append(supplierDocuments, supplierDocument)
+	}
+
+	return &supplier, supplierDocuments, nil
+}

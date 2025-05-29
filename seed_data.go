@@ -2212,12 +2212,25 @@ func seedSupplierProfiles(ctx context.Context, apiDb, partnerDb *pgxpool.Pool, s
 
 		supplierIDs = append(supplierIDs, supplierID)
 
-		// Tạo supplier document
+		// Tạo supplier document với JSON documents
+		documentsJSON := map[string]string{
+			"id_card_front":    "https://images.unsplash.com/photo-1633332755192-727a05c4013d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
+			"id_card_back":     "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+			"business_license": "https://images.unsplash.com/photo-1554224155-6726b3ff858f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"tax_certificate":  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+		}
+
+		documentsBytes, err := json.Marshal(documentsJSON)
+		if err != nil {
+			log.Printf("Error marshaling documents JSON: %v", err)
+			continue
+		}
+
 		_, err = partnerDb.Exec(ctx, `
-			INSERT INTO supplier_documents (supplier_id, document_url, verification_status, admin_note)
-			VALUES ($1, $2, 'approved', 'Đã xác thực hồ sơ')
+			INSERT INTO supplier_documents (supplier_id, documents, verification_status, admin_note)
+			VALUES ($1, $2, 'approved', 'Đã xác thực hồ sơ nhà cung cấp - Tài liệu đầy đủ và hợp lệ')
 			ON CONFLICT DO NOTHING;
-		`, supplierID, "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80")
+		`, supplierID, documentsBytes)
 
 		if err != nil {
 			log.Printf("Error inserting supplier document: %v", err)

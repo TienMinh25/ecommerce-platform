@@ -2754,6 +2754,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/suppliers/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "get supplier detail",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "get supplier detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetSupplierByIDResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "security": [
@@ -5514,6 +5568,78 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.GetSupplierByIDResponse": {
+            "type": "object",
+            "properties": {
+                "business_address": {
+                    "type": "string"
+                },
+                "company_name": {
+                    "type": "string"
+                },
+                "contact_phone": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "documents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetSupplierDocument"
+                    }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "logo_thumbnail_url": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/common.SupplierProfileStatus"
+                },
+                "tax_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "api_gateway_dto.GetSupplierByIDResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.GetSupplierByIDResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.GetSupplierDocument": {
+            "type": "object",
+            "properties": {
+                "admin_note": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "document": {
+                    "$ref": "#/definitions/api_gateway_dto.SupplierDocument"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "verification_status": {
+                    "$ref": "#/definitions/common.SupplierDocumentStatus"
+                }
+            }
+        },
         "api_gateway_dto.GetSupplierProductResponse": {
             "type": "object",
             "properties": {
@@ -6798,6 +6924,19 @@ const docTemplate = `{
                 "Cancelled",
                 "PaymentFailed",
                 "Refunded"
+            ]
+        },
+        "common.SupplierDocumentStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "approved",
+                "rejected"
+            ],
+            "x-enum-varnames": [
+                "SupplierDocumentStatusPending",
+                "SupplierDocumentStatusApproved",
+                "SupplierDocumentStatusRejected"
             ]
         },
         "common.SupplierProfileStatus": {

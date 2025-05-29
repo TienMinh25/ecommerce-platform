@@ -44,3 +44,36 @@ type GetSuppliersResponse struct {
 	CreatedAt        time.Time                    `json:"created_at"`
 	UpdatedAt        time.Time                    `json:"updated_at"`
 }
+
+type GetSupplierByIDRequest struct {
+	ID int64 `uri:"id" binding:"required"`
+}
+
+type GetSupplierByIDResponse struct {
+	ID               int64                        `json:"id"`
+	CompanyName      string                       `json:"company_name"`
+	ContactPhone     string                       `json:"contact_phone"`
+	LogoThumbnailURL string                       `json:"logo_thumbnail_url"`
+	BusinessAddress  string                       `json:"business_address"`
+	TaxID            string                       `json:"tax_id"`
+	Status           common.SupplierProfileStatus `json:"status"`
+	CreatedAt        time.Time                    `json:"created_at"`
+	UpdatedAt        time.Time                    `json:"updated_at"`
+	Documents        []GetSupplierDocument        `json:"documents"`
+}
+
+type GetSupplierDocument struct {
+	ID                 string                        `json:"id"`
+	VerificationStatus common.SupplierDocumentStatus `json:"verification_status"`
+	AdminNote          *string                       `json:"admin_note"`
+	CreatedAt          time.Time                     `json:"created_at"`
+	UpdatedAt          time.Time                     `json:"updated_at"`
+	Document           SupplierDocument              `json:"document"`
+}
+
+type Document struct {
+	BusinessLicense string `json:"business_license"`
+	TaxCertificate  string `json:"tax_certificate"`
+	IDCardFront     string `json:"id_card_front"`
+	IDCardBack      string `json:"id_card_back"`
+}

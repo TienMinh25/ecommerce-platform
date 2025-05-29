@@ -29,3 +29,16 @@ func (p *PartnerHandler) GetSuppliers(ctx context.Context, data *partner_proto_g
 
 	return res, nil
 }
+
+func (p *PartnerHandler) GetSupplierDetail(ctx context.Context, data *partner_proto_gen.GetSupplierDetailRequest) (*partner_proto_gen.GetSupplierDetailResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetSupplierDetail"))
+	defer span.End()
+
+	res, err := p.supplierService.GetSupplierDetail(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

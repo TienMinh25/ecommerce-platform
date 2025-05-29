@@ -41,6 +41,7 @@ import {
 import supplierService from '../../../../services/supplierService.js';
 import SupplierFilterDropdown from './SupplierFilterDropdown.jsx';
 import SupplierSearchComponent from './SupplierSearchComponent.jsx';
+import SupplierDetailModal from './SupplierDetailModal.jsx';
 
 const SupplierManagementComponent = () => {
     // Theme colors
@@ -68,6 +69,10 @@ const SupplierManagementComponent = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [isError, setIsError] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
+
+    // Detail modal state
+    const [selectedSupplierId, setSelectedSupplierId] = useState(null);
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
     // Pagination
     const [totalCount, setTotalCount] = useState(0);
@@ -178,19 +183,16 @@ const SupplierManagementComponent = () => {
     };
 
     const handleSupplierClick = (supplier) => {
-        // TODO: Navigate to supplier detail page or open detail modal
-        console.log('View supplier details:', supplier);
-        toast({
-            title: 'Xem chi tiết nhà cung cấp',
-            description: `Chi tiết cho ${supplier.company_name} sẽ được hiển thị`,
-            status: 'info',
-            duration: 3000,
-            isClosable: true,
-        });
+        setSelectedSupplierId(supplier.id);
+        setIsDetailModalOpen(true);
+    };
+
+    const handleCloseDetailModal = () => {
+        setIsDetailModalOpen(false);
+        setSelectedSupplierId(null);
     };
 
     const handleUpdateSupplierStatus = async (supplierId, currentStatus) => {
-        // TODO: Implement status update logic
         const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
 
         try {
@@ -655,6 +657,13 @@ const SupplierManagementComponent = () => {
                     </Flex>
                 </Box>
             </Box>
+
+            {/* Detail Modal */}
+            <SupplierDetailModal
+                isOpen={isDetailModalOpen}
+                onClose={handleCloseDetailModal}
+                supplierId={selectedSupplierId}
+            />
         </Container>
     );
 };

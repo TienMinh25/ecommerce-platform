@@ -101,3 +101,45 @@ func (s *supplierService) GetSuppliers(ctx context.Context, data *partner_proto_
 		},
 	}, nil
 }
+
+func (s *supplierService) GetSupplierDetail(ctx context.Context, data *partner_proto_gen.GetSupplierDetailRequest) (*partner_proto_gen.GetSupplierDetailResponse, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetSupplierDetail"))
+	defer span.End()
+
+	supplierInfo, supplierDocuments, err := s.supplierRepo.GetSupplierDetail(ctx, data.SupplierId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	resSupplierDocuments := make([]*partner_proto_gen.GetSupplierDetailDocument, 0)
+
+	for _, supplierDocument := range supplierDocuments {
+		resSupplierDocuments = append(resSupplierDocuments, &partner_proto_gen.GetSupplierDetailDocument{
+			Id:                 supplierDocument.ID,
+			VerificationStatus: string(supplierDocument.VerificationStatus),
+			AdminNote:          supplierDocument.AdminNote,
+			CreatedAt:          timestamppb.New(supplierDocument.CreatedAt),
+			UpdatedAt:          timestamppb.New(supplierDocument.UpdatedAt),
+			Document: &partner_proto_gen.DocumentDetail{
+				BusinessLicense: supplierDocument.Documents.BusinessLicense,
+				TaxCertificate:  supplierDocument.Documents.TaxCertificate,
+				IdCardFront:     supplierDocument.Documents.IdCardFront,
+				IdCardBack:      supplierDocument.Documents.IdCardBack,
+			},
+		})
+	}
+
+	return &partner_proto_gen.GetSupplierDetailResponse{
+		Id:                supplierInfo.ID,
+		CompanyName:       supplierInfo.CompanyName,
+		ContactPhone:      supplierInfo.ContactPhone,
+		LogoThumbnailUrl:  supplierInfo.LogoURL,
+		TaxId:             supplierInfo.TaxID,
+		BusinessAddressId: supplierInfo.BusinessAddressID,
+		Status:            supplierInfo.Status,
+		CreatedAt:         timestamppb.New(supplierInfo.CreatedAt),
+		UpdatedAt:         timestamppb.New(supplierInfo.UpdatedAt),
+		Documents:         resSupplierDocuments,
+	}, nil
+}
