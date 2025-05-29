@@ -42,3 +42,14 @@ func (p *PartnerHandler) GetSupplierDetail(ctx context.Context, data *partner_pr
 
 	return res, nil
 }
+
+func (p *PartnerHandler) UpdateSupplier(ctx context.Context, data *partner_proto_gen.UpdateSupplierRequest) (*partner_proto_gen.UpdateSupplierResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateSupplier"))
+	defer span.End()
+
+	if err := p.supplierService.UpdateSupplier(ctx, data); err != nil {
+		return nil, err
+	}
+
+	return &partner_proto_gen.UpdateSupplierResponse{}, nil
+}

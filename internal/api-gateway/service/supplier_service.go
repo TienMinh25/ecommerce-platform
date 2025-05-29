@@ -183,3 +183,34 @@ func (s *supplierService) GetSupplierByID(ctx context.Context, supplierID int64)
 		Documents:        resSupplierDocuments,
 	}, nil
 }
+
+func (s *supplierService) UpdateSupplier(ctx context.Context, data api_gateway_dto.UpdateSupplierRequest, supplierID int64) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateSupplier"))
+	defer span.End()
+
+	_, err := s.partnerClient.UpdateSupplier(ctx, &partner_proto_gen.UpdateSupplierRequest{
+		SupplierId: supplierID,
+		Status:     string(data.Status),
+	})
+
+	if err != nil {
+		st, _ := status.FromError(err)
+
+		switch st.Code() {
+		case codes.NotFound:
+		case codes.FailedPrecondition:
+			return utils.BusinessError{
+				Code:      http.StatusBadRequest,
+				ErrorCode: st.Code().String(),
+				Message:   st.Message(),
+			}
+		case codes.Internal:
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+	}
+
+	return nil
+}

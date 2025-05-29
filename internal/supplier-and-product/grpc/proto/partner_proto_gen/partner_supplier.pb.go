@@ -782,6 +782,94 @@ func (x *DocumentDetail) GetIdCardBack() string {
 	return ""
 }
 
+type UpdateSupplierRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SupplierId    int64                  `protobuf:"varint,1,opt,name=supplier_id,json=supplierId,proto3" json:"supplier_id,omitempty"`
+	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSupplierRequest) Reset() {
+	*x = UpdateSupplierRequest{}
+	mi := &file_partner_supplier_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSupplierRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSupplierRequest) ProtoMessage() {}
+
+func (x *UpdateSupplierRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_partner_supplier_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSupplierRequest.ProtoReflect.Descriptor instead.
+func (*UpdateSupplierRequest) Descriptor() ([]byte, []int) {
+	return file_partner_supplier_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *UpdateSupplierRequest) GetSupplierId() int64 {
+	if x != nil {
+		return x.SupplierId
+	}
+	return 0
+}
+
+func (x *UpdateSupplierRequest) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type UpdateSupplierResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateSupplierResponse) Reset() {
+	*x = UpdateSupplierResponse{}
+	mi := &file_partner_supplier_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateSupplierResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateSupplierResponse) ProtoMessage() {}
+
+func (x *UpdateSupplierResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_partner_supplier_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateSupplierResponse.ProtoReflect.Descriptor instead.
+func (*UpdateSupplierResponse) Descriptor() ([]byte, []int) {
+	return file_partner_supplier_proto_rawDescGZIP(), []int{11}
+}
+
 var File_partner_supplier_proto protoreflect.FileDescriptor
 
 var file_partner_supplier_proto_rawDesc = string([]byte{
@@ -932,9 +1020,16 @@ var file_partner_supplier_proto_rawDesc = string([]byte{
 	0x72, 0x6f, 0x6e, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x69, 0x64, 0x43, 0x61,
 	0x72, 0x64, 0x46, 0x72, 0x6f, 0x6e, 0x74, 0x12, 0x20, 0x0a, 0x0c, 0x69, 0x64, 0x5f, 0x63, 0x61,
 	0x72, 0x64, 0x5f, 0x62, 0x61, 0x63, 0x6b, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x69,
-	0x64, 0x43, 0x61, 0x72, 0x64, 0x42, 0x61, 0x63, 0x6b, 0x42, 0x15, 0x5a, 0x13, 0x2e, 0x2f, 0x70,
-	0x61, 0x72, 0x74, 0x6e, 0x65, 0x72, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x5f, 0x67, 0x65, 0x6e,
-	0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x64, 0x43, 0x61, 0x72, 0x64, 0x42, 0x61, 0x63, 0x6b, 0x22, 0x50, 0x0a, 0x15, 0x55, 0x70, 0x64,
+	0x61, 0x74, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x5f, 0x69,
+	0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
+	0x72, 0x49, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x02, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x18, 0x0a, 0x16, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x15, 0x5a, 0x13, 0x2e, 0x2f, 0x70, 0x61, 0x72, 0x74, 0x6e,
+	0x65, 0x72, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x5f, 0x67, 0x65, 0x6e, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 })
 
 var (
@@ -949,7 +1044,7 @@ func file_partner_supplier_proto_rawDescGZIP() []byte {
 	return file_partner_supplier_proto_rawDescData
 }
 
-var file_partner_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_partner_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_partner_supplier_proto_goTypes = []any{
 	(*RegisterSupplierRequest)(nil),   // 0: RegisterSupplierRequest
 	(*RegisterSupplierDocument)(nil),  // 1: RegisterSupplierDocument
@@ -961,20 +1056,22 @@ var file_partner_supplier_proto_goTypes = []any{
 	(*GetSupplierDetailResponse)(nil), // 7: GetSupplierDetailResponse
 	(*GetSupplierDetailDocument)(nil), // 8: GetSupplierDetailDocument
 	(*DocumentDetail)(nil),            // 9: DocumentDetail
-	(*PartnerMetadata)(nil),           // 10: PartnerMetadata
-	(*timestamppb.Timestamp)(nil),     // 11: google.protobuf.Timestamp
+	(*UpdateSupplierRequest)(nil),     // 10: UpdateSupplierRequest
+	(*UpdateSupplierResponse)(nil),    // 11: UpdateSupplierResponse
+	(*PartnerMetadata)(nil),           // 12: PartnerMetadata
+	(*timestamppb.Timestamp)(nil),     // 13: google.protobuf.Timestamp
 }
 var file_partner_supplier_proto_depIdxs = []int32{
 	1,  // 0: RegisterSupplierRequest.documents:type_name -> RegisterSupplierDocument
 	5,  // 1: GetSuppliersResponse.data:type_name -> SuppliersResponse
-	10, // 2: GetSuppliersResponse.metadata:type_name -> PartnerMetadata
-	11, // 3: SuppliersResponse.created_at:type_name -> google.protobuf.Timestamp
-	11, // 4: SuppliersResponse.updated_at:type_name -> google.protobuf.Timestamp
-	11, // 5: GetSupplierDetailResponse.created_at:type_name -> google.protobuf.Timestamp
-	11, // 6: GetSupplierDetailResponse.updated_at:type_name -> google.protobuf.Timestamp
+	12, // 2: GetSuppliersResponse.metadata:type_name -> PartnerMetadata
+	13, // 3: SuppliersResponse.created_at:type_name -> google.protobuf.Timestamp
+	13, // 4: SuppliersResponse.updated_at:type_name -> google.protobuf.Timestamp
+	13, // 5: GetSupplierDetailResponse.created_at:type_name -> google.protobuf.Timestamp
+	13, // 6: GetSupplierDetailResponse.updated_at:type_name -> google.protobuf.Timestamp
 	8,  // 7: GetSupplierDetailResponse.documents:type_name -> GetSupplierDetailDocument
-	11, // 8: GetSupplierDetailDocument.created_at:type_name -> google.protobuf.Timestamp
-	11, // 9: GetSupplierDetailDocument.updated_at:type_name -> google.protobuf.Timestamp
+	13, // 8: GetSupplierDetailDocument.created_at:type_name -> google.protobuf.Timestamp
+	13, // 9: GetSupplierDetailDocument.updated_at:type_name -> google.protobuf.Timestamp
 	9,  // 10: GetSupplierDetailDocument.document:type_name -> DocumentDetail
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
@@ -998,7 +1095,7 @@ func file_partner_supplier_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_partner_supplier_proto_rawDesc), len(file_partner_supplier_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

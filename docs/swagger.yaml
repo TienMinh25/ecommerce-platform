@@ -1698,6 +1698,20 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.UpdateSupplierRequest:
+    properties:
+      status:
+        $ref: '#/definitions/common.SupplierProfileStatus'
+    type: object
+  api_gateway_dto.UpdateSupplierResponse:
+    type: object
+  api_gateway_dto.UpdateSupplierResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateSupplierResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.UpdateUserByAdminRequest:
     properties:
       roles:
@@ -3605,6 +3619,45 @@ paths:
       security:
       - BearerAuth: []
       summary: get supplier detail
+      tags:
+      - suppliers
+    patch:
+      consumes:
+      - application/json
+      description: Quản trị viên cho phép supplier hoạt động hoặc không
+      parameters:
+      - description: Thông tin cần cập nhật
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateSupplierRequest'
+      - in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateSupplierResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: Quản trị viên cho phép supplier hoạt động hoặc không
       tags:
       - suppliers
   /suppliers/register:

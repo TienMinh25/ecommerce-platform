@@ -83,3 +83,10 @@ message DocumentDetail {
   string id_card_front = 3;
   string id_card_back = 4;
 }
+
+message UpdateSupplierRequest {
+  int64 supplier_id = 1;
+  string status = 2;
+}
+
+message UpdateSupplierResponse {}

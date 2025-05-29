@@ -147,9 +147,48 @@ func (h *supplierHandler) GetSupplierByID(ctx *gin.Context) {
 	utils.SuccessResponse(ctx, http.StatusOK, *res)
 }
 
+// UpdateSupplier admin cập nhật trạng thái supplier
+//
+//	@Summary		Quản trị viên cho phép supplier hoạt động hoặc không
+//	@Tags			suppliers
+//	@Description	Quản trị viên cho phép supplier hoạt động hoặc không
+//	@Accept			json
+//	@Produce		json
+//
+//	@Security		BearerAuth
+//	@Param			request	body		api_gateway_dto.UpdateSupplierRequest		true	"Thông tin cần cập nhật"
+//	@Param			uri		path		api_gateway_dto.UpdateSupplierURIRequest	true	"Thông tin cần cập nhật"
+//	@Success		200		{object}	api_gateway_dto.UpdateSupplierResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/suppliers/{id} [patch]
 func (h *supplierHandler) UpdateSupplier(ctx *gin.Context) {
 	cRaw, _ := ctx.Get("tracingContext")
 	c := cRaw.(context.Context)
-	_, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateSupplier"))
+	ct, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateSupplier"))
 	defer span.End()
+
+	var data api_gateway_dto.UpdateSupplierRequest
+	var uri api_gateway_dto.UpdateSupplierURIRequest
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := h.service.UpdateSupplier(ct, data, uri.SupplierID); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.UpdateSupplierResponse{})
 }

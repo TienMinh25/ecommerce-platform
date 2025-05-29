@@ -77,3 +77,13 @@ type Document struct {
 	IDCardFront     string `json:"id_card_front"`
 	IDCardBack      string `json:"id_card_back"`
 }
+
+type UpdateSupplierRequest struct {
+	Status common.SupplierProfileStatus `form:"status" binding:"omitempty,enum"`
+}
+
+type UpdateSupplierURIRequest struct {
+	SupplierID int64 `uri:"id" binding:"required"`
+}
+
+type UpdateSupplierResponse struct{}

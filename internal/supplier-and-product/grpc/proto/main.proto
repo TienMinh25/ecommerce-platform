@@ -31,4 +31,6 @@ service PartnerService {
   rpc GetSuppliers(GetSuppliersRequest) returns (GetSuppliersResponse);
 
   rpc GetSupplierDetail(GetSupplierDetailRequest) returns (GetSupplierDetailResponse);
+
+  rpc UpdateSupplier(UpdateSupplierRequest) returns (UpdateSupplierResponse);
 }

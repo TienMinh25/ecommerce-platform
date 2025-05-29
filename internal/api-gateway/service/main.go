@@ -143,6 +143,7 @@ type ISupplierService interface {
 	RegisterSupplier(ctx context.Context, data api_gateway_dto.RegisterSupplierRequest, userID int) error
 	GetSuppliers(ctx context.Context, data *api_gateway_dto.GetSuppliersRequest) ([]api_gateway_dto.GetSuppliersResponse, int, int, bool, bool, error)
 	GetSupplierByID(ctx context.Context, supplierID int64) (*api_gateway_dto.GetSupplierByIDResponse, error)
+	UpdateSupplier(ctx context.Context, data api_gateway_dto.UpdateSupplierRequest, supplierID int64) error
 }
 
 type IS3Service interface {

@@ -224,7 +224,7 @@ func (s *supplierProfileRepository) GetSuppliers(ctx context.Context, data *part
 	offset := uint64(data.Limit * (data.Page - 1))
 
 	selectQuery, args, err := selectQueryBuilder.Limit(limit).
-		Offset(offset).ToSql()
+		Offset(offset).OrderBy("company_name asc").ToSql()
 
 	rows, err := s.db.Query(ctx, selectQuery, args...)
 
@@ -295,4 +295,54 @@ func (s *supplierProfileRepository) GetSupplierDetail(ctx context.Context, suppl
 	}
 
 	return &supplier, supplierDocuments, nil
+}
+
+func (s *supplierProfileRepository) UpdateSupplierByAdmin(ctx context.Context, data *partner_proto_gen.UpdateSupplierRequest) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateSupplierByAdmin"))
+	defer span.End()
+
+	pgBuilder := squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
+
+	selectQuery, args, err := pgBuilder.Select("status").
+		From("supplier_profiles").
+		Where(squirrel.Eq{"id": data.SupplierId}).
+		ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	var oldStatus string
+
+	if err = s.db.QueryRow(ctx, selectQuery, args...).Scan(&oldStatus); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return status.Error(codes.NotFound, err.Error())
+		}
+
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	if oldStatus == string(common.SupplierProfileStatusPending) {
+		return status.Error(codes.FailedPrecondition, "This supplier is not allowed to update because the registration documents have not been approved yet")
+	}
+
+	updateQuery, args, err := pgBuilder.Update("supplier_profiles").
+		Set("status", data.Status).
+		Where(squirrel.Eq{"id": data.SupplierId}).
+		ToSql()
+
+	if err != nil {
+		span.RecordError(err)
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	if err = s.db.Exec(ctx, updateQuery, args...); err != nil {
+		span.RecordError(err)
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	return nil
 }

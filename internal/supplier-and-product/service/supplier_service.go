@@ -143,3 +143,14 @@ func (s *supplierService) GetSupplierDetail(ctx context.Context, data *partner_p
 		Documents:         resSupplierDocuments,
 	}, nil
 }
+
+func (s *supplierService) UpdateSupplier(ctx context.Context, data *partner_proto_gen.UpdateSupplierRequest) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateSupplier"))
+	defer span.End()
+
+	if err := s.supplierRepo.UpdateSupplierByAdmin(ctx, data); err != nil {
+		return err
+	}
+
+	return nil
+}
