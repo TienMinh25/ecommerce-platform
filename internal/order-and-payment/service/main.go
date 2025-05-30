@@ -30,3 +30,7 @@ type IPaymentService interface {
 type IOrderService interface {
 	GetMyOrders(ctx context.Context, data *order_proto_gen.GetMyOrdersRequest) (*order_proto_gen.GetMyOrdersResponse, error)
 }
+
+type IDelivererService interface {
+	RegisterDeliverer(ctx context.Context, data *order_proto_gen.RegisterDelivererRequest) error
+}

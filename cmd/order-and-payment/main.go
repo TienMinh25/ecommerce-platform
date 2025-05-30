@@ -139,11 +139,13 @@ func main() {
 			service.NewCouponService,
 			service.NewPaymentService,
 			service.NewOrderService,
+			service.NewDelivererService,
 			// repository
 			repository.NewCartRepository,
 			repository.NewCouponRepository,
 			repository.NewPaymentRepository,
 			repository.NewOrderRepository,
+			repository.NewDelivererRepository,
 			// tracer
 			NewTracerOrderAndPaymentService,
 			// infrastructure,

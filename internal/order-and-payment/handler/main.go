@@ -8,22 +8,25 @@ import (
 
 type OrderHandler struct {
 	order_proto_gen.UnimplementedOrderServiceServer
-	tracer         pkg.Tracer
-	cartService    service.ICartService
-	couponService  service.ICouponService
-	paymentService service.IPaymentService
-	orderService   service.IOrderService
+	tracer           pkg.Tracer
+	cartService      service.ICartService
+	couponService    service.ICouponService
+	paymentService   service.IPaymentService
+	orderService     service.IOrderService
+	delivererService service.IDelivererService
 }
 
 func NewOrderHandler(tracer pkg.Tracer, cartService service.ICartService,
 	couponService service.ICouponService,
 	paymentService service.IPaymentService,
-	orderService service.IOrderService) *OrderHandler {
+	orderService service.IOrderService,
+	delivererService service.IDelivererService) *OrderHandler {
 	return &OrderHandler{
-		tracer:         tracer,
-		cartService:    cartService,
-		couponService:  couponService,
-		paymentService: paymentService,
-		orderService:   orderService,
+		tracer:           tracer,
+		cartService:      cartService,
+		couponService:    couponService,
+		paymentService:   paymentService,
+		orderService:     orderService,
+		delivererService: delivererService,
 	}
 }

@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+option go_package = "./order_proto_gen";
+
+message RegisterDelivererRequest {
+  int64 user_id = 1;
+  string id_card_number = 2;
+  string id_card_front_image = 3;
+  string id_card_back_image = 4;
+  string vehicle_type = 5;
+  string vehicle_license_plate = 6;
+  RegisterDelivererServiceArea service_area = 7;
+}
+
+message RegisterDelivererServiceArea {
+  string country = 1;
+  string city = 2;
+  string district = 3;
+  string ward = 4;
+}
+
+message RegisterDelivererResponse {}

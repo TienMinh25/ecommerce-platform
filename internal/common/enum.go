@@ -193,3 +193,59 @@ type SupplierDocumentType string
 const (
 	SupplierDocumentTypeRegister SupplierDocumentType = "register"
 )
+
+type VehicleType string
+
+const (
+	Motorbike VehicleType = "Xe máy"
+	Car       VehicleType = "Ô tô"
+	MiniTruck VehicleType = "Xe tải nhỏ"
+)
+
+func (s VehicleType) IsValid() bool {
+	validArray := []VehicleType{
+		Motorbike, Car, MiniTruck,
+	}
+
+	if slices.Contains(validArray, s) {
+		return true
+	}
+
+	return false
+}
+
+func (s VehicleType) ErrorMessage() string {
+	validArray := []string{string(Motorbike), string(Car), string(MiniTruck)}
+
+	return fmt.Sprintf("Vehicle type must be in the one of: [%v]", strings.Join(validArray, ", "))
+}
+
+type DeliveryPersonApplicationStatus string
+
+const (
+	DeliveryPersonApplicationStatusPending  DeliveryPersonApplicationStatus = "pending"
+	DeliveryPersonApplicationStatusApproved DeliveryPersonApplicationStatus = "approved"
+	DeliveryPersonApplicationStatusRejected DeliveryPersonApplicationStatus = "rejected"
+)
+
+func (d DeliveryPersonApplicationStatus) IsValid() bool {
+	validArray := []DeliveryPersonApplicationStatus{
+		DeliveryPersonApplicationStatusApproved,
+		DeliveryPersonApplicationStatusRejected,
+	}
+
+	if slices.Contains(validArray, d) {
+		return true
+	}
+
+	return false
+}
+
+func (d DeliveryPersonApplicationStatus) ErrorMessage() string {
+	validArray := []string{
+		string(DeliveryPersonApplicationStatusApproved),
+		string(DeliveryPersonApplicationStatusRejected),
+	}
+
+	return fmt.Sprintf("Delivery person application must be in the one of: [%v]", strings.Join(validArray, ", "))
+}

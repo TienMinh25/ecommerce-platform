@@ -6,6 +6,7 @@ import "cart.proto";
 import "coupon.proto";
 import "payment.proto";
 import "order.proto";
+import "order_deliverer.proto";
 
 service OrderService {
   rpc AddItemToCart(AddItemToCartRequest) returns (AddItemToCartResponse);
@@ -35,4 +36,6 @@ service OrderService {
   rpc GetMyOrders(GetMyOrdersRequest) returns (GetMyOrdersResponse);
 
   rpc UpdateOrderStatusFromMomo(UpdateOrderStatusFromMomoRequest) returns (UpdateOrderStatusFromMomoResponse);
+
+  rpc RegisterDeliverer(RegisterDelivererRequest) returns (RegisterDelivererResponse);
 }

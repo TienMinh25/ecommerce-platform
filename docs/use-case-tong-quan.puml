@@ -50,7 +50,7 @@ rectangle "Nền tảng mua sắm trực tuyến Minh Plaza" {
 
   ' Supplier-facing use cases
   usecase "Quản lý đơn hàng" as UC21
-  usecase "Quản lý thanh toán" as UC22
+
 
   ' Delivery person use cases
   usecase "Quản lý đơn hàng giao" as UC24
@@ -88,7 +88,6 @@ ncc --> UC4
 ncc --> UC10
 ncc --> UC19
 ncc --> UC21
-ncc --> UC22
 ncc --> UC30
 
 ' Admin connections

@@ -1231,6 +1231,53 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.RegisterDelivererRequest:
+    properties:
+      id_card_back_image:
+        type: string
+      id_card_front_image:
+        type: string
+      id_card_number:
+        type: string
+      service_area:
+        $ref: '#/definitions/api_gateway_dto.RegisterDelivererServiceArea'
+      vehicle_license_plate:
+        type: string
+      vehicle_type:
+        $ref: '#/definitions/common.VehicleType'
+    required:
+    - id_card_back_image
+    - id_card_front_image
+    - id_card_number
+    - service_area
+    - vehicle_license_plate
+    - vehicle_type
+    type: object
+  api_gateway_dto.RegisterDelivererResponse:
+    type: object
+  api_gateway_dto.RegisterDelivererResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.RegisterDelivererResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
+  api_gateway_dto.RegisterDelivererServiceArea:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      district:
+        type: string
+      ward:
+        type: string
+    required:
+    - city
+    - country
+    - district
+    - ward
+    type: object
   api_gateway_dto.RegisterRequest:
     properties:
       email:
@@ -1894,6 +1941,16 @@ definitions:
     - SupplierProfileStatusPending
     - SupplierProfileStatusActive
     - SupplierProfileStatusSuspended
+  common.VehicleType:
+    enum:
+    - Xe máy
+    - Ô tô
+    - Xe tải nhỏ
+    type: string
+    x-enum-varnames:
+    - Motorbike
+    - Car
+    - MiniTruck
 host: server.local:3000
 info:
   contact: {}
@@ -2758,6 +2815,42 @@ paths:
       summary: Get coupons by client
       tags:
       - coupons
+  /deliverers/register:
+    post:
+      consumes:
+      - application/json
+      description: customer register deliverer
+      parameters:
+      - description: data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.RegisterDelivererRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.RegisterDelivererResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      security:
+      - BearerAuth: []
+      summary: customer register deliverer
+      tags:
+      - deliverers
   /modules:
     get:
       consumes:

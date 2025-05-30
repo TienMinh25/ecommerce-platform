@@ -1349,6 +1349,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/deliverers/register": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "customer register deliverer",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "deliverers"
+                ],
+                "summary": "customer register deliverer",
+                "parameters": [
+                    {
+                        "description": "data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.RegisterDelivererRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.RegisterDelivererResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/modules": {
             "get": {
                 "security": [
@@ -6230,6 +6287,74 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.RegisterDelivererRequest": {
+            "type": "object",
+            "required": [
+                "id_card_back_image",
+                "id_card_front_image",
+                "id_card_number",
+                "service_area",
+                "vehicle_license_plate",
+                "vehicle_type"
+            ],
+            "properties": {
+                "id_card_back_image": {
+                    "type": "string"
+                },
+                "id_card_front_image": {
+                    "type": "string"
+                },
+                "id_card_number": {
+                    "type": "string"
+                },
+                "service_area": {
+                    "$ref": "#/definitions/api_gateway_dto.RegisterDelivererServiceArea"
+                },
+                "vehicle_license_plate": {
+                    "type": "string"
+                },
+                "vehicle_type": {
+                    "$ref": "#/definitions/common.VehicleType"
+                }
+            }
+        },
+        "api_gateway_dto.RegisterDelivererResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.RegisterDelivererResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.RegisterDelivererResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.RegisterDelivererServiceArea": {
+            "type": "object",
+            "required": [
+                "city",
+                "country",
+                "district",
+                "ward"
+            ],
+            "properties": {
+                "city": {
+                    "type": "string"
+                },
+                "country": {
+                    "type": "string"
+                },
+                "district": {
+                    "type": "string"
+                },
+                "ward": {
+                    "type": "string"
+                }
+            }
+        },
         "api_gateway_dto.RegisterRequest": {
             "type": "object",
             "required": [
@@ -7206,6 +7331,19 @@ const docTemplate = `{
                 "SupplierProfileStatusPending",
                 "SupplierProfileStatusActive",
                 "SupplierProfileStatusSuspended"
+            ]
+        },
+        "common.VehicleType": {
+            "type": "string",
+            "enum": [
+                "Xe máy",
+                "Ô tô",
+                "Xe tải nhỏ"
+            ],
+            "x-enum-varnames": [
+                "Motorbike",
+                "Car",
+                "MiniTruck"
             ]
         }
     },
