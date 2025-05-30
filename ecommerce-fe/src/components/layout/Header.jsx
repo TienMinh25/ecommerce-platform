@@ -241,7 +241,7 @@ const Header = () => {
                   </MenuItem>
                   <MenuItem
                       as={RouterLink}
-                      to='user/account/orders'
+                      to='/user/account/orders'
                       py={3}
                       _hover={{ bg: 'gray.50' }}
                       w="full"
@@ -254,7 +254,7 @@ const Header = () => {
                         <MenuDivider m={0} />
                         <MenuItem
                             as={RouterLink}
-                            to='/supplier/dashboard'
+                            to='/supplier'
                             py={3}
                             _hover={{ bg: 'gray.50' }}
                             w="full"
@@ -272,7 +272,7 @@ const Header = () => {
                         <MenuDivider m={0} />
                         <MenuItem
                             as={RouterLink}
-                            to='/delivery/orders'
+                            to='/deliverer'
                             py={3}
                             _hover={{ bg: 'gray.50' }}
                             w="full"
@@ -476,7 +476,7 @@ const Header = () => {
 
                 <Box
                     as={RouterLink}
-                    to='/account/profile'
+                    to='/user/account/profile'
                     py={3}
                     px={4}
                     borderBottomWidth="1px"
@@ -491,7 +491,7 @@ const Header = () => {
 
                 <Box
                     as={RouterLink}
-                    to='/account/orders'
+                    to='/user/account/orders'
                     py={3}
                     px={4}
                     borderBottomWidth="1px"
@@ -506,7 +506,7 @@ const Header = () => {
 
                 <Box
                     as={RouterLink}
-                    to='/cart'
+                    to='/carts'
                     py={3}
                     px={4}
                     borderBottomWidth="1px"
@@ -521,7 +521,7 @@ const Header = () => {
 
                 <Box
                     as={RouterLink}
-                    to='/notifications'
+                    to='/user/account/notifications/see'
                     py={3}
                     px={4}
                     borderBottomWidth="1px"
@@ -537,7 +537,7 @@ const Header = () => {
                 {isSupplier && (
                     <Box
                         as={RouterLink}
-                        to='/supplier/dashboard'
+                        to='/supplier'
                         py={3}
                         px={4}
                         borderBottomWidth="1px"
@@ -557,7 +557,7 @@ const Header = () => {
                 {isDeliverer && (
                     <Box
                         as={RouterLink}
-                        to='/delivery/orders'
+                        to='/deliverer'
                         py={3}
                         px={4}
                         borderBottomWidth="1px"
@@ -577,7 +577,7 @@ const Header = () => {
                 {isAdmin && (
                     <Box
                         as={RouterLink}
-                        to='/admin/dashboard'
+                        to='/dashboard'
                         py={3}
                         px={4}
                         borderBottomWidth="1px"
