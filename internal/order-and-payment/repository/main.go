@@ -13,6 +13,7 @@ type ICartRepository interface {
 	GetCart(ctx context.Context, userID int64) ([]*models.CartItem, error)
 	UpdateCartItem(ctx context.Context, data *order_proto_gen.UpdateCartItemRequest) (*models.CartItem, error)
 	DeleteCartItem(ctx context.Context, cartItemIds []string, userID int64) error
+	CreateCart(ctx context.Context, userID int64) error
 }
 
 type ICouponRepository interface {

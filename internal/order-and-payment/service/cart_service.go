@@ -91,3 +91,14 @@ func (s *cartService) RemoveCartItem(ctx context.Context, data *order_proto_gen.
 		CartItemIds: data.CartItemIds,
 	}, nil
 }
+
+func (s *cartService) CreateCart(ctx context.Context, userID int64) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "CreateCart"))
+	defer span.End()
+
+	if err := s.cartRepo.CreateCart(ctx, userID); err != nil {
+		return err
+	}
+
+	return nil
+}

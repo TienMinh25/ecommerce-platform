@@ -31,7 +31,7 @@ func (n *notificationPreferencesRepository) CreateNotificationPreferences(ctx co
 	// query to insert
 	var args []interface{}
 	sqlInsert := `INSERT INTO notification_preferences (user_id, email_preferences, in_app_preferences) 
-				VALUES($1, $2, $2)`
+				VALUES($1, $2, $3)`
 
 	args = append(args, userID)
 	args = append(args, `{"order_status": true, "payment_status": true, "product_status": true, "promotion": true}`)
