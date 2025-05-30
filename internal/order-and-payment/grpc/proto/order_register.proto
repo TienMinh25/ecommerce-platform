@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+option go_package = "./order_proto_gen";
+
+message CreateCartForRegisterRequest {
+  int64 user_id = 1;
+}
+
+message CreateCartForRegisterResponse {}

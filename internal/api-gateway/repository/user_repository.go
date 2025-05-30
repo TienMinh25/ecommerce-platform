@@ -8,6 +8,7 @@ import (
 	api_gateway_models "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/models"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/notifications/transport/grpc/proto/notification_proto_gen"
+	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
@@ -30,16 +31,19 @@ type userRepository struct {
 	userPasswordRepository IUserPasswordRepository
 	redis                  pkg.ICache
 	client                 notification_proto_gen.NotificationServiceClient
+	orderClient            order_proto_gen.OrderServiceClient
 }
 
 func NewUserRepository(db pkg.Database, tracer pkg.Tracer, userPasswordRepository IUserPasswordRepository, redis pkg.ICache,
-	client notification_proto_gen.NotificationServiceClient) IUserRepository {
+	client notification_proto_gen.NotificationServiceClient,
+	orderClient order_proto_gen.OrderServiceClient) IUserRepository {
 	return &userRepository{
 		db:                     db,
 		tracer:                 tracer,
 		userPasswordRepository: userPasswordRepository,
 		redis:                  redis,
 		client:                 client,
+		orderClient:            orderClient,
 	}
 }
 
@@ -106,12 +110,21 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 
 		wg := sync.WaitGroup{}
 		var errNotiService error
-		wg.Add(1)
+		var errOrderService error
+		wg.Add(2)
 		go func() {
 			defer wg.Done()
 
 			// call grpc to notification to create new notifications
 			_, errNotiService = u.client.CreateUserSettingNotification(ctx, &notification_proto_gen.CreateUserSettingNotificationRequest{
+				UserId: int64(userID),
+			})
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			_, errOrderService = u.orderClient.CreateCartForRegister(ctx, &order_proto_gen.CreateCartForRegisterRequest{
 				UserId: int64(userID),
 			})
 		}()
@@ -145,6 +158,13 @@ func (u *userRepository) CreateUserWithPassword(ctx context.Context, email, full
 					Code:    http.StatusInternalServerError,
 					Message: common.MSG_INTERNAL_ERROR,
 				}
+			}
+		}
+
+		if errOrderService != nil {
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
 			}
 		}
 
@@ -374,12 +394,21 @@ func (u *userRepository) CreateUserBasedOauth(ctx context.Context, user *api_gat
 
 		wg := sync.WaitGroup{}
 		var errNotiService error
-		wg.Add(1)
+		var errOrderService error
+		wg.Add(2)
 		go func() {
 			defer wg.Done()
 
 			// call grpc to notification to create new notifications
 			_, errNotiService = u.client.CreateUserSettingNotification(ctx, &notification_proto_gen.CreateUserSettingNotificationRequest{
+				UserId: int64(userID),
+			})
+		}()
+
+		go func() {
+			defer wg.Done()
+
+			_, errOrderService = u.orderClient.CreateCartForRegister(ctx, &order_proto_gen.CreateCartForRegisterRequest{
 				UserId: int64(userID),
 			})
 		}()
@@ -413,6 +442,13 @@ func (u *userRepository) CreateUserBasedOauth(ctx context.Context, user *api_gat
 					Code:    http.StatusInternalServerError,
 					Message: common.MSG_INTERNAL_ERROR,
 				}
+			}
+		}
+
+		if errOrderService != nil {
+			return utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
 			}
 		}
 

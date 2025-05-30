@@ -39,6 +39,7 @@ func NewRouter(
 	paymentHandler api_gateway_handler.IPaymentHandler,
 	supplierHandler api_gateway_handler.ISupplierHandler,
 	s3Handler api_gateway_handler.IS3Handler,
+	delivererHandler api_gateway_handler.IDelivererHandler,
 ) *Router {
 	apiV1Group := router.Group("/api/v1")
 
@@ -56,6 +57,7 @@ func NewRouter(
 	registerPaymentEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, paymentHandler)
 	registerSupplierEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, xAuthMiddleware, supplierHandler)
 	registerS3Endpoint(apiV1Group, accessTokenMiddleware, s3Handler)
+	registerDelivererEndpoint(apiV1Group, accessTokenMiddleware, permissionMiddleware, delivererHandler)
 
 	return &Router{
 		Router: router,
@@ -255,5 +257,15 @@ func registerS3Endpoint(group *gin.RouterGroup, accessTokenMiddleware *middlewar
 	s3Group.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
 	{
 		s3Group.POST("/presigned_url", s3Handler.GetPresignedURLUpload)
+	}
+}
+
+func registerDelivererEndpoint(group *gin.RouterGroup, accessTokenMiddleware *middleware.JwtMiddleware, permissionMiddleware *middleware.PermissionMiddleware,
+	delivererHandler api_gateway_handler.IDelivererHandler) {
+	delivererGroup := group.Group("/deliverers")
+
+	delivererGroup.Use(accessTokenMiddleware.JwtAccessTokenMiddleware())
+	{
+		delivererGroup.POST("/register", permissionMiddleware.HasPermission([]common.RoleName{common.RoleCustomer, common.RoleAdmin}, common.UserManagement, common.Create), delivererHandler.RegisterDeliverer)
 	}
 }

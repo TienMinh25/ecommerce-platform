@@ -10,6 +10,7 @@ type ICartService interface {
 	GetCart(ctx context.Context, data *order_proto_gen.GetCartRequest) (*order_proto_gen.GetCartResponse, error)
 	UpdateCart(ctx context.Context, data *order_proto_gen.UpdateCartItemRequest) (*order_proto_gen.UpdateCartItemResponse, error)
 	RemoveCartItem(ctx context.Context, data *order_proto_gen.RemoveCartItemRequest) (*order_proto_gen.RemoveCartItemResponse, error)
+	CreateCart(ctx context.Context, userID int64) error
 }
 
 type ICouponService interface {
@@ -29,4 +30,8 @@ type IPaymentService interface {
 
 type IOrderService interface {
 	GetMyOrders(ctx context.Context, data *order_proto_gen.GetMyOrdersRequest) (*order_proto_gen.GetMyOrdersResponse, error)
+}
+
+type IDelivererService interface {
+	RegisterDeliverer(ctx context.Context, data *order_proto_gen.RegisterDelivererRequest) error
 }

@@ -347,3 +347,17 @@ func (c *cartRepository) DeleteCartItem(ctx context.Context, cartItemIds []strin
 
 	return nil
 }
+
+func (c *cartRepository) CreateCart(ctx context.Context, userID int64) error {
+	ctx, span := c.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "CreateCart"))
+	defer span.End()
+
+	sqlInsert := `insert into carts (user_id) values ($1)`
+
+	if err := c.db.Exec(ctx, sqlInsert, userID); err != nil {
+		span.RecordError(err)
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	return nil
+}

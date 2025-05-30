@@ -151,3 +151,7 @@ type ISupplierService interface {
 type IS3Service interface {
 	GetPresignedURLUpload(ctx context.Context, data *api_gateway_dto.GetPresignedURLRequest, userID int) (string, error)
 }
+
+type IDelivererService interface {
+	RegisterDeliverer(ctx context.Context, data api_gateway_dto.RegisterDelivererRequest, userID int) error
+}

@@ -28,12 +28,16 @@ import {
     SimpleGrid,
     Checkbox,
     CheckboxGroup,
+    Select,
+    Spinner,
 } from '@chakra-ui/react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { FaShippingFast, FaUpload, FaIdCard, FaCheckCircle, FaTimesCircle, FaMotorcycle, FaCar, FaTruck } from 'react-icons/fa';
 import useAuth from "../hooks/useAuth.js";
+import userMeService from "../services/userMeService.js";
+import delivererService from "../services/delivererService.js"; // Import service để gọi API địa danh
 
 const DelivererRegistration = () => {
     const [currentStep, setCurrentStep] = useState(1);
@@ -50,31 +54,119 @@ const DelivererRegistration = () => {
         drivingLicenseNumber: '',
         vehicleType: '',
         vehicleLicensePlate: '',
-        serviceAreas: []
+        selectedProvince: '',
+        selectedDistrict: '',
+        selectedWard: '',
+        selectedProvinceName: '',
+        selectedDistrictName: '',
+        selectedWardName: ''
     });
+
+    // States cho địa danh
+    const [provinces, setProvinces] = useState([]);
+    const [districts, setDistricts] = useState([]);
+    const [wards, setWards] = useState([]);
+    const [isLoadingProvinces, setIsLoadingProvinces] = useState(false);
+    const [isLoadingDistricts, setIsLoadingDistricts] = useState(false);
+    const [isLoadingWards, setIsLoadingWards] = useState(false);
 
     const [errors, setErrors] = useState({});
 
     const totalSteps = 3;
 
     const vehicleTypes = [
-        { value: 'motorcycle', label: 'Xe máy', icon: FaMotorcycle },
-        { value: 'car', label: 'Ô tô', icon: FaCar },
-        { value: 'truck', label: 'Xe tải nhỏ', icon: FaTruck }
+        { value: 'Xe máy', label: 'Xe máy', icon: FaMotorcycle },
+        { value: 'Ô tô', label: 'Ô tô', icon: FaCar },
+        { value: 'Xe tải nhỏ', label: 'Xe tải nhỏ', icon: FaTruck }
     ];
 
-    const availableAreas = [
-        { id: 1, name: 'Quận Ba Đình, Hà Nội', code: 'HN-BD' },
-        { id: 2, name: 'Quận Hoàn Kiếm, Hà Nội', code: 'HN-HK' },
-        { id: 3, name: 'Quận Tây Hồ, Hà Nội', code: 'HN-TH' },
-        { id: 4, name: 'Quận Long Biên, Hà Nội', code: 'HN-LB' },
-        { id: 5, name: 'Quận Cầu Giấy, Hà Nội', code: 'HN-CG' },
-        { id: 6, name: 'Quận Đống Đa, Hà Nội', code: 'HN-DD' },
-        { id: 7, name: 'Quận Hai Bà Trưng, Hà Nội', code: 'HN-HBT' },
-        { id: 8, name: 'Quận Hoàng Mai, Hà Nội', code: 'HN-HM' },
-        { id: 9, name: 'Quận Thanh Xuân, Hà Nội', code: 'HN-TX' },
-        { id: 10, name: 'Quận Nam Từ Liêm, Hà Nội', code: 'HN-NTL' }
-    ];
+    // Fetch provinces khi component mount
+    useLayoutEffect(() => {
+        fetchProvinces();
+    }, []);
+
+    // Fetch districts when province changes
+    useLayoutEffect(() => {
+        if (formData.selectedProvince) {
+            fetchDistricts(formData.selectedProvince);
+            setFormData(prev => ({ ...prev, selectedDistrict: '', selectedWard: '' }));
+            setWards([]);
+        } else {
+            setDistricts([]);
+            setWards([]);
+        }
+    }, [formData.selectedProvince]);
+
+    // Fetch wards when district changes
+    useLayoutEffect(() => {
+        if (formData.selectedProvince && formData.selectedDistrict) {
+            fetchWards(formData.selectedProvince, formData.selectedDistrict);
+            setFormData(prev => ({ ...prev, selectedWard: '' }));
+        } else {
+            setWards([]);
+        }
+    }, [formData.selectedDistrict]);
+
+    const fetchProvinces = async () => {
+        setIsLoadingProvinces(true);
+        try {
+            const provinces = await userMeService.getProvinces();
+            setProvinces(provinces || []);
+        } catch (error) {
+            console.error('Error fetching provinces:', error);
+            toast({
+                title: 'Lỗi',
+                description: 'Không thể tải danh sách tỉnh/thành phố',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+        } finally {
+            setIsLoadingProvinces(false);
+        }
+    };
+
+    const fetchDistricts = async (provinceId) => {
+        if (!provinceId) return;
+
+        setIsLoadingDistricts(true);
+        try {
+            const districts = await userMeService.getDistricts(provinceId);
+            setDistricts(districts || []);
+        } catch (error) {
+            console.error('Error fetching districts:', error);
+            toast({
+                title: 'Lỗi',
+                description: 'Không thể tải danh sách quận/huyện',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+        } finally {
+            setIsLoadingDistricts(false);
+        }
+    };
+
+    const fetchWards = async (provinceId, districtId) => {
+        if (!provinceId || !districtId) return;
+
+        setIsLoadingWards(true);
+        try {
+            const wards = await userMeService.getWards(provinceId, districtId);
+            setWards(wards || []);
+        } catch (error) {
+            console.error('Error fetching wards:', error);
+            toast({
+                title: 'Lỗi',
+                description: 'Không thể tải danh sách phường/xã',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+            });
+        } finally {
+            setIsLoadingWards(false);
+        }
+    };
 
     // Handle form input changes
     const handleInputChange = (field, value) => {
@@ -83,26 +175,41 @@ const DelivererRegistration = () => {
             [field]: value
         }));
 
+        // Update corresponding names when selecting location
+        if (field === 'selectedProvince') {
+            const province = provinces.find(p => p.id === value);
+            setFormData(prev => ({
+                ...prev,
+                selectedProvince: value,
+                selectedProvinceName: province ? province.name : '',
+                selectedDistrict: '',
+                selectedWard: '',
+                selectedDistrictName: '',
+                selectedWardName: ''
+            }));
+        } else if (field === 'selectedDistrict') {
+            const district = districts.find(d => d.id === value);
+            setFormData(prev => ({
+                ...prev,
+                selectedDistrict: value,
+                selectedDistrictName: district ? district.name : '',
+                selectedWard: '',
+                selectedWardName: ''
+            }));
+        } else if (field === 'selectedWard') {
+            const ward = wards.find(w => w.id === value);
+            setFormData(prev => ({
+                ...prev,
+                selectedWard: value,
+                selectedWardName: ward ? ward.name : ''
+            }));
+        }
+
         // Clear error when user starts typing
         if (errors[field]) {
             setErrors(prev => ({
                 ...prev,
                 [field]: ''
-            }));
-        }
-    };
-
-    // Handle service area selection
-    const handleServiceAreaChange = (areas) => {
-        setFormData(prev => ({
-            ...prev,
-            serviceAreas: areas
-        }));
-
-        if (errors.serviceAreas) {
-            setErrors(prev => ({
-                ...prev,
-                serviceAreas: ''
             }));
         }
     };
@@ -171,8 +278,8 @@ const DelivererRegistration = () => {
         }
 
         if (step === 3) {
-            if (formData.serviceAreas.length === 0) {
-                newErrors.serviceAreas = 'Vui lòng chọn ít nhất một khu vực giao hàng';
+            if (!formData.selectedWard) {
+                newErrors.serviceAreas = 'Vui lòng chọn khu vực giao hàng';
             }
         }
 
@@ -195,22 +302,41 @@ const DelivererRegistration = () => {
 
         setLoading(true);
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Prepare files object
+            const files = {
+                drivingLicenseFront: uploadedImages.drivingLicenseFront?.file,
+                drivingLicenseBack: uploadedImages.drivingLicenseBack?.file
+            };
 
-            toast({
-                title: 'Đăng ký thành công!',
-                description: 'Đơn đăng ký của bạn đã được gửi và đang chờ xét duyệt.',
-                status: 'success',
-                duration: 5000,
-                isClosable: true,
-            });
+            // Use the service to handle complete registration process
+            const result = await delivererService.completeRegistration(formData, files);
 
-            navigate('/user/account/profile');
+            if (result.success) {
+                toast({
+                    title: 'Đăng ký thành công!',
+                    description: 'Đơn đăng ký của bạn đã được gửi và đang chờ xét duyệt.',
+                    status: 'success',
+                    duration: 5000,
+                    isClosable: true,
+                });
+
+                navigate('/user/account/profile');
+            } else {
+                throw result.error;
+            }
         } catch (error) {
+            console.error('Registration error:', error);
+
+            let errorMessage = 'Vui lòng thử lại sau.';
+            if (error.response?.data?.error?.message) {
+                errorMessage = error.response.data.error.message;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
             toast({
                 title: 'Có lỗi xảy ra',
-                description: 'Vui lòng thử lại sau.',
+                description: errorMessage,
                 status: 'error',
                 duration: 5000,
                 isClosable: true,
@@ -501,61 +627,98 @@ const DelivererRegistration = () => {
                                 <FormControl isInvalid={errors.serviceAreas}>
                                     <FormLabel>Khu vực giao hàng *</FormLabel>
                                     <Text fontSize="sm" color="gray.600" mb={4}>
-                                        Chọn ít nhất một khu vực (có thể chọn nhiều):
+                                        Chọn theo thứ tự: Tỉnh/Thành phố → Quận/Huyện → Phường/Xã:
                                     </Text>
 
-                                    <CheckboxGroup
-                                        value={formData.serviceAreas}
-                                        onChange={handleServiceAreaChange}
-                                    >
-                                        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
-                                            {availableAreas.map((area) => (
-                                                <Card
-                                                    key={area.id}
-                                                    size="sm"
-                                                    variant={formData.serviceAreas.includes(area.code) ? "filled" : "outline"}
-                                                    bg={formData.serviceAreas.includes(area.code) ? "green.50" : "white"}
-                                                    borderColor={formData.serviceAreas.includes(area.code) ? "green.200" : "gray.200"}
-                                                >
-                                                    <CardBody py={3}>
-                                                        <Checkbox
-                                                            value={area.code}
-                                                            colorScheme="green"
-                                                            size="md"
-                                                            w="full"
-                                                        >
-                                                            <VStack align="flex-start" spacing={1} ml={2}>
-                                                                <Text fontWeight="medium" fontSize="sm">
-                                                                    {area.name}
-                                                                </Text>
-                                                                <Badge colorScheme="green" size="sm">
-                                                                    {area.code}
-                                                                </Badge>
-                                                            </VStack>
-                                                        </Checkbox>
-                                                    </CardBody>
-                                                </Card>
-                                            ))}
-                                        </SimpleGrid>
-                                    </CheckboxGroup>
+                                    <VStack spacing={4} align="stretch">
+                                        {/* Province Selection */}
+                                        <FormControl>
+                                            <FormLabel fontSize="sm">Tỉnh/Thành phố</FormLabel>
+                                            <Select
+                                                placeholder="Chọn Tỉnh/Thành phố"
+                                                value={formData.selectedProvince}
+                                                onChange={(e) => handleInputChange('selectedProvince', e.target.value)}
+                                                isDisabled={isLoadingProvinces}
+                                            >
+                                                {provinces.map(province => (
+                                                    <option key={province.id} value={province.id}>
+                                                        {province.name}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                            {isLoadingProvinces && (
+                                                <Flex align="center" mt={2}>
+                                                    <Spinner size="sm" mr={2} />
+                                                    <Text fontSize="sm" color="gray.500">Đang tải...</Text>
+                                                </Flex>
+                                            )}
+                                        </FormControl>
+
+                                        {/* District Selection */}
+                                        <FormControl>
+                                            <FormLabel fontSize="sm">Quận/Huyện</FormLabel>
+                                            <Select
+                                                placeholder="Chọn Quận/Huyện"
+                                                value={formData.selectedDistrict}
+                                                onChange={(e) => handleInputChange('selectedDistrict', e.target.value)}
+                                                isDisabled={!formData.selectedProvince || isLoadingDistricts}
+                                            >
+                                                {districts.map(district => (
+                                                    <option key={district.id} value={district.id}>
+                                                        {district.name}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                            {isLoadingDistricts && (
+                                                <Flex align="center" mt={2}>
+                                                    <Spinner size="sm" mr={2} />
+                                                    <Text fontSize="sm" color="gray.500">Đang tải...</Text>
+                                                </Flex>
+                                            )}
+                                        </FormControl>
+
+                                        {/* Ward Selection */}
+                                        <FormControl>
+                                            <FormLabel fontSize="sm">Phường/Xã</FormLabel>
+                                            <Select
+                                                placeholder="Chọn Phường/Xã"
+                                                value={formData.selectedWard}
+                                                onChange={(e) => handleInputChange('selectedWard', e.target.value)}
+                                                isDisabled={!formData.selectedDistrict || isLoadingWards}
+                                            >
+                                                {wards.map(ward => (
+                                                    <option key={ward.id} value={ward.id}>
+                                                        {ward.name}
+                                                    </option>
+                                                ))}
+                                            </Select>
+                                            {isLoadingWards && (
+                                                <Flex align="center" mt={2}>
+                                                    <Spinner size="sm" mr={2} />
+                                                    <Text fontSize="sm" color="gray.500">Đang tải...</Text>
+                                                </Flex>
+                                            )}
+                                        </FormControl>
+                                    </VStack>
+
                                     <FormErrorMessage>{errors.serviceAreas}</FormErrorMessage>
                                 </FormControl>
 
-                                {formData.serviceAreas.length > 0 && (
+                                {/* Selected Area Summary */}
+                                {formData.selectedWard && (
                                     <Box>
                                         <Text fontWeight="medium" mb={3}>
-                                            Đã chọn ({formData.serviceAreas.length} khu vực):
+                                            Khu vực đã chọn:
                                         </Text>
-                                        <Flex wrap="wrap" gap={2}>
-                                            {formData.serviceAreas.map((areaCode) => {
-                                                const area = availableAreas.find(a => a.code === areaCode);
-                                                return area ? (
-                                                    <Badge key={areaCode} colorScheme="green" p={2} borderRadius="md">
-                                                        {area.name}
-                                                    </Badge>
-                                                ) : null;
-                                            })}
-                                        </Flex>
+                                        <Card bg="green.50" borderColor="green.200">
+                                            <CardBody py={3}>
+                                                <Text fontWeight="medium" color="green.800">
+                                                    {wards.find(w => w.id === formData.selectedWard)?.name}, {' '}
+                                                    {districts.find(d => d.id === formData.selectedDistrict)?.name}, {' '}
+                                                    {provinces.find(p => p.id === formData.selectedProvince)?.name}
+                                                </Text>
+                                            </CardBody>
+                                        </Card>
                                     </Box>
                                 )}
                             </VStack>
@@ -594,7 +757,7 @@ const DelivererRegistration = () => {
                             colorScheme="green"
                             size="lg"
                             isLoading={loading}
-                            loadingText="Đang gửi đăng ký..."
+                            loadingText="Đang upload và đăng ký..."
                         >
                             Hoàn tất đăng ký
                         </Button>

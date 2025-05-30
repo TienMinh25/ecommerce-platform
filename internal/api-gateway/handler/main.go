@@ -132,3 +132,7 @@ type IS3Handler interface {
 	// presigned url
 	GetPresignedURLUpload(ctx *gin.Context)
 }
+
+type IDelivererHandler interface {
+	RegisterDeliverer(ctx *gin.Context)
+}
