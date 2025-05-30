@@ -36,6 +36,11 @@ import SupplierRegistration from "../pages/SupplierRegistration.jsx";
 import DelivererRegistration from "../pages/DelivererRegistration.jsx";
 import SupplierManagementComponent
     from "../components/dashboard/admin/onboard-supplier-management/SupplierManagementComponent.jsx";
+import SupplierLayout from "../components/layout/SupplierLayout.jsx";
+import SupplierOrders from "../components/dashboard/supplier/SupplierOrders.jsx";
+import SupplierPayments from "../components/dashboard/supplier/SupplierPayments.jsx";
+import DelivererOrders from "../components/dashboard/deliverer/DelivererOrders.jsx";
+import DelivererLayout from "../components/layout/DelivererLayout.jsx";
 
 const AppRoutes = () => {
     return (
@@ -75,6 +80,7 @@ const AppRoutes = () => {
                     <Route path='carts' element={<CartPage />} />
                     <Route path='/checkout' element={<CheckoutPage />} />
                 </Route>
+
                 <Route path='/dashboard' element={<DashboardLayout />}>
                     {/* Main dashboard */}
                     <Route index element={<Dashboard />} />
@@ -91,6 +97,19 @@ const AppRoutes = () => {
                     <Route path='onboarding/suppliers' element={<SupplierManagementComponent />} />
                     {/*
                       <Route path='onboarding/deliverers' element={<DashboardComponent />} /> */}
+                </Route>
+
+                {/* Supplier Layout Routes */}
+                <Route path='/supplier' element={<SupplierLayout />}>
+                    <Route index element={<Navigate to='/supplier/orders' replace />} />
+                    <Route path='orders' element={<SupplierOrders />} />
+                    <Route path='payments' element={<SupplierPayments />} />
+                </Route>
+
+                {/* Deliverer Layout Routes */}
+                <Route path='/deliverer' element={<DelivererLayout />}>
+                    <Route index element={<Navigate to='/deliverer/orders' replace />} />
+                    <Route path='orders' element={<DelivererOrders />} />
                 </Route>
             </Route>
 
