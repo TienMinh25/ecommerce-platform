@@ -13,12 +13,15 @@ import (
 type supplierService struct {
 	tracer       pkg.Tracer
 	supplierRepo repository.ISupplierProfileRepository
+	productRepo  repository.IProductRepository
 }
 
-func NewSupplierService(tracer pkg.Tracer, supplierRepo repository.ISupplierProfileRepository) ISupplierService {
+func NewSupplierService(tracer pkg.Tracer, supplierRepo repository.ISupplierProfileRepository,
+	productRepo repository.IProductRepository) ISupplierService {
 	return &supplierService{
 		tracer:       tracer,
 		supplierRepo: supplierRepo,
+		productRepo:  productRepo,
 	}
 }
 
@@ -183,4 +186,15 @@ func (s *supplierService) GetSupplierID(ctx context.Context, userID int64) (*par
 	return &partner_proto_gen.GetSupplierIDResponse{
 		SupplierId: supplierID,
 	}, nil
+}
+
+func (s *supplierService) UpdateQuantityProductVariantWhenConfirmed(ctx context.Context, data *partner_proto_gen.UpdateQuantityProductVariantWhenConfirmedRequest) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateQuantityProductVariantWhenConfirmed"))
+	defer span.End()
+
+	if err := s.productRepo.UpdateQuantityProductVariantWhenConfirmed(ctx, data); err != nil {
+		return err
+	}
+
+	return nil
 }

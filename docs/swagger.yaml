@@ -1763,6 +1763,24 @@ definitions:
       metadata:
         $ref: '#/definitions/api_gateway_dto.Metadata'
     type: object
+  api_gateway_dto.UpdateOrderItemRequest:
+    properties:
+      status:
+        allOf:
+        - $ref: '#/definitions/common.StatusOrder'
+        enum:
+        - confirmed
+        - cancelled
+    type: object
+  api_gateway_dto.UpdateOrderItemResponse:
+    type: object
+  api_gateway_dto.UpdateOrderItemResponseDocs:
+    properties:
+      data:
+        $ref: '#/definitions/api_gateway_dto.UpdateOrderItemResponse'
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.Metadata'
+    type: object
   api_gateway_dto.UpdatePermissionByIDResponseDocs:
     properties:
       data:
@@ -3913,16 +3931,41 @@ paths:
         name: page
         type: integer
       - enum:
+        - pending_payment
         - pending
-        - active
-        - suspended
+        - confirmed
+        - processing
+        - ready_to_ship
+        - in_transit
+        - out_for_delivery
+        - delivered
+        - cancelled
+        - payment_failed
+        - refunded
         in: query
         name: status
         type: string
+        x-enum-comments:
+          Confirmed: Supplier đã xác nhận
+          Delivered: Đã giao thành công
+          InTransit: Đang vận chuyển (đang ship)
+          OutForDelivery: Sắp giao (shipper đang trên đường)
+          Pending: Chờ supplier xác nhận
+          PendingPayment: Chờ thanh toán
+          Processing: Đang chuẩn bị hàng
+          ReadyToShip: Sẵn sàng giao hàng
         x-enum-varnames:
-        - SupplierProfileStatusPending
-        - SupplierProfileStatusActive
-        - SupplierProfileStatusSuspended
+        - PendingPayment
+        - Pending
+        - Confirmed
+        - Processing
+        - ReadyToShip
+        - InTransit
+        - OutForDelivery
+        - Delivered
+        - Cancelled
+        - PaymentFailed
+        - Refunded
       produces:
       - application/json
       responses:
@@ -3943,6 +3986,44 @@ paths:
           schema:
             $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
       summary: get supplier orders
+      tags:
+      - suppliers
+  /suppliers/orders/{orderItemID}:
+    post:
+      consumes:
+      - application/json
+      description: update order item
+      parameters:
+      - in: path
+        name: orderItemID
+        required: true
+        type: string
+      - description: Thông tin cần cập nhật
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api_gateway_dto.UpdateOrderItemRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.UpdateOrderItemResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: update order item
       tags:
       - suppliers
   /suppliers/register:

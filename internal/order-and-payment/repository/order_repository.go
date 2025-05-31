@@ -7,22 +7,27 @@ import (
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/models"
+	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
+	"github.com/jackc/pgx/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"sync"
 )
 
 type orderRepository struct {
-	tracer pkg.Tracer
-	db     pkg.Database
+	tracer        pkg.Tracer
+	db            pkg.Database
+	partnerClient partner_proto_gen.PartnerServiceClient
 }
 
-func NewOrderRepository(tracer pkg.Tracer, db pkg.Database) IOrderRepository {
+func NewOrderRepository(tracer pkg.Tracer, db pkg.Database,
+	partnerClient partner_proto_gen.PartnerServiceClient) IOrderRepository {
 	return &orderRepository{
-		tracer: tracer,
-		db:     db,
+		tracer:        tracer,
+		db:            db,
+		partnerClient: partnerClient,
 	}
 }
 
@@ -244,4 +249,47 @@ func (r *orderRepository) GetSupplierOrders(ctx context.Context, data *order_pro
 	}
 
 	return orderItems, totalItems, nil
+}
+
+func (r *orderRepository) UpdateOrderItem(ctx context.Context, data *order_proto_gen.UpdateOrderItemRequest) error {
+	ctx, span := r.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateOrderItem"))
+	defer span.End()
+
+	return r.db.BeginTxFunc(ctx, pgx.TxOptions{IsoLevel: pgx.ReadCommitted}, func(tx pkg.Tx) error {
+		resPartner, err := r.partnerClient.GetSupplierID(ctx, &partner_proto_gen.GetSupplierIDRequest{
+			UserId: data.UserId,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		// update order items
+		updateSql := `update order_items set status = $1 where supplier_id = $2 and id = $3
+				returning quantity, product_variant_id`
+
+		var quantity int64
+		var productVariantID string
+
+		if err = tx.QueryRow(ctx, updateSql, data.Status, resPartner.SupplierId, data.OrderItemId).
+			Scan(&quantity, &productVariantID); err != nil {
+			span.RecordError(err)
+			return status.Error(codes.Internal, err.Error())
+		}
+
+		if data.Status == string(common.Pending) {
+			// call to partner to update item
+			_, err = r.partnerClient.UpdateQuantityProductVariantWhenConfirmed(ctx, &partner_proto_gen.UpdateQuantityProductVariantWhenConfirmedRequest{
+				Quantity:         quantity,
+				ProductVariantId: productVariantID,
+			})
+
+			if err != nil {
+				span.RecordError(err)
+				return status.Error(codes.Internal, err.Error())
+			}
+		}
+
+		return nil
+	})
 }

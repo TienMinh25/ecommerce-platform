@@ -36,3 +36,10 @@ message ProductInfoCartResponse {
   string currency = 9;
   string variant_name = 10;
 }
+
+message UpdateQuantityProductVariantWhenConfirmedRequest {
+  int64 quantity = 1;
+  string product_variant_id = 2;
+}
+
+message UpdateQuantityProductVariantWhenConfirmedResponse {}

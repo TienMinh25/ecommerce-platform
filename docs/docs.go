@@ -2782,15 +2782,41 @@ const docTemplate = `{
                     },
                     {
                         "enum": [
+                            "pending_payment",
                             "pending",
-                            "active",
-                            "suspended"
+                            "confirmed",
+                            "processing",
+                            "ready_to_ship",
+                            "in_transit",
+                            "out_for_delivery",
+                            "delivered",
+                            "cancelled",
+                            "payment_failed",
+                            "refunded"
                         ],
                         "type": "string",
+                        "x-enum-comments": {
+                            "Confirmed": "Supplier đã xác nhận",
+                            "Delivered": "Đã giao thành công",
+                            "InTransit": "Đang vận chuyển (đang ship)",
+                            "OutForDelivery": "Sắp giao (shipper đang trên đường)",
+                            "Pending": "Chờ supplier xác nhận",
+                            "PendingPayment": "Chờ thanh toán",
+                            "Processing": "Đang chuẩn bị hàng",
+                            "ReadyToShip": "Sẵn sàng giao hàng"
+                        },
                         "x-enum-varnames": [
-                            "SupplierProfileStatusPending",
-                            "SupplierProfileStatusActive",
-                            "SupplierProfileStatusSuspended"
+                            "PendingPayment",
+                            "Pending",
+                            "Confirmed",
+                            "Processing",
+                            "ReadyToShip",
+                            "InTransit",
+                            "OutForDelivery",
+                            "Delivered",
+                            "Cancelled",
+                            "PaymentFailed",
+                            "Refunded"
                         ],
                         "name": "status",
                         "in": "query"
@@ -2801,6 +2827,64 @@ const docTemplate = `{
                         "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/api_gateway_dto.GetSupplierOrdersResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
+        "/suppliers/orders/{orderItemID}": {
+            "post": {
+                "description": "update order item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "update order item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "name": "orderItemID",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Thông tin cần cập nhật",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateOrderItemRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.UpdateOrderItemResponseDocs"
                         }
                     },
                     "400": {
@@ -7141,6 +7225,36 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/api_gateway_dto.UpdateOrderIPNMomoResponse"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.Metadata"
+                }
+            }
+        },
+        "api_gateway_dto.UpdateOrderItemRequest": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "enum": [
+                        "confirmed",
+                        "cancelled"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/common.StatusOrder"
+                        }
+                    ]
+                }
+            }
+        },
+        "api_gateway_dto.UpdateOrderItemResponse": {
+            "type": "object"
+        },
+        "api_gateway_dto.UpdateOrderItemResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/api_gateway_dto.UpdateOrderItemResponse"
                 },
                 "metadata": {
                     "$ref": "#/definitions/api_gateway_dto.Metadata"

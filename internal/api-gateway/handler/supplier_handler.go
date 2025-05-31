@@ -322,3 +322,51 @@ func (h *supplierHandler) GetSupplierOrders(ctx *gin.Context) {
 
 	utils.PaginatedResponse(ctx, res, int(data.Page), int(data.Limit), totalPages, totalItems, hasNext, hasPrevious)
 }
+
+// UpdateOrderItem update order item
+//
+//	@Summary		update order item
+//	@Tags			suppliers
+//	@Description	update order item
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			request	path		api_gateway_dto.UpdateOrderItemUriRequest	true	"Thông tin cần cập nhật"
+//	@Param			request	body		api_gateway_dto.UpdateOrderItemRequest	true	"Thông tin cần cập nhật"
+//	@Success		200		{object}	api_gateway_dto.UpdateOrderItemResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/suppliers/orders/{orderItemID} [post]
+func (h *supplierHandler) UpdateOrderItem(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "UpdateOrderItem"))
+	defer span.End()
+
+	req, _ := ctx.Get("user")
+	userClaims := req.(*api_gateway_service.UserClaims)
+
+	var data api_gateway_dto.UpdateOrderItemRequest
+	var uri api_gateway_dto.UpdateOrderItemUriRequest
+
+	if err := ctx.ShouldBindUri(&uri); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := ctx.ShouldBindJSON(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	if err := h.service.UpdateOrderItem(ct, data, userClaims.UserID, uri.OrderItemID); err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.UpdateOrderItemResponse{})
+}

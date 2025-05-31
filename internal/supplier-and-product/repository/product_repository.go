@@ -669,3 +669,24 @@ func (p *productRepository) GetProdInfoForPayment(ctx context.Context, data *par
 
 	return result, nil
 }
+
+func (p *productRepository) UpdateQuantityProductVariantWhenConfirmed(ctx context.Context, data *partner_proto_gen.UpdateQuantityProductVariantWhenConfirmedRequest) error {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "UpdateQuantityProductVariantWhenConfirmed"))
+	defer span.End()
+
+	selectSql := `select inventory_quantity from product_variants where id = $1`
+	var oldQuantity int64
+	if err := p.db.QueryRow(ctx, selectSql, data.ProductVariantId).Scan(&oldQuantity); err != nil {
+		span.RecordError(err)
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	updateSql := `update product_variants set inventory_quantity = $1 where id = $2`
+
+	if err := p.db.Exec(ctx, updateSql, oldQuantity-data.Quantity, data.ProductVariantId); err != nil {
+		span.RecordError(err)
+		return status.Error(codes.Internal, err.Error())
+	}
+
+	return nil
+}

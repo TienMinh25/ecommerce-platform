@@ -107,3 +107,4 @@ type UpdateSupplierDocumentVerificationStatusResponseDocs = ResponseSuccessDocs[
 type UpdateRoleForUserRegisterSupplierResponseDocs = ResponseSuccessDocs[UpdateRoleForUserRegisterSupplierResponse]
 type RegisterDelivererResponseDocs = ResponseSuccessDocs[RegisterDelivererResponse]
 type GetSupplierOrdersResponseDocs = ResponseSuccessPaginationDocs[[]GetSupplierOrdersResponse]
+type UpdateOrderItemResponseDocs = ResponseSuccessDocs[UpdateOrderItemResponse]

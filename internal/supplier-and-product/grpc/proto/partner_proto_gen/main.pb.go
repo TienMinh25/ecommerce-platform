@@ -31,7 +31,7 @@ var file_main_proto_rawDesc = string([]byte{
 	0x65, 0x6e, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x13, 0x70, 0x61, 0x72, 0x74, 0x6e,
 	0x65, 0x72, 0x5f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x16,
 	0x70, 0x61, 0x72, 0x74, 0x6e, 0x65, 0x72, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
-	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0xb1, 0x08, 0x0a, 0x0e, 0x50, 0x61, 0x72, 0x74, 0x6e,
+	0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0xc6, 0x09, 0x0a, 0x0e, 0x50, 0x61, 0x72, 0x74, 0x6e,
 	0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3e, 0x0a, 0x0d, 0x47, 0x65, 0x74,
 	0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x12, 0x15, 0x2e, 0x47, 0x65, 0x74,
 	0x43, 0x61, 0x74, 0x65, 0x67, 0x6f, 0x72, 0x69, 0x65, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
@@ -98,40 +98,51 @@ var file_main_proto_rawDesc = string([]byte{
 	0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x49, 0x44, 0x12, 0x15, 0x2e, 0x47, 0x65,
 	0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x49, 0x44, 0x52, 0x65, 0x71, 0x75, 0x65,
 	0x73, 0x74, 0x1a, 0x16, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
-	0x49, 0x44, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x15, 0x5a, 0x13, 0x2e, 0x2f,
-	0x70, 0x61, 0x72, 0x74, 0x6e, 0x65, 0x72, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x5f, 0x67, 0x65,
-	0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x49, 0x44, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x92, 0x01, 0x0a, 0x29, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x51, 0x75, 0x61, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x50, 0x72, 0x6f,
+	0x64, 0x75, 0x63, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x57, 0x68, 0x65, 0x6e, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x12, 0x31, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74,
+	0x65, 0x51, 0x75, 0x61, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x50, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x74,
+	0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x57, 0x68, 0x65, 0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69,
+	0x72, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x32, 0x2e, 0x55, 0x70,
+	0x64, 0x61, 0x74, 0x65, 0x51, 0x75, 0x61, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x50, 0x72, 0x6f, 0x64,
+	0x75, 0x63, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x57, 0x68, 0x65, 0x6e, 0x43, 0x6f,
+	0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42,
+	0x15, 0x5a, 0x13, 0x2e, 0x2f, 0x70, 0x61, 0x72, 0x74, 0x6e, 0x65, 0x72, 0x5f, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x5f, 0x67, 0x65, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 })
 
 var file_main_proto_goTypes = []any{
-	(*GetCategoriesRequest)(nil),            // 0: GetCategoriesRequest
-	(*GetProductsRequest)(nil),              // 1: GetProductsRequest
-	(*GetProductDetailRequest)(nil),         // 2: GetProductDetailRequest
-	(*GetProductReviewsRequest)(nil),        // 3: GetProductReviewsRequest
-	(*CheckAvailableProductRequest)(nil),    // 4: CheckAvailableProductRequest
-	(*GetProductInfoCartRequest)(nil),       // 5: GetProductInfoCartRequest
-	(*GetProdInfoForPaymentRequest)(nil),    // 6: GetProdInfoForPaymentRequest
-	(*GetSupplierInfoForOrderRequest)(nil),  // 7: GetSupplierInfoForOrderRequest
-	(*RegisterSupplierRequest)(nil),         // 8: RegisterSupplierRequest
-	(*GetSuppliersRequest)(nil),             // 9: GetSuppliersRequest
-	(*GetSupplierDetailRequest)(nil),        // 10: GetSupplierDetailRequest
-	(*UpdateSupplierRequest)(nil),           // 11: UpdateSupplierRequest
-	(*UpdateDocumentSupplierRequest)(nil),   // 12: UpdateDocumentSupplierRequest
-	(*GetSupplierIDRequest)(nil),            // 13: GetSupplierIDRequest
-	(*GetCategoriesResponse)(nil),           // 14: GetCategoriesResponse
-	(*GetProductsResponse)(nil),             // 15: GetProductsResponse
-	(*GetProductDetailResponse)(nil),        // 16: GetProductDetailResponse
-	(*GetProductReviewsResponse)(nil),       // 17: GetProductReviewsResponse
-	(*CheckAvailableProductResponse)(nil),   // 18: CheckAvailableProductResponse
-	(*GetProductInfoCartResponse)(nil),      // 19: GetProductInfoCartResponse
-	(*GetProdInfoForPaymentResponse)(nil),   // 20: GetProdInfoForPaymentResponse
-	(*GetSupplierInfoForOrderResponse)(nil), // 21: GetSupplierInfoForOrderResponse
-	(*RegisterSupplierResponse)(nil),        // 22: RegisterSupplierResponse
-	(*GetSuppliersResponse)(nil),            // 23: GetSuppliersResponse
-	(*GetSupplierDetailResponse)(nil),       // 24: GetSupplierDetailResponse
-	(*UpdateSupplierResponse)(nil),          // 25: UpdateSupplierResponse
-	(*UpdateDocumentSupplierResponse)(nil),  // 26: UpdateDocumentSupplierResponse
-	(*GetSupplierIDResponse)(nil),           // 27: GetSupplierIDResponse
+	(*GetCategoriesRequest)(nil),                              // 0: GetCategoriesRequest
+	(*GetProductsRequest)(nil),                                // 1: GetProductsRequest
+	(*GetProductDetailRequest)(nil),                           // 2: GetProductDetailRequest
+	(*GetProductReviewsRequest)(nil),                          // 3: GetProductReviewsRequest
+	(*CheckAvailableProductRequest)(nil),                      // 4: CheckAvailableProductRequest
+	(*GetProductInfoCartRequest)(nil),                         // 5: GetProductInfoCartRequest
+	(*GetProdInfoForPaymentRequest)(nil),                      // 6: GetProdInfoForPaymentRequest
+	(*GetSupplierInfoForOrderRequest)(nil),                    // 7: GetSupplierInfoForOrderRequest
+	(*RegisterSupplierRequest)(nil),                           // 8: RegisterSupplierRequest
+	(*GetSuppliersRequest)(nil),                               // 9: GetSuppliersRequest
+	(*GetSupplierDetailRequest)(nil),                          // 10: GetSupplierDetailRequest
+	(*UpdateSupplierRequest)(nil),                             // 11: UpdateSupplierRequest
+	(*UpdateDocumentSupplierRequest)(nil),                     // 12: UpdateDocumentSupplierRequest
+	(*GetSupplierIDRequest)(nil),                              // 13: GetSupplierIDRequest
+	(*UpdateQuantityProductVariantWhenConfirmedRequest)(nil),  // 14: UpdateQuantityProductVariantWhenConfirmedRequest
+	(*GetCategoriesResponse)(nil),                             // 15: GetCategoriesResponse
+	(*GetProductsResponse)(nil),                               // 16: GetProductsResponse
+	(*GetProductDetailResponse)(nil),                          // 17: GetProductDetailResponse
+	(*GetProductReviewsResponse)(nil),                         // 18: GetProductReviewsResponse
+	(*CheckAvailableProductResponse)(nil),                     // 19: CheckAvailableProductResponse
+	(*GetProductInfoCartResponse)(nil),                        // 20: GetProductInfoCartResponse
+	(*GetProdInfoForPaymentResponse)(nil),                     // 21: GetProdInfoForPaymentResponse
+	(*GetSupplierInfoForOrderResponse)(nil),                   // 22: GetSupplierInfoForOrderResponse
+	(*RegisterSupplierResponse)(nil),                          // 23: RegisterSupplierResponse
+	(*GetSuppliersResponse)(nil),                              // 24: GetSuppliersResponse
+	(*GetSupplierDetailResponse)(nil),                         // 25: GetSupplierDetailResponse
+	(*UpdateSupplierResponse)(nil),                            // 26: UpdateSupplierResponse
+	(*UpdateDocumentSupplierResponse)(nil),                    // 27: UpdateDocumentSupplierResponse
+	(*GetSupplierIDResponse)(nil),                             // 28: GetSupplierIDResponse
+	(*UpdateQuantityProductVariantWhenConfirmedResponse)(nil), // 29: UpdateQuantityProductVariantWhenConfirmedResponse
 }
 var file_main_proto_depIdxs = []int32{
 	0,  // 0: PartnerService.GetCategories:input_type -> GetCategoriesRequest
@@ -148,22 +159,24 @@ var file_main_proto_depIdxs = []int32{
 	11, // 11: PartnerService.UpdateSupplier:input_type -> UpdateSupplierRequest
 	12, // 12: PartnerService.UpdateDocumentSupplier:input_type -> UpdateDocumentSupplierRequest
 	13, // 13: PartnerService.GetSupplierID:input_type -> GetSupplierIDRequest
-	14, // 14: PartnerService.GetCategories:output_type -> GetCategoriesResponse
-	15, // 15: PartnerService.GetProducts:output_type -> GetProductsResponse
-	16, // 16: PartnerService.GetProductByID:output_type -> GetProductDetailResponse
-	17, // 17: PartnerService.GetProductReviewsByID:output_type -> GetProductReviewsResponse
-	18, // 18: PartnerService.CheckAvailableProduct:output_type -> CheckAvailableProductResponse
-	19, // 19: PartnerService.GetProductInfoCart:output_type -> GetProductInfoCartResponse
-	20, // 20: PartnerService.GetProdInfoForPayment:output_type -> GetProdInfoForPaymentResponse
-	21, // 21: PartnerService.GetSupplierInfoForMyOrders:output_type -> GetSupplierInfoForOrderResponse
-	22, // 22: PartnerService.RegisterSupplier:output_type -> RegisterSupplierResponse
-	23, // 23: PartnerService.GetSuppliers:output_type -> GetSuppliersResponse
-	24, // 24: PartnerService.GetSupplierDetail:output_type -> GetSupplierDetailResponse
-	25, // 25: PartnerService.UpdateSupplier:output_type -> UpdateSupplierResponse
-	26, // 26: PartnerService.UpdateDocumentSupplier:output_type -> UpdateDocumentSupplierResponse
-	27, // 27: PartnerService.GetSupplierID:output_type -> GetSupplierIDResponse
-	14, // [14:28] is the sub-list for method output_type
-	0,  // [0:14] is the sub-list for method input_type
+	14, // 14: PartnerService.UpdateQuantityProductVariantWhenConfirmed:input_type -> UpdateQuantityProductVariantWhenConfirmedRequest
+	15, // 15: PartnerService.GetCategories:output_type -> GetCategoriesResponse
+	16, // 16: PartnerService.GetProducts:output_type -> GetProductsResponse
+	17, // 17: PartnerService.GetProductByID:output_type -> GetProductDetailResponse
+	18, // 18: PartnerService.GetProductReviewsByID:output_type -> GetProductReviewsResponse
+	19, // 19: PartnerService.CheckAvailableProduct:output_type -> CheckAvailableProductResponse
+	20, // 20: PartnerService.GetProductInfoCart:output_type -> GetProductInfoCartResponse
+	21, // 21: PartnerService.GetProdInfoForPayment:output_type -> GetProdInfoForPaymentResponse
+	22, // 22: PartnerService.GetSupplierInfoForMyOrders:output_type -> GetSupplierInfoForOrderResponse
+	23, // 23: PartnerService.RegisterSupplier:output_type -> RegisterSupplierResponse
+	24, // 24: PartnerService.GetSuppliers:output_type -> GetSuppliersResponse
+	25, // 25: PartnerService.GetSupplierDetail:output_type -> GetSupplierDetailResponse
+	26, // 26: PartnerService.UpdateSupplier:output_type -> UpdateSupplierResponse
+	27, // 27: PartnerService.UpdateDocumentSupplier:output_type -> UpdateDocumentSupplierResponse
+	28, // 28: PartnerService.GetSupplierID:output_type -> GetSupplierIDResponse
+	29, // 29: PartnerService.UpdateQuantityProductVariantWhenConfirmed:output_type -> UpdateQuantityProductVariantWhenConfirmedResponse
+	15, // [15:30] is the sub-list for method output_type
+	0,  // [0:15] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name

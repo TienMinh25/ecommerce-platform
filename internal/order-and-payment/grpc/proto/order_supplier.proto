@@ -46,3 +46,11 @@ message SupplierOrdersResponse {
   // additional
   string order_item_id = 25;
 }
+
+message UpdateOrderItemRequest {
+  string status = 1;
+  int64 user_id = 2;
+  string order_item_id = 3;
+}
+
+message UpdateOrderItemResponse {}

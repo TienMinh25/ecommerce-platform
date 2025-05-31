@@ -79,3 +79,14 @@ func (p *PartnerHandler) GetSupplierID(ctx context.Context, data *partner_proto_
 
 	return res, nil
 }
+
+func (p *PartnerHandler) UpdateQuantityProductVariantWhenConfirmed(ctx context.Context, data *partner_proto_gen.UpdateQuantityProductVariantWhenConfirmedRequest) (*partner_proto_gen.UpdateQuantityProductVariantWhenConfirmedResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateQuantityProductVariantWhenConfirmed"))
+	defer span.End()
+
+	if err := p.supplierService.UpdateQuantityProductVariantWhenConfirmed(ctx, data); err != nil {
+		return nil, err
+	}
+
+	return &partner_proto_gen.UpdateQuantityProductVariantWhenConfirmedResponse{}, nil
+}

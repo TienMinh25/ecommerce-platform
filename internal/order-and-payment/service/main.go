@@ -31,6 +31,7 @@ type IPaymentService interface {
 type IOrderService interface {
 	GetMyOrders(ctx context.Context, data *order_proto_gen.GetMyOrdersRequest) (*order_proto_gen.GetMyOrdersResponse, error)
 	GetSupplierOrders(ctx context.Context, data *order_proto_gen.GetSupplierOrdersRequest) (*order_proto_gen.GetSupplierOrdersResponse, error)
+	UpdateOrderItem(ctx context.Context, data *order_proto_gen.UpdateOrderItemRequest) error
 }
 
 type IDelivererService interface {

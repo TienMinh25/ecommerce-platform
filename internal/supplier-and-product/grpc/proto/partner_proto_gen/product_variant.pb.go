@@ -373,6 +373,94 @@ func (x *ProductInfoCartResponse) GetVariantName() string {
 	return ""
 }
 
+type UpdateQuantityProductVariantWhenConfirmedRequest struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Quantity         int64                  `protobuf:"varint,1,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	ProductVariantId string                 `protobuf:"bytes,2,opt,name=product_variant_id,json=productVariantId,proto3" json:"product_variant_id,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *UpdateQuantityProductVariantWhenConfirmedRequest) Reset() {
+	*x = UpdateQuantityProductVariantWhenConfirmedRequest{}
+	mi := &file_product_variant_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateQuantityProductVariantWhenConfirmedRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateQuantityProductVariantWhenConfirmedRequest) ProtoMessage() {}
+
+func (x *UpdateQuantityProductVariantWhenConfirmedRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_product_variant_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateQuantityProductVariantWhenConfirmedRequest.ProtoReflect.Descriptor instead.
+func (*UpdateQuantityProductVariantWhenConfirmedRequest) Descriptor() ([]byte, []int) {
+	return file_product_variant_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *UpdateQuantityProductVariantWhenConfirmedRequest) GetQuantity() int64 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *UpdateQuantityProductVariantWhenConfirmedRequest) GetProductVariantId() string {
+	if x != nil {
+		return x.ProductVariantId
+	}
+	return ""
+}
+
+type UpdateQuantityProductVariantWhenConfirmedResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateQuantityProductVariantWhenConfirmedResponse) Reset() {
+	*x = UpdateQuantityProductVariantWhenConfirmedResponse{}
+	mi := &file_product_variant_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateQuantityProductVariantWhenConfirmedResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateQuantityProductVariantWhenConfirmedResponse) ProtoMessage() {}
+
+func (x *UpdateQuantityProductVariantWhenConfirmedResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_product_variant_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateQuantityProductVariantWhenConfirmedResponse.ProtoReflect.Descriptor instead.
+func (*UpdateQuantityProductVariantWhenConfirmedResponse) Descriptor() ([]byte, []int) {
+	return file_product_variant_proto_rawDescGZIP(), []int{7}
+}
+
 var File_product_variant_proto protoreflect.FileDescriptor
 
 var file_product_variant_proto_rawDesc = string([]byte{
@@ -432,9 +520,20 @@ var file_product_variant_proto_rawDesc = string([]byte{
 	0x0a, 0x08, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x63, 0x79, 0x18, 0x09, 0x20, 0x01, 0x28, 0x09,
 	0x52, 0x08, 0x63, 0x75, 0x72, 0x72, 0x65, 0x6e, 0x63, 0x79, 0x12, 0x21, 0x0a, 0x0c, 0x76, 0x61,
 	0x72, 0x69, 0x61, 0x6e, 0x74, 0x5f, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x09,
-	0x52, 0x0b, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x42, 0x15, 0x5a,
-	0x13, 0x2e, 0x2f, 0x70, 0x61, 0x72, 0x74, 0x6e, 0x65, 0x72, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x5f, 0x67, 0x65, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x0b, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x22, 0x7c, 0x0a,
+	0x30, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x51, 0x75, 0x61, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x50,
+	0x72, 0x6f, 0x64, 0x75, 0x63, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x57, 0x68, 0x65,
+	0x6e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x1a, 0x0a, 0x08, 0x71, 0x75, 0x61, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x03, 0x52, 0x08, 0x71, 0x75, 0x61, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x12, 0x2c, 0x0a,
+	0x12, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x74, 0x5f, 0x76, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74,
+	0x5f, 0x69, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x10, 0x70, 0x72, 0x6f, 0x64, 0x75,
+	0x63, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x49, 0x64, 0x22, 0x33, 0x0a, 0x31, 0x55,
+	0x70, 0x64, 0x61, 0x74, 0x65, 0x51, 0x75, 0x61, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x50, 0x72, 0x6f,
+	0x64, 0x75, 0x63, 0x74, 0x56, 0x61, 0x72, 0x69, 0x61, 0x6e, 0x74, 0x57, 0x68, 0x65, 0x6e, 0x43,
+	0x6f, 0x6e, 0x66, 0x69, 0x72, 0x6d, 0x65, 0x64, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
+	0x42, 0x15, 0x5a, 0x13, 0x2e, 0x2f, 0x70, 0x61, 0x72, 0x74, 0x6e, 0x65, 0x72, 0x5f, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x5f, 0x67, 0x65, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 })
 
 var (
@@ -449,14 +548,16 @@ func file_product_variant_proto_rawDescGZIP() []byte {
 	return file_product_variant_proto_rawDescData
 }
 
-var file_product_variant_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_product_variant_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_product_variant_proto_goTypes = []any{
-	(*CheckAvailableProductVariantRequest)(nil),  // 0: CheckAvailableProductVariantRequest
-	(*CheckAvailableProductVariantResponse)(nil), // 1: CheckAvailableProductVariantResponse
-	(*GetProductInfoCartRequest)(nil),            // 2: GetProductInfoCartRequest
-	(*ProductInfoCart)(nil),                      // 3: ProductInfoCart
-	(*GetProductInfoCartResponse)(nil),           // 4: GetProductInfoCartResponse
-	(*ProductInfoCartResponse)(nil),              // 5: ProductInfoCartResponse
+	(*CheckAvailableProductVariantRequest)(nil),               // 0: CheckAvailableProductVariantRequest
+	(*CheckAvailableProductVariantResponse)(nil),              // 1: CheckAvailableProductVariantResponse
+	(*GetProductInfoCartRequest)(nil),                         // 2: GetProductInfoCartRequest
+	(*ProductInfoCart)(nil),                                   // 3: ProductInfoCart
+	(*GetProductInfoCartResponse)(nil),                        // 4: GetProductInfoCartResponse
+	(*ProductInfoCartResponse)(nil),                           // 5: ProductInfoCartResponse
+	(*UpdateQuantityProductVariantWhenConfirmedRequest)(nil),  // 6: UpdateQuantityProductVariantWhenConfirmedRequest
+	(*UpdateQuantityProductVariantWhenConfirmedResponse)(nil), // 7: UpdateQuantityProductVariantWhenConfirmedResponse
 }
 var file_product_variant_proto_depIdxs = []int32{
 	3, // 0: GetProductInfoCartRequest.request:type_name -> ProductInfoCart
@@ -479,7 +580,7 @@ func file_product_variant_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_product_variant_proto_rawDesc), len(file_product_variant_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

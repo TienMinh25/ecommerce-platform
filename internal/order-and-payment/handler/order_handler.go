@@ -31,3 +31,14 @@ func (h *OrderHandler) GetSupplierOrders(ctx context.Context, data *order_proto_
 
 	return res, nil
 }
+
+func (h *OrderHandler) UpdateOrderItem(ctx context.Context, data *order_proto_gen.UpdateOrderItemRequest) (*order_proto_gen.UpdateOrderItemResponse, error) {
+	ctx, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "UpdateOrderItem"))
+	defer span.End()
+
+	if err := h.orderService.UpdateOrderItem(ctx, data); err != nil {
+		return nil, err
+	}
+
+	return &order_proto_gen.UpdateOrderItemResponse{}, nil
+}

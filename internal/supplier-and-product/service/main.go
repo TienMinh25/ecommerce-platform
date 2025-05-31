@@ -26,4 +26,5 @@ type ISupplierService interface {
 	UpdateSupplier(ctx context.Context, data *partner_proto_gen.UpdateSupplierRequest) error
 	UpdateDocumentSupplier(ctx context.Context, data *partner_proto_gen.UpdateDocumentSupplierRequest) (*partner_proto_gen.UpdateDocumentSupplierResponse, error)
 	GetSupplierID(ctx context.Context, userID int64) (*partner_proto_gen.GetSupplierIDResponse, error)
+	UpdateQuantityProductVariantWhenConfirmed(ctx context.Context, data *partner_proto_gen.UpdateQuantityProductVariantWhenConfirmedRequest) error
 }

@@ -251,6 +251,7 @@ func registerSupplierEndpoint(group *gin.RouterGroup, accessTokenMiddleware *mid
 		supplierGroup.PATCH("/:id/documents/:documentID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleAdmin}, common.Onboarding, common.Update), supplierHandler.UpdateSupplierDocumentVerificationStatus)
 
 		supplierGroup.GET("/me", permissionMiddleware.HasPermission([]common.RoleName{common.RoleSupplier}, common.OrderManagement, common.Read), supplierHandler.GetSupplierOrders)
+		supplierGroup.POST("/orders/:orderItemID", permissionMiddleware.HasPermission([]common.RoleName{common.RoleSupplier}, common.OrderManagement, common.Update), supplierHandler.UpdateOrderItem)
 	}
 }
 

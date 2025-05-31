@@ -228,6 +228,21 @@ const supplierService = {
             throw error;
         }
     },
+
+    // Update order item status
+    updateOrderStatus: async (orderItemID, status) => {
+        try {
+            const requestBody = { status };
+
+            const response = await api.post(
+                `/suppliers/orders/${orderItemID}`,
+                requestBody
+            );
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    }
 };
 
 export default supplierService;

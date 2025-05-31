@@ -141,3 +141,13 @@ type GetSupplierOrdersResponse struct {
 
 	OrderItemID string `json:"order_item_id"`
 }
+
+type UpdateOrderItemRequest struct {
+	Status common.StatusOrder `json:"status" binding:"omitempty,enum,oneof=confirmed cancelled processing"`
+}
+
+type UpdateOrderItemUriRequest struct {
+	OrderItemID string `uri:"orderItemID" binding:"required"`
+}
+
+type UpdateOrderItemResponse struct{}

@@ -44,4 +44,6 @@ service OrderService {
   rpc CreateCartForRegister(CreateCartForRegisterRequest) returns (CreateCartForRegisterResponse);
 
   rpc GetSupplierOrders(GetSupplierOrdersRequest) returns (GetSupplierOrdersResponse);
+
+  rpc UpdateOrderItem(UpdateOrderItemRequest) returns (UpdateOrderItemResponse);
 }

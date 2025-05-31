@@ -129,6 +129,7 @@ type ISupplierHandler interface {
 
 	// supplier management
 	GetSupplierOrders(ctx *gin.Context)
+	UpdateOrderItem(ctx *gin.Context)
 }
 
 type IS3Handler interface {

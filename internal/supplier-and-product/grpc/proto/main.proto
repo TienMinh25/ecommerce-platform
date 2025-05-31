@@ -37,4 +37,6 @@ service PartnerService {
   rpc UpdateDocumentSupplier(UpdateDocumentSupplierRequest) returns (UpdateDocumentSupplierResponse);
 
   rpc GetSupplierID(GetSupplierIDRequest) returns (GetSupplierIDResponse);
+
+  rpc UpdateQuantityProductVariantWhenConfirmed(UpdateQuantityProductVariantWhenConfirmedRequest) returns (UpdateQuantityProductVariantWhenConfirmedResponse);
 }

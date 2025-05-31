@@ -210,3 +210,14 @@ func (s *orderService) GetSupplierOrders(ctx context.Context, data *order_proto_
 		Metadata: metadata,
 	}, nil
 }
+
+func (s *orderService) UpdateOrderItem(ctx context.Context, data *order_proto_gen.UpdateOrderItemRequest) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateOrderItem"))
+	defer span.End()
+
+	if err := s.orderRepository.UpdateOrderItem(ctx, data); err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -19,20 +19,21 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PartnerService_GetCategories_FullMethodName              = "/PartnerService/GetCategories"
-	PartnerService_GetProducts_FullMethodName                = "/PartnerService/GetProducts"
-	PartnerService_GetProductByID_FullMethodName             = "/PartnerService/GetProductByID"
-	PartnerService_GetProductReviewsByID_FullMethodName      = "/PartnerService/GetProductReviewsByID"
-	PartnerService_CheckAvailableProduct_FullMethodName      = "/PartnerService/CheckAvailableProduct"
-	PartnerService_GetProductInfoCart_FullMethodName         = "/PartnerService/GetProductInfoCart"
-	PartnerService_GetProdInfoForPayment_FullMethodName      = "/PartnerService/GetProdInfoForPayment"
-	PartnerService_GetSupplierInfoForMyOrders_FullMethodName = "/PartnerService/GetSupplierInfoForMyOrders"
-	PartnerService_RegisterSupplier_FullMethodName           = "/PartnerService/RegisterSupplier"
-	PartnerService_GetSuppliers_FullMethodName               = "/PartnerService/GetSuppliers"
-	PartnerService_GetSupplierDetail_FullMethodName          = "/PartnerService/GetSupplierDetail"
-	PartnerService_UpdateSupplier_FullMethodName             = "/PartnerService/UpdateSupplier"
-	PartnerService_UpdateDocumentSupplier_FullMethodName     = "/PartnerService/UpdateDocumentSupplier"
-	PartnerService_GetSupplierID_FullMethodName              = "/PartnerService/GetSupplierID"
+	PartnerService_GetCategories_FullMethodName                             = "/PartnerService/GetCategories"
+	PartnerService_GetProducts_FullMethodName                               = "/PartnerService/GetProducts"
+	PartnerService_GetProductByID_FullMethodName                            = "/PartnerService/GetProductByID"
+	PartnerService_GetProductReviewsByID_FullMethodName                     = "/PartnerService/GetProductReviewsByID"
+	PartnerService_CheckAvailableProduct_FullMethodName                     = "/PartnerService/CheckAvailableProduct"
+	PartnerService_GetProductInfoCart_FullMethodName                        = "/PartnerService/GetProductInfoCart"
+	PartnerService_GetProdInfoForPayment_FullMethodName                     = "/PartnerService/GetProdInfoForPayment"
+	PartnerService_GetSupplierInfoForMyOrders_FullMethodName                = "/PartnerService/GetSupplierInfoForMyOrders"
+	PartnerService_RegisterSupplier_FullMethodName                          = "/PartnerService/RegisterSupplier"
+	PartnerService_GetSuppliers_FullMethodName                              = "/PartnerService/GetSuppliers"
+	PartnerService_GetSupplierDetail_FullMethodName                         = "/PartnerService/GetSupplierDetail"
+	PartnerService_UpdateSupplier_FullMethodName                            = "/PartnerService/UpdateSupplier"
+	PartnerService_UpdateDocumentSupplier_FullMethodName                    = "/PartnerService/UpdateDocumentSupplier"
+	PartnerService_GetSupplierID_FullMethodName                             = "/PartnerService/GetSupplierID"
+	PartnerService_UpdateQuantityProductVariantWhenConfirmed_FullMethodName = "/PartnerService/UpdateQuantityProductVariantWhenConfirmed"
 )
 
 // PartnerServiceClient is the client API for PartnerService service.
@@ -53,6 +54,7 @@ type PartnerServiceClient interface {
 	UpdateSupplier(ctx context.Context, in *UpdateSupplierRequest, opts ...grpc.CallOption) (*UpdateSupplierResponse, error)
 	UpdateDocumentSupplier(ctx context.Context, in *UpdateDocumentSupplierRequest, opts ...grpc.CallOption) (*UpdateDocumentSupplierResponse, error)
 	GetSupplierID(ctx context.Context, in *GetSupplierIDRequest, opts ...grpc.CallOption) (*GetSupplierIDResponse, error)
+	UpdateQuantityProductVariantWhenConfirmed(ctx context.Context, in *UpdateQuantityProductVariantWhenConfirmedRequest, opts ...grpc.CallOption) (*UpdateQuantityProductVariantWhenConfirmedResponse, error)
 }
 
 type partnerServiceClient struct {
@@ -203,6 +205,16 @@ func (c *partnerServiceClient) GetSupplierID(ctx context.Context, in *GetSupplie
 	return out, nil
 }
 
+func (c *partnerServiceClient) UpdateQuantityProductVariantWhenConfirmed(ctx context.Context, in *UpdateQuantityProductVariantWhenConfirmedRequest, opts ...grpc.CallOption) (*UpdateQuantityProductVariantWhenConfirmedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateQuantityProductVariantWhenConfirmedResponse)
+	err := c.cc.Invoke(ctx, PartnerService_UpdateQuantityProductVariantWhenConfirmed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PartnerServiceServer is the server API for PartnerService service.
 // All implementations must embed UnimplementedPartnerServiceServer
 // for forward compatibility.
@@ -221,6 +233,7 @@ type PartnerServiceServer interface {
 	UpdateSupplier(context.Context, *UpdateSupplierRequest) (*UpdateSupplierResponse, error)
 	UpdateDocumentSupplier(context.Context, *UpdateDocumentSupplierRequest) (*UpdateDocumentSupplierResponse, error)
 	GetSupplierID(context.Context, *GetSupplierIDRequest) (*GetSupplierIDResponse, error)
+	UpdateQuantityProductVariantWhenConfirmed(context.Context, *UpdateQuantityProductVariantWhenConfirmedRequest) (*UpdateQuantityProductVariantWhenConfirmedResponse, error)
 	mustEmbedUnimplementedPartnerServiceServer()
 }
 
@@ -272,6 +285,9 @@ func (UnimplementedPartnerServiceServer) UpdateDocumentSupplier(context.Context,
 }
 func (UnimplementedPartnerServiceServer) GetSupplierID(context.Context, *GetSupplierIDRequest) (*GetSupplierIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetSupplierID not implemented")
+}
+func (UnimplementedPartnerServiceServer) UpdateQuantityProductVariantWhenConfirmed(context.Context, *UpdateQuantityProductVariantWhenConfirmedRequest) (*UpdateQuantityProductVariantWhenConfirmedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateQuantityProductVariantWhenConfirmed not implemented")
 }
 func (UnimplementedPartnerServiceServer) mustEmbedUnimplementedPartnerServiceServer() {}
 func (UnimplementedPartnerServiceServer) testEmbeddedByValue()                        {}
@@ -546,6 +562,24 @@ func _PartnerService_GetSupplierID_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PartnerService_UpdateQuantityProductVariantWhenConfirmed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateQuantityProductVariantWhenConfirmedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).UpdateQuantityProductVariantWhenConfirmed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_UpdateQuantityProductVariantWhenConfirmed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).UpdateQuantityProductVariantWhenConfirmed(ctx, req.(*UpdateQuantityProductVariantWhenConfirmedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PartnerService_ServiceDesc is the grpc.ServiceDesc for PartnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -608,6 +642,10 @@ var PartnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetSupplierID",
 			Handler:    _PartnerService_GetSupplierID_Handler,
+		},
+		{
+			MethodName: "UpdateQuantityProductVariantWhenConfirmed",
+			Handler:    _PartnerService_UpdateQuantityProductVariantWhenConfirmed_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

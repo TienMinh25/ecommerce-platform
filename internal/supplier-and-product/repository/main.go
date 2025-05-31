@@ -21,6 +21,7 @@ type IProductRepository interface {
 	CheckAvailableProd(ctx context.Context, prodVariantID string, quantity int64) (bool, int64, error)
 	GetProductInfoForCart(ctx context.Context, prodIds []string, prodVariantIds []string) (map[string]models.Product, []models.ProductVariant, error)
 	GetProdInfoForPayment(ctx context.Context, data *partner_proto_gen.GetProdInfoForPaymentRequest) (*partner_proto_gen.GetProdInfoForPaymentResponse, error)
+	UpdateQuantityProductVariantWhenConfirmed(ctx context.Context, data *partner_proto_gen.UpdateQuantityProductVariantWhenConfirmedRequest) error
 }
 
 type ISupplierProfileRepository interface {

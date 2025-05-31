@@ -340,3 +340,23 @@ func (s *supplierService) GetSupplierOrders(ctx context.Context, data api_gatewa
 
 	return result, int(resultOrder.Metadata.TotalItems), int(resultOrder.Metadata.TotalPages), resultOrder.Metadata.HasNext, resultOrder.Metadata.HasPrevious, nil
 }
+
+func (s *supplierService) UpdateOrderItem(ctx context.Context, data api_gateway_dto.UpdateOrderItemRequest, userID int, orderItemID string) error {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "UpdateOrderItem"))
+	defer span.End()
+
+	_, err := s.orderClient.UpdateOrderItem(ctx, &order_proto_gen.UpdateOrderItemRequest{
+		OrderItemId: orderItemID,
+		Status:      string(data.Status),
+		UserId:      int64(userID),
+	})
+
+	if err != nil {
+		return utils.TechnicalError{
+			Code:    http.StatusInternalServerError,
+			Message: common.MSG_INTERNAL_ERROR,
+		}
+	}
+
+	return nil
+}

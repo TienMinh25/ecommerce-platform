@@ -29,6 +29,7 @@ import {
     ModalBody,
     ModalCloseButton,
     Textarea,
+    useToast,
 } from '@chakra-ui/react';
 import { ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
 import supplierService from '../../../services/supplierService';
@@ -51,11 +52,13 @@ const SupplierOrders = () => {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [statusToUpdate, setStatusToUpdate] = useState('');
     const [cancelReason, setCancelReason] = useState('');
+    const [updating, setUpdating] = useState(false);
 
     const { isOpen: isStatusModalOpen, onOpen: onStatusModalOpen, onClose: onStatusModalClose } = useDisclosure();
     const { isOpen: isCancelModalOpen, onOpen: onCancelModalOpen, onClose: onCancelModalClose } = useDisclosure();
+    const toast = useToast();
 
-    // Status tabs for supplier - based on acceptStatus
+    // Status tabs for supplier - based on acceptStatus from backend
     const statusTabs = [
         { key: null, label: 'Tất cả' },
         { key: 'pending', label: 'Chờ xác nhận' },
@@ -87,7 +90,7 @@ const SupplierOrders = () => {
                 limit: pagination.limit
             };
 
-            // Add status filter if provided (based on acceptStatus)
+            // Add status filter if provided
             if (status) {
                 params.status = status;
             }
@@ -146,7 +149,7 @@ const SupplierOrders = () => {
         fetchOrders(1, currentStatus);
     }, [activeTab]);
 
-    // Status badges with updated statuses
+    // Status badges with statuses matching supplier acceptStatus
     const renderStatusBadge = (status) => {
         const statusConfig = {
             'pending': {
@@ -257,56 +260,71 @@ const SupplierOrders = () => {
     const confirmStatusUpdate = async () => {
         if (!selectedOrder) return;
 
+        setUpdating(true);
         try {
-            setLoading(true);
-
-            // Call API to update order status
+            // Call API to update order status using the correct endpoint
             await supplierService.updateOrderStatus(
                 selectedOrder.order_item_id,
                 statusToUpdate
             );
 
-            // Update order status in local state
-            setOrders(prevOrders =>
-                prevOrders.map(order =>
-                    order.order_item_id === selectedOrder.order_item_id
-                        ? { ...order, status: statusToUpdate }
-                        : order
-                )
-            );
+            // Show success toast
+            toast({
+                title: 'Cập nhật thành công',
+                description: `Đã cập nhật trạng thái đơn hàng thành "${getStatusLabel(statusToUpdate)}"`,
+                status: 'success',
+                duration: 3000,
+                isClosable: true,
+            });
+
+            // Reload data with current tab status and pagination
+            const currentStatus = statusTabs[activeTab]?.key;
+            await fetchOrders(pagination.page, currentStatus);
 
             onStatusModalClose();
             setSelectedOrder(null);
             setStatusToUpdate('');
         } catch (error) {
             console.error('Error updating status:', error);
-            setError(error.response?.data?.error?.message || 'Có lỗi xảy ra khi cập nhật trạng thái');
+            const errorMessage = error.response?.data?.error?.message || 'Có lỗi xảy ra khi cập nhật trạng thái';
+            setError(errorMessage);
+
+            // Show error toast
+            toast({
+                title: 'Cập nhật thất bại',
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
         } finally {
-            setLoading(false);
+            setUpdating(false);
         }
     };
 
     const confirmCancelOrder = async () => {
-        if (!selectedOrder || !cancelReason.trim()) return;
+        if (!selectedOrder) return;
 
+        setUpdating(true);
         try {
-            setLoading(true);
-
-            // Call API to cancel order with reason
+            // Call API to cancel order (no cancel reason in API)
             await supplierService.updateOrderStatus(
                 selectedOrder.order_item_id,
-                'cancelled',
-                cancelReason
+                'cancelled'
             );
 
-            // Update order status in local state
-            setOrders(prevOrders =>
-                prevOrders.map(order =>
-                    order.order_item_id === selectedOrder.order_item_id
-                        ? { ...order, status: 'cancelled', cancelled_reason: cancelReason }
-                        : order
-                )
-            );
+            // Show success toast
+            toast({
+                title: 'Hủy đơn hàng thành công',
+                description: 'Đã hủy đơn hàng thành công',
+                status: 'success',
+                duration: 3000,
+                isClosable: true,
+            });
+
+            // Reload data with current tab status and pagination
+            const currentStatus = statusTabs[activeTab]?.key;
+            await fetchOrders(pagination.page, currentStatus);
 
             onCancelModalClose();
             setSelectedOrder(null);
@@ -314,19 +332,33 @@ const SupplierOrders = () => {
             setCancelReason('');
         } catch (error) {
             console.error('Error cancelling order:', error);
-            setError(error.response?.data?.error?.message || 'Có lỗi xảy ra khi hủy đơn hàng');
+            const errorMessage = error.response?.data?.error?.message || 'Có lỗi xảy ra khi hủy đơn hàng';
+            setError(errorMessage);
+
+            // Show error toast
+            toast({
+                title: 'Hủy đơn hàng thất bại',
+                description: errorMessage,
+                status: 'error',
+                duration: 5000,
+                isClosable: true,
+            });
         } finally {
-            setLoading(false);
+            setUpdating(false);
         }
     };
 
     // Get available status transitions based on current status
     const getAvailableStatuses = (currentStatus) => {
-        // Chỉ có pending mới có thể thực hiện action
+        // Business logic for supplier status transitions:
         if (currentStatus === 'pending') {
+            // Pending orders can be confirmed or cancelled
             return ['confirmed', 'cancelled'];
+        } else if (currentStatus === 'confirmed') {
+            // Confirmed orders can start processing
+            return ['processing'];
         }
-        // Tất cả status khác chỉ được xem, không có button action
+        // All other statuses are view-only for suppliers
         return [];
     };
 
@@ -334,12 +366,8 @@ const SupplierOrders = () => {
     const getStatusLabel = (status) => {
         const labels = {
             'confirmed': 'Xác nhận đơn hàng',
-            'processing': 'Bắt đầu chuẩn bị',
-            'ready_to_ship': 'Sẵn sàng giao hàng',
-            'in_transit': 'Bắt đầu vận chuyển',
-            'out_for_delivery': 'Đang giao hàng',
-            'delivered': 'Đã giao thành công',
-            'cancelled': 'Hủy đơn hàng'
+            'cancelled': 'Hủy đơn hàng',
+            'processing': 'Bắt đầu chuẩn bị'
         };
         return labels[status] || status;
     };
@@ -374,14 +402,14 @@ const SupplierOrders = () => {
                         <Avatar
                             size="sm"
                             src={order.customer_avatar}
-                            name={order.customer_name}
+                            name={order.recipient_name}
                         />
                         <VStack align="start" spacing={1}>
                             <Text fontWeight="bold" noOfLines={1}>
-                                Khách hàng: {order.customer_name}
+                                Khách hàng: {order.recipient_name}
                             </Text>
                             <Text fontSize="sm" color="gray.600">
-                                Mã đơn: {order.order_id} • {formatDate(order.created_at)}
+                                Mã đơn: {order.order_item_id} • {formatDate(order.created_at)}
                             </Text>
                         </VStack>
                     </Flex>
@@ -428,7 +456,7 @@ const SupplierOrders = () => {
                     <Flex direction="column" align="flex-end" minW="140px">
                         {order.discount_amount > 0 && (
                             <Text textDecoration="line-through" color="gray.500" fontSize="sm">
-                                {formatCurrency(order.unit_price)}
+                                {formatCurrency(order.unit_price * order.quantity)}
                             </Text>
                         )}
                         <Text color={redColor} fontWeight="bold">
@@ -458,23 +486,27 @@ const SupplierOrders = () => {
                     <Flex align="center" gap={3} direction={{ base: "column", md: "row" }}>
                         <Text fontSize="sm">Tổng tiền:</Text>
                         <Text fontSize="lg" fontWeight="bold" color={redColor}>
-                            {formatCurrency(order.total_price + order.shipping_fee - order.discount_amount)}
+                            {formatCurrency(order.total_price + order.shipping_fee + order.tax_amount - order.discount_amount)}
                         </Text>
 
-                        {/* Order actions */}
-                        <HStack spacing={2} wrap="wrap">
-                            {availableStatuses.map(status => (
-                                <Button
-                                    key={status}
-                                    size="sm"
-                                    colorScheme={status === 'cancelled' ? 'red' : 'blue'}
-                                    variant={status === 'cancelled' ? 'outline' : 'solid'}
-                                    onClick={() => handleStatusUpdate(order, status)}
-                                >
-                                    {getStatusLabel(status)}
-                                </Button>
-                            ))}
-                        </HStack>
+                        {/* Order actions - Show for pending and confirmed orders */}
+                        {availableStatuses.length > 0 && (
+                            <HStack spacing={2} wrap="wrap">
+                                {availableStatuses.map(status => (
+                                    <Button
+                                        key={status}
+                                        size="sm"
+                                        colorScheme={status === 'cancelled' ? 'red' : status === 'processing' ? 'green' : 'blue'}
+                                        variant={status === 'cancelled' ? 'outline' : 'solid'}
+                                        onClick={() => handleStatusUpdate(order, status)}
+                                        isLoading={updating && selectedOrder?.order_item_id === order.order_item_id}
+                                        isDisabled={updating}
+                                    >
+                                        {getStatusLabel(status)}
+                                    </Button>
+                                ))}
+                            </HStack>
+                        )}
                     </Flex>
                 </Flex>
 
@@ -494,23 +526,26 @@ const SupplierOrders = () => {
                                 <Text>SĐT: {order.recipient_phone}</Text>
                             </Box>
 
-                            <Box>
-                                <Text fontWeight="bold" mb={1}>Mã vận đơn:</Text>
-                                <Text>{order.tracking_number}</Text>
-                            </Box>
+                            {order.tracking_number && (
+                                <Box>
+                                    <Text fontWeight="bold" mb={1}>Mã vận đơn:</Text>
+                                    <Text>{order.tracking_number}</Text>
+                                </Box>
+                            )}
 
-                            <Box>
-                                <Text fontWeight="bold" mb={1}>Ngày giao dự kiến:</Text>
-                                <Text>{formatDate(order.estimated_delivery_date)}</Text>
-                            </Box>
+                            {order.estimated_delivery_date && (
+                                <Box>
+                                    <Text fontWeight="bold" mb={1}>Ngày giao dự kiến:</Text>
+                                    <Text>{formatDate(order.estimated_delivery_date)}</Text>
+                                </Box>
+                            )}
 
                             <Box>
                                 <Text fontWeight="bold" mb={1}>Phương thức thanh toán:</Text>
                                 <Text>
                                     {order.shipping_method === 'cod' ? 'Thanh toán khi nhận hàng' :
                                         order.shipping_method === 'momo' ? 'Thanh toán bằng MoMo' :
-                                            order.shipping_method === 'vnpay' ? 'Thanh toán bằng VNPay' :
-                                                order.shipping_method}
+                                            'Thanh toán trực tuyến'}
                                 </Text>
                             </Box>
 
@@ -532,15 +567,29 @@ const SupplierOrders = () => {
                                         <Text>Phí vận chuyển:</Text>
                                         <Text>{formatCurrency(order.shipping_fee)}</Text>
                                     </Flex>
+                                    {order.tax_amount > 0 && (
+                                        <Flex justify="space-between">
+                                            <Text>Thuế:</Text>
+                                            <Text>{formatCurrency(order.tax_amount)}</Text>
+                                        </Flex>
+                                    )}
                                     <Divider />
                                     <Flex justify="space-between" fontWeight="bold">
                                         <Text>Tổng thanh toán:</Text>
                                         <Text color={redColor}>
-                                            {formatCurrency(order.total_price + order.shipping_fee - order.discount_amount)}
+                                            {formatCurrency(order.total_price + order.shipping_fee + order.tax_amount - order.discount_amount)}
                                         </Text>
                                     </Flex>
                                 </VStack>
                             </Box>
+
+                            {/* Show cancel reason if order is cancelled */}
+                            {order.status === 'cancelled' && order.cancelled_reason && (
+                                <Box>
+                                    <Text fontWeight="bold" mb={1}>Lý do hủy:</Text>
+                                    <Text color="red.600">{order.cancelled_reason}</Text>
+                                </Box>
+                            )}
                         </VStack>
                     </Box>
                 </Collapse>
@@ -638,7 +687,7 @@ const SupplierOrders = () => {
                                                                 const currentStatus = statusTabs[activeTab]?.key;
                                                                 fetchOrders(pagination.page - 1, currentStatus);
                                                             }}
-                                                            isDisabled={!pagination.has_previous}
+                                                            isDisabled={!pagination.has_previous || loading}
                                                         >
                                                             Trước
                                                         </Button>
@@ -653,7 +702,7 @@ const SupplierOrders = () => {
                                                                 const currentStatus = statusTabs[activeTab]?.key;
                                                                 fetchOrders(pagination.page + 1, currentStatus);
                                                             }}
-                                                            isDisabled={!pagination.has_next}
+                                                            isDisabled={!pagination.has_next || loading}
                                                         >
                                                             Sau
                                                         </Button>
@@ -686,21 +735,25 @@ const SupplierOrders = () => {
                     <ModalCloseButton />
                     <ModalBody>
                         <Text>
-                            Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng{' '}
-                            <Text as="span" fontWeight="bold">
-                                {selectedOrder?.order_id}
-                            </Text>{' '}
-                            thành{' '}
+                            Bạn có chắc chắn muốn{' '}
                             <Text as="span" fontWeight="bold" color="blue.500">
                                 {getStatusLabel(statusToUpdate)}
+                            </Text>{' '}
+                            cho đơn hàng{' '}
+                            <Text as="span" fontWeight="bold">
+                                {selectedOrder?.order_item_id}
                             </Text>?
                         </Text>
                     </ModalBody>
                     <ModalFooter>
-                        <Button variant="ghost" mr={3} onClick={onStatusModalClose}>
+                        <Button variant="ghost" mr={3} onClick={onStatusModalClose} isDisabled={updating}>
                             Hủy
                         </Button>
-                        <Button colorScheme="blue" onClick={confirmStatusUpdate}>
+                        <Button
+                            colorScheme="blue"
+                            onClick={confirmStatusUpdate}
+                            isLoading={updating}
+                        >
                             Xác nhận
                         </Button>
                     </ModalFooter>
@@ -714,28 +767,21 @@ const SupplierOrders = () => {
                     <ModalHeader>Hủy đơn hàng</ModalHeader>
                     <ModalCloseButton />
                     <ModalBody>
-                        <Text mb={4}>
+                        <Text>
                             Bạn có chắc chắn muốn hủy đơn hàng{' '}
                             <Text as="span" fontWeight="bold">
-                                {selectedOrder?.order_id}
+                                {selectedOrder?.order_item_id}
                             </Text>?
                         </Text>
-                        <Text mb={2}>Lý do hủy đơn hàng:</Text>
-                        <Textarea
-                            placeholder="Nhập lý do hủy đơn hàng..."
-                            value={cancelReason}
-                            onChange={(e) => setCancelReason(e.target.value)}
-                            rows={3}
-                        />
                     </ModalBody>
                     <ModalFooter>
-                        <Button variant="ghost" mr={3} onClick={onCancelModalClose}>
-                            Hủy
+                        <Button variant="ghost" mr={3} onClick={onCancelModalClose} isDisabled={updating}>
+                            Không
                         </Button>
                         <Button
                             colorScheme="red"
                             onClick={confirmCancelOrder}
-                            isDisabled={!cancelReason.trim()}
+                            isLoading={updating}
                         >
                             Xác nhận hủy
                         </Button>

@@ -32,7 +32,7 @@ var file_order_and_payment_main_proto_rawDesc = string([]byte{
 	0x76, 0x65, 0x72, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x14, 0x6f, 0x72, 0x64,
 	0x65, 0x72, 0x5f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x1a, 0x14, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65,
-	0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0x83, 0x09, 0x0a, 0x0c, 0x4f, 0x72, 0x64, 0x65,
+	0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x32, 0xc9, 0x09, 0x0a, 0x0c, 0x4f, 0x72, 0x64, 0x65,
 	0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3e, 0x0a, 0x0d, 0x41, 0x64, 0x64, 0x49,
 	0x74, 0x65, 0x6d, 0x54, 0x6f, 0x43, 0x61, 0x72, 0x74, 0x12, 0x15, 0x2e, 0x41, 0x64, 0x64, 0x49,
 	0x74, 0x65, 0x6d, 0x54, 0x6f, 0x43, 0x61, 0x72, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
@@ -104,9 +104,13 @@ var file_order_and_payment_main_proto_rawDesc = string([]byte{
 	0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x12, 0x19, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x75, 0x70, 0x70,
 	0x6c, 0x69, 0x65, 0x72, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
 	0x74, 0x1a, 0x1a, 0x2e, 0x47, 0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x4f,
-	0x72, 0x64, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x13, 0x5a,
-	0x11, 0x2e, 0x2f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x5f, 0x67,
-	0x65, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x72, 0x64, 0x65, 0x72, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x44, 0x0a,
+	0x0f, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x49, 0x74, 0x65, 0x6d,
+	0x12, 0x17, 0x2e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x49, 0x74,
+	0x65, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x55, 0x70, 0x64, 0x61,
+	0x74, 0x65, 0x4f, 0x72, 0x64, 0x65, 0x72, 0x49, 0x74, 0x65, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x42, 0x13, 0x5a, 0x11, 0x2e, 0x2f, 0x6f, 0x72, 0x64, 0x65, 0x72, 0x5f, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x5f, 0x67, 0x65, 0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 })
 
 var file_order_and_payment_main_proto_goTypes = []any{
@@ -127,22 +131,24 @@ var file_order_and_payment_main_proto_goTypes = []any{
 	(*RegisterDelivererRequest)(nil),          // 14: RegisterDelivererRequest
 	(*CreateCartForRegisterRequest)(nil),      // 15: CreateCartForRegisterRequest
 	(*GetSupplierOrdersRequest)(nil),          // 16: GetSupplierOrdersRequest
-	(*AddItemToCartResponse)(nil),             // 17: AddItemToCartResponse
-	(*GetCartResponse)(nil),                   // 18: GetCartResponse
-	(*UpdateCartItemResponse)(nil),            // 19: UpdateCartItemResponse
-	(*RemoveCartItemResponse)(nil),            // 20: RemoveCartItemResponse
-	(*GetCouponResponse)(nil),                 // 21: GetCouponResponse
-	(*CreateCouponResponse)(nil),              // 22: CreateCouponResponse
-	(*GetDetailCouponResponse)(nil),           // 23: GetDetailCouponResponse
-	(*UpdateCouponResponse)(nil),              // 24: UpdateCouponResponse
-	(*DeleteCouponResponse)(nil),              // 25: DeleteCouponResponse
-	(*GetPaymentMethodsResponse)(nil),         // 26: GetPaymentMethodsResponse
-	(*CheckoutResponse)(nil),                  // 27: CheckoutResponse
-	(*GetMyOrdersResponse)(nil),               // 28: GetMyOrdersResponse
-	(*UpdateOrderStatusFromMomoResponse)(nil), // 29: UpdateOrderStatusFromMomoResponse
-	(*RegisterDelivererResponse)(nil),         // 30: RegisterDelivererResponse
-	(*CreateCartForRegisterResponse)(nil),     // 31: CreateCartForRegisterResponse
-	(*GetSupplierOrdersResponse)(nil),         // 32: GetSupplierOrdersResponse
+	(*UpdateOrderItemRequest)(nil),            // 17: UpdateOrderItemRequest
+	(*AddItemToCartResponse)(nil),             // 18: AddItemToCartResponse
+	(*GetCartResponse)(nil),                   // 19: GetCartResponse
+	(*UpdateCartItemResponse)(nil),            // 20: UpdateCartItemResponse
+	(*RemoveCartItemResponse)(nil),            // 21: RemoveCartItemResponse
+	(*GetCouponResponse)(nil),                 // 22: GetCouponResponse
+	(*CreateCouponResponse)(nil),              // 23: CreateCouponResponse
+	(*GetDetailCouponResponse)(nil),           // 24: GetDetailCouponResponse
+	(*UpdateCouponResponse)(nil),              // 25: UpdateCouponResponse
+	(*DeleteCouponResponse)(nil),              // 26: DeleteCouponResponse
+	(*GetPaymentMethodsResponse)(nil),         // 27: GetPaymentMethodsResponse
+	(*CheckoutResponse)(nil),                  // 28: CheckoutResponse
+	(*GetMyOrdersResponse)(nil),               // 29: GetMyOrdersResponse
+	(*UpdateOrderStatusFromMomoResponse)(nil), // 30: UpdateOrderStatusFromMomoResponse
+	(*RegisterDelivererResponse)(nil),         // 31: RegisterDelivererResponse
+	(*CreateCartForRegisterResponse)(nil),     // 32: CreateCartForRegisterResponse
+	(*GetSupplierOrdersResponse)(nil),         // 33: GetSupplierOrdersResponse
+	(*UpdateOrderItemResponse)(nil),           // 34: UpdateOrderItemResponse
 }
 var file_order_and_payment_main_proto_depIdxs = []int32{
 	0,  // 0: OrderService.AddItemToCart:input_type -> AddItemToCartRequest
@@ -162,25 +168,27 @@ var file_order_and_payment_main_proto_depIdxs = []int32{
 	14, // 14: OrderService.RegisterDeliverer:input_type -> RegisterDelivererRequest
 	15, // 15: OrderService.CreateCartForRegister:input_type -> CreateCartForRegisterRequest
 	16, // 16: OrderService.GetSupplierOrders:input_type -> GetSupplierOrdersRequest
-	17, // 17: OrderService.AddItemToCart:output_type -> AddItemToCartResponse
-	18, // 18: OrderService.GetCart:output_type -> GetCartResponse
-	19, // 19: OrderService.UpdateCart:output_type -> UpdateCartItemResponse
-	20, // 20: OrderService.RemoveCartItem:output_type -> RemoveCartItemResponse
-	21, // 21: OrderService.GetCoupons:output_type -> GetCouponResponse
-	22, // 22: OrderService.CreateCoupon:output_type -> CreateCouponResponse
-	21, // 23: OrderService.GetCouponsByClient:output_type -> GetCouponResponse
-	23, // 24: OrderService.GetDetailCoupon:output_type -> GetDetailCouponResponse
-	24, // 25: OrderService.UpdateCoupon:output_type -> UpdateCouponResponse
-	25, // 26: OrderService.DeleteCoupon:output_type -> DeleteCouponResponse
-	26, // 27: OrderService.GetPaymentMethods:output_type -> GetPaymentMethodsResponse
-	27, // 28: OrderService.CreateOrder:output_type -> CheckoutResponse
-	28, // 29: OrderService.GetMyOrders:output_type -> GetMyOrdersResponse
-	29, // 30: OrderService.UpdateOrderStatusFromMomo:output_type -> UpdateOrderStatusFromMomoResponse
-	30, // 31: OrderService.RegisterDeliverer:output_type -> RegisterDelivererResponse
-	31, // 32: OrderService.CreateCartForRegister:output_type -> CreateCartForRegisterResponse
-	32, // 33: OrderService.GetSupplierOrders:output_type -> GetSupplierOrdersResponse
-	17, // [17:34] is the sub-list for method output_type
-	0,  // [0:17] is the sub-list for method input_type
+	17, // 17: OrderService.UpdateOrderItem:input_type -> UpdateOrderItemRequest
+	18, // 18: OrderService.AddItemToCart:output_type -> AddItemToCartResponse
+	19, // 19: OrderService.GetCart:output_type -> GetCartResponse
+	20, // 20: OrderService.UpdateCart:output_type -> UpdateCartItemResponse
+	21, // 21: OrderService.RemoveCartItem:output_type -> RemoveCartItemResponse
+	22, // 22: OrderService.GetCoupons:output_type -> GetCouponResponse
+	23, // 23: OrderService.CreateCoupon:output_type -> CreateCouponResponse
+	22, // 24: OrderService.GetCouponsByClient:output_type -> GetCouponResponse
+	24, // 25: OrderService.GetDetailCoupon:output_type -> GetDetailCouponResponse
+	25, // 26: OrderService.UpdateCoupon:output_type -> UpdateCouponResponse
+	26, // 27: OrderService.DeleteCoupon:output_type -> DeleteCouponResponse
+	27, // 28: OrderService.GetPaymentMethods:output_type -> GetPaymentMethodsResponse
+	28, // 29: OrderService.CreateOrder:output_type -> CheckoutResponse
+	29, // 30: OrderService.GetMyOrders:output_type -> GetMyOrdersResponse
+	30, // 31: OrderService.UpdateOrderStatusFromMomo:output_type -> UpdateOrderStatusFromMomoResponse
+	31, // 32: OrderService.RegisterDeliverer:output_type -> RegisterDelivererResponse
+	32, // 33: OrderService.CreateCartForRegister:output_type -> CreateCartForRegisterResponse
+	33, // 34: OrderService.GetSupplierOrders:output_type -> GetSupplierOrdersResponse
+	34, // 35: OrderService.UpdateOrderItem:output_type -> UpdateOrderItemResponse
+	18, // [18:36] is the sub-list for method output_type
+	0,  // [0:18] is the sub-list for method input_type
 	0,  // [0:0] is the sub-list for extension type_name
 	0,  // [0:0] is the sub-list for extension extendee
 	0,  // [0:0] is the sub-list for field type_name
