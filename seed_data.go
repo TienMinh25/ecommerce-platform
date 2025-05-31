@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"github.com/Masterminds/squirrel"
@@ -57,551 +56,39 @@ var vietnamGeoAPIs = []string{
 	"https://vapi.vnappmob.com/api/province/",
 }
 
-// Mở rộng danh sách tên sản phẩm mẫu theo danh mục
-var categoryProductNames = map[string][]string{
-	"Điện thoại thông minh": {
-		"iPhone 13 Pro Max", "iPhone 14", "Samsung Galaxy S22 Ultra", "Samsung Galaxy Z Fold 4",
-		"Xiaomi Redmi Note 11", "Xiaomi 12T Pro", "OPPO Reno8 Pro", "OPPO Find X5 Pro",
-		"Vivo V25 Pro", "Realme GT Neo 3", "Nokia G21", "Huawei Nova 10",
-		"iPhone 15 Pro", "Samsung Galaxy S23", "Google Pixel 7", "OnePlus 11",
-		"Xiaomi 13", "Nothing Phone", "Sony Xperia 5 IV", "Asus ROG Phone 7",
-	},
-	"Máy tính xách tay": {
-		"MacBook Air M2", "MacBook Pro 14", "Dell XPS 13", "Dell Inspiron 15",
-		"HP Spectre x360", "HP Pavilion 15", "Lenovo ThinkPad X1 Carbon", "Lenovo Yoga 7i",
-		"Asus ZenBook 14", "Asus ROG Zephyrus G14", "Acer Swift 5", "MSI Prestige 14",
-		"Microsoft Surface Laptop 5", "Razer Blade 15", "LG Gram 17", "Gigabyte Aero 16",
-		"Framework Laptop", "Huawei MateBook X Pro", "Samsung Galaxy Book 3", "Alienware m18",
-	},
-	"Thời trang nam": {
-		"Áo sơ mi nam dài tay", "Áo thun nam cổ tròn", "Áo thun polo nam", "Áo khoác denim nam",
-		"Áo khoác bomber nam", "Quần jeans nam slim fit", "Quần kaki nam", "Quần short nam",
-		"Bộ vest nam công sở", "Áo len nam cổ tròn", "Áo hoodie nam", "Quần tây nam công sở",
-		"Áo phông nam cổ V", "Áo khoác gió nam", "Áo blazer nam", "Quần jogger nam",
-		"Áo gile nam", "Quần shorts thể thao nam", "Áo thun nam oversize", "Áo sơ mi nam caro",
-	},
-	"Thời trang nữ": {
-		"Áo sơ mi nữ công sở", "Áo blouse nữ", "Áo thun nữ cổ tròn", "Áo khoác denim nữ",
-		"Đầm suông nữ", "Đầm ôm body nữ", "Chân váy chữ A", "Chân váy tennis",
-		"Quần jeans nữ ống rộng", "Quần culottes nữ", "Áo cardigan nữ", "Set đồ nữ hai mảnh",
-		"Áo croptop nữ", "Áo kiểu nữ", "Đầm maxi nữ", "Quần short nữ",
-		"Áo thun oversize nữ", "Quần baggy nữ", "Áo khoác blazer nữ", "Chân váy midi",
-	},
-	"Đồ gia dụng": {
-		"Nồi cơm điện", "Máy xay sinh tố", "Bếp từ đơn", "Bếp gas đôi",
-		"Lò vi sóng", "Ấm đun nước siêu tốc", "Máy lọc không khí", "Quạt điều hòa",
-		"Máy hút bụi", "Bàn ủi hơi nước", "Nồi chiên không dầu", "Máy rửa chén",
-		"Máy lọc nước", "Máy ép trái cây", "Máy sấy tóc", "Nồi áp suất điện",
-		"Máy đánh trứng", "Bàn là hơi nước đứng", "Máy xay thịt", "Máy làm sữa hạt",
-	},
-	"Sách": {
-		"Nhà Giả Kim", "Đắc Nhân Tâm", "Cà Phê Cùng Tony", "Người Giàu Có Nhất Thành Babylon",
-		"Hai Số Phận", "Điều Kỳ Diệu Của Tiệm Tạp Hóa Namiya", "Bước Chậm Lại Giữa Thế Gian Vội Vã", "Tuổi Trẻ Đáng Giá Bao Nhiêu",
-		"Chúng Ta Rồi Sẽ Hạnh Phúc, Theo Những Cách Khác Nhau", "Khéo Ăn Nói Sẽ Có Được Thiên Hạ", "Tôi Tài Giỏi, Bạn Cũng Thế", "Dám Nghĩ Lớn",
-		"Atomic Habits", "Sapiens", "Thinking Fast and Slow", "Đàn Ông Sao Hỏa Đàn Bà Sao Kim",
-		"Tiểu thuyết Sherlock Holmes", "Harry Potter", "Nhật ký Anne Frank", "Nghệ thuật tinh tế của việc đếch quan tâm",
-	},
-	"Thể thao": {
-		"Tạ tay 5kg", "Thảm tập yoga", "Dây nhảy thể dục", "Máy chạy bộ điện",
-		"Xe đạp tập thể dục", "Găng tay tập gym", "Ghế tập bụng đa năng", "Bóng đá size 5",
-		"Vợt cầu lông", "Vợt tennis", "Bộ cờ vua quốc tế", "Bàn bóng bàn",
-		"Xe đạp địa hình", "Gậy golf", "Áo bơi nam", "Áo bơi nữ",
-		"Giày chạy bộ", "Bóng rổ", "Dụng cụ bơi lội", "Máy tập thể dục đa năng",
-	},
-	"Máy tính bảng": {
-		"iPad Pro 12.9", "iPad Mini", "Samsung Galaxy Tab S8 Ultra", "Samsung Galaxy Tab A8",
-		"Xiaomi Pad 5", "Lenovo Tab P11 Pro", "Huawei MatePad Pro", "Amazon Fire HD 10",
-		"Microsoft Surface Pro 9", "Realme Pad", "Nokia T20", "OnePlus Pad",
-		"iPad Air", "Redmi Pad", "Vivo Pad", "TCL NXTPAPER 11",
-	},
-	"Máy tính để bàn": {
-		"iMac 24", "Mac Mini M2", "Dell OptiPlex", "HP Pavilion Desktop",
-		"Lenovo ThinkCentre", "Asus ProArt", "Acer Aspire TC", "MSI MAG Infinite",
-		"HP All-in-One", "Lenovo IdeaCentre AIO", "Microsoft Surface Studio", "Dell XPS Desktop",
-		"ASUS ROG Strix", "Corsair One", "Alienware Aurora", "HP Omen",
-	},
-	"Tai nghe & Loa": {
-		"AirPods Pro", "Sony WH-1000XM5", "JBL Flip 6", "Bose QuietComfort Earbuds",
-		"Samsung Galaxy Buds Pro", "Harman Kardon Onyx Studio", "Marshall Emberton", "Anker Soundcore",
-		"Beats Studio Buds", "Jabra Elite 7 Pro", "Logitech G Pro X", "Sennheiser HD 660S",
-		"UE Wonderboom", "Bose SoundLink Revolve+", "Edifier R1280DB", "Audio-Technica ATH-M50x",
-	},
-	"Máy ảnh & Máy quay": {
-		"Sony Alpha A7 IV", "Canon EOS R6", "Nikon Z6 II", "Fujifilm X-T4",
-		"GoPro HERO11 Black", "DJI Pocket 2", "Canon EOS 90D", "Sony ZV-1",
-		"Panasonic Lumix GH6", "Olympus OM-D E-M10", "Leica Q2", "Ricoh GR III",
-		"Canon EOS R5", "Sony A6600", "Nikon Z9", "Fujifilm X100V",
-	},
-	"Thời trang trẻ em": {
-		"Bộ quần áo trẻ em hình thú", "Áo thun bé trai họa tiết siêu nhân", "Váy công chúa bé gái", "Đồ bộ thể thao trẻ em", "Đồ bơi trẻ em", "Áo khoác trẻ em",
-		"Quần jeans bé trai", "Giày thể thao trẻ em", "Đầm dự tiệc bé gái", "Quần áo sơ sinh",
-		"Áo len trẻ em", "Quần short bé trai", "Váy denim bé gái", "Áo phông trẻ em họa tiết hoạt hình",
-		"Bộ đồ ngủ trẻ em", "Mũ bảo hiểm trẻ em", "Túi đeo chéo trẻ em", "Giày sandal trẻ em",
-	},
-	"Giày dép": {
-		"Giày thể thao nam", "Giày cao gót nữ", "Giày tây nam", "Giày sandal nữ",
-		"Dép quai hậu nam", "Giày búp bê nữ", "Giày lười nam", "Giày boot nữ",
-		"Giày thể thao nữ", "Giày đế xuồng nữ", "Dép tông nam", "Giày oxford nam",
-		"Giày sneaker nữ", "Dép lê nam", "Giày mọi nữ", "Giày vải nam",
-	},
-	"Túi xách": {
-		"Túi xách tay nữ", "Túi đeo chéo nữ", "Balo nam", "Balo nữ",
-		"Túi đeo hông nam", "Túi clutch nữ", "Túi laptop", "Túi du lịch",
-		"Ví nam", "Ví nữ", "Túi tote nữ", "Túi đeo chéo nam",
-		"Túi xách công sở nữ", "Túi chống sốc laptop", "Túi đựng mỹ phẩm", "Balo du lịch",
-	},
-	"Đồng hồ & Trang sức": {
-		"Đồng hồ nam", "Đồng hồ nữ", "Nhẫn bạc nữ", "Vòng tay nam",
-		"Dây chuyền bạc nữ", "Khuyên tai nữ", "Nhẫn cưới", "Vòng cổ nam",
-		"Đồng hồ thông minh", "Lắc tay nữ", "Mặt dây chuyền phật", "Đồng hồ đôi",
-		"Nhẫn nam", "Vòng cổ choker", "Bông tai nam", "Nhẫn đính hôn",
-	},
-	"Đồ dùng nhà bếp": {
-		"Bộ nồi inox", "Chảo chống dính", "Dao làm bếp", "Thớt gỗ",
-		"Hộp đựng thực phẩm", "Bình giữ nhiệt", "Bát đĩa", "Đũa thìa inox",
-		"Máy xay cà phê", "Cây đánh trứng", "Ly thủy tinh", "Nồi lẩu điện",
-		"Dao gọt hoa quả", "Ấm trà", "Đồ lọc cà phê", "Dụng cụ làm bánh",
-	},
-	"Đồ dùng phòng ngủ": {
-		"Bộ ga gối đệm", "Chăn lông cừu", "Nệm cao su", "Gối ôm",
-		"Gối tựa đầu", "Đệm bông ép", "Vỏ chăn", "Gối latex",
-		"Đèn ngủ", "Màn chống muỗi", "Đồng hồ báo thức", "Nệm lò xo",
-		"Gối mềm", "Tủ đầu giường", "Rèm cửa phòng ngủ", "Thảm trải sàn",
-	},
-	"Đồ dùng phòng tắm": {
-		"Khăn tắm", "Rèm nhà tắm", "Gương phòng tắm", "Vòi sen",
-		"Giá treo khăn", "Thảm chân nhà tắm", "Kệ góc nhà tắm", "Bộ phụ kiện nhà tắm",
-		"Bồn rửa mặt", "Vòi rửa mặt", "Máy sấy tóc", "Hộp đựng xà phòng",
-		"Giá treo đồ", "Bồn tắm", "Khăn mặt", "Giấy vệ sinh",
-	},
-	"Văn phòng phẩm": {
-		"Bút bi", "Bút gel", "Sổ tay", "Giấy note",
-		"Kẹp giấy", "Máy tính cầm tay", "Bút highlight", "Thước kẻ",
-		"Hộp bút", "Bút chì", "Gôm tẩy", "Ghim bấm",
-		"Kéo văn phòng", "Máy bấm kim", "Giá đỡ tài liệu", "Dập ghim",
-	},
-	"Sách giáo khoa": {
-		"Sách tiếng Việt lớp 1", "Sách Toán lớp 5", "Sách Tiếng Anh lớp 9", "Sách Vật lý lớp 12",
-		"Sách Hóa học lớp 11", "Sách Sinh học lớp 10", "Sách Lịch sử lớp 7", "Sách Địa lý lớp 8",
-		"Sách Giáo dục công dân", "Sách Tin học", "Sách ôn thi THPT Quốc gia", "Sách ôn thi đại học",
-		"Sách tham khảo Toán", "Sách tham khảo Ngữ văn", "Từ điển Anh-Việt", "Sách giáo trình đại học",
-	},
-	"Tạp chí & Báo": {
-		"Tạp chí Thời trang", "Báo Thanh niên", "Tạp chí Đẹp", "Báo Tuổi trẻ",
-		"Tạp chí Kinh tế", "Báo Nhân dân", "Tạp chí Sức khỏe", "Báo Pháp luật",
-		"Tạp chí Du lịch", "Báo Hà Nội mới", "Tạp chí Kiến trúc", "Báo Tiền phong",
-		"Tạp chí Ẩm thực", "Báo Lao động", "Tạp chí Khoa học", "Báo Đầu tư",
-	},
-	"Dụng cụ thể thao": {
-		"Quả bóng đá", "Vợt cầu lông", "Bóng rổ", "Quả bóng chuyền",
-		"Gậy golf", "Vợt tennis", "Bàn cờ vua", "Túi đựng đồ thể thao",
-		"Túi đựng vợt", "Găng tay tập gym", "Băng đô thể thao", "Khăn lau mồ hôi",
-		"Găng tay golf", "Balo thể thao", "Băng bảo vệ cổ tay", "Giàn tập tạ",
-	},
-	"Vali & Túi du lịch": {
-		"Vali kéo 20 inch", "Vali kéo 24 inch", "Vali kéo 28 inch", "Balo du lịch",
-		"Túi du lịch", "Túi đựng đồ cá nhân", "Túi đựng giày", "Túi đựng mỹ phẩm",
-		"Vali kéo trẻ em", "Balo máy ảnh", "Túi chống nước", "Gói hành lý",
-		"Khóa vali", "Thẻ hành lý", "Gối cổ du lịch", "Túi treo quần áo",
-	},
-	"Thiết bị cắm trại": {
-		"Lều cắm trại", "Túi ngủ", "Đèn cắm trại", "Bếp dã ngoại",
-		"Ghế xếp", "Bàn xếp", "Dao đa năng", "Thảm picnic",
-		"Túi giữ lạnh", "Bình nước", "Võng dã ngoại", "Bếp cồn",
-		"Mũ cắm trại", "Áo mưa", "Dụng cụ nấu ăn cắm trại", "Đèn pin",
-	},
-	"Xe đạp & Phụ kiện": {
-		"Xe đạp đường phố", "Xe đạp thể thao", "Xe đạp trẻ em", "Xe đạp điện",
-		"Mũ bảo hiểm xe đạp", "Găng tay xe đạp", "Đèn xe đạp", "Bơm xe đạp",
-		"Khóa xe đạp", "Túi treo xe đạp", "Chuông xe đạp", "Gương xe đạp",
-		"Kính xe đạp", "Giỏ xe đạp", "Bình nước xe đạp", "Găng tay xe đạp",
-	},
-	"Đồ dùng cho bé": {
-		"Tã dán", "Tã quần", "Sữa bột", "Bình sữa",
-		"Núm ti", "Ghế ăn dặm", "Xe tập đi", "Nôi em bé",
-		"Xe đẩy em bé", "Miếng lót thấm sữa", "Máy hâm sữa", "Máy tiệt trùng bình sữa",
-		"Khăn ướt", "Phấn rôm", "Dầu gội em bé", "Sữa tắm em bé",
-	},
-	"Đồ chơi cho bé": {
-		"Đồ chơi xếp hình", "Thú nhồi bông", "Đồ chơi gỗ", "Đồ chơi âm nhạc",
-		"Đồ chơi nhà tắm", "Xe ô tô đồ chơi", "Búp bê", "Đồ chơi giáo dục",
-		"Đồ chơi ngoài trời", "Đồ chơi nấu ăn", "Đồ chơi bác sĩ", "Lego",
-		"Đồ chơi cát", "Đồ chơi câu cá", "Đồ chơi nhà bếp", "Đồ chơi vận động",
-	},
-	"Thời trang cho bé": {
-		"Bộ bodysuit", "Áo sơ sinh", "Quần sơ sinh", "Mũ sơ sinh",
-		"Áo thun bé trai", "Áo thun bé gái", "Quần jeans bé trai", "Váy bé gái",
-		"Bộ đồ ngủ bé trai", "Bộ đồ ngủ bé gái", "Giày tập đi", "Tất em bé",
-		"Giày cho bé", "Đồ bơi bé trai", "Đồ bơi bé gái", "Mũ lưỡi trai trẻ em",
-	},
-	"Đồ dùng cho mẹ": {
-		"Áo cho con bú", "Máy hút sữa", "Túi trữ sữa", "Đai đỡ bụng bầu",
-		"Kem chống rạn da", "Sữa rửa mặt cho bà bầu", "Gối bầu", "Quần bầu",
-		"Áo bầu", "Túi đựng đồ cho mẹ và bé", "Ghế massage cho bà bầu", "Vitamin cho bà bầu",
-		"Sữa bầu", "Túi giữ nhiệt sữa", "Kem nứt đầu ti", "Áo lót cho con bú",
-	},
-	"Mỹ phẩm": {
-		"Son môi", "Phấn má hồng", "Kem nền", "Mascara",
-		"Phấn phủ", "Kẻ mắt", "Phấn mắt", "Kem lót",
-		"Tẩy trang", "Sữa rửa mặt", "Kem chống nắng", "Xịt khoáng",
-		"Kem dưỡng ẩm", "Mặt nạ dưỡng da", "Serum dưỡng da", "Nước hoa",
-	},
-	"Chăm sóc da": {
-		"Sữa rửa mặt", "Toner", "Serum", "Kem dưỡng ẩm",
-		"Kem chống nắng", "Mặt nạ giấy", "Mặt nạ ngủ", "Tẩy tế bào chết",
-		"Kem mắt", "Kem trị mụn", "Kem trị thâm", "Kem dưỡng body",
-		"Sữa tắm", "Dầu gội", "Dầu xả", "Kem tẩy lông",
-	},
-	"Chăm sóc tóc": {
-		"Dầu gội", "Dầu xả", "Kem ủ tóc", "Serum dưỡng tóc",
-		"Dầu dưỡng tóc", "Xịt dưỡng tóc", "Thuốc nhuộm tóc", "Máy sấy tóc",
-		"Máy duỗi tóc", "Máy uốn tóc", "Lược chải tóc", "Kẹp tóc",
-		"Mũ trùm tóc", "Khăn quấn tóc", "Dầu gội khô", "Wax tóc",
-	},
-	"Thực phẩm chức năng": {
-		"Viên uống vitamin C", "Viên uống collagen", "Viên uống sáng da", "Viên uống chống nắng",
-		"Viên uống giảm cân", "Viên uống bổ gan", "Viên uống canxi", "Viên uống omega 3",
-		"Viên uống vitamin tổng hợp", "Viên uống probiotics", "Viên uống sữa ong chúa", "Viên uống tăng cường miễn dịch",
-		"Viên uống mọc tóc", "Viên uống ngừa nám", "Viên uống bổ mắt", "Viên uống tăng chiều cao",
-	},
-	"Thiết bị y tế": {
-		"Máy đo huyết áp", "Máy đo đường huyết", "Máy massage", "Nhiệt kế",
-		"Máy xông mũi họng", "Máy hút mũi", "Dụng cụ rửa mũi", "Hộp đựng thuốc",
-		"Băng gạc y tế", "Cồn y tế", "Bông gòn y tế", "Dung dịch sát khuẩn",
-		"Khẩu trang y tế", "Ống nghe y tế", "Máy đo nồng độ oxy", "Găng tay y tế",
-	},
-	"Thực phẩm khô": {
-		"Gạo", "Mì gói", "Hạt nêm", "Dầu ăn",
-		"Nước mắm", "Nước tương", "Đường", "Muối",
-		"Bột ngọt", "Hạt tiêu", "Bột canh", "Tương ớt",
-		"Cà phê hòa tan", "Trà túi lọc", "Thực phẩm ăn liền", "Ngũ cốc ăn sáng",
-	},
-	"Thực phẩm tươi sống": {
-		"Rau xanh", "Trái cây", "Thịt heo", "Thịt bò",
-		"Thịt gà", "Cá", "Tôm", "Mực",
-		"Trứng gà", "Sữa tươi", "Phô mai", "Bơ",
-		"Nấm", "Đậu hũ", "Rau củ quả", "Hải sản tươi sống",
-	},
-	"Đồ uống": {
-		"Nước khoáng", "Nước ngọt", "Trà xanh", "Cà phê",
-		"Sữa tươi", "Sữa chua", "Nước ép trái cây", "Bia",
-		"Rượu vang", "Rượu mạnh", "Sinh tố", "Nước detox",
-		"Nước tăng lực", "Trà sữa", "Nước uống collagen", "Sữa hạt",
-	},
-	"Bánh kẹo & Đồ ăn vặt": {
-		"Bánh quy", "Bánh gạo", "Kẹo", "Chocolate",
-		"Snack khoai tây", "Hạt các loại", "Mứt", "Trái cây sấy",
-		"Bánh trung thu", "Bánh mì", "Xúc xích", "Pate",
-		"Mì ăn liền", "Cháo ăn liền", "Thịt khô", "Chà bông",
-	},
-}
-
-// Mở rộng danh sách mô tả sản phẩm mẫu theo danh mục
-var categoryProductDescriptions = map[string][]string{
-	"Điện thoại thông minh": {
-		"Sản phẩm công nghệ hiện đại với màn hình Retina sắc nét, camera độ phân giải cao và thời lượng pin dài.",
-		"Thiết kế sang trọng với cấu hình mạnh mẽ, camera AI thông minh và khả năng chống nước IP68.",
-		"Smartphone cao cấp với chip xử lý mới nhất, màn hình AMOLED 120Hz và sạc nhanh 65W.",
-		"Điện thoại thông minh với camera chuyên nghiệp, khả năng quay video 4K và bộ nhớ lớn.",
-		"Thiết bị di động mỏng nhẹ, màn hình rộng với tần số quét cao và hỗ trợ công nghệ 5G mới nhất.",
-		"Điện thoại thông minh cao cấp với khả năng chụp ảnh đẹp dưới mọi điều kiện ánh sáng và pin siêu bền.",
-		"Smartphone thiết kế gập độc đáo với màn hình linh hoạt, hiệu năng mạnh mẽ và khả năng đa nhiệm tuyệt vời.",
-		"Điện thoại cao cấp với màn hình tràn viền, cảm biến vân tay dưới màn hình và camera selfie ẩn dưới màn hình.",
-	},
-	"Máy tính xách tay": {
-		"Laptop mỏng nhẹ với hiệu suất mạnh mẽ, thời lượng pin cả ngày và màn hình Retina sắc nét.",
-		"Máy tính xách tay cao cấp dành cho công việc sáng tạo, đồ họa với card màn hình rời và SSD tốc độ cao.",
-		"Laptop chuyên gaming với card đồ họa mạnh mẽ, tản nhiệt hiệu quả và bàn phím RGB.",
-		"Máy tính 2-in-1 linh hoạt với màn hình cảm ứng, bút stylus và thiết kế gập xoay 360 độ.",
-		"Laptop siêu mỏng nhẹ, thiết kế tinh tế với hiệu năng ổn định, phù hợp cho công việc và giải trí hàng ngày.",
-		"Máy tính xách tay với màn hình HDR sắc nét, âm thanh vòm sống động và thời lượng pin suốt cả ngày.",
-		"Laptop chuyên đồ họa với màn hình hiển thị màu chuẩn, cấu hình mạnh mẽ và nhiều cổng kết nối.",
-		"Máy tính xách tay business cao cấp với tính năng bảo mật toàn diện, bền bỉ và hiệu năng ổn định.",
-	},
-	"Thời trang nam": {
-		"Áo thời trang nam phong cách Hàn Quốc, chất liệu cao cấp thoáng mát và thấm hút mồ hôi tốt.",
-		"Quần nam thiết kế hiện đại, form dáng vừa vặn tôn dáng người mặc và dễ phối đồ.",
-		"Sản phẩm thời trang dành cho nam giới công sở với thiết kế lịch lãm, tinh tế và sang trọng.",
-		"Trang phục nam thiết kế theo phong cách đường phố, cá tính và năng động dành cho giới trẻ.",
-		"Áo nam chất liệu cotton organic cao cấp, không gây kích ứng da, thiết kế basic dễ phối đồ.",
-		"Quần nam form slimfit, chất liệu co giãn thoải mái, phù hợp cho cả môi trường công sở và dạo phố.",
-		"Áo khoác nam thiết kế thời thượng, chống thấm nước nhẹ và giữ ấm tốt trong mùa lạnh.",
-		"Vest nam may đo tỉ mỉ từ chất liệu cao cấp, cắt may tinh tế tôn dáng người mặc.",
-	},
-	"Thời trang nữ": {
-		"Thời trang nữ thiết kế theo xu hướng mới nhất, tôn dáng người mặc và phù hợp nhiều hoàn cảnh.",
-		"Trang phục nữ phong cách Hàn Quốc với chất liệu cao cấp, thoáng mát và thấm hút tốt.",
-		"Quần áo nữ thiết kế tinh tế với họa tiết độc đáo, phù hợp cho công sở và dạo phố.",
-		"Đầm nữ thiết kế sang trọng, quyến rũ phù hợp cho các buổi tiệc và sự kiện quan trọng.",
-		"Trang phục nữ phong cách tối giản, thanh lịch với đường may tinh tế và chất liệu bền đẹp.",
-		"Đầm nữ thiết kế hiện đại, cut-out tinh tế, tôn dáng và phù hợp với nhiều vóc dáng khác nhau.",
-		"Áo nữ thiết kế theo xu hướng Y2K, mang đậm phong cách retro nhưng vẫn hiện đại và trẻ trung.",
-		"Quần nữ cạp cao, ôm dáng vừa phải, tôn lên đường cong cơ thể một cách tinh tế và thanh lịch.",
-	},
-	"Đồ gia dụng": {
-		"Thiết bị gia dụng cao cấp với công nghệ hiện đại, tiết kiệm điện và dễ dàng sử dụng.",
-		"Sản phẩm gia dụng thông minh với khả năng kết nối điện thoại và điều khiển từ xa.",
-		"Thiết bị nhà bếp đa năng với nhiều chức năng, giúp việc nấu nướng trở nên đơn giản và nhanh chóng.",
-		"Sản phẩm gia dụng bền bỉ với chất liệu cao cấp và chế độ bảo hành dài hạn.",
-		"Thiết bị gia dụng thiết kế nhỏ gọn, tiết kiệm không gian nhưng vẫn đảm bảo đầy đủ tính năng cần thiết.",
-		"Sản phẩm gia dụng an toàn với trẻ em, có chế độ tự ngắt khi quá nhiệt và bảo vệ điện áp.",
-		"Thiết bị gia dụng cao cấp với thiết kế sang trọng, là điểm nhấn tô điểm cho không gian sống hiện đại.",
-		"Đồ gia dụng thông minh với khả năng học hỏi thói quen sử dụng và tự động điều chỉnh cho phù hợp.",
-	},
-	"Sách": {
-		"Cuốn sách best-seller với nội dung sâu sắc, đem lại nhiều bài học giá trị cho người đọc.",
-		"Tác phẩm nổi tiếng của tác giả được yêu thích, đã được dịch ra nhiều thứ tiếng trên thế giới.",
-		"Sách hay với nội dung bổ ích, ngôn từ cuốn hút và thông điệp ý nghĩa.",
-		"Cuốn sách giúp bạn thay đổi tư duy, phát triển bản thân và đạt được thành công trong cuộc sống.",
-		"Tác phẩm văn học kinh điển đã được tái bản nhiều lần với bản dịch mới mang tính học thuật cao.",
-		"Sách phát triển bản thân với phương pháp thực tế, dễ áp dụng và mang lại hiệu quả rõ rệt.",
-		"Tiểu thuyết lãng mạn với cốt truyện cuốn hút, nhân vật sống động và thông điệp nhân văn sâu sắc.",
-		"Sách chuyên ngành với nội dung chuyên sâu, cập nhật kiến thức mới nhất trong lĩnh vực.",
-	},
-	"Thể thao": {
-		"Thiết bị tập thể thao cao cấp với chất liệu bền bỉ, an toàn và hiệu quả cao.",
-		"Dụng cụ thể thao đa năng giúp bạn tập luyện nhiều nhóm cơ khác nhau.",
-		"Sản phẩm thể thao chuyên nghiệp được thiết kế bởi các chuyên gia hàng đầu.",
-		"Thiết bị tập luyện tại nhà tiện lợi, tiết kiệm không gian và dễ dàng cất gọn.",
-		"Dụng cụ thể thao chuyên nghiệp được sử dụng bởi các vận động viên Olympic và các giải đấu lớn.",
-		"Thiết bị tập luyện thông minh với khả năng theo dõi tiến trình, nhịp tim và lượng calo tiêu thụ.",
-		"Dụng cụ thể thao ngoài trời bền bỉ trong mọi điều kiện thời tiết, dễ dàng mang theo khi đi du lịch.",
-		"Thiết bị thể thao hiện đại, thiết kế tinh tế và công năng vượt trội so với các sản phẩm thông thường.",
-		"Dụng cụ tập luyện phù hợp cho mọi đối tượng từ người mới bắt đầu đến vận động viên chuyên nghiệp.",
-	},
-	"Máy tính bảng": {
-		"Máy tính bảng hiện đại với màn hình Retina sắc nét, hiệu năng mạnh mẽ và thời lượng pin dài.",
-		"Thiết bị di động đa năng phù hợp cho giải trí, làm việc và học tập với màn hình lớn.",
-		"Máy tính bảng cao cấp hỗ trợ bút cảm ứng, phù hợp với các công việc thiết kế và ghi chú.",
-		"Thiết bị di động mỏng nhẹ, màn hình sắc nét, âm thanh sống động phù hợp cho giải trí di động.",
-		"Máy tính bảng với màn hình hiển thị True Tone, tần số quét cao và khả năng chống chói vượt trội.",
-		"Thiết bị di động linh hoạt với khả năng biến đổi thành laptop khi kết nối với bàn phím chuyên dụng.",
-		"Máy tính bảng siêu nhẹ, thiết kế tinh tế với khả năng xử lý đa nhiệm mạnh mẽ và ổn định.",
-		"Thiết bị giải trí di động cao cấp với màn hình AMOLED, loa stereo và hỗ trợ các ứng dụng giải trí.",
-	},
-	"Máy tính để bàn": {
-		"Máy tính để bàn hiệu năng cao với bộ vi xử lý mới nhất, dung lượng RAM lớn, phù hợp cho gaming và đồ họa.",
-		"PC văn phòng nhỏ gọn, thiết kế tối giản với hiệu năng ổn định cho công việc hằng ngày.",
-		"Máy tính All-in-One tiện lợi, tiết kiệm không gian với màn hình lớn và âm thanh chất lượng.",
-		"PC gaming cao cấp với card đồ họa mạnh mẽ, tản nhiệt hiệu quả và hệ thống LED RGB đẹp mắt.",
-		"Máy tính để bàn chuyên dụng cho công việc đồ họa, render video với hiệu năng mạnh mẽ và độ ổn định cao.",
-		"PC workstation chuyên nghiệp với khả năng nâng cấp linh hoạt và hiệu năng xử lý đa nhân vượt trội.",
-		"Máy tính để bàn mini nhỏ gọn, tiết kiệm không gian nhưng vẫn đảm bảo hiệu năng cho công việc văn phòng.",
-		"PC gaming đa nhiệm với khả năng vừa chơi game vừa livestream mượt mà không giật lag.",
-	},
-	"Tai nghe & Loa": {
-		"Tai nghe không dây với công nghệ chống ồn chủ động, âm thanh HD và thời lượng pin lên đến 30 giờ.",
-		"Loa bluetooth di động chống nước, âm thanh mạnh mẽ và pin sử dụng liên tục suốt 24 giờ.",
-		"Tai nghe gaming với âm thanh vòm 7.1, micro khử tiếng ồn và đèn LED RGB tùy chỉnh.",
-		"Loa soundbar cao cấp kết nối không dây, âm thanh vòm Dolby Atmos và thiết kế sang trọng.",
-		"Tai nghe true wireless với kết nối Bluetooth 5.2, chống nước IPX7 và hộp sạc không dây tiện lợi.",
-		"Loa thông minh tích hợp trợ lý ảo, âm thanh 360 độ và khả năng điều khiển thiết bị nhà thông minh.",
-		"Tai nghe audiophile với driver planar magnetic, tái tạo âm thanh chi tiết và không gian âm rộng.",
-		"Loa bookshelf cao cấp với củ loa tweeter mềm, âm trầm mạnh mẽ và dải tần số rộng.",
-	},
-	"Máy ảnh & Máy quay": {
-		"Máy ảnh mirrorless full-frame với cảm biến độ phân giải cao, chống rung trong thân máy và khả năng quay video 4K.",
-		"Máy quay phim chuyên nghiệp với cảm biến lớn, khả năng quay slow-motion và hệ thống lấy nét nhanh chính xác.",
-		"Máy ảnh compact cao cấp nhỏ gọn với zoom quang học lớn, cảm biến 1 inch và khả năng chụp RAW.",
-		"Action camera chống nước, chống rung điện tử và khả năng quay video 5.3K với góc nhìn siêu rộng.",
-		"Máy ảnh DSLR chuyên nghiệp với hệ thống lấy nét tiên tiến, tốc độ chụp liên tiếp cao và dải ISO rộng.",
-		"Máy quay Gimbal tích hợp với khả năng chống rung 3 trục, theo dõi chủ thể và tính năng timelapse.",
-		"Máy ảnh medium format với cảm biến lớn, tái tạo màu sắc chính xác và dải tương phản động cao.",
-		"Drone quay phim với camera gimbal 3 trục, quay video 4K HDR và khả năng bay ổn định trong nhiều điều kiện.",
-	},
-	"Phụ tùng ô tô": {
-		"Lốp xe ô tô cao cấp với độ bám đường tốt, chống ồn và tuổi thọ cao.",
-		"Dầu nhớt động cơ tổng hợp hoàn toàn, bảo vệ động cơ tối ưu và kéo dài thời gian thay dầu.",
-		"Ắc quy khô không bảo dưỡng, khởi động mạnh mẽ và tuổi thọ cao trong mọi điều kiện thời tiết.",
-		"Bộ lọc không khí, dầu và xăng chính hãng, đảm bảo hiệu suất tối ưu cho động cơ.",
-		"Phanh đĩa và má phanh cao cấp với khả năng phanh mạnh mẽ, ổn định và ít tiếng ồn.",
-		"Đèn pha LED siêu sáng với tuổi thọ cao và tiêu thụ điện năng thấp.",
-		"Phụ tùng điện tử chính hãng với độ bền cao và tương thích hoàn hảo với xe.",
-		"Bộ phụ kiện nâng cấp hiệu suất với khả năng tăng mã lực và tiết kiệm nhiên liệu.",
-	},
-	"Tủ lạnh & Tủ đông": {
-		"Tủ lạnh Side-by-Side với ngăn đá lớn, công nghệ làm lạnh đa chiều và tính năng lấy nước, đá tự động.",
-		"Tủ lạnh Inverter tiết kiệm điện, vận hành êm ái và duy trì nhiệt độ ổn định.",
-		"Tủ lạnh mini nhỏ gọn, phù hợp cho phòng ngủ, văn phòng và những không gian hạn chế.",
-		"Tủ đông dung tích lớn với khả năng làm đông nhanh, tiết kiệm điện năng và hoạt động ổn định.",
-		"Tủ lạnh French Door sang trọng với ngăn chuyển đổi nhiệt độ linh hoạt và hệ thống khử mùi.",
-		"Tủ lạnh thông minh kết nối Wi-Fi, quản lý thực phẩm và điều khiển từ xa qua smartphone.",
-		"Tủ đông đứng với nhiều ngăn kéo tiện lợi, dễ dàng sắp xếp và tìm kiếm thực phẩm.",
-		"Tủ mát trưng bày đồ uống với cửa kính trong suốt và hệ thống đèn LED trang trí bắt mắt.",
-	},
-	"Máy giặt & Máy sấy": {
-		"Máy giặt cửa trước với công nghệ giặt hơi nước, diệt khuẩn và làm mềm vải hiệu quả.",
-		"Máy giặt Inverter tiết kiệm điện, nước với khả năng cân chỉnh tự động lượng nước và chất tẩy.",
-		"Máy sấy tụ hơi thông minh với nhiều chương trình sấy chuyên biệt cho từng loại vải.",
-		"Máy giặt sấy kết hợp tiết kiệm không gian với công nghệ sấy bằng bơm nhiệt tiết kiệm điện.",
-		"Máy giặt cửa trên dung tích lớn phù hợp cho gia đình đông người với khả năng giặt mạnh mẽ.",
-		"Máy sấy thông minh với cảm biến độ ẩm, tự động điều chỉnh thời gian sấy phù hợp.",
-		"Máy giặt mini nhỏ gọn phù hợp cho căn hộ, nhà trọ với khả năng tiết kiệm điện, nước hiệu quả.",
-		"Bộ đôi máy giặt và máy sấy cùng thương hiệu với thiết kế đồng bộ và khả năng kết nối thông minh.",
-	},
-	"Nội thất phòng khách": {
-		"Sofa da cao cấp với khung gỗ tự nhiên, đệm mút D40 êm ái và kiểu dáng hiện đại, sang trọng.",
-		"Bàn trà gỗ tự nhiên thiết kế tinh tế, bề mặt chống trầy xước và chân bàn chắc chắn.",
-		"Kệ tivi gỗ công nghiệp phủ melamine chống xước, chống ẩm với nhiều ngăn chứa đồ tiện lợi.",
-		"Thảm trang trí lông ngắn mềm mại, họa tiết hiện đại và dễ dàng vệ sinh, làm sạch.",
-		"Sofa góc L rộng rãi bọc vải cao cấp kháng bẩn, kháng nước và dễ dàng tháo lắp vệ sinh.",
-		"Bàn console trang trí phong cách Bắc Âu với thiết kế tối giản và tinh tế.",
-		"Ghế bành thư giãn có tính năng ngả lưng và gác chân, bọc da công nghiệp bền đẹp.",
-		"Kệ trang trí đa năng với nhiều ngăn kệ phù hợp trưng bày đồ trang trí và sách.",
-	},
-	"Vật tư nông nghiệp": {
-		"Phân bón NPK cân đối dinh dưỡng, tăng cường năng suất cây trồng và cải thiện chất lượng đất.",
-		"Hạt giống rau sạch nhập khẩu với tỷ lệ nảy mầm cao và khả năng kháng bệnh tốt.",
-		"Thuốc bảo vệ thực vật an toàn, hiệu quả với đa dạng công dụng diệt trừ sâu bệnh.",
-		"Màng phủ nông nghiệp chất lượng cao, chống UV, giữ ẩm và kiểm soát cỏ dại hiệu quả.",
-		"Hệ thống tưới nhỏ giọt tiết kiệm nước, tưới đúng chỗ và dễ dàng lắp đặt.",
-		"Giá thể trồng cây không đất sạch sẽ, thoáng khí và giàu dinh dưỡng cho cây phát triển tốt.",
-		"Vật tư làm vườn đồng bộ từ chậu, đất, phân bón đến dụng cụ chăm sóc cây.",
-		"Hệ thống nhà kính mini phù hợp cho sân thượng, ban công với khả năng lắp đặt dễ dàng.",
-	},
-}
-
 // Mở rộng danh sách attribute cho các danh mục mới
 var categoryAttributes = map[string]map[string][]string{
-	"Điện thoại thông minh": {
-		"Màu sắc":          {"Đen", "Trắng", "Xanh", "Đỏ", "Hồng", "Vàng", "Bạc", "Xám"},
-		"Dung lượng":       {"64GB", "128GB", "256GB", "512GB", "1TB"},
-		"RAM":              {"4GB", "6GB", "8GB", "12GB", "16GB"},
-		"Hệ điều hành":     {"Android", "iOS"},
-		"Kích cỡ màn hình": {"5.5 inch", "6.1 inch", "6.4 inch", "6.7 inch", "6.9 inch"},
+	"Điện tử": {
+		"Màu sắc":    {"Đen", "Trắng", "Xanh", "Xám", "Bạc", "Vàng"},
+		"Dung lượng": {"64GB", "128GB", "256GB", "512GB", "1TB"},
 	},
-	"Máy tính xách tay": {
-		"Màu sắc":  {"Đen", "Trắng", "Bạc", "Xám", "Xanh"},
-		"CPU":      {"Intel Core i3", "Intel Core i5", "Intel Core i7", "Intel Core i9", "AMD Ryzen 5", "AMD Ryzen 7", "AMD Ryzen 9"},
-		"RAM":      {"4GB", "8GB", "16GB", "32GB", "64GB"},
-		"Ổ cứng":   {"256GB SSD", "512GB SSD", "1TB SSD", "2TB SSD", "512GB SSD + 1TB HDD"},
-		"Màn hình": {"13.3 inch", "14 inch", "15.6 inch", "16 inch", "17.3 inch"},
-	},
-	"Thời trang nam": {
-		"Màu sắc":    {"Đen", "Trắng", "Xanh Navy", "Xanh Lá", "Đỏ", "Xám", "Nâu", "Be"},
+	"Thời trang": {
+		"Màu sắc":    {"Đen", "Trắng", "Xanh", "Đỏ", "Nâu", "Hồng"},
 		"Kích thước": {"S", "M", "L", "XL", "XXL"},
-		"Chất liệu":  {"Cotton", "Polyester", "Len", "Lụa", "Vải Lanh", "Vải Jeans", "Vải Thun"},
-		"Kiểu dáng":  {"Regular Fit", "Slim Fit", "Loose Fit", "Skinny Fit"},
-		"Mùa":        {"Xuân Hè", "Thu Đông", "Bốn mùa"},
-		"Xuất xứ":    {"Việt Nam", "Trung Quốc", "Hàn Quốc", "Thái Lan", "Nhật Bản", "Mỹ"},
-		"Phong cách": {"Casual", "Formal", "Street Style", "Vintage", "Minimalist"},
 	},
-	"Thời trang nữ": {
-		"Màu sắc":    {"Đen", "Trắng", "Đỏ", "Hồng", "Xanh Navy", "Xanh Lá", "Tím", "Vàng", "Be", "Nâu"},
-		"Kích thước": {"S", "M", "L", "XL", "XXL"},
-		"Chất liệu":  {"Cotton", "Polyester", "Len", "Lụa", "Vải Lanh", "Vải Jeans", "Vải Thun", "Ren"},
-		"Kiểu dáng":  {"Regular Fit", "Slim Fit", "Loose Fit", "Oversize"},
-		"Mùa":        {"Xuân Hè", "Thu Đông", "Bốn mùa"},
-		"Xuất xứ":    {"Việt Nam", "Trung Quốc", "Hàn Quốc", "Thái Lan", "Nhật Bản", "Mỹ"},
-		"Phong cách": {"Casual", "Formal", "Street Style", "Vintage", "Minimalist", "Sexy", "Bohemian"},
-	},
-	"Đồ gia dụng": {
-		"Màu sắc":   {"Đen", "Trắng", "Bạc", "Xám", "Đỏ", "Xanh", "Hồng", "Vàng"},
-		"Chất liệu": {"Nhựa", "Kim loại", "Gỗ", "Thủy tinh", "Gốm sứ", "Silicone", "Inox"},
-		"Công suất": {"500W", "700W", "1000W", "1200W", "1500W", "2000W"},
-		"Xuất xứ":   {"Việt Nam", "Trung Quốc", "Hàn Quốc", "Thái Lan", "Nhật Bản", "Mỹ", "Đức"},
-		"Bảo hành":  {"6 tháng", "12 tháng", "24 tháng", "36 tháng", "60 tháng"},
+	"Gia dụng": {
+		"Màu sắc":   {"Đen", "Trắng", "Bạc", "Xám"},
+		"Công suất": {"500W", "1000W", "1500W", "2000W"},
 	},
 	"Sách": {
-		"Thể loại":     {"Tiểu thuyết", "Khoa học viễn tưởng", "Kinh doanh", "Tâm lý học", "Kỹ năng sống", "Lịch sử", "Trinh thám", "Hồi ký"},
-		"Ngôn ngữ":     {"Tiếng Việt", "Tiếng Anh", "Song ngữ Anh-Việt"},
-		"Tác giả":      {"Nguyễn Nhật Ánh", "Nguyễn Ngọc Tư", "Trang Hạ", "Paulo Coelho", "Haruki Murakami", "J.K. Rowling", "Stephen King"},
-		"Nhà xuất bản": {"NXB Kim Đồng", "NXB Trẻ", "NXB Tổng hợp TPHCM", "NXB Hội Nhà văn", "NXB Giáo dục", "NXB Lao động"},
-		"Bìa sách":     {"Bìa mềm", "Bìa cứng", "Bìa gập"},
+		"Loại bìa": {"Bìa mềm", "Bìa cứng"},
+		"Ngôn ngữ": {"Tiếng Việt", "Tiếng Anh"},
 	},
 	"Thể thao": {
-		"Màu sắc":       {"Đen", "Trắng", "Xanh", "Đỏ", "Xám", "Cam"},
-		"Chất liệu":     {"Nhựa", "Kim loại", "Cao su", "Vải", "Da tổng hợp", "Sợi carbon"},
-		"Kích thước":    {"S", "M", "L", "XL", "XXL", "Freesize"},
-		"Thương hiệu":   {"Nike", "Adidas", "Puma", "Under Armour", "The North Face", "Columbia", "Lining"},
-		"Xuất xứ":       {"Việt Nam", "Trung Quốc", "Mỹ", "Đức", "Nhật Bản", "Thái Lan"},
-		"Loại thiết bị": {"Tập lực", "Tập cardio", "Đồ bảo hộ", "Phụ kiện", "Quần áo tập"},
+		"Màu sắc":    {"Đen", "Xanh", "Đỏ", "Tím", "Hồng"},
+		"Kích thước": {"Nhỏ", "Vừa", "Lớn"},
 	},
-	// Thêm attribute cho các danh mục mới
-	"Máy tính bảng": {
-		"Màu sắc":      {"Đen", "Trắng", "Bạc", "Xám", "Vàng Hồng", "Xanh", "Tím"},
-		"Dung lượng":   {"32GB", "64GB", "128GB", "256GB", "512GB", "1TB"},
-		"Kết nối":      {"WiFi", "4G/LTE", "5G", "WiFi + Cellular"},
-		"Kích thước":   {"7.9 inch", "8.3 inch", "10.2 inch", "10.9 inch", "11 inch", "12.9 inch"},
-		"Hệ điều hành": {"iPadOS", "Android", "Windows", "HarmonyOS"},
+	"Làm đẹp": {
+		"Màu sắc":   {"Đỏ", "Hồng", "Nude", "Cam"},
+		"Dung tích": {"15ml", "30ml", "50ml", "100ml"},
 	},
-	"Máy tính để bàn": {
-		"CPU":          {"Intel Core i3", "Intel Core i5", "Intel Core i7", "Intel Core i9", "AMD Ryzen 5", "AMD Ryzen 7", "AMD Ryzen 9", "AMD Threadripper"},
-		"RAM":          {"4GB", "8GB", "16GB", "32GB", "64GB", "128GB"},
-		"Ổ cứng":       {"256GB SSD", "512GB SSD", "1TB SSD", "2TB SSD", "1TB HDD", "2TB HDD", "SSD + HDD"},
-		"Card đồ họa":  {"NVIDIA GTX 1650", "NVIDIA RTX 3060", "NVIDIA RTX 3070", "NVIDIA RTX 4080", "AMD Radeon RX 6600", "AMD Radeon RX 6800", "Intel Arc"},
-		"Hệ điều hành": {"Windows 11", "Windows 10", "macOS", "Linux"},
+	"Thực phẩm": {
+		"Trọng lượng": {"340g", "500g", "1kg", "5kg", "10kg"},
+		"Xuất xứ":     {"Việt Nam", "Thái Lan", "Nhật Bản"},
 	},
-	"Tai nghe & Loa": {
-		"Loại kết nối":   {"Có dây", "Bluetooth", "Wireless 2.4GHz", "Type-C"},
-		"Kiểu đeo":       {"Over-ear", "On-ear", "In-ear", "True Wireless"},
-		"Tính năng":      {"Chống ồn chủ động", "Chống nước", "Micro đàm thoại", "Âm thanh vòm"},
-		"Thời lượng pin": {"8 giờ", "15 giờ", "24 giờ", "30 giờ", "40 giờ", "50 giờ"},
-		"Công suất":      {"5W", "10W", "20W", "30W", "50W", "100W", "300W"},
-	},
-	"Máy ảnh & Máy quay": {
-		"Độ phân giải":        {"12MP", "20MP", "24MP", "32MP", "45MP", "61MP"},
-		"Cảm biến":            {"MFT", "APS-C", "Full Frame", "Medium Format"},
-		"Khả năng quay video": {"Full HD", "4K/30p", "4K/60p", "8K/30p", "RAW Video"},
-		"Hãng sản xuất":       {"Sony", "Canon", "Nikon", "Fujifilm", "Panasonic", "Leica", "Olympus"},
-		"Loại máy":            {"DSLR", "Mirrorless", "Compact", "Action Camera", "Cinema Camera"},
-	},
-	"Nội thất phòng khách": {
-		"Chất liệu khung": {"Gỗ tự nhiên", "Gỗ công nghiệp", "Kim loại", "Nhựa cao cấp", "Kết hợp"},
-		"Chất liệu bọc":   {"Da thật", "Da công nghiệp", "Vải", "Nỉ", "Nhung", "Canvas"},
-		"Phong cách":      {"Hiện đại", "Tân cổ điển", "Cổ điển", "Scandinavian", "Industrial", "Minimalist"},
-		"Màu sắc":         {"Đen", "Trắng", "Xám", "Nâu", "Be", "Xanh dương", "Xanh lá", "Đỏ"},
-		"Kích thước":      {"Nhỏ (1-2 người)", "Vừa (3-4 người)", "Lớn (5-7 người)", "Rất lớn (8+ người)"},
-	},
-	"Đồ chơi trẻ em": {
-		"Độ tuổi phù hợp": {"0-12 tháng", "1-3 tuổi", "3-5 tuổi", "6-9 tuổi", "10-14 tuổi"},
-		"Chất liệu":       {"Nhựa an toàn", "Gỗ tự nhiên", "Vải", "Silicone", "Bông"},
-		"Loại đồ chơi":    {"Đồ chơi giáo dục", "Đồ chơi vận động", "Đồ chơi sáng tạo", "Đồ chơi nhập vai", "Đồ chơi xây dựng"},
-		"Thương hiệu":     {"Lego", "Fisher-Price", "Barbie", "Hot Wheels", "Nerf", "Vtech", "Melissa & Doug"},
-		"Xuất xứ":         {"Việt Nam", "Trung Quốc", "Nhật Bản", "Mỹ", "Đức", "Đan Mạch"},
-	},
-	"Mỹ phẩm": {
-		"Loại da":          {"Da dầu", "Da khô", "Da hỗn hợp", "Da nhạy cảm", "Da thường"},
-		"Chứng nhận":       {"Organic", "Cruelty-free", "Vegan", "Không paraben", "Hypoallergenic"},
-		"Xuất xứ":          {"Hàn Quốc", "Nhật Bản", "Pháp", "Mỹ", "Việt Nam", "Thái Lan"},
-		"Hiệu quả":         {"Dưỡng ẩm", "Chống lão hóa", "Trị mụn", "Sáng da", "Chống nắng"},
-		"Thành phần chính": {"Vitamin C", "Retinol", "Hyaluronic Acid", "Niacinamide", "AHA/BHA", "Centella Asiatica"},
-	},
-	"Thực phẩm khô": {
-		"Hạn sử dụng":          {"3 tháng", "6 tháng", "1 năm", "2 năm", "3 năm"},
-		"Xuất xứ":              {"Việt Nam", "Thái Lan", "Nhật Bản", "Hàn Quốc", "Trung Quốc", "Đài Loan"},
-		"Quy cách đóng gói":    {"100g", "250g", "500g", "1kg", "5kg", "Hộp", "Túi", "Lon"},
-		"Phương pháp chế biến": {"Sấy khô", "Đông lạnh", "Đóng hộp", "Lên men", "Ướp muối"},
-		"Chứng nhận":           {"Organic", "Non-GMO", "Fair Trade", "Halal", "Kosher", "HACCP"},
-	},
-	"Đồ uống": {
-		"Loại đồ uống": {"Nước khoáng", "Nước ngọt", "Cà phê", "Trà", "Nước ép", "Sữa", "Bia", "Rượu"},
-		"Dung tích":    {"250ml", "330ml", "500ml", "1L", "1.5L", "2L", "5L"},
-		"Vị":           {"Truyền thống", "Trái cây", "Sữa", "Socola", "Vani", "Caramel", "Không đường"},
-		"Đóng gói":     {"Chai", "Lon", "Hộp", "Bịch", "Thùng"},
-		"Độ cồn":       {"0%", "4.5%", "5%", "12%", "14%", "40%"},
-		"Xuất xứ":      {"Việt Nam", "Thái Lan", "Hàn Quốc", "Nhật Bản", "Pháp", "Ý", "Mỹ"},
-	},
-	"Túi xách": {
-		"Chất liệu":  {"Da thật", "Da PU", "Vải Canvas", "Vải Oxford", "Nylon", "Nhựa", "Kim loại"},
-		"Kích thước": {"Mini", "Nhỏ", "Trung bình", "Lớn", "Rất lớn"},
-		"Màu sắc":    {"Đen", "Trắng", "Nâu", "Be", "Đỏ", "Xanh", "Hồng", "Vàng", "Bạc", "Đa màu"},
-		"Phong cách": {"Casual", "Business", "Party", "Vintage", "Sporty", "Minimalist"},
-		"Kiểu dáng":  {"Tote", "Crossbody", "Backpack", "Clutch", "Hobo", "Bucket", "Satchel"},
-	},
-	"Nội thất phòng ngủ": {
-		"Chất liệu":         {"Gỗ tự nhiên", "Gỗ công nghiệp", "Kim loại", "Da", "Vải", "Nhựa"},
-		"Kích thước giường": {"1.2m x 2m", "1.5m x 2m", "1.6m x 2m", "1.8m x 2m", "2m x 2.2m"},
-		"Độ cứng nệm":       {"Cứng", "Trung bình", "Mềm", "Siêu mềm"},
-		"Phong cách":        {"Hiện đại", "Cổ điển", "Tân cổ điển", "Vintage", "Minimalist", "Rustic"},
-		"Màu sắc":           {"Trắng", "Đen", "Xám", "Nâu", "Be", "Xanh", "Hồng", "Tím"},
-	},
-	"Cây cảnh & Hoa": {
-		"Loại cây":       {"Cây để bàn", "Cây sàn", "Cây treo", "Cây thủy sinh", "Cây nội thất", "Cây ăn quả mini", "Hoa"},
-		"Điều kiện sống": {"Ít ánh sáng", "Ánh sáng vừa", "Nhiều ánh sáng", "Ít nước", "Nhiều nước", "Ẩm cao"},
-		"Kích thước":     {"Nhỏ (<30cm)", "Trung bình (30-80cm)", "Lớn (80-150cm)", "Rất lớn (>150cm)"},
-		"Chậu cây":       {"Nhựa", "Gốm sứ", "Đất nung", "Gỗ", "Kim loại", "Thủy tinh"},
-		"Công dụng":      {"Trang trí", "Lọc không khí", "Phong thủy", "Ăn quả", "Làm thuốc"},
+	"Nội thất": {
+		"Màu sắc":    {"Trắng", "Nâu", "Đen", "Xám", "Be"},
+		"Kích thước": {"Nhỏ", "Vừa", "Lớn"},
 	},
 }
 
@@ -814,6 +301,7 @@ func seedRolePermissions(ctx context.Context, db *pgxpool.Pool) {
 		"supplier": {
 			{ModuleID: 3, Permissions: []int{1, 2, 3, 4}},
 			{ModuleID: 9, Permissions: []int{1, 2, 3, 4}},
+			{ModuleID: 5, Permissions: []int{2, 4}},
 		},
 		"deliverer": {
 			{ModuleID: 5, Permissions: []int{2, 4}},
@@ -1154,7 +642,7 @@ func seedUsers(ctx context.Context, db *pgxpool.Pool, total, batchSize, numGorou
 
 // Sửa lại hàm selectSupplierUserIDs để đảm bảo admin cũng là supplier
 func selectSupplierUserIDs(userIDs []int64) []int64 {
-	count := len(userIDs) / 10 // 10% users as suppliers
+	count := 15 // Cố định 15 supplier thay vì len(userIDs) / 10
 	supplierUserIDs := make([]int64, 0, count+1)
 
 	// Đảm bảo admin cũng là supplier (ID=1)
@@ -1163,9 +651,11 @@ func selectSupplierUserIDs(userIDs []int64) []int64 {
 
 	// Trộn ngẫu nhiên để chọn users làm supplier
 	gofakeit.ShuffleAnySlice(userIDs)
-	for i := 0; i < count && i < len(userIDs); i++ {
+	addedCount := 0
+	for i := 0; i < len(userIDs) && addedCount < count; i++ {
 		if userIDs[i] != adminID {
 			supplierUserIDs = append(supplierUserIDs, userIDs[i])
+			addedCount++
 		}
 	}
 	return supplierUserIDs
@@ -1204,7 +694,7 @@ func assignSupplierRole(ctx context.Context, db *pgxpool.Pool, supplierUserIDs [
 
 // Tương tự với deliverer, cũng thêm admin
 func selectDelivererUserIDs(userIDs []int64) []int64 {
-	count := len(userIDs) / 20 // 5% users as deliverers
+	count := 15 // Cố định 15 deliverer thay vì len(userIDs) / 20
 	delivererUserIDs := make([]int64, 0, count+1)
 
 	// Thêm admin vào danh sách deliverer
@@ -1213,9 +703,11 @@ func selectDelivererUserIDs(userIDs []int64) []int64 {
 
 	// Trộn ngẫu nhiên để chọn users làm deliverer
 	gofakeit.ShuffleAnySlice(userIDs)
-	for i := 0; i < count && i < len(userIDs); i++ {
+	addedCount := 0
+	for i := 0; i < len(userIDs) && addedCount < count; i++ {
 		if userIDs[i] != adminID {
 			delivererUserIDs = append(delivererUserIDs, userIDs[i])
+			addedCount++
 		}
 	}
 	return delivererUserIDs
@@ -1559,517 +1051,316 @@ func seedPartnersIndependentTables(ctx context.Context, db *pgxpool.Pool) {
 
 // Cập nhật hàm seedCategories để thêm nhiều danh mục cha và con hơn
 func seedCategories(ctx context.Context, db *pgxpool.Pool) {
-	// Danh mục chính (mở rộng từ 5 lên hơn 10)
+	// Chỉ tạo 8 categories chính, bỏ hết category con
 	mainCategories := []struct{ name, desc, imageUrl string }{
 		{
-			"Điện tử & Công nghệ",
-			"Các sản phẩm điện tử và công nghệ hiện đại",
-			"https://images.unsplash.com/photo-1468495244123-6c6c332eeece?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1021&q=80",
+			"Điện tử",
+			"Điện thoại, laptop, máy tính bảng và thiết bị điện tử",
+			"https://images.unsplash.com/photo-1498049794561-7780e7231661?w=600&h=400&fit=crop",
 		},
 		{
 			"Thời trang",
 			"Quần áo, giày dép và phụ kiện thời trang",
-			"https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
+			"https://images.unsplash.com/photo-1445205170230-053b83016050?w=600&h=400&fit=crop",
 		},
 		{
-			"Nhà cửa & Đời sống",
+			"Gia dụng",
 			"Đồ gia dụng và vật dụng sinh hoạt hàng ngày",
-			"https://images.unsplash.com/photo-1484101403633-562f891dc89a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1174&q=80",
-		},
-		{
-			"Sách & Văn phòng phẩm",
-			"Sách, văn phòng phẩm và học cụ",
-			"https://images.unsplash.com/photo-1526243741027-444d633d7365?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Thể thao & Du lịch",
-			"Dụng cụ thể thao và đồ dùng du lịch",
-			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		// Thêm các danh mục chính mới
-		{
-			"Mẹ & Bé",
-			"Sản phẩm dành cho mẹ và trẻ em",
-			"https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Làm đẹp & Sức khỏe",
-			"Mỹ phẩm, chăm sóc cá nhân và sức khỏe",
-			"https://images.unsplash.com/photo-1571875257727-256c39da42af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Thực phẩm & Đồ uống",
-			"Thực phẩm, đồ uống và nguyên liệu nấu ăn",
-			"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Ô tô & Xe máy",
-			"Phụ tùng, phụ kiện và sản phẩm chăm sóc xe",
-			"https://images.unsplash.com/photo-1577278689329-1914b6814d58?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Điện gia dụng",
-			"Các thiết bị điện tử gia dụng và nhà bếp",
-			"https://png.pngtree.com/template/20220330/ourmid/pngtree-electrical-appliances-renewal-season-small-appliances-promotion-poster-image_907595.jpg",
-		},
-		{
-			"Nội thất & Trang trí",
-			"Đồ nội thất và trang trí không gian sống",
-			"https://images.unsplash.com/photo-1565183928294-7063f23ce0f8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Đồ chơi & Sở thích",
-			"Đồ chơi, game và sản phẩm cho sở thích",
-			"https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Thiết bị công nghiệp",
-			"Máy móc, thiết bị và vật tư công nghiệp",
-			"https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Nông nghiệp & Vườn tược",
-			"Thiết bị, phân bón và sản phẩm nông nghiệp",
-			"https://images.unsplash.com/photo-1486328228599-85db4443971f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-	}
-
-	mainCategoryIDs := make(map[string]int64)
-	for _, cat := range mainCategories {
-		var id int64
-		err := db.QueryRow(ctx, `SELECT id FROM categories WHERE name = $1`, cat.name).Scan(&id)
-
-		if err != nil {
-			err = db.QueryRow(ctx, `INSERT INTO categories (name, description, image_url, is_active)
-                VALUES ($1, $2, $3, TRUE)
-                RETURNING id;`, cat.name, cat.desc, cat.imageUrl).Scan(&id)
-
-			if err != nil {
-				log.Printf("Error inserting main category: %v", err)
-				continue
-			}
-		}
-
-		mainCategoryIDs[cat.name] = id
-	}
-
-	// Seed danh mục con - mở rộng danh sách con
-	subCategories := []struct{ name, desc, parent, imageUrl string }{
-		{
-			"Điện thoại thông minh",
-			"Điện thoại thông minh từ các thương hiệu nổi tiếng",
-			"Điện tử & Công nghệ",
-			"https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
-		},
-		{
-			"Máy tính xách tay",
-			"Laptop và máy tính xách tay các loại",
-			"Điện tử & Công nghệ",
-			"https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Thời trang nam",
-			"Quần áo và phụ kiện dành cho nam giới",
-			"Thời trang",
-			"https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Thời trang nữ",
-			"Quần áo và phụ kiện dành cho nữ giới",
-			"Thời trang",
-			"https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Đồ gia dụng",
-			"Thiết bị điện và đồ dùng gia đình",
-			"Nhà cửa & Đời sống",
-			"https://images.unsplash.com/photo-1556909172-54557c7e4fb7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=600&h=400&fit=crop",
 		},
 		{
 			"Sách",
-			"Sách tiếng Việt và ngoại văn các thể loại",
-			"Sách & Văn phòng phẩm",
-			"https://images.unsplash.com/photo-1495446815901-a7297e633e8d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"Sách và văn phòng phẩm",
+			"https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=600&h=400&fit=crop",
 		},
 		{
 			"Thể thao",
-			"Dụng cụ tập luyện thể thao",
-			"Thể thao & Du lịch",
-			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"Dụng cụ thể thao và đồ dùng tập luyện",
+			"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&h=400&fit=crop",
 		},
 		{
-			"Máy tính bảng",
-			"Máy tính bảng và phụ kiện",
-			"Điện tử & Công nghệ",
-			"https://images.unsplash.com/photo-1589739900843-a2120b1d8e92?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
+			"Làm đẹp",
+			"Mỹ phẩm và sản phẩm chăm sóc cá nhân",
+			"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&h=400&fit=crop",
 		},
 		{
-			"Máy tính để bàn",
-			"Máy tính để bàn và linh kiện",
-			"Điện tử & Công nghệ",
-			"https://images.unsplash.com/photo-1593640408182-31c70c8268f5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1142&q=80",
+			"Thực phẩm",
+			"Thực phẩm và đồ uống",
+			"https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&h=400&fit=crop",
 		},
 		{
-			"Tai nghe & Loa",
-			"Tai nghe, loa và thiết bị âm thanh",
-			"Điện tử & Công nghệ",
-			"https://images.unsplash.com/photo-1546435770-a3e426bf472b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1165&q=80",
-		},
-		{
-			"Máy ảnh & Máy quay",
-			"Máy ảnh, máy quay và phụ kiện",
-			"Điện tử & Công nghệ",
-			"https://images.unsplash.com/photo-1516724562728-afc824a36e84?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Thời trang trẻ em",
-			"Quần áo và phụ kiện cho trẻ em",
-			"Thời trang",
-			"https://images.unsplash.com/photo-1519457431-44ccd64a579b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Giày dép",
-			"Giày dép các loại cho nam và nữ",
-			"Thời trang",
-			"https://images.unsplash.com/photo-1600269452121-4f2416e55c28?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1965&q=80",
-		},
-		{
-			"Túi xách",
-			"Túi xách, ví và balo thời trang",
-			"Thời trang",
-			"https://images.unsplash.com/photo-1584917865442-de89df76afd3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Đồng hồ & Trang sức",
-			"Đồng hồ, nhẫn, dây chuyền và trang sức",
-			"Thời trang",
-			"https://images.unsplash.com/photo-1619946794135-5bc917a27793?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1654&q=80",
-		},
-		{
-			"Đồ dùng nhà bếp",
-			"Dụng cụ nấu ăn và đồ dùng nhà bếp",
-			"Nhà cửa & Đời sống",
-			"https://images.unsplash.com/photo-1556911261-6bd341186b2f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Đồ dùng phòng ngủ",
-			"Chăn, ga, gối, đệm và đồ dùng phòng ngủ",
-			"Nhà cửa & Đời sống",
-			"https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Đồ dùng phòng tắm",
-			"Khăn tắm, rèm và đồ dùng phòng tắm",
-			"Nhà cửa & Đời sống",
-			"https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Văn phòng phẩm",
-			"Bút, giấy và dụng cụ văn phòng",
-			"Sách & Văn phòng phẩm",
-			"https://images.unsplash.com/photo-1574359411659-11a4b689bc48?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1122&q=80",
-		},
-		{
-			"Sách giáo khoa",
-			"Sách giáo khoa và tài liệu học tập",
-			"Sách & Văn phòng phẩm",
-			"https://images.unsplash.com/photo-1503676260728-1c00da094a0b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1122&q=80",
-		},
-		{
-			"Tạp chí & Báo",
-			"Tạp chí, báo và ấn phẩm định kỳ",
-			"Sách & Văn phòng phẩm",
-			"https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-		},
-		{
-			"Dụng cụ thể thao",
-			"Dụng cụ, thiết bị và quần áo thể thao",
-			"Thể thao & Du lịch",
-			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Vali & Túi du lịch",
-			"Vali, túi du lịch và phụ kiện",
-			"Thể thao & Du lịch",
-			"https://images.unsplash.com/photo-1581553680321-4fffae59fccd?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Thiết bị cắm trại",
-			"Lều, túi ngủ và thiết bị cắm trại",
-			"Thể thao & Du lịch",
-			"https://images.unsplash.com/photo-1504851149312-7a075b496cc7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Xe đạp & Phụ kiện",
-			"Xe đạp, phụ tùng và phụ kiện",
-			"Thể thao & Du lịch",
-			"https://images.unsplash.com/photo-1541625602330-2277a4c46182?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Đồ dùng cho bé",
-			"Bỉm, sữa và đồ dùng cho bé",
-			"Mẹ & Bé",
-			"https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1175&q=80",
-		},
-		{
-			"Đồ chơi cho bé",
-			"Đồ chơi giáo dục và giải trí cho bé",
-			"Mẹ & Bé",
-			"https://images.unsplash.com/photo-1566140967404-b8b3932483f5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Thời trang cho bé",
-			"Quần áo, giày dép cho bé",
-			"Mẹ & Bé",
-			"https://images.unsplash.com/photo-1611042553365-9b101441c135?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Đồ dùng cho mẹ",
-			"Sản phẩm dành cho mẹ bầu và sau sinh",
-			"Mẹ & Bé",
-			"https://images.unsplash.com/photo-1519710164239-da123dc03ef4?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-		},
-		{
-			"Mỹ phẩm",
-			"Mỹ phẩm và trang điểm",
-			"Làm đẹp & Sức khỏe",
-			"https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
-		},
-		{
-			"Chăm sóc da",
-			"Sản phẩm chăm sóc da mặt và cơ thể",
-			"Làm đẹp & Sức khỏe",
-			"https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Chăm sóc tóc",
-			"Sản phẩm chăm sóc và tạo kiểu tóc",
-			"Làm đẹp & Sức khỏe",
-			"https://images.unsplash.com/photo-1562157873-818bc0726f68?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
-		},
-		{
-			"Thực phẩm chức năng",
-			"Vitamin, thực phẩm bổ sung và thảo dược",
-			"Làm đẹp & Sức khỏe",
-			"https://images.unsplash.com/photo-1577174881658-0f30ed549adc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Thiết bị y tế",
-			"Máy đo đường huyết, huyết áp và thiết bị y tế gia đình",
-			"Làm đẹp & Sức khỏe",
-			"https://images.unsplash.com/photo-1581595219361-c2a3858daa21?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
-		},
-		{
-			"Thực phẩm khô",
-			"Gạo, mì, ngũ cốc và thực phẩm khô",
-			"Thực phẩm & Đồ uống",
-			"https://images.unsplash.com/photo-1558961363-fa8fdf82db35?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1065&q=80",
-		},
-		{
-			"Thực phẩm tươi sống",
-			"Rau củ, trái cây, thịt và thực phẩm tươi sống",
-			"Thực phẩm & Đồ uống",
-			"https://images.unsplash.com/photo-1488459716781-31db52582fe9?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Đồ uống",
-			"Nước giải khát, bia, rượu và đồ uống",
-			"Thực phẩm & Đồ uống",
-			"https://images.unsplash.com/photo-1581349485608-9469926a8e5e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=764&q=80",
-		},
-		{
-			"Bánh kẹo & Đồ ăn vặt",
-			"Bánh kẹo, snack và đồ ăn vặt",
-			"Thực phẩm & Đồ uống",
-			"https://images.unsplash.com/photo-1582058091505-f87a2e55a40f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Phụ tùng ô tô",
-			"Phụ tùng, linh kiện và phụ kiện ô tô",
-			"Ô tô & Xe máy",
-			"https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1172&q=80",
-		},
-		{
-			"Phụ tùng xe máy",
-			"Phụ tùng, linh kiện và phụ kiện xe máy",
-			"Ô tô & Xe máy",
-			"https://images.unsplash.com/photo-1558981001-792f6c0d5068?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Chăm sóc xe",
-			"Sản phẩm chăm sóc, vệ sinh và bảo dưỡng xe",
-			"Ô tô & Xe máy",
-			"https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Thiết bị định vị & Điện tử ô tô",
-			"Thiết bị GPS, camera hành trình và điện tử ô tô",
-			"Ô tô & Xe máy",
-			"https://images.unsplash.com/photo-1619538419737-edebb2e4af83?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Tủ lạnh & Tủ đông",
-			"Tủ lạnh, tủ đông và tủ mát",
-			"Điện gia dụng",
-			"https://images.unsplash.com/photo-1588854337221-4cf9fa96059c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Máy giặt & Máy sấy",
-			"Máy giặt, máy sấy và thiết bị giặt ủi",
-			"Điện gia dụng",
-			"https://images.unsplash.com/photo-1626806787461-102c1a7d1155?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Điều hòa & Quạt",
-			"Điều hòa không khí, quạt và thiết bị làm mát",
-			"Điện gia dụng",
-			"https://images.unsplash.com/photo-1553776590-89774c09baeb?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Thiết bị nhà bếp",
-			"Lò vi sóng, lò nướng và thiết bị nhà bếp",
-			"Điện gia dụng",
-			"https://images.unsplash.com/photo-1630459065645-55f3669a92ed?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=880&q=80",
-		},
-		{
-			"Nội thất phòng khách",
-			"Sofa, bàn trà và nội thất phòng khách",
-			"Nội thất & Trang trí",
-			"https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-		},
-		{
-			"Nội thất phòng ngủ",
-			"Giường, tủ quần áo và nội thất phòng ngủ",
-			"Nội thất & Trang trí",
-			"https://images.unsplash.com/photo-1617325247661-675ab4b64ae2?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-		},
-		{
-			"Nội thất phòng ăn",
-			"Bàn ăn, ghế và nội thất phòng ăn",
-			"Nội thất & Trang trí",
-			"https://images.unsplash.com/photo-1617806118233-18e1de247200?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1032&q=80",
-		},
-		{
-			"Đèn & Thiết bị chiếu sáng",
-			"Đèn trần, đèn bàn và thiết bị chiếu sáng",
-			"Nội thất & Trang trí",
-			"https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-
-		// Thêm danh mục con cho "Đồ chơi & Sở thích"
-		{
-			"Đồ chơi trẻ em",
-			"Đồ chơi và trò chơi cho trẻ em",
-			"Đồ chơi & Sở thích",
-			"https://images.unsplash.com/photo-1558060370-8c436e9e5d76?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1176&q=80",
-		},
-		{
-			"Mô hình & Đồ sưu tầm",
-			"Mô hình, đồ sưu tầm và đồ chơi cao cấp",
-			"Đồ chơi & Sở thích",
-			"https://images.unsplash.com/photo-1516562309708-05f3b2b2c238?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1169&q=80",
-		},
-		{
-			"Nhạc cụ",
-			"Đàn guitar, piano và nhạc cụ",
-			"Đồ chơi & Sở thích",
-			"https://images.unsplash.com/photo-1511192336575-5a79af67a629?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1632&q=80",
-		},
-		{
-			"Đồ thủ công & Mỹ nghệ",
-			"Vật liệu thủ công và mỹ nghệ",
-			"Đồ chơi & Sở thích",
-			"https://images.unsplash.com/photo-1499744349893-0c6de53516e6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1136&q=80",
-		},
-
-		// Thêm danh mục con cho "Thiết bị công nghiệp"
-		{
-			"Máy móc công nghiệp",
-			"Máy móc và thiết bị công nghiệp",
-			"Thiết bị công nghiệp",
-			"https://images.unsplash.com/photo-1566937169390-7be4c63b8a0e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Dụng cụ điện",
-			"Máy khoan, máy cắt và dụng cụ điện",
-			"Thiết bị công nghiệp",
-			"https://images.unsplash.com/photo-1530124566582-a618bc2615dc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Thiết bị an toàn",
-			"Mũ bảo hiểm, găng tay và thiết bị an toàn lao động",
-			"Thiết bị công nghiệp",
-			"https://images.unsplash.com/photo-1601171903232-8663ec287c2e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Thiết bị đo lường",
-			"Thước, máy đo và thiết bị đo lường",
-			"Thiết bị công nghiệp",
-			"https://images.unsplash.com/photo-1572372783017-2b80336200d5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-
-		// Thêm danh mục con cho "Nông nghiệp & Vườn tược"
-		{
-			"Vật tư nông nghiệp",
-			"Phân bón, hạt giống và vật tư nông nghiệp",
-			"Nông nghiệp & Vườn tược",
-			"https://images.unsplash.com/photo-1589923188651-268a357A047E?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Máy móc nông nghiệp",
-			"Máy cắt cỏ, máy bơm và máy móc nông nghiệp",
-			"Nông nghiệp & Vườn tược",
-			"https://images.unsplash.com/photo-1575379573116-bd5e9c629046?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		{
-			"Cây cảnh & Hoa",
-			"Cây cảnh, hạt giống hoa và phụ kiện",
-			"Nông nghiệp & Vườn tược",
-			"https://images.unsplash.com/photo-1501004318641-b39e6451bec6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80",
-		},
-		{
-			"Dụng cụ làm vườn",
-			"Xẻng, kéo cắt cành và dụng cụ làm vườn",
-			"Nông nghiệp & Vườn tược",
-			"https://images.unsplash.com/photo-1598902468171-0f50e32f3e57?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
+			"Nội thất",
+			"Đồ nội thất và trang trí nhà cửa",
+			"https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600&h=400&fit=crop",
 		},
 	}
 
-	for _, subCat := range subCategories {
-		parentID, exists := mainCategoryIDs[subCat.parent]
-		if !exists {
-			log.Printf("Parent category not found: %s", subCat.parent)
+	for _, cat := range mainCategories {
+		// First check if the category already exists
+		var count int
+		err := db.QueryRow(ctx, `
+			SELECT COUNT(*) FROM categories WHERE name = $1
+		`, cat.name).Scan(&count)
+
+		if err != nil {
+			log.Printf("Error checking category existence: %v", err)
 			continue
 		}
 
-		// Kiểm tra xem danh mục con đã tồn tại chưa
-		var existingID int64
-		err := db.QueryRow(ctx, `SELECT id FROM categories WHERE name = $1`, subCat.name).Scan(&existingID)
-
-		if err != nil {
-			// Nếu không tìm thấy hoặc lỗi khác, thêm mới
-			_, err = db.Exec(ctx, `
-				INSERT INTO categories (name, description, parent_id, image_url, is_active)
-				VALUES ($1, $2, $3, $4, TRUE);
-			`, subCat.name, subCat.desc, parentID, subCat.imageUrl)
+		if count == 0 {
+			// Insert new category
+			_, err := db.Exec(ctx, `
+				INSERT INTO categories (name, description, image_url, is_active)
+				VALUES ($1, $2, $3, TRUE)
+			`, cat.name, cat.desc, cat.imageUrl)
 
 			if err != nil {
-				log.Printf("Error inserting sub category: %v", err)
+				log.Printf("Error inserting category: %v", err)
 			}
 		} else {
-			// Nếu đã tồn tại, cập nhật
-			_, err = db.Exec(ctx, `
-				UPDATE categories
-				SET description = $1, parent_id = $2, image_url = $3, is_active = TRUE
-				WHERE id = $4;
-			`, subCat.desc, parentID, subCat.imageUrl, existingID)
+			// Update existing category
+			_, err := db.Exec(ctx, `
+				UPDATE categories 
+				SET description = $2, image_url = $3, is_active = TRUE, updated_at = CURRENT_TIMESTAMP
+				WHERE name = $1
+			`, cat.name, cat.desc, cat.imageUrl)
 
 			if err != nil {
-				log.Printf("Error updating sub category: %v", err)
+				log.Printf("Error updating category: %v", err)
 			}
 		}
 	}
 	log.Println("✅ Categories seeded successfully")
+}
+
+// Danh sách sản phẩm cụ thể với ảnh đã test và hoạt động
+var specificProducts = []struct {
+	name          string
+	description   string
+	category      string
+	imageURL      string
+	variantImages map[string]string
+}{
+	// ĐIỆN TỬ
+	{
+		name:        "iPhone 15 Pro Max 256GB",
+		description: "Điện thoại thông minh cao cấp với chip A17 Pro, camera 48MP và màn hình Super Retina XDR 6.7 inch",
+		category:    "Điện tử",
+		imageURL:    "https://cdn.tgdd.vn/Products/Images/42/299033/iphone-15-pro-max-blue-thumbnew-600x600.jpg",
+		variantImages: map[string]string{
+			"Xanh":  "https://cdn.tgdd.vn/Products/Images/42/299033/iphone-15-pro-max-blue-thumbnew-600x600.jpg",
+			"Đen":   "https://cdn.tgdd.vn/Products/Images/42/299033/iphone-15-pro-max-black-thumbnew-600x600.jpg",
+			"Trắng": "https://cdn.tgdd.vn/Products/Images/42/299033/iphone-15-pro-max-white-thumbnew-600x600.jpg",
+		},
+	},
+	{
+		name:        "Samsung Galaxy S24 Ultra",
+		description: "Flagship Android với bút S Pen, camera 200MP và màn hình Dynamic AMOLED 2X",
+		category:    "Điện tử",
+		imageURL:    "https://images.fpt.shop/unsafe/filters:quality(90)/fptshop.com.vn/Uploads/images/2015/Tin-Tuc/QuanLNH2/samsung-galaxy-s24-ultra-1.jpg",
+		variantImages: map[string]string{
+			"Xám": "https://images.fpt.shop/unsafe/filters:quality(90)/fptshop.com.vn/Uploads/images/2015/Tin-Tuc/QuanLNH2/samsung-galaxy-s24-ultra-1.jpg",
+			"Đen": "https://images.fpt.shop/unsafe/filters:quality(90)/fptshop.com.vn/Uploads/images/2015/Tin-Tuc/QuanLNH2/samsung-galaxy-s24-ultra-2.jpg",
+		},
+	},
+	{
+		name:        "MacBook Air M3 13 inch",
+		description: "Laptop siêu mỏng với chip Apple M3 và thời lượng pin 18 giờ",
+		category:    "Điện tử",
+		imageURL:    "https://cdn.tgdd.vn/Products/Images/44/322096/macbook-air-13-inch-m3-2024-starlight-thumb-600x600.jpg",
+		variantImages: map[string]string{
+			"Vàng": "https://cdn.tgdd.vn/Products/Images/44/322096/macbook-air-13-inch-m3-2024-starlight-thumb-600x600.jpg",
+			"Bạc":  "https://cdn.tgdd.vn/Products/Images/44/322096/macbook-air-13-inch-m3-2024-silver-thumb-600x600.jpg",
+			"Xám":  "https://cdn.tgdd.vn/Products/Images/44/322096/macbook-air-13-inch-m3-2024-space-gray-thumb-600x600.jpg",
+		},
+	},
+	{
+		name:        "iPad Pro M4 11 inch",
+		description: "Máy tính bảng cao cấp với chip M4 và màn hình Liquid Retina XDR",
+		category:    "Điện tử",
+		imageURL:    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/ipad-pro-11-select-wifi-spacegray-202405?wid=470&hei=556&fmt=png-alpha&.v=1713308272877",
+		variantImages: map[string]string{
+			"Xám": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/ipad-pro-11-select-wifi-spacegray-202405?wid=470&hei=556&fmt=png-alpha&.v=1713308272877",
+			"Bạc": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/ipad-pro-11-select-wifi-silver-202405?wid=470&hei=556&fmt=png-alpha&.v=1713308272877",
+		},
+	},
+	{
+		name:        "AirPods Pro Gen 2",
+		description: "Tai nghe true wireless với chống ồn chủ động và chip H2",
+		category:    "Điện tử",
+		imageURL:    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/MQD83?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1660803972361",
+	},
+
+	// THỜI TRANG
+	{
+		name:        "Áo thun nam Uniqlo cổ tròn",
+		description: "Áo thun nam chất liệu cotton 100% mềm mại và thoáng mát",
+		category:    "Thời trang",
+		imageURL:    "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/422992/item/vngoods_09_422992.jpg",
+		variantImages: map[string]string{
+			"Đen":   "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/422992/item/vngoods_09_422992.jpg",
+			"Trắng": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/422992/item/vngoods_01_422992.jpg",
+			"Xanh":  "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/422992/item/vngoods_65_422992.jpg",
+		},
+	},
+	{
+		name:        "Giày thể thao Nike Air Force 1",
+		description: "Giày thể thao kinh điển với đế Air cushion và da thật cao cấp",
+		category:    "Thời trang",
+		imageURL:    "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/4f37fca8-6bce-43e7-ad07-f57ae3c13142/air-force-1-07-shoes-WrLlWX.png",
+		variantImages: map[string]string{
+			"Trắng": "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/4f37fca8-6bce-43e7-ad07-f57ae3c13142/air-force-1-07-shoes-WrLlWX.png",
+			"Đen":   "https://static.nike.com/a/images/c_limit,w_592,f_auto/t_product_v1/00375837-849f-4f17-ba24-d201d27be36b/air-force-1-07-shoes-0XGfD7.png",
+		},
+	},
+	{
+		name:        "Túi xách tay nữ Coach",
+		description: "Túi xách tay nữ cao cấp da thật 100% thiết kế sang trọng",
+		category:    "Thời trang",
+		imageURL:    "https://vietnam.coach.com/dw/image/v2/BFCR_PRD/on/demandware.static/-/Sites-coach-master-catalog/default/dw5c5e5e5e/images/large/C0772_B4NQ4_d0.jpg",
+		variantImages: map[string]string{
+			"Nâu": "https://vietnam.coach.com/dw/image/v2/BFCR_PRD/on/demandware.static/-/Sites-coach-master-catalog/default/dw5c5e5e5e/images/large/C0772_B4NQ4_d0.jpg",
+			"Đen": "https://vietnam.coach.com/dw/image/v2/BFCR_PRD/on/demandware.static/-/Sites-coach-master-catalog/default/dw5c5e5e5e/images/large/C0772_B4BK_d0.jpg",
+		},
+	},
+
+	// GIA DỤNG
+	{
+		name:        "Nồi cơm điện Panasonic 1.8L",
+		description: "Nồi cơm điện thông minh với công nghệ IH và lòng nồi chống dính",
+		category:    "Gia dụng",
+		imageURL:    "https://panasonic.com.vn/wp-content/uploads/2020/09/SR-KS181WRA_1-600x600.jpg",
+		variantImages: map[string]string{
+			"Trắng": "https://panasonic.com.vn/wp-content/uploads/2020/09/SR-KS181WRA_1-600x600.jpg",
+		},
+	},
+	{
+		name:        "Máy lọc không khí Xiaomi Mi Air Purifier 4",
+		description: "Máy lọc không khí thông minh với bộ lọc HEPA H13",
+		category:    "Gia dụng",
+		imageURL:    "https://cdn.tgdd.vn/Products/Images/1348/280714/may-loc-khong-khi-xiaomi-mi-air-purifier-4-thumb-600x600.jpg",
+	},
+	{
+		name:        "Nồi chiên không dầu Philips 4.1L",
+		description: "Nồi chiên không dầu công nghệ Rapid Air với dung tích 4.1L",
+		category:    "Gia dụng",
+		imageURL:    "https://cdn.tgdd.vn/Products/Images/1982/78874/noi-chien-khong-dau-philips-hd9200-90-4-1-lit-thumb-600x600.jpg",
+		variantImages: map[string]string{
+			"Đen":   "https://cdn.tgdd.vn/Products/Images/1982/78874/noi-chien-khong-dau-philips-hd9200-90-4-1-lit-thumb-600x600.jpg",
+			"Trắng": "https://cdn.tgdd.vn/Products/Images/1982/78875/noi-chien-khong-dau-philips-hd9252-90-4-1-lit-thumb-600x600.jpg",
+		},
+	},
+
+	// SÁCH
+	{
+		name:        "Đắc Nhân Tâm - Dale Carnegie",
+		description: "Cuốn sách kinh điển về nghệ thuật giao tiếp và ứng xử",
+		category:    "Sách",
+		imageURL:    "https://salt.tikicdn.com/cache/750x750/ts/product/5e/18/24/2a6154ba08df6ce6161c13f4303fa19e.jpg.webp",
+	},
+	{
+		name:        "Nhà Giả Kim - Paulo Coelho",
+		description: "Tiểu thuyết nổi tiếng thế giới về hành trình tìm kiếm ý nghĩa cuộc sống",
+		category:    "Sách",
+		imageURL:    "https://salt.tikicdn.com/cache/750x750/ts/product/45/3b/fc/aa81d0592c4d5be8ad83ad1555164abc.jpg.webp",
+	},
+	{
+		name:        "Sapiens - Yuval Noah Harari",
+		description: "Lược sử loài người - cuốn sách về lịch sử và tương lai nhân loại",
+		category:    "Sách",
+		imageURL:    "https://salt.tikicdn.com/cache/750x750/ts/product/e0/65/24/8cf7d2f6a50b5fb60c53da09bc2db7a4.jpg.webp",
+	},
+
+	// THỂ THAO
+	{
+		name:        "Tạ tay điều chỉnh 20kg",
+		description: "Tạ tay thông minh có thể điều chỉnh từ 2-20kg tiết kiệm không gian",
+		category:    "Thể thao",
+		imageURL:    "https://cdn.tgdd.vn/Products/Images/4221/236951/ta-tay-dieu-chinh-bowflex-selecttech-552-tu-2-24kg-thumb-600x600.jpg",
+	},
+	{
+		name:        "Thảm tập yoga chống trượt 6mm",
+		description: "Thảm tập yoga cao cấp dày 6mm chống trượt và thân thiện môi trường",
+		category:    "Thể thao",
+		imageURL:    "https://cdn.tgdd.vn/Products/Images/4221/235951/tham-tap-yoga-6mm-xanh-la-thumb-600x600.jpg",
+		variantImages: map[string]string{
+			"Xanh": "https://cdn.tgdd.vn/Products/Images/4221/235951/tham-tap-yoga-6mm-xanh-la-thumb-600x600.jpg",
+			"Tím":  "https://cdn.tgdd.vn/Products/Images/4221/235952/tham-tap-yoga-6mm-tim-thumb-600x600.jpg",
+			"Hồng": "https://cdn.tgdd.vn/Products/Images/4221/235953/tham-tap-yoga-6mm-hong-thumb-600x600.jpg",
+		},
+	},
+	{
+		name:        "Bóng đá FIFA Quality Pro",
+		description: "Bóng đá chuẩn FIFA Quality Pro cho thi đấu chuyên nghiệp",
+		category:    "Thể thao",
+		imageURL:    "https://cdn.tgdd.vn/Products/Images/4221/236845/bong-da-fifa-quality-pro-size-5-thumb-600x600.jpg",
+	},
+
+	// LÀM ĐẸP
+	{
+		name:        "Son môi YSL Rouge Pur Couture",
+		description: "Son môi cao cấp với công thức dưỡng ẩm và màu sắc lâu trôi",
+		category:    "Làm đẹp",
+		imageURL:    "https://www.yslbeauty.com.vn/dw/image/v2/AANG_PRD/on/demandware.static/-/Sites-ysl-master-catalog/default/dwc5c5c5c5/images/LIPS/ROUGE_PUR_COUTURE/3365440787984_rouge_pur_couture_1_rouge_rock.jpg",
+		variantImages: map[string]string{
+			"Đỏ":   "https://www.yslbeauty.com.vn/dw/image/v2/AANG_PRD/on/demandware.static/-/Sites-ysl-master-catalog/default/dwc5c5c5c5/images/LIPS/ROUGE_PUR_COUTURE/3365440787984_rouge_pur_couture_1_rouge_rock.jpg",
+			"Hồng": "https://www.yslbeauty.com.vn/dw/image/v2/AANG_PRD/on/demandware.static/-/Sites-ysl-master-catalog/default/dwc5c5c5c5/images/LIPS/ROUGE_PUR_COUTURE/3365440787984_rouge_pur_couture_52_rosy_coral.jpg",
+		},
+	},
+	{
+		name:        "Kem chống nắng La Roche-Posay SPF 60",
+		description: "Kem chống nắng dành cho da nhạy cảm SPF 60 PA++++",
+		category:    "Làm đẹp",
+		imageURL:    "https://www.laroche-posay.vn/-/media/project/loreal/brand-sites/lrp/apac/vn/products/anthelios/anthelios-airlicium-ultra-light-spf60/3337875546298.jpg",
+		variantImages: map[string]string{
+			"50ml":  "https://www.laroche-posay.vn/-/media/project/loreal/brand-sites/lrp/apac/vn/products/anthelios/anthelios-airlicium-ultra-light-spf60/3337875546298.jpg",
+			"100ml": "https://www.laroche-posay.vn/-/media/project/loreal/brand-sites/lrp/apac/vn/products/anthelios/anthelios-airlicium-ultra-light-spf60-100ml/3337875546299.jpg",
+		},
+	},
+
+	// THỰC PHẨM
+	{
+		name:        "Gạo ST25 Đồng Tháp",
+		description: "Gạo thơm ST25 chất lượng cao từ Đồng Tháp hạt dẻo mềm thơm ngon",
+		category:    "Thực phẩm",
+		imageURL:    "https://cdn.tgdd.vn/Products/Images/2513/238242/gao-st25-dong-thap-tui-5kg-202103091133085068.jpg",
+		variantImages: map[string]string{
+			"5kg":  "https://cdn.tgdd.vn/Products/Images/2513/238242/gao-st25-dong-thap-tui-5kg-202103091133085068.jpg",
+			"10kg": "https://cdn.tgdd.vn/Products/Images/2513/238243/gao-st25-dong-thap-tui-10kg-202103091133085068.jpg",
+		},
+	},
+	{
+		name:        "Cà phê Trung Nguyên Legend 5",
+		description: "Cà phê pha phin truyền thống pha chế từ 100% cà phê Robusta và Arabica",
+		category:    "Thực phẩm",
+		imageURL:    "https://www.trungnguyenlegend.com/wp-content/uploads/2018/08/ca-phe-trung-nguyen-legend-5-500g.jpg",
+		variantImages: map[string]string{
+			"500g": "https://www.trungnguyenlegend.com/wp-content/uploads/2018/08/ca-phe-trung-nguyen-legend-5-500g.jpg",
+			"340g": "https://www.trungnguyenlegend.com/wp-content/uploads/2018/08/ca-phe-trung-nguyen-legend-5-340g.jpg",
+		},
+	},
+
+	// NỘI THẤT
+	{
+		name:        "Sofa 3 chỗ IKEA Ektorp",
+		description: "Sofa 3 chỗ ngồi bọc vải khung gỗ thông thiết kế Scandinavian",
+		category:    "Nội thất",
+		imageURL:    "https://www.ikea.com/vn/en/images/products/ektorp-3-seat-sofa-vittaryd-white__0818598_pe774498_s5.jpg",
+		variantImages: map[string]string{
+			"Trắng": "https://www.ikea.com/vn/en/images/products/ektorp-3-seat-sofa-vittaryd-white__0818598_pe774498_s5.jpg",
+			"Xám":   "https://www.ikea.com/vn/en/images/products/ektorp-3-seat-sofa-vittaryd-grey__0818599_pe774499_s5.jpg",
+		},
+	},
+	{
+		name:        "Bàn làm việc IKEA Hemnes",
+		description: "Bàn làm việc gỗ thông tự nhiên với 2 ngăn kéo thiết kế cổ điển",
+		category:    "Nội thất",
+		imageURL:    "https://www.ikea.com/vn/en/images/products/hemnes-desk-white-stain__0318434_pe513726_s5.jpg",
+		variantImages: map[string]string{
+			"Trắng": "https://www.ikea.com/vn/en/images/products/hemnes-desk-white-stain__0318434_pe513726_s5.jpg",
+			"Nâu":   "https://www.ikea.com/vn/en/images/products/hemnes-desk-brown__0318435_pe513727_s5.jpg",
+		},
+	},
 }
 
 func seedTags(ctx context.Context, db *pgxpool.Pool) {
@@ -2243,7 +1534,6 @@ func seedSupplierProfiles(ctx context.Context, apiDb, partnerDb *pgxpool.Pool, s
 
 // Cải tiến seedEnhancedProducts để đảm bảo seedTags được gọi trước khi thêm sản phẩm
 func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []int64) {
-	// Đảm bảo tags và attributes đã được tạo trước
 	seedTags(ctx, db)
 	seedAttributeDefinitions(ctx, db)
 
@@ -2262,565 +1552,855 @@ func seedEnhancedProducts(ctx context.Context, db *pgxpool.Pool, supplierIDs []i
 		return
 	}
 
-	if !exists {
-		log.Printf("The product_variants table does not exist. Make sure tables are created in the correct order.")
-		log.Printf("Attempting to seed products first before product variants.")
+	// Danh sách sản phẩm cụ thể với ảnh chính xác
+	// THAY THẾ PHẦN specificProducts TRONG HÀM seedEnhancedProducts BẰNG CODE NÀY
+	specificProducts := []struct {
+		name          string
+		description   string
+		category      string
+		imageURL      string
+		variantImages map[string]string
+	}{
+		// ĐIỆN TỬ
+		{
+			name:        "iPhone 15 Pro Max 256GB",
+			description: "Điện thoại thông minh cao cấp với chip A17 Pro, camera 48MP và màn hình Super Retina XDR 6.7 inch",
+			category:    "Điện tử",
+			imageURL:    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/iphone-15-pro-max-bluetitanium-select?wid=470&hei=556&fmt=png-alpha&.v=1692895204112",
+			variantImages: map[string]string{
+				"Xanh":  "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/iphone-15-pro-max-bluetitanium-select?wid=470&hei=556&fmt=png-alpha&.v=1692895204112",
+				"Đen":   "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/iphone-15-pro-max-blacktitanium-select?wid=470&hei=556&fmt=png-alpha&.v=1692895204112",
+				"Trắng": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/iphone-15-pro-max-whitetitanium-select?wid=470&hei=556&fmt=png-alpha&.v=1692895204112",
+			},
+		},
+		{
+			name:        "Samsung Galaxy S24 Ultra",
+			description: "Flagship Android với bút S Pen, camera 200MP và màn hình Dynamic AMOLED 2X",
+			category:    "Điện tử",
+			imageURL:    "https://cdn.tgdd.vn/Products/Images/42/307174/samsung-galaxy-s24-ultra-xam-1-750x500.jpg",
+			variantImages: map[string]string{
+				"Xám":  "https://cdn.tgdd.vn/Products/Images/42/307174/samsung-galaxy-s24-ultra-xam-1-750x500.jpg",
+				"Đen":  "https://cdn.tgdd.vn/Products/Images/42/307174/samsung-galaxy-s24-ultra-den-1-750x500.jpg",
+				"Tím":  "https://cdn.tgdd.vn/Products/Images/42/307174/samsung-galaxy-s24-ultra-tim-1-750x500.jpg",
+				"Vàng": "https://cdn.tgdd.vn/Products/Images/42/307174/samsung-galaxy-s24-ultra-vang-1-750x500.jpg",
+			},
+		},
+		{
+			name:        "MacBook Air M3 13 inch",
+			description: "Laptop siêu mỏng với chip Apple M3 và thời lượng pin 18 giờ",
+			category:    "Điện tử",
+			imageURL:    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/mba13-starlight-select-202402?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1708367688034",
+			variantImages: map[string]string{
+				"Vàng": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/mba13-starlight-select-202402?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1708367688034",
+				"Bạc":  "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/mba13-silver-select-202402?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1708367688034",
+				"Xám":  "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/mba13-spacegray-select-202402?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1708367688034",
+			},
+		},
+		{
+			name:        "iPad Pro M4 11 inch",
+			description: "Máy tính bảng cao cấp với chip M4 và màn hình Liquid Retina XDR",
+			category:    "Điện tử",
+			imageURL:    "https://cdn.tgdd.vn/Products/Images/522/325513/ipad-pro-11-inch-m4-wifi-black-3-750x500.jpg",
+			variantImages: map[string]string{
+				"Đen": "https://cdn.tgdd.vn/Products/Images/522/325513/ipad-pro-11-inch-m4-wifi-black-1-750x500.jpg",
+				"Bạc": "https://cdn.tgdd.vn/Products/Images/522/325513/ipad-pro-11-inch-m4-wifi-sliver-1-750x500.jpg",
+			},
+		},
+		{
+			name:        "AirPods Pro Gen 2",
+			description: "Tai nghe true wireless với chống ồn chủ động và chip H2",
+			category:    "Điện tử",
+			imageURL:    "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/MQD83?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1660803972361",
+			variantImages: map[string]string{
+				"Trắng": "https://store.storeimages.cdn-apple.com/1/as-images.apple.com/is/MQD83?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1660803972361",
+			},
+		},
+
+		// THỜI TRANG
+		{
+			name:        "Áo thun nam Uniqlo cổ tròn",
+			description: "Áo thun nam chất liệu cotton 100% mềm mại và thoáng mát",
+			category:    "Thời trang",
+			imageURL:    "https://image.uniqlo.com/UQ/ST3/AsianCommon/imagesgoods/422992/sub/goods_422992_sub14_3x4.jpg?width=369",
+			variantImages: map[string]string{
+				"Đen":   "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/422992/item/vngoods_09_422992_3x4.jpg?width=369",
+				"Trắng": "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/422992/item/vngoods_00_422992_3x4.jpg?width=369",
+				"Xanh":  "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/422992/item/vngoods_67_422992_3x4.jpg?width=369",
+				"Hồng":  "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/422992/item/vngoods_12_422992_3x4.jpg?width=369",
+				"Nâu":   "https://image.uniqlo.com/UQ/ST3/vn/imagesgoods/422992/item/vngoods_35_422992_3x4.jpg?width=369",
+			},
+		},
+		{
+			name:        "Giày thể thao Nike Air Force 1",
+			description: "Giày thể thao kinh điển với đế Air cushion và da thật cao cấp",
+			category:    "Thời trang",
+			imageURL:    "https://static.nike.com/a/images/t_PDP_1728_v1/f_auto,q_auto:eco/b7d9211c-26e7-431a-ac24-b0540fb3c00f/AIR+FORCE+1+%2707.png",
+			variantImages: map[string]string{
+				"Trắng": "https://static.nike.com/a/images/t_PDP_1728_v1/f_auto,q_auto:eco/b7d9211c-26e7-431a-ac24-b0540fb3c00f/AIR+FORCE+1+%2707.png",
+				"Đen":   "https://static.nike.com/a/images/t_PDP_1728_v1/f_auto,q_auto:eco/fc4622c4-2769-4665-aa6e-42c974a7705e/AIR+FORCE+1+%2707.png",
+			},
+		},
+		{
+			name:        "Túi Đeo Chéo Nam Coach Borsa A Tracolla Sullivan In Tela Esclusiva",
+			description: "Túi Đeo Chéo Coach Nam Borsa A Tracolla Sullivan In Tela Esclusiva là chiếc túi dành cho phái mạnh đến từ thương hiệu Coach nổi tiếng. Túi được làm từ chất liệu cao cấp, bền đẹp trong suốt quá trình sử dụng.",
+			category:    "Thời trang",
+			imageURL:    "https://cdn.vuahanghieu.com/unsafe/0x500/left/top/smart/filters:quality(90)/https://admin.vuahanghieu.com/upload/product/2022/12/tui-deo-cheo-coach-nam-borsa-a-tracolla-sullivan-in-tela-esclusiva-cc009-mau-den-xam-63aab3ce1ee15-27122022155854.jpg",
+			variantImages: map[string]string{
+				"Đen": "https://cdn.vuahanghieu.com/unsafe/0x900/left/top/smart/filters:quality(90)/https://admin.vuahanghieu.com/upload/product/2022/12/tui-deo-cheo-coach-nam-borsa-a-tracolla-sullivan-in-tela-esclusiva-cc009-mau-den-xam-63aab3ce18523-27122022155854.jpg",
+			},
+		},
+
+		// GIA DỤNG
+		{
+			name:        "Nồi cơm điện Panasonic 1.8L",
+			description: "Nồi cơm điện thông minh với công nghệ IH và lòng nồi chống dính",
+			category:    "Gia dụng",
+			imageURL:    "https://cdnv2.tgdd.vn/mwg-static/dmx/Products/Images/1922/335998/noi-com-dien-tu-panasonic-1-8-lit-sr-dm184kra-1-638827266994887155-700x467.jpg",
+			variantImages: map[string]string{
+				"Đen": "https://cdnv2.tgdd.vn/mwg-static/dmx/Products/Images/1922/335998/noi-com-dien-tu-panasonic-1-8-lit-sr-dm184kra-1-638827266994887155-700x467.jpg",
+			},
+		},
+		{
+			name:        "Máy lọc không khí Xiaomi Mi Air Purifier 4",
+			description: "Máy lọc không khí thông minh với bộ lọc HEPA H13",
+			category:    "Gia dụng",
+			imageURL:    "https://cdn.tgdd.vn/Products/Images/5473/314385/Slider/xiaomi-smart-air-purifier-4-compact-eu-bhr5860eu-27w638304564376429632.jpg",
+			variantImages: map[string]string{
+				"Trắng": "https://cdn.tgdd.vn/Products/Images/5473/314385/Slider/xiaomi-smart-air-purifier-4-compact-eu-bhr5860eu-27w638304564376429632.jpg",
+			},
+		},
+		{
+			name:        "Nồi chiên không dầu Philips 4.1L",
+			description: "Nồi chiên không dầu công nghệ Rapid Air với dung tích 4.1L",
+			category:    "Gia dụng",
+			imageURL:    "https://euromixx.vn/wp-content/uploads/2024/10/010406034817-150x150.jpg",
+			variantImages: map[string]string{
+				"Đen": "https://euromixx.vn/wp-content/uploads/2024/10/010406034817-150x150.jpg",
+			},
+		},
+
+		// SÁCH
+		{
+			name:        "Đắc Nhân Tâm - Dale Carnegie",
+			description: "Cuốn sách kinh điển về nghệ thuật giao tiếp và ứng xử",
+			category:    "Sách",
+			imageURL:    "https://static.oreka.vn/800-800_881c12cb-3fb9-4011-b6dd-fbf459fc0b92.webp",
+			variantImages: map[string]string{
+				"Bìa cứng": "https://static.oreka.vn/800-800_881c12cb-3fb9-4011-b6dd-fbf459fc0b92.webp",
+			},
+		},
+		{
+			name:        "Nhà Giả Kim - Paulo Coelho",
+			description: "Tiểu thuyết nổi tiếng thế giới về hành trình tìm kiếm ý nghĩa cuộc sống",
+			category:    "Sách",
+			imageURL:    "https://static.oreka.vn/800-800_8177be27-d7d5-4715-99c2-3993b4b65ba7.webp",
+			variantImages: map[string]string{
+				"Bìa cứng": "https://static.oreka.vn/800-800_8177be27-d7d5-4715-99c2-3993b4b65ba7.webp",
+			},
+		},
+		{
+			name:        "Sapiens - Lược Sử Loài Người Bằng Tranh",
+			description: "Lược sử loài người - cuốn sách về lịch sử và tương lai nhân loại",
+			category:    "Sách",
+			imageURL:    "https://static.oreka.vn/800-800_4bf9560a-972f-4ed2-979c-225d44f9cb18.webp",
+			variantImages: map[string]string{
+				"Bìa cứng": "https://static.oreka.vn/800-800_4bf9560a-972f-4ed2-979c-225d44f9cb18.webp",
+			},
+		},
+
+		// THỂ THAO
+		{
+			name:        "Tạ tay điều chỉnh 20kg",
+			description: "Tạ tay thông minh có thể điều chỉnh từ 2-20kg tiết kiệm không gian",
+			category:    "Thể thao",
+			imageURL:    "https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=256x0&format=auto 256w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=384x0&format=auto 384w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=768x0&format=auto 768w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=1024x0&format=auto 1024w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=1440x0&format=auto 1440w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=1920x0&format=auto 1920w",
+			variantImages: map[string]string{
+				"Đen": "https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=256x0&format=auto 256w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=384x0&format=auto 384w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=768x0&format=auto 768w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=1024x0&format=auto 1024w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=1440x0&format=auto 1440w, https://contents.mediadecathlon.com/p2599290/k$a0f24e15abaf3f5be0cd667889c26627/b%E1%BB%99-t%E1%BA%A1-th%C3%A1o-l%E1%BA%AFp-20-kg-corength-8018574.jpg?f=1920x0&format=auto 1920w",
+			},
+		},
+		{
+			name:        "Thảm tập yoga chống trượt 6mm",
+			description: "Thảm tập yoga cao cấp dày 6mm chống trượt và thân thiện môi trường",
+			category:    "Thể thao",
+			imageURL:    "https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lp2k4n79n2aj25",
+			variantImages: map[string]string{
+				"Xanh": "https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lp2k2y25ckm380",
+				"Đen":  "https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lp2k2y25fdqzfb",
+				"Hồng": "https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lp2k2y25gsbfbc",
+			},
+		},
+		{
+			name:        "Bóng đá FIFA Quality Pro",
+			description: "Bóng đá chuẩn FIFA Quality Pro cho thi đấu chuyên nghiệp",
+			category:    "Thể thao",
+			imageURL:    "https://contents.mediadecathlon.com/p2571168/k$984defa0d32944089839f3e3c2e08b80/qu%E1%BA%A3-b%C3%B3ng-%C4%91%C3%A1-theo-ti%C3%AAu-chu%E1%BA%A9n-fifa-quality-pro-li%C3%AAn-k%E1%BA%BFt-nhi%E1%BB%87t-c%E1%BB%A1-5-pro-tr%E1%BA%AFng-kipsta-8827905.jpg?f=1920x0&format=auto",
+			variantImages: map[string]string{
+				"Trắng": "https://contents.mediadecathlon.com/p2571168/k$984defa0d32944089839f3e3c2e08b80/qu%E1%BA%A3-b%C3%B3ng-%C4%91%C3%A1-theo-ti%C3%AAu-chu%E1%BA%A9n-fifa-quality-pro-li%C3%AAn-k%E1%BA%BFt-nhi%E1%BB%87t-c%E1%BB%A1-5-pro-tr%E1%BA%AFng-kipsta-8827905.jpg?f=1920x0&format=auto",
+				"Đỏ":    "https://contents.mediadecathlon.com/p2571092/k$bae70824ac05b30df5625da4456afad2/qu%E1%BA%A3-b%C3%B3ng-%C4%91%C3%A1-c%E1%BB%A1-5-chu%E1%BA%A9n-fifa-quality-pro-pro-%C4%91%E1%BB%8F-kipsta-8827906.jpg?f=1920x0&format=auto",
+			},
+		},
+
+		// LÀM ĐẸP
+		{
+			name:        "Son môi YSL Rouge Pur Couture",
+			description: "Son môi cao cấp với công thức dưỡng ẩm và màu sắc lâu trôi",
+			category:    "Làm đẹp",
+			imageURL:    "https://lipstick.vn/wp-content/uploads/2016/01/son-ysl-mau-201-orange-imagine.jpg",
+			variantImages: map[string]string{
+				"Đỏ": "\t\t\t\t\"Hồng\": \"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=600&h=600&fit=crop&crop=center\",\n",
+			},
+		},
+		{
+			name:        "Kem chống nắng La Roche-Posay SPF 60",
+			description: "Kem chống nắng dành cho da nhạy cảm SPF 60 PA++++",
+			category:    "Làm đẹp",
+			imageURL:    "https://down-vn.img.susercontent.com/file/vn-11134207-7qukw-lf6o7ah0nibud3",
+			variantImages: map[string]string{
+				"50ml":  "https://down-vn.img.susercontent.com/file/vn-11134207-7qukw-lf6o7ah0nibud3",
+				"100ml": "https://down-vn.img.susercontent.com/file/vn-11134207-7qukw-lf6o7ah0nibud3",
+			},
+		},
+
+		// THỰC PHẨM
+		{
+			name:        "Gạo ST25 Đồng Tháp",
+			description: "Gạo thơm ST25 chất lượng cao từ Đồng Tháp hạt dẻo mềm thơm ngon",
+			category:    "Thực phẩm",
+			imageURL:    "https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lz1zx9c987kdc5",
+			variantImages: map[string]string{
+				"5kg":  "https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lz1zx9c987kdc5",
+				"10kg": "https://down-vn.img.susercontent.com/file/vn-11134207-7r98o-lz1zx9c987kdc5",
+			},
+		},
+		{
+			name:        "Cà phê Trung Nguyên Legend 5",
+			description: "Cà phê pha phin truyền thống pha chế từ 100% cà phê Robusta và Arabica",
+			category:    "Thực phẩm",
+			imageURL:    "https://salt.tikicdn.com/cache/750x750/ts/product/8f/3b/25/c73e2d9ef40438a229d06c5dc4ac035f.jpg.webp",
+			variantImages: map[string]string{
+				"500g": "https://salt.tikicdn.com/cache/750x750/ts/product/8f/3b/25/c73e2d9ef40438a229d06c5dc4ac035f.jpg.webp",
+				"340g": "https://salt.tikicdn.com/cache/750x750/ts/product/8f/3b/25/c73e2d9ef40438a229d06c5dc4ac035f.jpg.webp",
+			},
+		},
+
+		// NỘI THẤT
+		{
+			name:        "Sofa 3 chỗ IKEA Ektorp",
+			description: "Sofa 3 chỗ ngồi bọc vải khung gỗ thông thiết kế Scandinavian",
+			category:    "Nội thất",
+			imageURL:    "https://kika.vn/wp-content/uploads/2022/09/ghe-sofa-vang-3-cho-ngoi-boc-da-han-cao-cap-sf90-1.jpg",
+			variantImages: map[string]string{
+				"Xanh": "https://kika.vn/wp-content/uploads/2022/09/ghe-sofa-vang-3-cho-ngoi-boc-da-han-cao-cap-sf90-1.jpg",
+				"Xám":  "https://kika.vn/wp-content/uploads/2022/09/ghe-sofa-vang-3-cho-ngoi-boc-da-han-cao-cap-sf90-4.jpg",
+			},
+		},
+		{
+			name:        "Bàn IKEA gaming 2 hộc tủ",
+			description: "Bàn làm việc gỗ thông tự nhiên với 2 ngăn kéo thiết kế cổ điển",
+			category:    "Nội thất",
+			imageURL:    "https://noithatdangkhoa.com/wp-content/uploads/2024/06/ban-ikea-gaming-2-hoc-tu-blvdk46-1.jpg",
+			variantImages: map[string]string{
+				"Trắng": "https://noithatdangkhoa.com/wp-content/uploads/2024/06/ban-ikea-gaming-2-hoc-tu-blvdk46-2.jpg",
+				"Đen":   "https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=600&h=600&fit=crop&crop=center",
+			},
+		},
 	}
 
-	// Lấy danh sách categories
-	type CategoryInfo struct {
-		id       int64
-		name     string
-		parentID sql.NullInt64
-	}
-	categories := make(map[int64]CategoryInfo) // id -> CategoryInfo
-	categoryNameToID := make(map[string]int64) // name -> id
-
-	rows, err := db.Query(ctx, `SELECT id, name, parent_id FROM categories`)
+	// Lấy categories
+	categoryNameToID := make(map[string]int64)
+	rows, err := db.Query(ctx, `SELECT id, name FROM categories`)
 	if err != nil {
 		log.Fatalf("Error getting categories: %v", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var category CategoryInfo
-		if err := rows.Scan(&category.id, &category.name, &category.parentID); err != nil {
+		var id int64
+		var name string
+		if err := rows.Scan(&id, &name); err != nil {
 			log.Printf("Error scanning category: %v", err)
 			continue
 		}
-		categories[category.id] = category
-		categoryNameToID[category.name] = category.id
+		categoryNameToID[name] = id
 	}
 
-	// Tổ chức categories thành parent -> []children
-	parentToChildren := make(map[int64][]int64)
-	parentCategories := make(map[int64]CategoryInfo)
-	childCategories := make(map[int64]CategoryInfo)
-
-	for id, category := range categories {
-		if !category.parentID.Valid {
-			// Đây là category cha
-			parentCategories[id] = category
-		} else {
-			// Đây là category con
-			childCategories[id] = category
-			parentID := category.parentID.Int64
-			parentToChildren[parentID] = append(parentToChildren[parentID], id)
-		}
-	}
-
-	// Danh sách ảnh sản phẩm chất lượng cao từ Unsplash theo danh mục
-	productImages := map[string][]string{
-		"Điện thoại thông minh": {
-			"https://images.unsplash.com/photo-1585060544812-6b45742d762f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1281&q=80",
-			"https://images.unsplash.com/photo-1598327105666-5b89351aff97?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2227&q=80",
-			"https://images.unsplash.com/photo-1529653762956-b0a27278529c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1605236453806-6ff36851218e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Máy tính xách tay": {
-			"https://images.unsplash.com/photo-1496181133206-80ce9b88a853?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-			"https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1332&q=80",
-			"https://images.unsplash.com/photo-1603302576837-37561b2e2302?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1168&q=80",
-		},
-		"Máy tính bảng": {
-			"https://images.unsplash.com/photo-1561154464-82e9adf32764?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1587&q=80",
-			"https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1473&q=80",
-		},
-		"Tai nghe & Loa": {
-			"https://images.unsplash.com/photo-1546435770-a3e426bf472b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1165&q=80",
-			"https://images.unsplash.com/photo-1563330232-57114bb0823c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Máy ảnh & Máy quay": {
-			"https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1164&q=80",
-			"https://images.unsplash.com/photo-1510127034890-ba27508e9f1c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Tủ lạnh & Tủ đông": {
-			"https://images.unsplash.com/photo-1584568694244-14fbdf83bd30?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1586455122341-cb7c5a37590a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Thời trang nam": {
-			"https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-			"https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-		},
-		"Thời trang nữ": {
-			"https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1483985988355-763728e1935b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Đồ gia dụng": {
-			"https://images.unsplash.com/photo-1556909172-54557c7e4fb7?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1560185893-a55cbc8c57e8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Sách": {
-			"https://images.unsplash.com/photo-1495446815901-a7297e633e8d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-		},
-		"Thể thao": {
-			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1547919307-1ecb10702e6f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=688&q=80",
-		},
-	}
-
-	// Images cho parent categories
-	parentCategoryImages := map[string][]string{
-		"Điện tử & Công nghệ": {
-			"https://images.unsplash.com/photo-1468495244123-6c6c332eeece?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1021&q=80",
-			"https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Thời trang": {
-			"https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-			"https://images.unsplash.com/photo-1589182337642-35f6e9ccbf8d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-		},
-		"Nhà cửa & Đời sống": {
-			"https://images.unsplash.com/photo-1484101403633-562f891dc89a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1174&q=80",
-			"https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Sách & Văn phòng phẩm": {
-			"https://images.unsplash.com/photo-1526243741027-444d633d7365?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-			"https://images.unsplash.com/photo-1512903989781-40c28368bd5d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Thể thao & Du lịch": {
-			"https://images.unsplash.com/photo-1517649763962-0c623066013b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1530266451970-40ded5a4d66a?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Mẹ & Bé": {
-			"https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1554684652-57e82094ad77?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Làm đẹp & Sức khỏe": {
-			"https://images.unsplash.com/photo-1571875257727-256c39da42af?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1171&q=80",
-			"https://images.unsplash.com/photo-1526947425960-945c6e72858f?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		},
-		"Thực phẩm & Đồ uống": {
-			"https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-			"https://images.unsplash.com/photo-1540914124281-342587941389?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1074&q=80",
-		},
-	}
-
-	// Default images cho các category chưa có ảnh chuyên biệt
-	defaultImages := []string{
-		"https://images.unsplash.com/photo-1523275335684-37898b6bab30?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1099&q=80",
-		"https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		"https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80",
-		"https://images.unsplash.com/photo-1553456558-aff63285bdd1?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80",
-	}
-
-	// Đảm bảo mỗi category đều có ảnh
-	for _, category := range categories {
-		// Kiểm tra danh mục con
-		if _, exists := productImages[category.name]; !exists {
-			productImages[category.name] = defaultImages
-		}
-
-		// Kiểm tra danh mục cha
-		if !category.parentID.Valid {
-			if _, exists := parentCategoryImages[category.name]; !exists {
-				parentCategoryImages[category.name] = defaultImages
-			}
-		}
-	}
-
-	// Số lượng sản phẩm đã tạo
+	// Tạo sản phẩm
 	totalProducts := 0
+	for _, productInfo := range specificProducts {
+		categoryID, categoryExists := categoryNameToID[productInfo.category]
+		if !categoryExists {
+			log.Printf("Category not found: %s", productInfo.category)
+			continue
+		}
 
-	// PHẦN 1: TẠO SẢN PHẨM CHO CATEGORY CHA
-	log.Println("Creating products for parent categories...")
+		// Chọn supplier ngẫu nhiên
+		supplierID := supplierIDs[gofakeit.Number(0, len(supplierIDs)-1)]
 
-	// Tạo thêm tên và mô tả cho sản phẩm của danh mục cha
-	parentProductNames := map[string][]string{
-		"Điện tử & Công nghệ": {
-			"Bộ sản phẩm Điện tử cao cấp",
-			"Combo Thiết bị Công nghệ hiện đại",
-			"Bộ sưu tập Gadget mới nhất",
-			"Tech Premium Bundle",
-			"Smart Home Combo",
-		},
-		"Thời trang": {
-			"Bộ sưu tập Thời trang cao cấp",
-			"Fashion Collection 2024",
-			"Combo Quần áo & Phụ kiện",
-			"Seasonal Fashion Bundle",
-			"Style Essentials Pack",
-		},
-		"Nhà cửa & Đời sống": {
-			"Bộ sản phẩm Gia đình đa năng",
-			"Home Essentials Pack",
-			"Combo Nội thất & Gia dụng",
-			"Living Space Collection",
-			"Home Improvement Bundle",
-		},
-		"Sách & Văn phòng phẩm": {
-			"Bộ sách Bestseller",
-			"Combo Văn phòng tiện lợi",
-			"Bộ sưu tập Sách & Stationery",
-			"Office Essentials Pack",
-			"Literature & Craft Bundle",
-		},
-		"Thể thao & Du lịch": {
-			"Bộ dụng cụ Thể thao đa năng",
-			"Combo Du lịch tiện ích",
-			"Travel & Sport Collection",
-			"Fitness Essentials Pack",
-			"Adventure Gear Bundle",
-		},
-	}
+		// Tạo SKU prefix
+		skuPrefix := strings.ToUpper(string([]rune(productInfo.category)[0])) +
+			strings.ToUpper(string([]rune(productInfo.name)[0])) +
+			fmt.Sprintf("%03d", gofakeit.Number(100, 999))
 
-	// Thêm mô tả cho sản phẩm danh mục cha
-	parentProductDescriptions := map[string][]string{
-		"Điện tử & Công nghệ": {
-			"Bộ sản phẩm điện tử cao cấp với những tính năng hiện đại nhất, kết nối liền mạch và trải nghiệm người dùng tuyệt vời.",
-			"Combo thiết bị công nghệ hiện đại mang lại trải nghiệm số hoá toàn diện cho ngôi nhà thông minh của bạn.",
-			"Bộ sưu tập gadget mới nhất với thiết kế tinh tế, chức năng vượt trội và công nghệ tiên tiến.",
-			"Tech Premium Bundle sẽ nâng tầm trải nghiệm công nghệ của bạn với các sản phẩm chất lượng cao và tích hợp thông minh.",
-			"Smart Home Combo giúp biến ngôi nhà của bạn thành không gian sống thông minh, tiện nghi và tiết kiệm năng lượng.",
-		},
-		"Thời trang": {
-			"Bộ sưu tập thời trang cao cấp từ các thương hiệu hàng đầu, mang đến phong cách độc đáo và đẳng cấp.",
-			"Fashion Collection 2024 với những thiết kế mới nhất, theo xu hướng thời trang quốc tế và chất liệu cao cấp.",
-			"Combo quần áo & phụ kiện giúp bạn tạo nên phong cách riêng, hài hòa và thời thượng cho mọi dịp.",
-			"Seasonal Fashion Bundle mang đến những món đồ thời trang phù hợp với mùa, dễ phối và trendy.",
-			"Style Essentials Pack với những món đồ cơ bản không thể thiếu, dễ kết hợp và luôn thời trang.",
-		},
-	}
+		// Kiểm tra sản phẩm đã tồn tại chưa
+		var existingID string
+		err := db.QueryRow(ctx, `
+			SELECT id FROM products WHERE name = $1 AND supplier_id = $2 AND category_id = $3
+		`, productInfo.name, supplierID, categoryID).Scan(&existingID)
 
-	// Tạo mô tả mặc định cho những danh mục chưa có mô tả cụ thể
-	defaultParentDescriptions := []string{
-		"Bộ sản phẩm cao cấp với thiết kế hiện đại, chất lượng vượt trội và đa dạng công năng sử dụng.",
-		"Combo sản phẩm chính hãng với đầy đủ phụ kiện và chế độ bảo hành tốt nhất trên thị trường.",
-		"Bộ sưu tập mới nhất với thiết kế độc đáo, công nghệ tiên tiến và trải nghiệm người dùng vượt trội.",
-		"Bộ sản phẩm đa năng phù hợp cho mọi nhu cầu sử dụng, tiết kiệm chi phí và không gian.",
-		"Combo tiết kiệm với giá cả hợp lý, chất lượng đảm bảo và đa dạng tính năng.",
-	}
+		var productID string
+		if err != nil && err != pgx.ErrNoRows {
+			log.Printf("Error checking product existence: %v", err)
+			continue
+		}
 
-	for parentID, parentCategory := range parentCategories {
-		// Lấy tên và mô tả phù hợp cho danh mục cha này
-		var names []string
-		var descriptions []string
+		if err == pgx.ErrNoRows {
+			// Tạo mới sản phẩm
+			err := db.QueryRow(ctx, `
+				INSERT INTO products (
+					supplier_id, category_id, name, description, image_url,
+					status, featured, tax_class, sku_prefix, average_rating
+				)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+				RETURNING id;
+			`,
+				supplierID, categoryID, productInfo.name, productInfo.description, productInfo.imageURL,
+				"active", gofakeit.Bool(), "standard", skuPrefix, float32(gofakeit.Float32Range(3.5, 5)),
+			).Scan(&productID)
 
-		if specificNames, ok := parentProductNames[parentCategory.name]; ok {
-			names = specificNames
+			if err != nil {
+				log.Printf("Error inserting product: %v", err)
+				continue
+			}
 		} else {
-			// Tạo tên mặc định nếu không có tên cụ thể
-			names = []string{
-				fmt.Sprintf("Bộ sản phẩm %s cao cấp", parentCategory.name),
-				fmt.Sprintf("Combo %s chính hãng", parentCategory.name),
-				fmt.Sprintf("Bộ sưu tập %s mới nhất", parentCategory.name),
-				fmt.Sprintf("Bộ %s đa năng", parentCategory.name),
-				fmt.Sprintf("Combo %s tiết kiệm", parentCategory.name),
+			productID = existingID
+		}
+
+		// Thêm tags
+		numTags := gofakeit.Number(1, 3)
+		tagNames := []string{"Mới nhất", "Bán chạy", "Chính hãng", "Giảm giá", "Chất lượng cao"}
+
+		for j := 0; j < numTags; j++ {
+			randomTag := tagNames[gofakeit.Number(0, len(tagNames)-1)]
+
+			var tagID string
+			err := db.QueryRow(ctx, `SELECT id FROM tags WHERE name = $1`, randomTag).Scan(&tagID)
+			if err != nil {
+				continue
+			}
+
+			var relationExists bool
+			err = db.QueryRow(ctx, `
+				SELECT EXISTS (
+					SELECT 1 FROM products_tags WHERE product_id = $1 AND tag_id = $2
+				)
+			`, productID, tagID).Scan(&relationExists)
+
+			if err == nil && !relationExists {
+				db.Exec(ctx, `INSERT INTO products_tags (product_id, tag_id) VALUES ($1, $2)`, productID, tagID)
 			}
 		}
 
-		if specificDescs, ok := parentProductDescriptions[parentCategory.name]; ok {
-			descriptions = specificDescs
-		} else {
-			descriptions = defaultParentDescriptions
+		// Tạo variants (3-5 variants)
+		if exists {
+			createOptimizedProductVariants(ctx, db, productID, skuPrefix, productInfo)
 		}
 
-		// Lấy ảnh cho danh mục cha
-		var parentImages []string
-		if images, ok := parentCategoryImages[parentCategory.name]; ok {
-			parentImages = images
-		} else {
-			parentImages = defaultImages
+		totalProducts++
+	}
+
+	log.Printf("✅ Created %d products successfully", totalProducts)
+}
+
+func createOptimizedProductVariants(
+	ctx context.Context,
+	db *pgxpool.Pool,
+	productID string,
+	skuPrefix string,
+	productInfo struct {
+		name          string
+		description   string
+		category      string
+		imageURL      string
+		variantImages map[string]string
+	},
+) {
+	// Lấy thuộc tính cho category
+	categoryAttrs, ok := categoryAttributes[productInfo.category]
+	if !ok {
+		// Fallback attributes nếu category không có
+		categoryAttrs = map[string][]string{
+			"Màu sắc": {"Đen", "Trắng", "Xám"},
 		}
+	}
 
-		// Mỗi nhà cung cấp tạo ít nhất 1-2 sản phẩm cho mỗi danh mục cha
-		for _, supplierID := range supplierIDs {
-			numProducts := gofakeit.Number(1, 2)
+	log.Printf("Creating variants for product: %s with category: %s", productInfo.name, productInfo.category)
 
-			for i := 0; i < numProducts; i++ {
-				// Chọn ngẫu nhiên tên sản phẩm và mô tả
-				productName := names[gofakeit.Number(0, len(names)-1)]
-				productDesc := descriptions[gofakeit.Number(0, len(descriptions)-1)]
+	// Tạo tất cả combinations có thể từ category attributes
+	var variants []map[string]string
 
-				// Chọn ngẫu nhiên ảnh sản phẩm
-				productImage := parentImages[gofakeit.Number(0, len(parentImages)-1)]
+	// Lấy tất cả attribute names và options từ category
+	attrNames := make([]string, 0, len(categoryAttrs))
+	attrOptions := make(map[string][]string)
 
-				// Tạo SKU prefix
-				skuPrefix := strings.ToUpper(string([]rune(parentCategory.name)[0])) +
-					strings.ToUpper(string([]rune(productName)[0])) +
-					fmt.Sprintf("%03d", gofakeit.Number(100, 999))
+	for name, options := range categoryAttrs {
+		attrNames = append(attrNames, name)
+		attrOptions[name] = options
+	}
 
-				// Kiểm tra xem sản phẩm đã tồn tại chưa
-				var existingID string
-				err := db.QueryRow(ctx, `
-					SELECT id FROM products WHERE name = $1 AND supplier_id = $2 AND category_id = $3
-				`, productName, supplierID, parentID).Scan(&existingID)
+	// Nếu có variantImages, ưu tiên tạo variants theo màu sắc có ảnh
+	if len(productInfo.variantImages) > 0 {
+		colorOptions := make([]string, 0, len(productInfo.variantImages))
+		for color := range productInfo.variantImages {
+			colorOptions = append(colorOptions, color)
+		}
+		attrOptions["Màu sắc"] = colorOptions
 
-				var productID string
-				if err != nil && err != pgx.ErrNoRows {
-					log.Printf("Error checking product existence: %v", err)
+		// Đảm bảo "Màu sắc" là attribute đầu tiên
+		if !stringInSlice("Màu sắc", attrNames) {
+			attrNames = append([]string{"Màu sắc"}, attrNames...)
+		}
+	}
+
+	// Tạo combinations thông minh dựa trên category
+	switch productInfo.category {
+	case "Điện tử":
+		variants = createElectronicsVariants(attrOptions, productInfo.variantImages)
+	case "Thời trang":
+		variants = createFashionVariants(attrOptions, productInfo.variantImages)
+	case "Gia dụng":
+		variants = createApplianceVariants(attrOptions, productInfo.variantImages)
+	case "Sách":
+		variants = createBookVariants(attrOptions)
+	case "Thể thao":
+		variants = createSportsVariants(attrOptions, productInfo.variantImages)
+	case "Làm đẹp":
+		variants = createBeautyVariants(attrOptions, productInfo.variantImages)
+	case "Thực phẩm":
+		variants = createFoodVariants(attrOptions, productInfo.variantImages)
+	case "Nội thất":
+		variants = createFurnitureVariants(attrOptions, productInfo.variantImages)
+	default:
+		variants = createGeneralVariants(attrOptions, productInfo.variantImages)
+	}
+
+	// Đảm bảo mọi sản phẩm đều có ít nhất 1 variant
+	if len(variants) == 0 {
+		// Tạo variant cơ bản với thuộc tính đầu tiên
+		defaultVariant := make(map[string]string)
+		for attrName, options := range attrOptions {
+			if len(options) > 0 {
+				defaultVariant[attrName] = options[0]
+				break
+			}
+		}
+		if len(defaultVariant) == 0 {
+			defaultVariant["Màu sắc"] = "Đen"
+		}
+		variants = append(variants, defaultVariant)
+	}
+
+	// Giới hạn tối đa 8 variants để tránh quá nhiều
+	if len(variants) > 8 {
+		variants = variants[:8]
+	}
+
+	log.Printf("Generated %d variants for product %s", len(variants), productInfo.name)
+
+	// Lấy attribute definitions và options
+	attributeDefs := make(map[string]int)
+	attributeOptions := make(map[string]map[string]int)
+
+	for _, variant := range variants {
+		for attrName := range variant {
+			if _, exists := attributeDefs[attrName]; !exists {
+				var attrID int
+				err := db.QueryRow(ctx, `SELECT id FROM attribute_definitions WHERE name = $1`, attrName).Scan(&attrID)
+				if err != nil {
+					log.Printf("Attribute definition not found: %s", attrName)
+					continue
+				}
+				attributeDefs[attrName] = attrID
+				attributeOptions[attrName] = make(map[string]int)
+
+				// Lấy options
+				rows, err := db.Query(ctx, `
+					SELECT id, option_value FROM attribute_options 
+					WHERE attribute_definition_id = $1
+				`, attrID)
+				if err != nil {
+					log.Printf("Error getting attribute options: %v", err)
 					continue
 				}
 
-				if err == pgx.ErrNoRows {
-					// Nếu chưa tồn tại, tạo mới
-					err := db.QueryRow(ctx, `
-						INSERT INTO products (
-							supplier_id, category_id, name, description, image_url,
-							status, featured, tax_class, sku_prefix, average_rating
-						)
-						VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-						RETURNING id;
-					`,
-						supplierID, parentID, productName, productDesc, productImage,
-						"active", gofakeit.Bool(), "standard", skuPrefix, float32(gofakeit.Float32Range(3.5, 5)),
-					).Scan(&productID)
-
-					if err != nil {
-						log.Printf("Error inserting parent category product: %v", err)
-						continue
-					}
-				} else {
-					productID = existingID
-					// Cập nhật sản phẩm đã tồn tại nếu cần
-					_, err := db.Exec(ctx, `
-						UPDATE products SET
-						description = $1, image_url = $2, status = 'active',
-						tax_class = 'standard', sku_prefix = $3
-						WHERE id = $4
-					`, productDesc, productImage, skuPrefix, productID)
-
-					if err != nil {
-						log.Printf("Error updating parent category product: %v", err)
-						continue
+				for rows.Next() {
+					var optionID int
+					var optionValue string
+					if err := rows.Scan(&optionID, &optionValue); err == nil {
+						attributeOptions[attrName][optionValue] = optionID
 					}
 				}
-
-				// Thêm tags cho sản phẩm của danh mục cha
-				numTags := gofakeit.Number(1, 3)
-				tagNames := []string{"Mới nhất", "Bán chạy", "Chính hãng", "Giảm giá", "Chất lượng cao", "Cao cấp", "Bộ sản phẩm", "Combo"}
-
-				for j := 0; j < numTags; j++ {
-					randomTag := tagNames[gofakeit.Number(0, len(tagNames)-1)]
-
-					// Lấy tag ID
-					var tagID string
-					err := db.QueryRow(ctx, `
-						SELECT id FROM tags WHERE name = $1
-					`, randomTag).Scan(&tagID)
-
-					if err != nil {
-						log.Printf("Error getting tag ID: %v", err)
-						continue
-					}
-
-					// Kiểm tra xem liên kết product-tag đã tồn tại chưa
-					var relationExists bool
-					err = db.QueryRow(ctx, `
-						SELECT EXISTS (
-							SELECT 1 FROM products_tags
-							WHERE product_id = $1 AND tag_id = $2
-						)
-					`, productID, tagID).Scan(&relationExists)
-
-					if err != nil {
-						log.Printf("Error checking product_tag existence: %v", err)
-						continue
-					}
-
-					if !relationExists {
-						_, err := db.Exec(ctx, `
-							INSERT INTO products_tags (product_id, tag_id)
-							VALUES ($1, $2);
-						`, productID, tagID)
-
-						if err != nil {
-							log.Printf("Error inserting product_tag: %v", err)
-						}
-					}
-				}
-
-				// Tạo thuộc tính mặc định cho sản phẩm cha
-				defaultAttrs := map[string][]string{
-					"Màu sắc":   {"Đen", "Trắng", "Bạc", "Xanh", "Đỏ", "Vàng", "Nâu"},
-					"Chất liệu": {"Cao cấp", "Nhựa", "Kim loại", "Composite", "Hợp kim", "Vải", "Gỗ"},
-					"Xuất xứ":   {"Việt Nam", "Trung Quốc", "Nhật Bản", "Hàn Quốc", "Thái Lan", "Mỹ", "Đức"},
-				}
-
-				// Kiểm tra xem bảng product_variants đã tồn tại chưa
-				if exists {
-					// Tạo biến thể sản phẩm cho sản phẩm cha
-					createProductVariants(ctx, db, productID, skuPrefix, defaultAttrs, parentCategory.name, productImage)
-				}
-
-				totalProducts++
+				rows.Close()
 			}
 		}
 	}
 
-	// PHẦN 2: TẠO SẢN PHẨM CHO CATEGORY CON
-	log.Println("Creating products for child categories...")
+	// Tạo variants
+	for i, variant := range variants {
+		// Tạo SKU unique
+		timestamp := time.Now().UnixNano() % 1000000
+		uniqueSKU := fmt.Sprintf("%s-%d-%d", skuPrefix, i+1, timestamp)
 
-	// Tạo sản phẩm cho mỗi danh mục con
-	for catID, category := range childCategories {
-		categoryName := category.name
+		// Tạo tên variant từ tất cả attributes
+		var variantNameParts []string
+		for attr, value := range variant {
+			variantNameParts = append(variantNameParts, fmt.Sprintf("%s: %s", attr, value))
+		}
+		variantName := strings.Join(variantNameParts, ", ")
 
-		// Check for product names & descriptions
-		productNames, ok := categoryProductNames[categoryName]
-		if !ok {
-			// Nếu không có tên sản phẩm cụ thể cho danh mục, dùng tên mặc định
-			productNames = []string{
-				fmt.Sprintf("Sản phẩm %s 1", categoryName),
-				fmt.Sprintf("Sản phẩm %s 2", categoryName),
-				fmt.Sprintf("Sản phẩm %s cao cấp", categoryName),
-				fmt.Sprintf("Sản phẩm %s tiết kiệm", categoryName),
-				fmt.Sprintf("Sản phẩm %s đặc biệt", categoryName),
+		// Chọn ảnh cho variant
+		variantImage := productInfo.imageURL
+		if colorValue, ok := variant["Màu sắc"]; ok {
+			if specificImage, exists := productInfo.variantImages[colorValue]; exists {
+				variantImage = specificImage
 			}
 		}
 
-		productDescriptions, ok := categoryProductDescriptions[categoryName]
-		if !ok {
-			// Nếu không có mô tả cụ thể cho danh mục, dùng mô tả mặc định
-			productDescriptions = []string{
-				"Sản phẩm chất lượng cao, thiết kế hiện đại và công năng vượt trội.",
-				"Sản phẩm tiết kiệm, bền bỉ với giá thành hợp lý cho mọi gia đình.",
-				"Sản phẩm cao cấp với thiết kế tinh tế, chất lượng vượt trội và nhiều tính năng đặc biệt.",
-				"Sản phẩm đáng tin cậy với chất lượng ổn định và dịch vụ hậu mãi chu đáo.",
+		// Tính giá dựa trên tất cả attributes
+		basePrice := getBasePriceForCategory(productInfo.category)
+
+		// Áp dụng multiplier cho từng attribute
+		for attrName, attrValue := range variant {
+			multiplier := getOptimizedPriceMultiplier(attrName, attrValue)
+			basePrice = basePrice * multiplier
+		}
+
+		// Làm tròn giá
+		basePrice = float32(math.Round(float64(basePrice/1000)) * 1000)
+
+		// Discount ngẫu nhiên
+		var discountPriceParam interface{} = nil
+		if gofakeit.Bool() { // 50% chance có discount
+			discountPercent := gofakeit.Float32Range(0.1, 0.3) // 10-30%
+			discountPrice := basePrice * (1 - discountPercent)
+			discountPrice = float32(math.Round(float64(discountPrice/1000)) * 1000)
+			if discountPrice < basePrice {
+				discountPriceParam = discountPrice
 			}
 		}
 
-		// Check for images
-		images, ok := productImages[categoryName]
-		if !ok {
-			// Đã xử lý ở trên, nhưng kiểm tra lại để đảm bảo
-			images = defaultImages
+		// Insert variant
+		var variantID string
+		err := db.QueryRow(ctx, `
+			INSERT INTO product_variants (
+				product_id, sku, variant_name, price, discount_price,
+				inventory_quantity, shipping_class, image_url, alt_text, is_default, is_active
+			)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			RETURNING id;
+		`,
+			productID, uniqueSKU, variantName, basePrice, discountPriceParam,
+			gofakeit.Number(10, 100), "standard", variantImage, variantName, i == 0, true,
+		).Scan(&variantID)
+
+		if err != nil {
+			log.Printf("Error inserting variant: %v", err)
+			continue
 		}
 
-		// Check for attributes
-		categoryAttrs, ok := categoryAttributes[categoryName]
-		if !ok {
-			// Nếu không có thuộc tính cụ thể cho danh mục, dùng thuộc tính mặc định
-			categoryAttrs = map[string][]string{
-				"Màu sắc":    {"Đen", "Trắng", "Xám", "Xanh", "Đỏ", "Vàng", "Nâu", "Bạc"},
-				"Kích thước": {"Nhỏ", "Vừa", "Lớn", "XL", "XXL", "Freesize"},
-				"Xuất xứ":    {"Việt Nam", "Trung Quốc", "Nhật Bản", "Hàn Quốc", "Thái Lan", "Mỹ", "Đức"},
-				"Chất liệu":  {"Nhựa", "Kim loại", "Vải", "Gỗ", "Da", "Thủy tinh", "Cao su"},
+		// Thêm tất cả attributes cho variant
+		for attrName, attrValue := range variant {
+			attrID, ok := attributeDefs[attrName]
+			if !ok {
+				log.Printf("Attribute definition not found: %s", attrName)
+				continue
 			}
-		}
 
-		// Tạo sản phẩm cho mỗi nhà cung cấp
-		for _, supplierID := range supplierIDs {
-			// Mỗi nhà cung cấp tạo 1-3 sản phẩm cho mỗi danh mục
-			numProducts := gofakeit.Number(1, 3)
-
-			for i := 0; i < numProducts; i++ {
-				// Chọn ngẫu nhiên tên sản phẩm
-				productName := productNames[gofakeit.Number(0, len(productNames)-1)]
-
-				// Chọn ngẫu nhiên mô tả sản phẩm
-				productDesc := productDescriptions[gofakeit.Number(0, len(productDescriptions)-1)]
-
-				// Chọn ngẫu nhiên ảnh sản phẩm
-				productImage := images[gofakeit.Number(0, len(images)-1)]
-
-				// Tạo SKU prefix dựa trên tên sản phẩm và tên danh mục
-				skuPrefix := strings.ToUpper(string([]rune(categoryName)[0])) +
-					strings.ToUpper(string([]rune(productName)[0])) +
-					fmt.Sprintf("%03d", gofakeit.Number(100, 999))
-
-				// Kiểm tra xem sản phẩm đã tồn tại chưa
-				var existingID string
+			optionID, ok := attributeOptions[attrName][attrValue]
+			if !ok {
+				// Tạo option mới nếu chưa có
 				err := db.QueryRow(ctx, `
-                    SELECT id FROM products WHERE name = $1 AND supplier_id = $2 AND category_id = $3
-                `, productName, supplierID, catID).Scan(&existingID)
-
-				var productID string
-				if err != nil && err != pgx.ErrNoRows {
-					log.Printf("Error checking product existence: %v", err)
+					INSERT INTO attribute_options (attribute_definition_id, option_value)
+					VALUES ($1, $2) RETURNING id;
+				`, attrID, attrValue).Scan(&optionID)
+				if err != nil {
+					log.Printf("Error creating attribute option: %v", err)
 					continue
 				}
-
-				if err == pgx.ErrNoRows {
-					// Nếu chưa tồn tại, tạo mới
-					err := db.QueryRow(ctx, `
-                        INSERT INTO products (
-                            supplier_id, category_id, name, description, image_url, 
-                            status, featured, tax_class, sku_prefix, average_rating
-                        )
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                        RETURNING id;
-                    `,
-						supplierID, catID, productName, productDesc, productImage,
-						"active", gofakeit.Bool(), "standard", skuPrefix, float32(gofakeit.Float32Range(3.5, 5)),
-					).Scan(&productID)
-
-					if err != nil {
-						log.Printf("Error inserting product: %v", err)
-						continue
-					}
-				} else {
-					productID = existingID
-					// Update existing product if needed
-					_, err := db.Exec(ctx, `
-                        UPDATE products SET 
-                        description = $1, image_url = $2, status = 'active', 
-                        tax_class = 'standard', sku_prefix = $3
-                        WHERE id = $4
-                    `, productDesc, productImage, skuPrefix, productID)
-
-					if err != nil {
-						log.Printf("Error updating product: %v", err)
-						continue
-					}
-				}
-
-				// Add tags to product
-				numTags := gofakeit.Number(1, 3)
-				tagNames := []string{"Mới nhất", "Bán chạy", "Chính hãng", "Giảm giá", "Chất lượng cao"}
-				for j := 0; j < numTags; j++ {
-					randomTag := tagNames[gofakeit.Number(0, len(tagNames)-1)]
-
-					// First get the tag ID
-					var tagID string
-					err := db.QueryRow(ctx, `
-                        SELECT id FROM tags WHERE name = $1
-                    `, randomTag).Scan(&tagID)
-
-					if err != nil {
-						log.Printf("Error getting tag ID: %v", err)
-						continue
-					}
-
-					// Check if the product-tag relation already exists
-					var relationExists bool
-					err = db.QueryRow(ctx, `
-                        SELECT EXISTS (
-                            SELECT 1 FROM products_tags 
-                            WHERE product_id = $1 AND tag_id = $2
-                        )
-                    `, productID, tagID).Scan(&relationExists)
-
-					if err != nil {
-						log.Printf("Error checking product_tag existence: %v", err)
-						continue
-					}
-
-					if !relationExists {
-						_, err := db.Exec(ctx, `
-                            INSERT INTO products_tags (product_id, tag_id)
-                            VALUES ($1, $2);
-                        `, productID, tagID)
-
-						if err != nil {
-							log.Printf("Error inserting product_tag: %v", err)
-						}
-					}
-				}
-
-				// Now check if product_variants table exists before trying to create variants
-				if exists {
-					// Create product variants
-					createProductVariants(ctx, db, productID, skuPrefix, categoryAttrs, category.name, productImage)
-				} else {
-					log.Printf("Skipping variant creation as product_variants table doesn't exist yet")
-				}
-
-				totalProducts++
+				attributeOptions[attrName][attrValue] = optionID
 			}
+
+			// Thêm attribute cho variant
+			_, err = db.Exec(ctx, `
+				INSERT INTO product_variant_attributes (
+					product_variant_id, attribute_definition_id, attribute_option_id
+				) VALUES ($1, $2, $3);
+			`, variantID, attrID, optionID)
+
+			if err != nil {
+				log.Printf("Error inserting variant attribute: %v", err)
+			}
+		}
+
+		log.Printf("Created variant: %s for product %s", variantName, productInfo.name)
+	}
+
+	log.Printf("Successfully created %d variants for product %s", len(variants), productInfo.name)
+}
+
+// Helper functions để tạo variants cho từng category
+
+func createElectronicsVariants(attrOptions map[string][]string, variantImages map[string]string) []map[string]string {
+	var variants []map[string]string
+
+	// Electronics: Màu sắc + Dung lượng
+	colors := getAttrOptions(attrOptions, "Màu sắc", []string{"Đen", "Trắng", "Xanh"})
+	capacities := getAttrOptions(attrOptions, "Dung lượng", []string{"64GB", "128GB", "256GB"})
+
+	// Tạo combinations với chỉ 2 attributes
+	for _, color := range colors {
+		for _, capacity := range capacities {
+			variant := map[string]string{
+				"Màu sắc":    color,
+				"Dung lượng": capacity,
+			}
+			variants = append(variants, variant)
 		}
 	}
 
-	log.Printf("✅ Created %d products with variants", totalProducts)
+	return variants
+}
+
+func createFashionVariants(attrOptions map[string][]string, variantImages map[string]string) []map[string]string {
+	var variants []map[string]string
+
+	// Fashion: Màu sắc + Kích thước
+	colors := getAttrOptions(attrOptions, "Màu sắc", []string{"Đen", "Trắng", "Xanh"})
+	sizes := getAttrOptions(attrOptions, "Kích thước", []string{"S", "M", "L", "XL"})
+
+	for _, color := range colors {
+		for _, size := range sizes {
+			variant := map[string]string{
+				"Màu sắc":    color,
+				"Kích thước": size,
+			}
+			variants = append(variants, variant)
+		}
+	}
+
+	return variants
+}
+
+func createApplianceVariants(attrOptions map[string][]string, variantImages map[string]string) []map[string]string {
+	var variants []map[string]string
+
+	// Gia dụng: Màu sắc + Công suất
+	colors := getAttrOptions(attrOptions, "Màu sắc", []string{"Đen", "Trắng", "Bạc"})
+	powers := getAttrOptions(attrOptions, "Công suất", []string{"500W", "1000W", "1500W"})
+
+	for _, color := range colors {
+		for _, power := range powers {
+			variant := map[string]string{
+				"Màu sắc":   color,
+				"Công suất": power,
+			}
+			variants = append(variants, variant)
+		}
+	}
+
+	return variants
+}
+
+func createBookVariants(attrOptions map[string][]string) []map[string]string {
+	var variants []map[string]string
+
+	// Sách: Loại bìa + Ngôn ngữ
+	covers := getAttrOptions(attrOptions, "Loại bìa", []string{"Bìa mềm", "Bìa cứng"})
+	languages := getAttrOptions(attrOptions, "Ngôn ngữ", []string{"Tiếng Việt", "Tiếng Anh"})
+
+	for _, cover := range covers {
+		for _, lang := range languages {
+			variant := map[string]string{
+				"Loại bìa": cover,
+				"Ngôn ngữ": lang,
+			}
+			variants = append(variants, variant)
+		}
+	}
+
+	return variants
+}
+
+func createSportsVariants(attrOptions map[string][]string, variantImages map[string]string) []map[string]string {
+	var variants []map[string]string
+
+	// Thể thao: Màu sắc + Kích thước
+	colors := getAttrOptions(attrOptions, "Màu sắc", []string{"Đen", "Xanh", "Đỏ"})
+	sizes := getAttrOptions(attrOptions, "Kích thước", []string{"Nhỏ", "Vừa", "Lớn"})
+
+	for _, color := range colors {
+		for _, size := range sizes {
+			variant := map[string]string{
+				"Màu sắc":    color,
+				"Kích thước": size,
+			}
+			variants = append(variants, variant)
+		}
+	}
+
+	return variants
+}
+
+func createBeautyVariants(attrOptions map[string][]string, variantImages map[string]string) []map[string]string {
+	var variants []map[string]string
+
+	// Làm đẹp: Màu sắc + Dung tích
+	colors := getAttrOptions(attrOptions, "Màu sắc", []string{"Đỏ", "Hồng", "Nude"})
+	capacities := getAttrOptions(attrOptions, "Dung tích", []string{"15ml", "30ml", "50ml"})
+
+	for _, color := range colors {
+		for _, capacity := range capacities {
+			variant := map[string]string{
+				"Màu sắc":   color,
+				"Dung tích": capacity,
+			}
+			variants = append(variants, variant)
+		}
+	}
+
+	return variants
+}
+
+func createFoodVariants(attrOptions map[string][]string, variantImages map[string]string) []map[string]string {
+	var variants []map[string]string
+
+	// Thực phẩm: Trọng lượng + Xuất xứ
+	weights := getAttrOptions(attrOptions, "Trọng lượng", []string{"340g", "500g", "1kg", "5kg"})
+	origins := getAttrOptions(attrOptions, "Xuất xứ", []string{"Việt Nam", "Thái Lan", "Nhật Bản"})
+
+	for _, weight := range weights {
+		for _, origin := range origins {
+			variant := map[string]string{
+				"Trọng lượng": weight,
+				"Xuất xứ":     origin,
+			}
+			variants = append(variants, variant)
+		}
+	}
+
+	return variants
+}
+
+func createFurnitureVariants(attrOptions map[string][]string, variantImages map[string]string) []map[string]string {
+	var variants []map[string]string
+
+	// Nội thất: Màu sắc + Kích thước (BỎ Chất liệu)
+	colors := getAttrOptions(attrOptions, "Màu sắc", []string{"Trắng", "Nâu", "Đen"})
+	sizes := getAttrOptions(attrOptions, "Kích thước", []string{"Nhỏ", "Vừa", "Lớn"})
+
+	for _, color := range colors {
+		for _, size := range sizes {
+			variant := map[string]string{
+				"Màu sắc":    color,
+				"Kích thước": size,
+			}
+			variants = append(variants, variant)
+		}
+	}
+
+	return variants
+}
+
+func createGeneralVariants(attrOptions map[string][]string, variantImages map[string]string) []map[string]string {
+	var variants []map[string]string
+
+	// General case: Lấy 2 attributes đầu tiên và tạo combinations
+	attrNames := make([]string, 0, len(attrOptions))
+	for name := range attrOptions {
+		attrNames = append(attrNames, name)
+		if len(attrNames) >= 2 {
+			break
+		}
+	}
+
+	if len(attrNames) >= 2 {
+		firstAttrOptions := attrOptions[attrNames[0]]
+		secondAttrOptions := attrOptions[attrNames[1]]
+
+		for _, firstVal := range firstAttrOptions {
+			for _, secondVal := range secondAttrOptions {
+				variant := map[string]string{
+					attrNames[0]: firstVal,
+					attrNames[1]: secondVal,
+				}
+				variants = append(variants, variant)
+			}
+		}
+	} else if len(attrNames) == 1 {
+		// Chỉ có 1 attribute, tạo variants đơn giản
+		for _, val := range attrOptions[attrNames[0]] {
+			variant := map[string]string{
+				attrNames[0]: val,
+			}
+			variants = append(variants, variant)
+		}
+	}
+
+	return variants
+}
+
+// Helper functions
+func getAttrOptions(attrOptions map[string][]string, attrName string, defaultOptions []string) []string {
+	if options, exists := attrOptions[attrName]; exists && len(options) > 0 {
+		return options
+	}
+	return defaultOptions
+}
+
+func getBasePriceForCategory(category string) float32 {
+	basePrices := map[string][2]float32{
+		"Điện tử":    {500000, 5000000},  // 500k - 5tr
+		"Thời trang": {100000, 2000000},  // 100k - 2tr
+		"Gia dụng":   {200000, 3000000},  // 200k - 3tr
+		"Sách":       {50000, 300000},    // 50k - 300k
+		"Thể thao":   {100000, 1000000},  // 100k - 1tr
+		"Làm đẹp":    {100000, 1500000},  // 100k - 1.5tr
+		"Thực phẩm":  {20000, 500000},    // 20k - 500k
+		"Nội thất":   {500000, 10000000}, // 500k - 10tr
+	}
+
+	if priceRange, exists := basePrices[category]; exists {
+		return gofakeit.Float32Range(priceRange[0], priceRange[1])
+	}
+
+	return gofakeit.Float32Range(100000, 1000000) // Default range
+}
+
+func getOptimizedPriceMultiplier(attrName, attrValue string) float32 {
+	multipliers := map[string]map[string]float32{
+		"Kích thước": {
+			"S": 0.9, "M": 1.0, "L": 1.1, "XL": 1.2, "XXL": 1.3,
+		},
+		"Dung lượng": {
+			"64GB": 0.9, "128GB": 1.0, "256GB": 1.2, "512GB": 1.5, "1TB": 1.8,
+		},
+		"RAM": {
+			"8GB": 1.0, "16GB": 1.2, "32GB": 1.5,
+		},
+		"Trọng lượng": {
+			"340g": 0.9, "500g": 1.0, "1kg": 1.1, "5kg": 1.3, "10kg": 1.5,
+		},
+		"Dung tích": {
+			"15ml": 0.8, "30ml": 1.0, "50ml": 1.2, "100ml": 1.4,
+			"1L": 0.9, "1.8L": 1.0, "2L": 1.1, "4L": 1.3,
+		},
+	}
+
+	if attrMultipliers, exists := multipliers[attrName]; exists {
+		if multiplier, exists := attrMultipliers[attrValue]; exists {
+			return multiplier
+		}
+	}
+	return 1.0 // Default multiplier
 }
 
 // Cải tiến seedAttributeDefinitions để đảm bảo rằng các thuộc tính được tạo đúng
@@ -2829,63 +2409,16 @@ func seedAttributeDefinitions(ctx context.Context, db *pgxpool.Pool) {
 		name, desc, inputType    string
 		isFilterable, isRequired bool
 	}{
-		// Thuộc tính hiện có
+		// Thuộc tính cơ bản - chỉ giữ lại những cái cần thiết
 		{"Màu sắc", "Màu sắc của sản phẩm", "select", true, true},
 		{"Kích thước", "Kích thước của sản phẩm", "select", true, true},
-		{"Chất liệu", "Chất liệu của sản phẩm", "select", true, false},
 		{"Dung lượng", "Dung lượng lưu trữ", "select", true, false},
-		{"RAM", "Dung lượng RAM", "select", true, false},
-		{"CPU", "Loại CPU", "select", true, false},
-		{"Ổ cứng", "Loại và dung lượng ổ cứng", "select", true, false},
-		{"Màn hình", "Kích thước màn hình", "select", true, false},
-		{"Kiểu dáng", "Kiểu dáng sản phẩm", "select", true, false},
-		{"Thương hiệu", "Thương hiệu sản phẩm", "select", true, false},
-		{"Xuất xứ", "Quốc gia xuất xứ", "select", false, false},
 		{"Công suất", "Công suất thiết bị", "select", false, false},
-		{"Bảo hành", "Thời gian bảo hành", "select", false, false},
-		{"Thể loại", "Thể loại sách", "select", true, false},
 		{"Ngôn ngữ", "Ngôn ngữ sách", "select", true, false},
-		{"Tác giả", "Tác giả sách", "select", true, false},
-		{"Nhà xuất bản", "Nhà xuất bản sách", "select", false, false},
-		{"Bìa sách", "Loại bìa sách", "select", false, false},
-		{"Mùa", "Mùa phù hợp", "select", false, false},
-		{"Phong cách", "Phong cách thời trang", "select", true, false},
-		{"Loại thiết bị", "Loại thiết bị thể thao", "select", true, false},
-		{"Hệ điều hành", "Hệ điều hành thiết bị", "select", true, false},
-		{"Kích cỡ màn hình", "Kích thước màn hình hiển thị", "select", true, false},
-
-		// Thêm các thuộc tính mới ở đây
-		{"Loại kết nối", "Loại kết nối của thiết bị", "select", true, false},
-		{"Kiểu đeo", "Kiểu đeo tai nghe", "select", true, false},
-		{"Thời lượng pin", "Thời lượng pin của thiết bị", "select", true, false},
-		{"Độ phân giải", "Độ phân giải của camera", "select", true, false},
-		{"Cảm biến", "Loại cảm biến của camera", "select", true, false},
-		{"Khả năng quay video", "Khả năng quay video của camera", "select", true, false},
-		{"Loại da", "Loại da phù hợp với sản phẩm", "select", true, false},
-		{"Chứng nhận", "Chứng nhận của sản phẩm", "select", false, false},
-		{"Hiệu quả", "Công dụng và hiệu quả của sản phẩm", "select", true, false},
-		{"Thành phần chính", "Thành phần chính của sản phẩm", "select", true, false},
-		{"Hạn sử dụng", "Thời hạn sử dụng sản phẩm", "select", true, false},
-		{"Quy cách đóng gói", "Quy cách đóng gói sản phẩm", "select", true, false},
-		{"Phương pháp chế biến", "Phương pháp chế biến sản phẩm", "select", false, false},
-		{"Loại đồ uống", "Loại đồ uống", "select", true, false},
+		{"Loại bìa", "Loại bìa sách", "select", false, false},
 		{"Dung tích", "Dung tích của sản phẩm", "select", true, false},
-		{"Vị", "Hương vị sản phẩm", "select", true, false},
-		{"Đóng gói", "Cách đóng gói sản phẩm", "select", false, false},
-		{"Độ cồn", "Độ cồn trong đồ uống", "select", true, false},
-		{"Chất liệu khung", "Chất liệu khung của sản phẩm", "select", true, false},
-		{"Chất liệu bọc", "Chất liệu bọc của sản phẩm", "select", true, false},
-		{"Độ tuổi phù hợp", "Độ tuổi phù hợp với sản phẩm", "select", true, false},
-		{"Loại cây", "Loại cây cảnh", "select", true, false},
-		{"Điều kiện sống", "Điều kiện sống của cây", "select", true, false},
-		{"Chậu cây", "Loại chậu cây", "select", true, false},
-		{"Công dụng", "Công dụng của cây cảnh", "select", true, false},
-		{"Kích thước giường", "Kích thước giường", "select", true, false},
-		{"Độ cứng nệm", "Độ cứng của nệm", "select", true, false},
-		{"Card đồ họa", "Loại card đồ họa", "select", true, false},
-		{"Kết nối", "Loại kết nối của thiết bị", "select", true, false},
-		{"Loại máy", "Loại máy ảnh", "select", true, false},
-		{"Loại đồ chơi", "Loại đồ chơi", "select", true, false},
+		{"Trọng lượng", "Trọng lượng của sản phẩm", "select", true, false}, // THÊM CÁI NÀY
+		{"Xuất xứ", "Quốc gia xuất xứ", "select", false, false},
 	}
 
 	// Seed attribute definitions
@@ -3415,7 +2948,7 @@ func seedDelivererProfiles(ctx context.Context, db *pgxpool.Pool, delivererUserI
 		// Cũng tạo một đơn đăng ký
 		_, err = db.Exec(ctx, `
 			INSERT INTO delivery_person_applications (
-				user_id, id_card_number, id_card_front_image, id_card_back_iamge,
+				user_id, id_card_number, id_card_front_image, id_card_back_image,
 				vehicle_type, vehicle_license_plate, service_area, application_status
 			)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)

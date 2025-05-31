@@ -8,6 +8,7 @@ import "payment.proto";
 import "order.proto";
 import "order_deliverer.proto";
 import "order_register.proto";
+import "order_supplier.proto";
 
 service OrderService {
   rpc AddItemToCart(AddItemToCartRequest) returns (AddItemToCartResponse);
@@ -41,4 +42,6 @@ service OrderService {
   rpc RegisterDeliverer(RegisterDelivererRequest) returns (RegisterDelivererResponse);
 
   rpc CreateCartForRegister(CreateCartForRegisterRequest) returns (CreateCartForRegisterResponse);
+
+  rpc GetSupplierOrders(GetSupplierOrdersRequest) returns (GetSupplierOrdersResponse);
 }

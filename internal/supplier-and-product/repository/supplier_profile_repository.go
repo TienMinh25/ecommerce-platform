@@ -469,3 +469,24 @@ func (s *supplierProfileRepository) UpdateDocumentSupplier(ctx context.Context, 
 
 	return newStatus, nil
 }
+
+func (s *supplierProfileRepository) GetSupplierID(ctx context.Context, userID int64) (int64, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.RepositoryLayer, "GetSupplierID"))
+	defer span.End()
+
+	sqlGet := `select id from supplier_profiles where user_id = $1`
+
+	var supplierID int64
+
+	if err := s.db.QueryRow(ctx, sqlGet, userID).Scan(&supplierID); err != nil {
+		span.RecordError(err)
+
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, status.Error(codes.NotFound, err.Error())
+		}
+
+		return 0, status.Error(codes.Internal, err.Error())
+	}
+
+	return supplierID, nil
+}

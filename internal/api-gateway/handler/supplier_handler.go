@@ -280,3 +280,45 @@ func (h *supplierHandler) UpdateRoleForUserRegisterSupplier(ctx *gin.Context) {
 
 	utils.SuccessResponse(ctx, http.StatusOK, api_gateway_dto.UpdateRoleForUserRegisterSupplierResponse{})
 }
+
+// GetSupplierOrders get supplier orders
+//
+//	@Summary		get supplier orders
+//	@Tags			suppliers
+//	@Description	get supplier orders
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			request	query		api_gateway_dto.GetSupplierOrdersRequest	true	"Thông tin cần cập nhật"
+//	@Success		200		{object}	api_gateway_dto.GetSupplierOrdersResponseDocs
+//	@Failure		400		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		401		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Failure		500		{object}	api_gateway_dto.ResponseErrorDocs
+//	@Router			/suppliers/me [get]
+func (h *supplierHandler) GetSupplierOrders(ctx *gin.Context) {
+	cRaw, _ := ctx.Get("tracingContext")
+	c := cRaw.(context.Context)
+	ct, span := h.tracer.StartFromContext(c, tracing.GetSpanName(tracing.HandlerLayer, "GetSupplierOrders"))
+	defer span.End()
+
+	req, _ := ctx.Get("user")
+	userClaims := req.(*api_gateway_service.UserClaims)
+
+	var data api_gateway_dto.GetSupplierOrdersRequest
+
+	if err := ctx.ShouldBindQuery(&data); err != nil {
+		span.RecordError(err)
+		utils.HandleValidateData(ctx, err)
+		return
+	}
+
+	res, totalItems, totalPages, hasNext, hasPrevious, err := h.service.GetSupplierOrders(ct, data, userClaims.UserID)
+
+	if err != nil {
+		span.RecordError(err)
+		utils.HandleErrorResponse(ctx, err)
+		return
+	}
+
+	utils.PaginatedResponse(ctx, res, int(data.Page), int(data.Limit), totalPages, totalItems, hasNext, hasPrevious)
+}

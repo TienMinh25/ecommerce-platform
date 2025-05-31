@@ -35,4 +35,6 @@ service PartnerService {
   rpc UpdateSupplier(UpdateSupplierRequest) returns (UpdateSupplierResponse);
 
   rpc UpdateDocumentSupplier(UpdateDocumentSupplierRequest) returns (UpdateDocumentSupplierResponse);
+
+  rpc GetSupplierID(GetSupplierIDRequest) returns (GetSupplierIDResponse);
 }

@@ -965,6 +965,66 @@ definitions:
       verification_status:
         $ref: '#/definitions/common.SupplierDocumentStatus'
     type: object
+  api_gateway_dto.GetSupplierOrdersResponse:
+    properties:
+      actual_delivery_date:
+        type: string
+      cancelled_reason:
+        type: string
+      discount_amount:
+        description: discount amount
+        type: number
+      estimated_delivery_date:
+        type: string
+      notes:
+        type: string
+      order_item_id:
+        type: string
+      product_id:
+        description: info products
+        type: string
+      product_name:
+        type: string
+      product_variant_id:
+        type: string
+      product_variant_name:
+        type: string
+      product_variant_thumbnail:
+        type: string
+      quantity:
+        type: integer
+      recipient_name:
+        type: string
+      recipient_phone:
+        type: string
+      shipping_address:
+        type: string
+      shipping_fee:
+        type: number
+      shipping_method:
+        $ref: '#/definitions/common.MethodType'
+      status:
+        $ref: '#/definitions/common.StatusOrder'
+      tax_amount:
+        type: number
+      total_price:
+        description: money need to be paid
+        type: number
+      tracking_number:
+        description: Used for detail when click into one order item
+        type: string
+      unit_price:
+        type: number
+    type: object
+  api_gateway_dto.GetSupplierOrdersResponseDocs:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api_gateway_dto.GetSupplierOrdersResponse'
+        type: array
+      metadata:
+        $ref: '#/definitions/api_gateway_dto.MetadataWithPagination'
+    type: object
   api_gateway_dto.GetSupplierProductResponse:
     properties:
       company_name:
@@ -1886,6 +1946,14 @@ definitions:
     - BucketAvatars
     - BucketDeliverers
     - BucketSuppliers
+  common.MethodType:
+    enum:
+    - momo
+    - cod
+    type: string
+    x-enum-varnames:
+    - Momo
+    - Cod
   common.StatusOrder:
     enum:
     - pending_payment
@@ -3828,6 +3896,53 @@ paths:
       security:
       - BearerAuth: []
       summary: approve or reject supplier document
+      tags:
+      - suppliers
+  /suppliers/me:
+    get:
+      consumes:
+      - application/json
+      description: get supplier orders
+      parameters:
+      - in: query
+        minimum: 1
+        name: limit
+        type: integer
+      - in: query
+        minimum: 1
+        name: page
+        type: integer
+      - enum:
+        - pending
+        - active
+        - suspended
+        in: query
+        name: status
+        type: string
+        x-enum-varnames:
+        - SupplierProfileStatusPending
+        - SupplierProfileStatusActive
+        - SupplierProfileStatusSuspended
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api_gateway_dto.GetSupplierOrdersResponseDocs'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api_gateway_dto.ResponseErrorDocs'
+      summary: get supplier orders
       tags:
       - suppliers
   /suppliers/register:

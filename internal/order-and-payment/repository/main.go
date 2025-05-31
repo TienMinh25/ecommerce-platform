@@ -33,6 +33,7 @@ type IPaymentRepository interface {
 
 type IOrderRepository interface {
 	GetMyOrders(ctx context.Context, data *order_proto_gen.GetMyOrdersRequest) ([]models.OrderItem, int64, error)
+	GetSupplierOrders(ctx context.Context, data *order_proto_gen.GetSupplierOrdersRequest, supplierID int64) ([]models.OrderItem, int64, error)
 }
 
 type IDelivererRepository interface {

@@ -18,3 +18,16 @@ func (h *OrderHandler) GetMyOrders(ctx context.Context, data *order_proto_gen.Ge
 
 	return res, nil
 }
+
+func (h *OrderHandler) GetSupplierOrders(ctx context.Context, data *order_proto_gen.GetSupplierOrdersRequest) (*order_proto_gen.GetSupplierOrdersResponse, error) {
+	ctx, span := h.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetSupplierOrders"))
+	defer span.End()
+
+	res, err := h.orderService.GetSupplierOrders(ctx, data)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

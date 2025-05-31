@@ -32,6 +32,7 @@ const (
 	PartnerService_GetSupplierDetail_FullMethodName          = "/PartnerService/GetSupplierDetail"
 	PartnerService_UpdateSupplier_FullMethodName             = "/PartnerService/UpdateSupplier"
 	PartnerService_UpdateDocumentSupplier_FullMethodName     = "/PartnerService/UpdateDocumentSupplier"
+	PartnerService_GetSupplierID_FullMethodName              = "/PartnerService/GetSupplierID"
 )
 
 // PartnerServiceClient is the client API for PartnerService service.
@@ -51,6 +52,7 @@ type PartnerServiceClient interface {
 	GetSupplierDetail(ctx context.Context, in *GetSupplierDetailRequest, opts ...grpc.CallOption) (*GetSupplierDetailResponse, error)
 	UpdateSupplier(ctx context.Context, in *UpdateSupplierRequest, opts ...grpc.CallOption) (*UpdateSupplierResponse, error)
 	UpdateDocumentSupplier(ctx context.Context, in *UpdateDocumentSupplierRequest, opts ...grpc.CallOption) (*UpdateDocumentSupplierResponse, error)
+	GetSupplierID(ctx context.Context, in *GetSupplierIDRequest, opts ...grpc.CallOption) (*GetSupplierIDResponse, error)
 }
 
 type partnerServiceClient struct {
@@ -191,6 +193,16 @@ func (c *partnerServiceClient) UpdateDocumentSupplier(ctx context.Context, in *U
 	return out, nil
 }
 
+func (c *partnerServiceClient) GetSupplierID(ctx context.Context, in *GetSupplierIDRequest, opts ...grpc.CallOption) (*GetSupplierIDResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSupplierIDResponse)
+	err := c.cc.Invoke(ctx, PartnerService_GetSupplierID_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PartnerServiceServer is the server API for PartnerService service.
 // All implementations must embed UnimplementedPartnerServiceServer
 // for forward compatibility.
@@ -208,6 +220,7 @@ type PartnerServiceServer interface {
 	GetSupplierDetail(context.Context, *GetSupplierDetailRequest) (*GetSupplierDetailResponse, error)
 	UpdateSupplier(context.Context, *UpdateSupplierRequest) (*UpdateSupplierResponse, error)
 	UpdateDocumentSupplier(context.Context, *UpdateDocumentSupplierRequest) (*UpdateDocumentSupplierResponse, error)
+	GetSupplierID(context.Context, *GetSupplierIDRequest) (*GetSupplierIDResponse, error)
 	mustEmbedUnimplementedPartnerServiceServer()
 }
 
@@ -256,6 +269,9 @@ func (UnimplementedPartnerServiceServer) UpdateSupplier(context.Context, *Update
 }
 func (UnimplementedPartnerServiceServer) UpdateDocumentSupplier(context.Context, *UpdateDocumentSupplierRequest) (*UpdateDocumentSupplierResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateDocumentSupplier not implemented")
+}
+func (UnimplementedPartnerServiceServer) GetSupplierID(context.Context, *GetSupplierIDRequest) (*GetSupplierIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupplierID not implemented")
 }
 func (UnimplementedPartnerServiceServer) mustEmbedUnimplementedPartnerServiceServer() {}
 func (UnimplementedPartnerServiceServer) testEmbeddedByValue()                        {}
@@ -512,6 +528,24 @@ func _PartnerService_UpdateDocumentSupplier_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PartnerService_GetSupplierID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupplierIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PartnerServiceServer).GetSupplierID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PartnerService_GetSupplierID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PartnerServiceServer).GetSupplierID(ctx, req.(*GetSupplierIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PartnerService_ServiceDesc is the grpc.ServiceDesc for PartnerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -570,6 +604,10 @@ var PartnerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateDocumentSupplier",
 			Handler:    _PartnerService_UpdateDocumentSupplier_Handler,
+		},
+		{
+			MethodName: "GetSupplierID",
+			Handler:    _PartnerService_GetSupplierID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

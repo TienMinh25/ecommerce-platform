@@ -66,3 +66,16 @@ func (p *PartnerHandler) UpdateDocumentSupplier(ctx context.Context, data *partn
 
 	return res, nil
 }
+
+func (p *PartnerHandler) GetSupplierID(ctx context.Context, data *partner_proto_gen.GetSupplierIDRequest) (*partner_proto_gen.GetSupplierIDResponse, error) {
+	ctx, span := p.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.HandlerLayer, "GetSupplierID"))
+	defer span.End()
+
+	res, err := p.supplierService.GetSupplierID(ctx, data.UserId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

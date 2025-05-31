@@ -169,3 +169,18 @@ func (s *supplierService) UpdateDocumentSupplier(ctx context.Context, data *part
 		Status: statusUpdated,
 	}, nil
 }
+
+func (s *supplierService) GetSupplierID(ctx context.Context, userID int64) (*partner_proto_gen.GetSupplierIDResponse, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetSupplierID"))
+	defer span.End()
+
+	supplierID, err := s.supplierRepo.GetSupplierID(ctx, userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &partner_proto_gen.GetSupplierIDResponse{
+		SupplierId: supplierID,
+	}, nil
+}

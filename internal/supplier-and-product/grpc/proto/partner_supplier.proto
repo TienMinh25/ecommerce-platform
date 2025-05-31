@@ -100,3 +100,11 @@ message UpdateDocumentSupplierRequest {
 message UpdateDocumentSupplierResponse {
   string status = 1;
 }
+
+message GetSupplierIDRequest {
+  int64 user_id = 1;
+}
+
+message GetSupplierIDResponse {
+  int64 supplier_id = 1;
+}

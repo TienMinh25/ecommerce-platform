@@ -209,7 +209,25 @@ const supplierService = {
         } catch (error) {
             throw error;
         }
-    }
+    },
+
+    /**
+     * Get supplier orders (Supplier's own orders)
+     * @param {Object} params - Query parameters
+     * @param {number} params.page - Page number
+     * @param {number} params.limit - Items per page
+     * @param {string} params.status - Order status filter (based on acceptStatus)
+     * @param {string} params.keyword - Search keyword
+     * @returns {Promise} Promise object with supplier orders data
+     */
+    getSupplierOrders: async (params) => {
+        try {
+            const response = await api.get('/suppliers/me', { params });
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
+    },
 };
 
 export default supplierService;

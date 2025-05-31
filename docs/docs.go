@@ -2754,6 +2754,76 @@ const docTemplate = `{
                 }
             }
         },
+        "/suppliers/me": {
+            "get": {
+                "description": "get supplier orders",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "suppliers"
+                ],
+                "summary": "get supplier orders",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "pending",
+                            "active",
+                            "suspended"
+                        ],
+                        "type": "string",
+                        "x-enum-varnames": [
+                            "SupplierProfileStatusPending",
+                            "SupplierProfileStatusActive",
+                            "SupplierProfileStatusSuspended"
+                        ],
+                        "name": "status",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.GetSupplierOrdersResponseDocs"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api_gateway_dto.ResponseErrorDocs"
+                        }
+                    }
+                }
+            }
+        },
         "/suppliers/register": {
             "post": {
                 "security": [
@@ -5879,6 +5949,95 @@ const docTemplate = `{
                 }
             }
         },
+        "api_gateway_dto.GetSupplierOrdersResponse": {
+            "type": "object",
+            "properties": {
+                "actual_delivery_date": {
+                    "type": "string"
+                },
+                "cancelled_reason": {
+                    "type": "string"
+                },
+                "discount_amount": {
+                    "description": "discount amount",
+                    "type": "number"
+                },
+                "estimated_delivery_date": {
+                    "type": "string"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "order_item_id": {
+                    "type": "string"
+                },
+                "product_id": {
+                    "description": "info products",
+                    "type": "string"
+                },
+                "product_name": {
+                    "type": "string"
+                },
+                "product_variant_id": {
+                    "type": "string"
+                },
+                "product_variant_name": {
+                    "type": "string"
+                },
+                "product_variant_thumbnail": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "recipient_name": {
+                    "type": "string"
+                },
+                "recipient_phone": {
+                    "type": "string"
+                },
+                "shipping_address": {
+                    "type": "string"
+                },
+                "shipping_fee": {
+                    "type": "number"
+                },
+                "shipping_method": {
+                    "$ref": "#/definitions/common.MethodType"
+                },
+                "status": {
+                    "$ref": "#/definitions/common.StatusOrder"
+                },
+                "tax_amount": {
+                    "type": "number"
+                },
+                "total_price": {
+                    "description": "money need to be paid",
+                    "type": "number"
+                },
+                "tracking_number": {
+                    "description": "Used for detail when click into one order item",
+                    "type": "string"
+                },
+                "unit_price": {
+                    "type": "number"
+                }
+            }
+        },
+        "api_gateway_dto.GetSupplierOrdersResponseDocs": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api_gateway_dto.GetSupplierOrdersResponse"
+                    }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/api_gateway_dto.MetadataWithPagination"
+                }
+            }
+        },
         "api_gateway_dto.GetSupplierProductResponse": {
             "type": "object",
             "properties": {
@@ -7266,6 +7425,17 @@ const docTemplate = `{
                 "BucketAvatars",
                 "BucketDeliverers",
                 "BucketSuppliers"
+            ]
+        },
+        "common.MethodType": {
+            "type": "string",
+            "enum": [
+                "momo",
+                "cod"
+            ],
+            "x-enum-varnames": [
+                "Momo",
+                "Cod"
             ]
         },
         "common.StatusOrder": {

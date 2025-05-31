@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+option go_package = "./order_proto_gen";
+
+import "google/protobuf/timestamp.proto";
+import "order_metadata.proto";
+
+message GetSupplierOrdersRequest {
+  int64 limit = 1;
+  int64 page = 2;
+  int64 user_id = 3;
+  optional string status = 4;
+}
+
+message GetSupplierOrdersResponse {
+  repeated SupplierOrdersResponse data = 1;
+  OrderMetadata metadata = 2;
+}
+
+message SupplierOrdersResponse {
+  // info products
+  string product_id = 4;
+  string product_variant_id = 5;
+  string product_name = 6;
+  string product_variant_name = 7;
+  string product_thumbnail_url = 8;
+  int64 quantity = 9;
+  double unit_price = 10;
+  double total_price = 11;
+  double discount_amount = 12;
+  double tax_amount = 13;
+  double shipping_fee = 14;
+  string status = 15;
+
+  // Used for detail when click into one order item
+  string tracking_number = 16;
+  string shipping_address = 17;
+  string shipping_method = 18;
+  string recipient_name = 19;
+  string recipient_phone = 20;
+  google.protobuf.Timestamp estimated_delivery_date = 21;
+  optional google.protobuf.Timestamp actual_delivery_date = 22;
+  optional string notes = 23;
+  optional string cancelled_reason = 24;
+
+  // additional
+  string order_item_id = 25;
+}

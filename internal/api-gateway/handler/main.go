@@ -126,6 +126,9 @@ type ISupplierHandler interface {
 	UpdateSupplier(ctx *gin.Context)
 	UpdateSupplierDocumentVerificationStatus(ctx *gin.Context)
 	UpdateRoleForUserRegisterSupplier(ctx *gin.Context)
+
+	// supplier management
+	GetSupplierOrders(ctx *gin.Context)
 }
 
 type IS3Handler interface {

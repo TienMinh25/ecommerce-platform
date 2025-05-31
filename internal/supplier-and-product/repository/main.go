@@ -31,4 +31,5 @@ type ISupplierProfileRepository interface {
 	GetSupplierDetail(ctx context.Context, supplierID int64) (*models.Supplier, []models.SupplierDocument, error)
 	UpdateSupplierByAdmin(ctx context.Context, data *partner_proto_gen.UpdateSupplierRequest) error
 	UpdateDocumentSupplier(ctx context.Context, data *partner_proto_gen.UpdateDocumentSupplierRequest) (string, error)
+	GetSupplierID(ctx context.Context, userID int64) (int64, error)
 }

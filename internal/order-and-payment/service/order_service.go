@@ -137,3 +137,76 @@ func (s *orderService) getSupplierInfoForOrders(ctx context.Context, data []mode
 
 	return result, nil
 }
+
+func (s *orderService) GetSupplierOrders(ctx context.Context, data *order_proto_gen.GetSupplierOrdersRequest) (*order_proto_gen.GetSupplierOrdersResponse, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetSupplierOrders"))
+	defer span.End()
+
+	supplierInfo, err := s.partnerClient.GetSupplierID(ctx, &partner_proto_gen.GetSupplierIDRequest{
+		UserId: data.UserId,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	orderSuppliers, totalItems, err := s.orderRepository.GetSupplierOrders(ctx, data, supplierInfo.SupplierId)
+
+	if err != nil {
+		return nil, err
+	}
+
+	totalPages := int64(math.Ceil(float64(totalItems) / float64(data.Limit)))
+
+	hasNext := data.Page < totalPages
+	hasPrevious := data.Page > 1
+
+	metadata := &order_proto_gen.OrderMetadata{
+		Limit:       data.Limit,
+		Page:        data.Page,
+		TotalItems:  totalItems,
+		TotalPages:  totalPages,
+		HasNext:     hasNext,
+		HasPrevious: hasPrevious,
+	}
+
+	result := make([]*order_proto_gen.SupplierOrdersResponse, 0)
+
+	for _, item := range orderSuppliers {
+		var actualDeliveryDate *timestamppb.Timestamp
+
+		if item.ActualDeliveryDate != nil {
+			actualDeliveryDate = timestamppb.New(*item.ActualDeliveryDate)
+		}
+
+		result = append(result, &order_proto_gen.SupplierOrdersResponse{
+			OrderItemId:           item.ID,
+			ProductId:             item.ProductID,
+			ProductVariantId:      item.ProductVariantID,
+			ProductName:           item.ProductName,
+			ProductVariantName:    item.ProductVariantName,
+			ProductThumbnailUrl:   item.ProductVariantImageURL,
+			Quantity:              item.Quantity,
+			UnitPrice:             item.UnitPrice,
+			TotalPrice:            item.TotalPrice,
+			DiscountAmount:        item.DiscountAmount,
+			TaxAmount:             item.TaxAmount,
+			ShippingFee:           item.ShippingFee,
+			Status:                string(item.Status),
+			TrackingNumber:        item.TrackingNumber,
+			ShippingAddress:       item.ShippingAddress,
+			ShippingMethod:        string(item.ShippingMethod),
+			RecipientPhone:        item.RecipientPhone,
+			RecipientName:         item.RecipientName,
+			EstimatedDeliveryDate: timestamppb.New(item.EstimatedDeliveryDate),
+			ActualDeliveryDate:    actualDeliveryDate,
+			Notes:                 item.Notes,
+			CancelledReason:       item.CancelledReason,
+		})
+	}
+
+	return &order_proto_gen.GetSupplierOrdersResponse{
+		Data:     result,
+		Metadata: metadata,
+	}, nil
+}

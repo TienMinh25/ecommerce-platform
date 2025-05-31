@@ -974,6 +974,94 @@ func (x *UpdateDocumentSupplierResponse) GetStatus() string {
 	return ""
 }
 
+type GetSupplierIDRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSupplierIDRequest) Reset() {
+	*x = GetSupplierIDRequest{}
+	mi := &file_partner_supplier_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSupplierIDRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSupplierIDRequest) ProtoMessage() {}
+
+func (x *GetSupplierIDRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_partner_supplier_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSupplierIDRequest.ProtoReflect.Descriptor instead.
+func (*GetSupplierIDRequest) Descriptor() ([]byte, []int) {
+	return file_partner_supplier_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetSupplierIDRequest) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+type GetSupplierIDResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SupplierId    int64                  `protobuf:"varint,1,opt,name=supplier_id,json=supplierId,proto3" json:"supplier_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSupplierIDResponse) Reset() {
+	*x = GetSupplierIDResponse{}
+	mi := &file_partner_supplier_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSupplierIDResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSupplierIDResponse) ProtoMessage() {}
+
+func (x *GetSupplierIDResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_partner_supplier_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSupplierIDResponse.ProtoReflect.Descriptor instead.
+func (*GetSupplierIDResponse) Descriptor() ([]byte, []int) {
+	return file_partner_supplier_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetSupplierIDResponse) GetSupplierId() int64 {
+	if x != nil {
+		return x.SupplierId
+	}
+	return 0
+}
+
 var File_partner_supplier_proto protoreflect.FileDescriptor
 
 var file_partner_supplier_proto_rawDesc = string([]byte{
@@ -1142,9 +1230,16 @@ var file_partner_supplier_proto_rawDesc = string([]byte{
 	0x22, 0x38, 0x0a, 0x1e, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x44, 0x6f, 0x63, 0x75, 0x6d, 0x65,
 	0x6e, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
 	0x73, 0x65, 0x12, 0x16, 0x0a, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x18, 0x01, 0x20, 0x01,
-	0x28, 0x09, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x42, 0x15, 0x5a, 0x13, 0x2e, 0x2f,
-	0x70, 0x61, 0x72, 0x74, 0x6e, 0x65, 0x72, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x5f, 0x67, 0x65,
-	0x6e, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x28, 0x09, 0x52, 0x06, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x22, 0x2f, 0x0a, 0x14, 0x47, 0x65,
+	0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x49, 0x44, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x12, 0x17, 0x0a, 0x07, 0x75, 0x73, 0x65, 0x72, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x03, 0x52, 0x06, 0x75, 0x73, 0x65, 0x72, 0x49, 0x64, 0x22, 0x38, 0x0a, 0x15, 0x47,
+	0x65, 0x74, 0x53, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72, 0x49, 0x44, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x1f, 0x0a, 0x0b, 0x73, 0x75, 0x70, 0x70, 0x6c, 0x69, 0x65, 0x72,
+	0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0a, 0x73, 0x75, 0x70, 0x70, 0x6c,
+	0x69, 0x65, 0x72, 0x49, 0x64, 0x42, 0x15, 0x5a, 0x13, 0x2e, 0x2f, 0x70, 0x61, 0x72, 0x74, 0x6e,
+	0x65, 0x72, 0x5f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x5f, 0x67, 0x65, 0x6e, 0x62, 0x06, 0x70, 0x72,
+	0x6f, 0x74, 0x6f, 0x33,
 })
 
 var (
@@ -1159,7 +1254,7 @@ func file_partner_supplier_proto_rawDescGZIP() []byte {
 	return file_partner_supplier_proto_rawDescData
 }
 
-var file_partner_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_partner_supplier_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_partner_supplier_proto_goTypes = []any{
 	(*RegisterSupplierRequest)(nil),        // 0: RegisterSupplierRequest
 	(*RegisterSupplierDocument)(nil),       // 1: RegisterSupplierDocument
@@ -1175,20 +1270,22 @@ var file_partner_supplier_proto_goTypes = []any{
 	(*UpdateSupplierResponse)(nil),         // 11: UpdateSupplierResponse
 	(*UpdateDocumentSupplierRequest)(nil),  // 12: UpdateDocumentSupplierRequest
 	(*UpdateDocumentSupplierResponse)(nil), // 13: UpdateDocumentSupplierResponse
-	(*PartnerMetadata)(nil),                // 14: PartnerMetadata
-	(*timestamppb.Timestamp)(nil),          // 15: google.protobuf.Timestamp
+	(*GetSupplierIDRequest)(nil),           // 14: GetSupplierIDRequest
+	(*GetSupplierIDResponse)(nil),          // 15: GetSupplierIDResponse
+	(*PartnerMetadata)(nil),                // 16: PartnerMetadata
+	(*timestamppb.Timestamp)(nil),          // 17: google.protobuf.Timestamp
 }
 var file_partner_supplier_proto_depIdxs = []int32{
 	1,  // 0: RegisterSupplierRequest.documents:type_name -> RegisterSupplierDocument
 	5,  // 1: GetSuppliersResponse.data:type_name -> SuppliersResponse
-	14, // 2: GetSuppliersResponse.metadata:type_name -> PartnerMetadata
-	15, // 3: SuppliersResponse.created_at:type_name -> google.protobuf.Timestamp
-	15, // 4: SuppliersResponse.updated_at:type_name -> google.protobuf.Timestamp
-	15, // 5: GetSupplierDetailResponse.created_at:type_name -> google.protobuf.Timestamp
-	15, // 6: GetSupplierDetailResponse.updated_at:type_name -> google.protobuf.Timestamp
+	16, // 2: GetSuppliersResponse.metadata:type_name -> PartnerMetadata
+	17, // 3: SuppliersResponse.created_at:type_name -> google.protobuf.Timestamp
+	17, // 4: SuppliersResponse.updated_at:type_name -> google.protobuf.Timestamp
+	17, // 5: GetSupplierDetailResponse.created_at:type_name -> google.protobuf.Timestamp
+	17, // 6: GetSupplierDetailResponse.updated_at:type_name -> google.protobuf.Timestamp
 	8,  // 7: GetSupplierDetailResponse.documents:type_name -> GetSupplierDetailDocument
-	15, // 8: GetSupplierDetailDocument.created_at:type_name -> google.protobuf.Timestamp
-	15, // 9: GetSupplierDetailDocument.updated_at:type_name -> google.protobuf.Timestamp
+	17, // 8: GetSupplierDetailDocument.created_at:type_name -> google.protobuf.Timestamp
+	17, // 9: GetSupplierDetailDocument.updated_at:type_name -> google.protobuf.Timestamp
 	9,  // 10: GetSupplierDetailDocument.document:type_name -> DocumentDetail
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
@@ -1212,7 +1309,7 @@ func file_partner_supplier_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_partner_supplier_proto_rawDesc), len(file_partner_supplier_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

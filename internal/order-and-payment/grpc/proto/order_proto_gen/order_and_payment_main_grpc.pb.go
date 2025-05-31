@@ -35,6 +35,7 @@ const (
 	OrderService_UpdateOrderStatusFromMomo_FullMethodName = "/OrderService/UpdateOrderStatusFromMomo"
 	OrderService_RegisterDeliverer_FullMethodName         = "/OrderService/RegisterDeliverer"
 	OrderService_CreateCartForRegister_FullMethodName     = "/OrderService/CreateCartForRegister"
+	OrderService_GetSupplierOrders_FullMethodName         = "/OrderService/GetSupplierOrders"
 )
 
 // OrderServiceClient is the client API for OrderService service.
@@ -57,6 +58,7 @@ type OrderServiceClient interface {
 	UpdateOrderStatusFromMomo(ctx context.Context, in *UpdateOrderStatusFromMomoRequest, opts ...grpc.CallOption) (*UpdateOrderStatusFromMomoResponse, error)
 	RegisterDeliverer(ctx context.Context, in *RegisterDelivererRequest, opts ...grpc.CallOption) (*RegisterDelivererResponse, error)
 	CreateCartForRegister(ctx context.Context, in *CreateCartForRegisterRequest, opts ...grpc.CallOption) (*CreateCartForRegisterResponse, error)
+	GetSupplierOrders(ctx context.Context, in *GetSupplierOrdersRequest, opts ...grpc.CallOption) (*GetSupplierOrdersResponse, error)
 }
 
 type orderServiceClient struct {
@@ -227,6 +229,16 @@ func (c *orderServiceClient) CreateCartForRegister(ctx context.Context, in *Crea
 	return out, nil
 }
 
+func (c *orderServiceClient) GetSupplierOrders(ctx context.Context, in *GetSupplierOrdersRequest, opts ...grpc.CallOption) (*GetSupplierOrdersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSupplierOrdersResponse)
+	err := c.cc.Invoke(ctx, OrderService_GetSupplierOrders_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // OrderServiceServer is the server API for OrderService service.
 // All implementations must embed UnimplementedOrderServiceServer
 // for forward compatibility.
@@ -247,6 +259,7 @@ type OrderServiceServer interface {
 	UpdateOrderStatusFromMomo(context.Context, *UpdateOrderStatusFromMomoRequest) (*UpdateOrderStatusFromMomoResponse, error)
 	RegisterDeliverer(context.Context, *RegisterDelivererRequest) (*RegisterDelivererResponse, error)
 	CreateCartForRegister(context.Context, *CreateCartForRegisterRequest) (*CreateCartForRegisterResponse, error)
+	GetSupplierOrders(context.Context, *GetSupplierOrdersRequest) (*GetSupplierOrdersResponse, error)
 	mustEmbedUnimplementedOrderServiceServer()
 }
 
@@ -304,6 +317,9 @@ func (UnimplementedOrderServiceServer) RegisterDeliverer(context.Context, *Regis
 }
 func (UnimplementedOrderServiceServer) CreateCartForRegister(context.Context, *CreateCartForRegisterRequest) (*CreateCartForRegisterResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCartForRegister not implemented")
+}
+func (UnimplementedOrderServiceServer) GetSupplierOrders(context.Context, *GetSupplierOrdersRequest) (*GetSupplierOrdersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSupplierOrders not implemented")
 }
 func (UnimplementedOrderServiceServer) mustEmbedUnimplementedOrderServiceServer() {}
 func (UnimplementedOrderServiceServer) testEmbeddedByValue()                      {}
@@ -614,6 +630,24 @@ func _OrderService_CreateCartForRegister_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _OrderService_GetSupplierOrders_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSupplierOrdersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(OrderServiceServer).GetSupplierOrders(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: OrderService_GetSupplierOrders_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(OrderServiceServer).GetSupplierOrders(ctx, req.(*GetSupplierOrdersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // OrderService_ServiceDesc is the grpc.ServiceDesc for OrderService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -684,6 +718,10 @@ var OrderService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateCartForRegister",
 			Handler:    _OrderService_CreateCartForRegister_Handler,
+		},
+		{
+			MethodName: "GetSupplierOrders",
+			Handler:    _OrderService_GetSupplierOrders_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

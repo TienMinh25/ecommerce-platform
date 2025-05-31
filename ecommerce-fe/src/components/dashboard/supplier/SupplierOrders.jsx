@@ -9,9 +9,6 @@ import {
     Tab,
     TabPanels,
     TabPanel,
-    Input,
-    InputGroup,
-    InputLeftElement,
     Button,
     Image,
     VStack,
@@ -23,7 +20,6 @@ import {
     Alert,
     AlertIcon,
     Avatar,
-    Select,
     useDisclosure,
     Modal,
     ModalOverlay,
@@ -34,7 +30,8 @@ import {
     ModalCloseButton,
     Textarea,
 } from '@chakra-ui/react';
-import { SearchIcon, ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
+import { ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
+import supplierService from '../../../services/supplierService';
 
 const SupplierOrders = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -58,14 +55,18 @@ const SupplierOrders = () => {
     const { isOpen: isStatusModalOpen, onOpen: onStatusModalOpen, onClose: onStatusModalClose } = useDisclosure();
     const { isOpen: isCancelModalOpen, onOpen: onCancelModalOpen, onClose: onCancelModalClose } = useDisclosure();
 
-    // Status tabs for supplier
+    // Status tabs for supplier - based on acceptStatus
     const statusTabs = [
         { key: null, label: 'Tất cả' },
         { key: 'pending', label: 'Chờ xác nhận' },
         { key: 'confirmed', label: 'Đã xác nhận' },
         { key: 'processing', label: 'Đang chuẩn bị' },
         { key: 'ready_to_ship', label: 'Sẵn sàng giao' },
+        { key: 'in_transit', label: 'Đang vận chuyển' },
+        { key: 'out_for_delivery', label: 'Sắp giao' },
+        { key: 'delivered', label: 'Đã giao' },
         { key: 'cancelled', label: 'Đã hủy' },
+        { key: 'refunded', label: 'Đã hoàn tiền' },
     ];
 
     // Colors
@@ -74,140 +75,78 @@ const SupplierOrders = () => {
     const redColor = useColorModeValue('red.500', 'red.300');
     const greenColor = useColorModeValue('green.500', 'green.300');
 
-    // Mock data - replace with actual API call later
-    const mockOrders = [
-        {
-            order_item_id: 1,
-            order_id: "ORD001",
-            product_name: "iPhone 14 Pro Max 256GB",
-            product_variant_name: "Deep Purple",
-            product_variant_thumbnail: "https://via.placeholder.com/80",
-            quantity: 1,
-            unit_price: 32990000,
-            total_price: 32990000,
-            discount_amount: 0,
-            shipping_fee: 30000,
-            tax_amount: 0,
-            status: "pending",
-            tracking_number: "MP001234567",
-            shipping_address: "123 Nguyễn Trãi, Quận 1, TP.HCM",
-            recipient_name: "Nguyễn Văn A",
-            recipient_phone: "0901234567",
-            shipping_method: "cod",
-            estimated_delivery_date: "2025-02-05",
-            created_at: "2025-01-30T10:00:00Z",
-            customer_name: "Nguyễn Văn A",
-            customer_avatar: "https://via.placeholder.com/40",
-            notes: "Giao hàng giờ hành chính"
-        },
-        {
-            order_item_id: 2,
-            order_id: "ORD002",
-            product_name: "Samsung Galaxy S24 Ultra",
-            product_variant_name: "Titanium Black 512GB",
-            product_variant_thumbnail: "https://via.placeholder.com/80",
-            quantity: 2,
-            unit_price: 29990000,
-            total_price: 59980000,
-            discount_amount: 1000000,
-            shipping_fee: 0,
-            tax_amount: 0,
-            status: "confirmed",
-            tracking_number: "MP001234568",
-            shipping_address: "456 Lê Lợi, Quận 3, TP.HCM",
-            recipient_name: "Trần Thị B",
-            recipient_phone: "0901234568",
-            shipping_method: "momo",
-            estimated_delivery_date: "2025-02-06",
-            created_at: "2025-01-29T14:30:00Z",
-            customer_name: "Trần Thị B",
-            customer_avatar: "https://via.placeholder.com/40",
-            notes: ""
-        },
-        {
-            order_item_id: 3,
-            order_id: "ORD003",
-            product_name: "MacBook Pro 14 inch M3",
-            product_variant_name: "Space Black 1TB",
-            product_variant_thumbnail: "https://via.placeholder.com/80",
-            quantity: 1,
-            unit_price: 52990000,
-            total_price: 52990000,
-            discount_amount: 2000000,
-            shipping_fee: 50000,
-            tax_amount: 0,
-            status: "processing",
-            tracking_number: "MP001234569",
-            shipping_address: "789 Võ Văn Tần, Quận 3, TP.HCM",
-            recipient_name: "Lê Văn C",
-            recipient_phone: "0901234569",
-            shipping_method: "vnpay",
-            estimated_delivery_date: "2025-02-07",
-            created_at: "2025-01-28T09:15:00Z",
-            customer_name: "Lê Văn C",
-            customer_avatar: "https://via.placeholder.com/40",
-            notes: "Liên hệ trước khi giao"
-        }
-    ];
-
-    // Fetch orders (mock implementation)
-    const fetchOrders = async (page = 1, status = null, keyword = null) => {
+    // Fetch orders from API
+    const fetchOrders = async (page = 1, status = null) => {
         setLoading(true);
         setError(null);
 
         try {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Build query parameters
+            const params = {
+                page: page,
+                limit: pagination.limit
+            };
 
-            let filteredOrders = [...mockOrders];
-
-            // Filter by status
+            // Add status filter if provided (based on acceptStatus)
             if (status) {
-                filteredOrders = filteredOrders.filter(order => order.status === status);
+                params.status = status;
             }
 
-            // Filter by keyword
-            if (keyword && keyword.trim()) {
-                const searchTerm = keyword.trim().toLowerCase();
-                filteredOrders = filteredOrders.filter(order =>
-                    order.product_name.toLowerCase().includes(searchTerm) ||
-                    order.customer_name.toLowerCase().includes(searchTerm) ||
-                    order.order_id.toLowerCase().includes(searchTerm)
-                );
-            }
+            // Call API through supplierService
+            const response = await supplierService.getSupplierOrders(params);
 
-            setOrders(filteredOrders);
+            if (response && response.data) {
+                setOrders(response.data);
+
+                // Update pagination from response metadata
+                if (response.metadata && response.metadata.pagination) {
+                    setPagination(response.metadata.pagination);
+                } else {
+                    // Fallback pagination if not provided
+                    setPagination({
+                        page: page,
+                        limit: params.limit,
+                        total_items: response.data.length,
+                        total_pages: Math.ceil(response.data.length / params.limit),
+                        has_next: false,
+                        has_previous: false
+                    });
+                }
+            } else {
+                setOrders([]);
+                setPagination({
+                    page: 1,
+                    limit: 10,
+                    total_items: 0,
+                    total_pages: 0,
+                    has_next: false,
+                    has_previous: false
+                });
+            }
+        } catch (err) {
+            console.error('Error fetching supplier orders:', err);
+            setError(err.response?.data?.error?.message || 'Có lỗi xảy ra khi tải đơn hàng');
+            setOrders([]);
             setPagination({
                 page: 1,
                 limit: 10,
-                total_items: filteredOrders.length,
-                total_pages: Math.ceil(filteredOrders.length / 10),
+                total_items: 0,
+                total_pages: 0,
                 has_next: false,
                 has_previous: false
             });
-        } catch (err) {
-            setError('Có lỗi xảy ra khi tải đơn hàng');
-            setOrders([]);
         } finally {
             setLoading(false);
         }
     };
 
+    // Fetch orders when tab changes
     useEffect(() => {
         const currentStatus = statusTabs[activeTab]?.key;
-        fetchOrders(1, currentStatus, searchQuery);
+        fetchOrders(1, currentStatus);
     }, [activeTab]);
 
-    useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            const currentStatus = statusTabs[activeTab]?.key;
-            fetchOrders(1, currentStatus, searchQuery);
-        }, 500);
-
-        return () => clearTimeout(timeoutId);
-    }, [searchQuery]);
-
-    // Status badges
+    // Status badges with updated statuses
     const renderStatusBadge = (status) => {
         const statusConfig = {
             'pending': {
@@ -230,10 +169,30 @@ const SupplierOrders = () => {
                 bg: '#CFFAFE',
                 color: '#155E75'
             },
+            'in_transit': {
+                text: 'Đang vận chuyển',
+                bg: '#DBEAFE',
+                color: '#1E40AF'
+            },
+            'out_for_delivery': {
+                text: 'Sắp giao',
+                bg: '#CCFBF1',
+                color: '#134E4A'
+            },
+            'delivered': {
+                text: 'Đã giao',
+                bg: '#D1FAE5',
+                color: '#065F46'
+            },
             'cancelled': {
                 text: 'Đã hủy',
                 bg: '#FEE2E2',
                 color: '#991B1B'
+            },
+            'refunded': {
+                text: 'Đã hoàn tiền',
+                bg: '#F3F4F6',
+                color: '#374151'
             }
         };
 
@@ -299,8 +258,13 @@ const SupplierOrders = () => {
         if (!selectedOrder) return;
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 500));
+            setLoading(true);
+
+            // Call API to update order status
+            await supplierService.updateOrderStatus(
+                selectedOrder.order_item_id,
+                statusToUpdate
+            );
 
             // Update order status in local state
             setOrders(prevOrders =>
@@ -316,6 +280,9 @@ const SupplierOrders = () => {
             setStatusToUpdate('');
         } catch (error) {
             console.error('Error updating status:', error);
+            setError(error.response?.data?.error?.message || 'Có lỗi xảy ra khi cập nhật trạng thái');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -323,8 +290,14 @@ const SupplierOrders = () => {
         if (!selectedOrder || !cancelReason.trim()) return;
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 500));
+            setLoading(true);
+
+            // Call API to cancel order with reason
+            await supplierService.updateOrderStatus(
+                selectedOrder.order_item_id,
+                'cancelled',
+                cancelReason
+            );
 
             // Update order status in local state
             setOrders(prevOrders =>
@@ -341,26 +314,31 @@ const SupplierOrders = () => {
             setCancelReason('');
         } catch (error) {
             console.error('Error cancelling order:', error);
+            setError(error.response?.data?.error?.message || 'Có lỗi xảy ra khi hủy đơn hàng');
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Get available status transitions
+    // Get available status transitions based on current status
     const getAvailableStatuses = (currentStatus) => {
-        const statusFlow = {
-            'pending': ['confirmed', 'cancelled'],
-            'confirmed': ['processing', 'cancelled'],
-            'processing': ['ready_to_ship', 'cancelled'],
-            'ready_to_ship': ['cancelled']
-        };
-        return statusFlow[currentStatus] || [];
+        // Chỉ có pending mới có thể thực hiện action
+        if (currentStatus === 'pending') {
+            return ['confirmed', 'cancelled'];
+        }
+        // Tất cả status khác chỉ được xem, không có button action
+        return [];
     };
 
-    // Get status label
+    // Get status label for buttons
     const getStatusLabel = (status) => {
         const labels = {
             'confirmed': 'Xác nhận đơn hàng',
             'processing': 'Bắt đầu chuẩn bị',
             'ready_to_ship': 'Sẵn sàng giao hàng',
+            'in_transit': 'Bắt đầu vận chuyển',
+            'out_for_delivery': 'Đang giao hàng',
+            'delivered': 'Đã giao thành công',
             'cancelled': 'Hủy đơn hàng'
         };
         return labels[status] || status;
@@ -484,7 +462,7 @@ const SupplierOrders = () => {
                         </Text>
 
                         {/* Order actions */}
-                        <HStack spacing={2}>
+                        <HStack spacing={2} wrap="wrap">
                             {availableStatuses.map(status => (
                                 <Button
                                     key={status}
@@ -634,21 +612,6 @@ const SupplierOrders = () => {
                     <TabPanels>
                         {statusTabs.map((tab, tabIndex) => (
                             <TabPanel key={tabIndex} p={4}>
-                                <Box mb={6}>
-                                    <InputGroup>
-                                        <InputLeftElement pointerEvents="none">
-                                            <SearchIcon color="gray.300" />
-                                        </InputLeftElement>
-                                        <Input
-                                            placeholder="Tìm kiếm theo tên sản phẩm, khách hàng hoặc mã đơn hàng"
-                                            value={searchQuery}
-                                            onChange={e => setSearchQuery(e.target.value)}
-                                            bg={bgColor}
-                                            borderColor={borderColor}
-                                        />
-                                    </InputGroup>
-                                </Box>
-
                                 {error && (
                                     <Alert status="error" mb={4}>
                                         <AlertIcon />
@@ -665,6 +628,37 @@ const SupplierOrders = () => {
                                         {orders.length > 0 ? (
                                             <>
                                                 {orders.map(order => renderOrderItem(order))}
+
+                                                {/* Pagination */}
+                                                {pagination.total_pages > 1 && (
+                                                    <Flex justify="center" mt={6} gap={2}>
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                const currentStatus = statusTabs[activeTab]?.key;
+                                                                fetchOrders(pagination.page - 1, currentStatus);
+                                                            }}
+                                                            isDisabled={!pagination.has_previous}
+                                                        >
+                                                            Trước
+                                                        </Button>
+
+                                                        <Text mx={4} alignSelf="center">
+                                                            Trang {pagination.page} / {pagination.total_pages}
+                                                        </Text>
+
+                                                        <Button
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                const currentStatus = statusTabs[activeTab]?.key;
+                                                                fetchOrders(pagination.page + 1, currentStatus);
+                                                            }}
+                                                            isDisabled={!pagination.has_next}
+                                                        >
+                                                            Sau
+                                                        </Button>
+                                                    </Flex>
+                                                )}
                                             </>
                                         ) : (
                                             <VStack spacing={4} py={10}>

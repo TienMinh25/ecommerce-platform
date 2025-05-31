@@ -5,29 +5,35 @@ import (
 	api_gateway_dto "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/dto"
 	api_gateway_repository "github.com/TienMinh25/ecommerce-platform/internal/api-gateway/repository"
 	"github.com/TienMinh25/ecommerce-platform/internal/common"
+	"github.com/TienMinh25/ecommerce-platform/internal/order-and-payment/grpc/proto/order_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/supplier-and-product/grpc/proto/partner_proto_gen"
 	"github.com/TienMinh25/ecommerce-platform/internal/utils"
+	"github.com/TienMinh25/ecommerce-platform/internal/utils/errorcode"
 	"github.com/TienMinh25/ecommerce-platform/pkg"
 	"github.com/TienMinh25/ecommerce-platform/third_party/tracing"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"net/http"
+	"time"
 )
 
 type supplierService struct {
 	tracer             pkg.Tracer
 	partnerClient      partner_proto_gen.PartnerServiceClient
+	orderClient        order_proto_gen.OrderServiceClient
 	addressRepository  api_gateway_repository.IAddressRepository
 	userRoleRepository api_gateway_repository.IUserRoleRepository
 }
 
 func NewSupplierService(tracer pkg.Tracer, partnerClient partner_proto_gen.PartnerServiceClient,
-	addressRepository api_gateway_repository.IAddressRepository, userRoleRepository api_gateway_repository.IUserRoleRepository) ISupplierService {
+	addressRepository api_gateway_repository.IAddressRepository, userRoleRepository api_gateway_repository.IUserRoleRepository,
+	orderClient order_proto_gen.OrderServiceClient) ISupplierService {
 	return &supplierService{
 		tracer:             tracer,
 		partnerClient:      partnerClient,
 		addressRepository:  addressRepository,
 		userRoleRepository: userRoleRepository,
+		orderClient:        orderClient,
 	}
 }
 
@@ -257,4 +263,80 @@ func (s *supplierService) UpdateRoleForUserRegisterSupplier(ctx context.Context,
 	}
 
 	return nil
+}
+
+func (s *supplierService) GetSupplierOrders(ctx context.Context, data api_gateway_dto.GetSupplierOrdersRequest, userID int) ([]api_gateway_dto.GetSupplierOrdersResponse, int, int, bool, bool, error) {
+	ctx, span := s.tracer.StartFromContext(ctx, tracing.GetSpanName(tracing.ServiceLayer, "GetSupplierOrders"))
+	defer span.End()
+
+	var orderStatus *string = nil
+
+	if data.Status != "" {
+		statusRaw := string(data.Status)
+		orderStatus = &statusRaw
+	}
+
+	resultOrder, err := s.orderClient.GetSupplierOrders(ctx, &order_proto_gen.GetSupplierOrdersRequest{
+		Limit:  data.Limit,
+		Page:   data.Page,
+		Status: orderStatus,
+		UserId: int64(userID),
+	})
+
+	if err != nil {
+		// not found or internal
+		st, _ := status.FromError(err)
+
+		switch st.Code() {
+		case codes.NotFound:
+			return nil, 0, 0, false, false, utils.BusinessError{
+				Code:      http.StatusBadRequest,
+				Message:   st.Message(),
+				ErrorCode: errorcode.BAD_REQUEST,
+			}
+		case codes.Internal:
+			return nil, 0, 0, false, false, utils.TechnicalError{
+				Code:    http.StatusInternalServerError,
+				Message: common.MSG_INTERNAL_ERROR,
+			}
+		}
+
+	}
+
+	result := make([]api_gateway_dto.GetSupplierOrdersResponse, 0)
+
+	for _, item := range resultOrder.Data {
+		var actualDeliveryDate *time.Time
+
+		if item.ActualDeliveryDate != nil {
+			*actualDeliveryDate = item.ActualDeliveryDate.AsTime()
+		}
+
+		result = append(result, api_gateway_dto.GetSupplierOrdersResponse{
+			OrderItemID:             item.OrderItemId,
+			ProductID:               item.ProductId,
+			ProductVariantID:        item.ProductVariantId,
+			ProductName:             item.ProductName,
+			ProductVariantName:      item.ProductVariantName,
+			ProductVariantThumbnail: item.ProductThumbnailUrl,
+			Quantity:                item.Quantity,
+			UnitPrice:               item.UnitPrice,
+			TotalPrice:              item.TotalPrice,
+			DiscountAmount:          item.DiscountAmount,
+			TaxAmount:               item.TaxAmount,
+			ShippingFee:             item.ShippingFee,
+			Status:                  common.StatusOrder(item.Status),
+			TrackingNumber:          item.TrackingNumber,
+			ShippingMethod:          common.MethodType(item.ShippingMethod),
+			ShippingAddress:         item.ShippingAddress,
+			RecipientName:           item.RecipientName,
+			RecipientPhone:          item.RecipientPhone,
+			EstimatedDeliveryDate:   item.EstimatedDeliveryDate.AsTime(),
+			ActualDeliveryDate:      actualDeliveryDate,
+			Notes:                   item.Notes,
+			CancelledReason:         item.CancelledReason,
+		})
+	}
+
+	return result, int(resultOrder.Metadata.TotalItems), int(resultOrder.Metadata.TotalPages), resultOrder.Metadata.HasNext, resultOrder.Metadata.HasPrevious, nil
 }
